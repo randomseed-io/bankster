@@ -282,11 +282,11 @@
   known kinds are:
 
   - :FIAT          – legal tender issued by government or other authority
-  - :FIDUCIARY     - accepted medium of exchange issued by fiduciary or fiduciaries
-  - :DECENTRALIZED - accepted medium of exchange issued using distributed ledger
+  - :FIDUCIARY     - accepted medium of exchange issued by a fiduciary or fiduciaries
+  - :DECENTRALIZED - accepted medium of exchange issued by a distributed ledger
   - :COMBANK       - commercial bank money
   - :COMMODITY     - accepted medium of exchange based on commodities
-  - :OTHER         - accepted medium of exchange that does not fit into the above categories.
+  - :EXPERIMENTAL  - pseudo-currency used for testing purposes.
 
   The function may return nil if the currency is a no-currency."
   (^clojure.lang.Keyword [c] (.kind ^Currency (of c)))
@@ -461,33 +461,38 @@
   "Alias for iso?"
   iso?)
 
+(defn ^Boolean has-kind?
+  "Returns true if the given currency has its kind defined."
+  (^Boolean [c] (some? (.kind ^Currency (of c))))
+  (^Boolean [c ^Registry registry] (some? (.kind ^Currency (of c)))))
+
 (defn ^Boolean kind-of?
   "Returns a kind of the given currency equals to the one given as a second argument."
   (^Boolean [c ^clojure.lang.Keyword kind] (= kind (.kind ^Currency (of c))))
   (^Boolean [c ^clojure.lang.Keyword kind ^Registry registry] (= kind (.kind ^Currency (of c)))))
 
 (defn ^Boolean fiat?
-  "Returns true if the given currency is a kind of :FIAT"
+  "Returns true if the given currency is a kind of :FIAT."
   (^Boolean [c] (= :FIAT (.kind ^Currency (of c))))
   (^Boolean [c ^Registry registry] (= :FIAT (.kind ^Currency (of c)))))
 
 (defn ^Boolean fiduciary?
-  "Returns true if the given currency is a kind of :FIDUCIARY"
+  "Returns true if the given currency is a kind of :FIDUCIARY."
   (^Boolean [c] (= :FIDUCIARY (.kind ^Currency (of c))))
   (^Boolean [c ^Registry registry] (= :FIDUCIARY (.kind ^Currency (of c)))))
 
 (defn ^Boolean combank?
-  "Returns true if the given currency is a kind of :COMBANK"
+  "Returns true if the given currency is a kind of :COMBANK."
   (^Boolean [c] (= :COMBANK (.kind ^Currency (of c))))
   (^Boolean [c ^Registry registry] (= :COMBANK (.kind ^Currency (of c)))))
 
 (defn ^Boolean commodity?
-  "Returns true if the given currency is a kind of :COMMODITY"
+  "Returns true if the given currency is a kind of :COMMODITY."
   (^Boolean [c] (= :COMMODITY (.kind ^Currency (of c))))
   (^Boolean [c ^Registry registry] (= :COMMODITY (.kind ^Currency (of c)))))
 
 (defn ^Boolean decentralized?
-  "Returns true if the given currency is a kind of :DECENTRALIZED"
+  "Returns true if the given currency is a kind of :DECENTRALIZED."
   (^Boolean [c] (= :DECENTRALIZED (.kind ^Currency (of c))))
   (^Boolean [c ^Registry registry] (= :DECENTRALIZED (.kind ^Currency (of c)))))
 
@@ -497,7 +502,7 @@
   "Alias for decentralized?"
   decentralized?)
 
-(defn ^Boolean other?
-  "Returns true if the given currency is a kind of :"
-  (^Boolean [c] (= :OTHER (.kind ^Currency (of c))))
-  (^Boolean [c ^Registry registry] (= :OTHER (.kind ^Currency (of c)))))
+(defn ^Boolean experimental?
+  "Returns true if the given currency is a kind of :EXPERIMENTAL."
+  (^Boolean [c] (= :EXPERIMENTAL (.kind ^Currency (of c))))
+  (^Boolean [c ^Registry registry] (= :EXPERIMENTAL (.kind ^Currency (of c)))))
