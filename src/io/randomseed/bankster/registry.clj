@@ -4,6 +4,8 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
+  (:refer-clojure :exclude [new])
+
   (:require [clojure.string                  :as      str]
             [io.randomseed.bankster          :as bankster]
             [io.randomseed.bankster.util.map :as      map]
@@ -18,21 +20,34 @@
 
 (defn ^Registry new-registry
   "Creates a new registry."
-  ([]
+  (^Registry []
    (bankster/->Registry {} {} {} {}))
-  ([^clojure.lang.PersistentHashMap cur-id->cur
-    ^clojure.lang.PersistentHashMap cur-nr->cur
-    ^clojure.lang.PersistentHashMap ctr-id->cur
-    ^clojure.lang.PersistentHashMap cur-id->ctr-ids]
+  (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+              ^clojure.lang.PersistentHashMap cur-nr->cur
+              ^clojure.lang.PersistentHashMap ctr-id->cur
+              ^clojure.lang.PersistentHashMap cur-id->ctr-ids]
    (bankster/->Registry cur-id->cur cur-nr->cur ctr-id->cur cur-id->ctr-ids))
-  ([^clojure.lang.PersistentHashMap cur-id->cur
-    ^clojure.lang.PersistentHashMap ctr-id->cur]
+  (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+              ^clojure.lang.PersistentHashMap ctr-id->cur]
    (bankster/->Registry cur-id->cur
                         (map/kmap-v :numeric cur-id->cur {})
                         ctr-id->cur
                         (map/invert-in-sets ctr-id->cur)))
-  ([^clojure.lang.PersistentHashMap m]
+  (^Registry [^clojure.lang.PersistentHashMap m]
    (bankster/map->Registry m)))
+
+(def ^{:tag Registry
+       :arglists '(^Registry []
+                   ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+                              ^clojure.lang.PersistentHashMap cur-nr->cur
+                              ^clojure.lang.PersistentHashMap ctr-id->cur
+                              ^clojure.lang.PersistentHashMap cur-id->ctr-ids]
+                   ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+                              ^clojure.lang.PersistentHashMap ctr-id->cur]
+                   ^Registry [^clojure.lang.PersistentHashMap m])}
+  new
+  "Alias for new-registry."
+  new-registry)
 
 ;;
 ;; Global, shared registry
@@ -61,14 +76,14 @@
 
 (defn ^Registry set!
   "Sets current state of a global registry."
-  ([registry]
+  (^Registry [registry]
    (if (registry? registry)
      (reset! R ^Registry registry)
      (reset! R (new-registry ^clojure.lang.PersistentHashMap registry))))
-  ([^clojure.lang.PersistentHashMap cur-id->cur
-    ^clojure.lang.PersistentHashMap cur-nr->cur
-    ^clojure.lang.PersistentHashMap ctr-id->cur
-    ^clojure.lang.PersistentHashMap cur-id->ctr-ids]
+  (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+              ^clojure.lang.PersistentHashMap cur-nr->cur
+              ^clojure.lang.PersistentHashMap ctr-id->cur
+              ^clojure.lang.PersistentHashMap cur-id->ctr-ids]
    (set! R
          (new-registry cur-id->cur
                        cur-nr->cur

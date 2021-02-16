@@ -4,7 +4,7 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [ns])
+  (:refer-clojure :exclude [ns new])
 
   (:require [clojure.string                  :as           str]
             [clojure.edn                     :as           edn]
@@ -59,6 +59,15 @@
    (->Currency id numeric-id decimal-places
                (keyword (or (try-upper-case (namespace id)) :ISO-4217))
                kind)))
+
+(def ^{:tag Currency
+       :arglists '(^Currency [^clojure.lang.Keyword id]
+                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id]
+                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, ^long decimal-places]
+                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, ^long decimal-places, ^clojure.lang.Keyword kind])}
+  new
+  "Alias for new-currency."
+  new-currency)
 
 ;;
 ;; Payable protocol.
@@ -221,7 +230,7 @@
 ;; Currency properties.
 ;;
 
-(defn nr
+(defn ^{:tag 'long} nr
   "Returns currency numeric ID as a long number. For currencies without the assigned
   number it will return 0."
   (^long [c] (.nr ^Currency (of c)))
@@ -234,11 +243,11 @@
   "Alias for nr."
   nr)
 
-(defn ^long dp
+(defn ^{:tag 'long} dp
   "Returns currency's decimal places as a long number. For currencies without the
   assigned decimal places it will return -1."
-  ([c] (.dp ^Currency (of c)))
-  ([c ^Registry registry] (.dp ^Currency (of c registry))))
+  (^long [c] (.dp ^Currency (of c)))
+  (^long [c ^Registry registry] (.dp ^Currency (of c registry))))
 
 (def ^{:tag 'long
        :arglists '([c] [c, ^Registry registry])}
@@ -250,11 +259,12 @@
   "Returns currency domain as a keyword. For currencies with simple identifiers it will
   be :ISO-4217. For currencies with namespace-qualified identifiers it will be the
   upper-cased namespace name (e.g. CRYPTO) set during creation a currency object."
-  ([c] (.ns ^Currency (of c)))
-  ([c ^Registry registry] (.ns ^Currency (of c registry))))
+  (^clojure.lang.Keyword [c] (.ns ^Currency (of c)))
+  (^clojure.lang.Keyword [c, ^Registry registry] (.ns ^Currency (of c registry))))
 
 (def ^{:tag clojure.lang.Keyword
-       :arglists '([c] [c, ^Registry registry])}
+       :arglists '(^clojure.lang.Keyword [c]
+                   ^clojure.lang.Keyword [c, ^Registry registry])}
   ns
   "Alias for domain."
   domain)
@@ -418,8 +428,8 @@
 (defn ^Boolean in-domain?
   "Returns true if the given currency has a domain set to the first given
   argument."
-  ([ns c] (= ns (.ns ^Currency (of c))))
-  ([ns c ^Registry registry] (= ns (.ns ^Currency (of c registry)))))
+  (^Boolean [ns c] (= ns (.ns ^Currency (of c))))
+  (^Boolean [ns c ^Registry registry] (= ns (.ns ^Currency (of c registry)))))
 
 (defn ^Boolean crypto?
   "Returns true if the given currency is a cryptocurrency. It is just a helper that
@@ -434,8 +444,15 @@
   (^Boolean [c] (= :ISO-4217 (.ns ^Currency (of c))))
   (^Boolean [c ^Registry registry] (= :ISO-4217 (.ns ^Currency (of c registry)))))
 
-(def ^Boolean
+(def ^{:tag Boolean
+       :arglists '(^Boolean [c] ^Boolean [c ^Registry registry])}
   official?
+  "Alias for iso?"
+  iso?)
+
+(def ^{:tag Boolean
+       :arglists '(^Boolean [c] ^Boolean [c ^Registry registry])}
+  standard?
   "Alias for iso?"
   iso?)
 
@@ -454,7 +471,7 @@
   (^Boolean [c] (= :FIDUCIARY (.kind ^Currency (of c))))
   (^Boolean [c ^Registry registry] (= :FIDUCIARY (.kind ^Currency (of c)))))
 
-(defn ^Boolean ?
+(defn ^Boolean combank?
   "Returns true if the given currency is a kind of :COMBANK"
   (^Boolean [c] (= :COMBANK (.kind ^Currency (of c))))
   (^Boolean [c ^Registry registry] (= :COMBANK (.kind ^Currency (of c)))))
@@ -469,7 +486,8 @@
   (^Boolean [c] (= :DECENTRALIZED (.kind ^Currency (of c))))
   (^Boolean [c ^Registry registry] (= :DECENTRALIZED (.kind ^Currency (of c)))))
 
-(def ^Boolean
+(def ^{:tag Boolean
+       :arglists '([c] [c ^Registry registry])}
   decentralised?
   "Alias for decentralized?"
   decentralized?)
