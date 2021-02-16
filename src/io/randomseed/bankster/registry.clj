@@ -89,3 +89,12 @@
                        cur-nr->cur
                        ctr-id->cur
                        cur-id->ctr-ids))))
+
+;;
+;; Getters and helpers.
+;;
+
+(defmacro currency-by-id              [id registry] `(get (cur-id->cur     ^Registry registry) id))
+(defmacro currency-by-nr              [nr registry] `(get (cur-nr->cur     ^Registry registry) nr))
+(defmacro currency-by-country-id      [id registry] `(get (ctr-id->cur     ^Registry registry) id))
+(defmacro country-ids-for-currency-id [id registry] `(get (cur-id->ctr-ids ^Registry registry) id))
