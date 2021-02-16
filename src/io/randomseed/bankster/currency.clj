@@ -419,10 +419,32 @@
 ;; Predicates.
 ;;
 
+(defn ^Boolean currency?
+  "Returns true if the given value is represented by a valid currency object."
+  (^Boolean [c] (and (instance? Currency c) (keyword? (.id ^Currency c))))
+  (^Boolean [c ^Registry registry] (and (instance? Currency c) (keyword? (.id ^Currency c)))))
+
+(defn possible?
+  "Returns true if the given value is a possible currency representation. If the
+  registry is not given, the global one is used. By possible representation we mean
+  that it is a currency with a keyword identifier or any other data type that can be
+  successfully converted into such using the registry provided."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [c] (keyword? (id c @R)))
+  (^Boolean [c, ^Registry registry] (keyword? (id c registry))))
+
 (defn ^Boolean has-numeric-id?
   "Returns true if the given currency has a numeric ID."
   (^Boolean [c] (> 0 (.nr ^Currency (of c))))
   (^Boolean [c ^Registry registry] (> 0 (.nr ^Currency (of c registry)))))
+
+(defn ^Boolean has-country?
+  "Returns true if the given currency has at least one country for which it is an
+  official currency."
+  (^Boolean [c]
+   (has-country? c @R))
+  (^Boolean [c, ^Registry registry]
+   (contains? (.cur-id->ctr-ids ^Registry registry) (id c))))
 
 (defn ^Boolean in-domain?
   "Returns true if the given currency has a domain set to the first given
