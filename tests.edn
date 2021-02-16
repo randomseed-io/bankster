@@ -1,0 +1,35 @@
+{:kaocha/tests
+ [{:kaocha.testable/type    :kaocha.type/midje,
+   :kaocha.testable/id      :unit,
+   :kaocha/source-paths     ["src"]
+   :kaocha/test-paths       ["test"]}],
+ :kaocha/fail-fast?         false,
+ :kaocha/color?             true,
+ :kaocha/plugins            [:kaocha.plugin/randomize
+                             :kaocha.plugin/filter
+                             :kaocha.plugin/capture-output
+                             :kaocha.plugin/print-invocations
+                             :kaocha.plugin/profiling
+                             :kaocha.plugin/notifier
+                             :kaocha.plugin.alpha/spec-test-check
+                             :kaocha.plugin/cloverage],
+ :kaocha/reporter [kaocha.report/documentation],
+ :kaocha.plugin.capture-output/capture-output? true,
+ :kaocha.plugin.profiling/count                   3,
+ :kaocha.plugin.randomize/seed            492209631,
+ :kaocha.plugin.randomize/randomize?           true,
+ :kaocha.plugin.notifier/command     "bin/test-notifier %{message} %{title} %{icon} %{failed?}"}
+ :cloverage/opts {:ns-exclude-regex [],
+                  :text? false,
+                  :lcov? false,
+                  :high-watermark 80,
+                  :fail-threshold 0,
+                  :output "target/coverage",
+                  :low-watermark 50,
+                  :ns-regex [],
+                  :summary? true,
+                  :coveralls? false,
+                  :emma-xml? false,
+                  :html? true,
+                  :nop? false,
+                  :codecov? true}}

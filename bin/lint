@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo "[bankster] Running Eastwood lint tool..."
+
+clojure -A:eastwood

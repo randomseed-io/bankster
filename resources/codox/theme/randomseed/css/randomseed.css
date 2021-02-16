@@ -1,0 +1,28 @@
+@import url('https://fonts.googleapis.com/css?family=Open+Sans&display=swap');
+
+body {
+    font-family: 'Open Sans', 'Helvetica Neue', 'PT Sans', Helvetica, sans-serif;
+    font-size: 15.5px;
+}
+
+pre, code {
+  font-size: 10pt;
+}
+
+.sidebar.primary {
+  background: #e2e2e2;
+  border-right: solid 1px #cccccc;
+}
+
+.sidebar.primary li.current a {
+border-left: 3px solid #a33;
+color: #a33;
+}
+
+.sidebar a {
+color: #333;
+}
+
+.sidebar h3.no-link {
+color: #636363;
+}
