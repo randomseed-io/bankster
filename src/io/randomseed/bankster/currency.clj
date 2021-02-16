@@ -317,9 +317,7 @@
   (^clojure.lang.PersistentHashSet [c]
    (countries c @R))
   (^clojure.lang.PersistentHashSet [c, ^Registry registry]
-   (let [^clojure.lang.PersistentHashSet ctrs (get (.cur-id->ctr-ids ^Registry registry)
-                                                   ^clojure.lang.Keyword (id c))]
-     (when (> (count ctrs) 0) ctrs))))
+   (get (.cur-id->ctr-ids ^Registry registry) ^clojure.lang.Keyword (id c))))
 
 (defn ^Currency of-country
   "Returns a currency for the given country identified by a country ID (which should be
