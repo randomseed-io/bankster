@@ -50,29 +50,29 @@
   new-registry)
 
 ;;
-;; Global, shared registry
+;; Global, shared registry.
 ;;
 
 (def ^:private R (atom (new-registry)))
-
-;;
-;; Registry operations
-;;
 
 (defn ^clojure.lang.Atom global
   "Returns global registry object."
   []
   R)
 
-(defn ^Boolean registry?
-  "Returns true if the given object is a registry."
-  [obj]
-  (instance? Registry obj))
-
 (defn ^Registry state
   "Returns current state of a global registry."
   []
   (deref R))
+
+;;
+;; Registry operations.
+;;
+
+(defn ^Boolean registry?
+  "Returns true if the given object is a registry."
+  [obj]
+  (instance? Registry obj))
 
 (defn ^Registry set!
   "Sets current state of a global registry."
