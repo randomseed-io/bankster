@@ -174,8 +174,7 @@
   (of
     (^Currency [^clojure.lang.Keyword id]
      (of id @R))
-    (^Currency [^clojure.lang.Keyword id
-                ^Registry registry]
+    (^Currency [^clojure.lang.Keyword id, ^Registry registry]
      (or (get (.cur-id->cur ^Registry registry) id)
          (throw (ex-info
                  (str "Currency " id " not found in a registry.")
@@ -337,35 +336,32 @@
 
 (defn ^Registry register
   "Adds currency and (optional) countries to the given registry. Returns updated
-  registry."
-  (^Registry [^Registry registry
-              currency]
+  registry. If the updating occurs then the current, all countries associated with
+  the currency are removed and replaced with the provided. To add new countries, use
+  add-countries."
+  (^Registry [^Registry registry, currency]
    (register registry currency nil false))
-  (^Registry [^Registry registry
-              currency
-              country-ids-or-update?]
+  (^Registry [^Registry registry, currency, country-ids-or-update?]
    (if (boolean? country-ids-or-update?)
      (register registry currency nil country-ids-or-update?)
      (register registry currency country-ids-or-update? false)))
-  (^Registry [^Registry registry
-              currency
-              country-ids
-              ^Boolean update?]
+  (^Registry [^Registry registry, currency, country-ids, ^Boolean update?]
    (let [^Currency c (of currency registry)]
      (when-not update?
        (when-some [^Currency p (get-in registry [:cur-id->cur (id c)])]
          (throw (ex-info
                  (str "Currency " (id c) " already exists in a registry.")
                  {:currency c, :existing-currency p}))))
-     (let [^clojure.lang.Keyword currency-id (id c registry)
-           ^Registry  registry (assoc-in registry [:cur-id->cur currency-id] c)
-           numeric-id (nr c registry)
-           ^Registry  registry (if (<= numeric-id 0) registry
-                                   (assoc-in registry [:cur-nr->cur numeric-id] c))
+     (let [currency-id (id c registry)
+           registry    (assoc-in (unregister registry c) [:cur-id->cur currency-id] c)
+           numeric-id  (nr c registry)
+           registry    (if (<= numeric-id 0) registry
+                           (assoc-in registry [:cur-nr->cur numeric-id] c))
            country-ids (when country-ids
                          (if (sequential? country-ids) country-ids
-                             (if (and (seqable? country-ids) (not (string? country-ids))) (seq country-ids)
-                                 (list country-ids))))]
+                             (if (and (seqable? country-ids) (not (string? country-ids)))
+                               (seq country-ids)
+                               (list country-ids))))]
        (if (nil? (seq country-ids)) registry
            (let [cids (map keyword country-ids)]
              (as-> registry regi
