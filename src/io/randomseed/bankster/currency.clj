@@ -332,6 +332,32 @@
 ;; Adding and removing currency to/from registry.
 ;;
 
+(defn ^Registry unregister
+  "Removes currency from the given registry. Also removes country constrains when
+  necessary. Returns updated registry."
+  [^Registry registry, currency]
+  (let [^Currency c (of currency registry)
+        currency-id (id c)
+        country-ids (get (.cur-id->ctr-ids ^Registry registry) currency-id)
+        ^Registry registry (-> registry
+                               (map/dissoc-in [:cur-id->cur currency-id])
+                               (map/dissoc-in [:cur-nr->cur (nr c)]))]
+    (if-not (contains? (.cur-id->ctr-ids ^Registry registry) currency-id) registry
+            (as-> registry regi
+              (map/dissoc-in regi [:cur-id->ctr-ids currency-id])
+              (apply update regi :ctr-id->cur dissoc country-ids)))))
+
+(defn ^Registry unregister-country
+  "Removes country from the given registry. Also removes constrained currencies from a
+  proper locations. Returns updated registry."
+  [^Registry registry
+   ^clojure.lang.Keyword country-id]
+  (let [^clojure.lang.Keyword country-id (keyword country-id)
+        ^Currency currency (get (.ctr-id->cur ^Registry registry) country-id)
+        ^Registry registry (map/dissoc-in registry [:ctr-id->cur country-id])]
+    (if (nil? currency) registry
+        (update-in registry [:cur-id->ctr-ids country-id] disj currency))))
+
 (defn ^Registry register
   "Adds currency and (optional) countries to the given registry. Returns updated
   registry. If the updating occurs then the current, all countries associated with
@@ -366,33 +392,6 @@
                (apply update-in regi [:cur-id->ctr-ids currency-id] (fnil conj #{}) (set cids))
                (update regi :ctr-id->cur (partial apply assoc) (interleave cids (repeat c))))))))))
 
-(defn ^Registry unregister
-  "Removes currency from the given registry. Also removes country constrains when
-  necessary. Returns updated registry."
-  [^Registry registry
-   currency]
-  (let [^Currency c (of currency registry)
-        ^clojure.lang.Keyword currency-id (id c)
-        ^clojure.lang.PersistentHashSet country-ids (get (.cur-id->ctr-ids ^Registry registry)
-                                                         ^clojure.lang.Keyword currency-id)
-        ^Registry registry (-> registry
-                               (map/dissoc-in [:cur-id->cur currency-id])
-                               (map/dissoc-in [:cur-nr->cur (nr c)]))]
-    (if (<= (count country-ids) 0) registry
-        (-> registry
-            (map/dissoc-in [:cur-id->ctr-ids currency-id])
-            (apply update :ctr-id->cur dissoc country-ids)))))
-
-(defn ^Registry unregister-country
-  "Removes country from the given registry. Also removes constrained currencies from a
-  proper locations. Returns updated registry."
-  [^Registry registry
-   ^clojure.lang.Keyword country-id]
-  (let [^clojure.lang.Keyword country-id (keyword country-id)
-        ^Currency currency (get (.ctr-id->cur ^Registry registry) country-id)
-        ^Registry registry (map/dissoc-in registry [:ctr-id->cur country-id])]
-    (if (nil? currency) registry
-        (update-in registry [:cur-id->ctr-ids country-id] disj currency))))
 
 (defn ^Registry register!
   "Adds currency and (optional) country to the global registry. Returns updated
