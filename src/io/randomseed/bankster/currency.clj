@@ -89,9 +89,9 @@
     returned as is.")
 
   (^{:tag Boolean :added "1.0.0"}
-   exists?
+   defined?
    [id] [id registry]
-   "Returns true if the given currency exists in registry. If the registry is not given,
+   "Returns true if the given currency exists in a registry. If the registry is not given,
     the default one is used.")
 
   (^{:tag Boolean :added "1.0.0"}
@@ -117,8 +117,9 @@
     (^clojure.lang.Keyword [currency] (.id ^Currency currency))
     (^clojure.lang.Keyword [currency, ^Registry registry] (.id ^Currency currency)))
 
-  (exists?
-    (^Boolean [currency] (exists? currency @R))
+  (defined?
+    (^Boolean [currency]
+     (contains? (.cur-id->cur ^Registry @R) (.id ^Currency currency)))
     (^Boolean [currency, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) (.id ^Currency currency))))
 
@@ -148,16 +149,21 @@
                (str "Currency with the numeric ID of " num " not found in a registry.")
                {:registry registry})))))
 
-  (exists?
+  (defined?
     (^Boolean [num]
-     (exists? num @R))
+     (contains? (.cur-nr->cur ^Registry @R) num))
     (^Boolean [num, ^Registry registry]
      (contains? (.cur-nr->cur ^Registry registry) num)))
 
   (same?
-    (^Boolean [a b] (same? a b @R))
+    (^Boolean [a b]
+     (if-some [c (get (.cur-nr->cur ^Registry @R) a)]
+       (= (.id ^Currency c) (id b @R))
+       (throw (ex-info
+               (str "Currency with the numeric ID of " num " not found in a registry.")
+               {:registry @R}))))
     (^Boolean [a b ^Registry registry]
-     (if-some [c (get :by-num registry)]
+     (if-some [c (get (.cur-nr->cur ^Registry registry) a)]
        (= (.id ^Currency c) (id b registry))
        (throw (ex-info
                (str "Currency with the numeric ID of " num " not found in a registry.")
@@ -179,13 +185,14 @@
     (^clojure.lang.Keyword [id] id)
     (^clojure.lang.Keyword [id, ^Registry registry] id))
 
-  (exists?
-    (^Boolean [id] (exists? id @R))
+  (defined?
+    (^Boolean [id]
+     (contains? (.cur-id->cur ^Registry @R) id))
     (^Boolean [id, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) id)))
 
   (same?
-    (^Boolean [a b] (= a (id b)))
+    (^Boolean [a b] (= a (id b @R)))
     (^Boolean [a b ^Registry registry] (= a (id b registry))))
 
   String
@@ -198,8 +205,9 @@
     (^clojure.lang.Keyword [id] (keyword id))
     (^clojure.lang.Keyword [id, ^Registry registry] (keyword id)))
 
-  (exists?
-    (^Boolean [id] (exists? id @R))
+  (defined?
+    (^Boolean [id]
+     (contains? (.cur-id->cur ^Registry @R) (keyword id)))
     (^Boolean [id, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) (keyword id))))
 
@@ -217,8 +225,9 @@
     (^clojure.lang.Keyword [id] (keyword id))
     (^clojure.lang.Keyword [id, ^Registry registry] (keyword id)))
 
-  (exists?
-    (^Boolean [id] (exists? id @R))
+  (defined?
+    (^Boolean [id]
+     (contains? (.cur-id->cur ^Registry @R) (keyword id)))
     (^Boolean [id, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) (keyword id))))
 
