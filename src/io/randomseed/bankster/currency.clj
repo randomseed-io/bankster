@@ -399,12 +399,9 @@
   registry."
   (^Registry [^Currency currency]
    (swap! R register currency))
-  (^Registry [^Currency currency
-              ^clojure.lang.Keyword country-id-or-update?]
+  (^Registry [^Currency currency, ^clojure.lang.Keyword country-id-or-update?]
    (swap! R register currency country-id-or-update?))
-  (^Registry [^Currency currency
-              ^clojure.lang.Keyword country-id
-              ^Boolean update?]
+  (^Registry [^Currency currency, ^clojure.lang.Keyword country-id, ^Boolean update?]
    (swap! R register currency country-id update?)))
 
 (defn ^Registry unregister!
