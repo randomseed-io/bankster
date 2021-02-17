@@ -72,9 +72,15 @@
   (reduce #(if (pred (get %1 %2)) (dissoc %1 %2) %1) m only))
 
 (defn ^clojure.lang.IPersistentMap remove-empty-values
-  [^clojure.lang.IPersistentMap m]
-  (remove-if-value
-   m #(or (nil? %) (and (seqable? %) (nil? (seq %))))))
+  (^clojure.lang.IPersistentMap [^clojure.lang.IPersistentMap m]
+   (remove-if-value m #(or (nil? %)
+                           (and (counted? %) (< (count %) 1))
+                           (and (seqable? %) (nil? (seq %))))))
+  (^clojure.lang.IPersistentMap [^clojure.lang.IPersistentMap m
+                                 ^clojure.lang.PersistentHashSet only]
+   (remove-by-if-value-in m #(or (nil? %)
+                                 (and (counted? %) (< (count %) 1))
+                                 (and (seqable? %) (nil? (seq %)))) only)))
 
 (defn fmap-k
   "For each key and value of the given map m calls a function passed as the first
