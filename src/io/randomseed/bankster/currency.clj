@@ -329,8 +329,33 @@
    (get (.ctr-id->cur ^Registry registry))))
 
 ;;
-;; Adding and removing currency to/from registry.
+;; Adding and removing to/from registry.
 ;;
+
+(defn- prep-country-ids
+  "Prepares country identifiers by converting the object into a sequence of keywords."
+  [country-ids]
+  (when country-ids
+    (let [cids (if (sequential? country-ids) country-ids
+                   (if (and (seqable? country-ids) (not (string? country-ids)))
+                     (seq country-ids)
+                     (list country-ids)))
+          cids (if (set? cids) cids (distinct cids))]
+      (map keyword cids))))
+
+(defn- ^Registry remove-countries-core
+  "Removes countries from the given registry. Also unlinks constrained currencies in
+  proper locations. Returns updated registry."
+  [^Registry registry, country-ids]
+  (if-not (some? (seq country-ids))
+    registry
+    (let [ctr-to-cur   (.ctr-id->cur ^Registry registry)
+          cid-to-ctrs  (.cur-id->ctr-ids ^Registry registry)
+          currency-ids (map #(.id ^Currency %) (distinct (filter identity (map ctr-to-cur country-ids))))
+          new-cid-ctr  (reduce #(apply update %1 %2 disj country-ids) cid-to-ctrs currency-ids)]
+      (-> registry
+          (assoc :cur-id->ctr-ids (map/remove-empty-values new-cid-ctr currency-ids))
+          (assoc :ctr-id->cur (apply dissoc ctr-to-cur country-ids))))))
 
 (defn ^Registry unregister
   "Removes currency from the given registry. Also removes country constrains when
@@ -347,22 +372,44 @@
               (map/dissoc-in regi [:cur-id->ctr-ids currency-id])
               (apply update regi :ctr-id->cur dissoc country-ids)))))
 
-(defn ^Registry unregister-country
-  "Removes country from the given registry. Also removes constrained currencies from a
+(defn ^Registry remove-countries
+  "Removes countries from the given registry. Also unlinks constrained currencies in
   proper locations. Returns updated registry."
-  [^Registry registry
-   ^clojure.lang.Keyword country-id]
-  (let [^clojure.lang.Keyword country-id (keyword country-id)
-        ^Currency currency (get (.ctr-id->cur ^Registry registry) country-id)
-        ^Registry registry (map/dissoc-in registry [:ctr-id->cur country-id])]
-    (if (nil? currency) registry
-        (update-in registry [:cur-id->ctr-ids country-id] disj currency))))
+  [^Registry registry, country-ids]
+  (remove-countries-core registry (prep-country-ids country-ids)))
+
+(defn ^Registry add-countries
+  "Associates the given country or countries with a currency. If the currency does not
+  exist, exception is thrown. If the currency exists but differs in any detail from
+  the existing currency from the registry, exception is thrown. If the currency
+  exists and equals to the given in any aspect, country associations are added. Links
+  from other countries to the currency are not removed unless the country is already
+  linked with some other currency; in this case it will be unlinked first."
+  [^Registry registry, currency, country-ids]
+  (when-not (defined? currency registry)
+    (throw
+     (ex-info (str "Currency "
+                   (if (instance? Currency currency) (.id ^Currency currency) currency)
+                   " does not exist in a registry.") {:currency currency})))
+  (let [^Currency c (of currency registry)
+        cid         (.id ^Currency c)
+        ^Currency p (get (.cur-id->cur ^Registry registry) cid)
+        cids        (prep-country-ids country-ids)]
+    (when-not (= c p)
+      (throw
+       (ex-info (str "Currency " cid " differs from the currency existing in a registry.")
+                {:currency c, :existing-currency p})))
+    (if (nil? (seq cids)) registry
+        (as-> registry regi
+          (remove-countries-core regi cids)
+          (apply update-in regi [:cur-id->ctr-ids cid] (fnil conj #{}) (set cids))
+          (update regi :ctr-id->cur (partial apply assoc) (interleave cids (repeat c)))))))
 
 (defn ^Registry register
   "Adds currency and (optional) countries to the given registry. Returns updated
-  registry. If the updating occurs then the current, all countries associated with
-  the currency are removed and replaced with the provided. To add new countries, use
-  add-countries."
+  registry. If the updating occurs then all of the current countries associated with
+  the currency are removed and replaced with the provided ones. To simply add new
+  countries, use add-countries."
   (^Registry [^Registry registry, currency]
    (register registry currency nil false))
   (^Registry [^Registry registry, currency, country-ids-or-update?]
@@ -370,28 +417,22 @@
      (register registry currency nil country-ids-or-update?)
      (register registry currency country-ids-or-update? false)))
   (^Registry [^Registry registry, currency, country-ids, ^Boolean update?]
-   (let [^Currency c (of currency registry)]
+   (let [^Currency c (of currency registry)
+         cid         (.id ^Currency c)
+         cid-to-cur  (.cur-id->cur ^Registry registry)]
      (when-not update?
-       (when-some [^Currency p (get-in registry [:cur-id->cur (id c)])]
+       (when-some [^Currency p (get cid-to-cur cid)]
          (throw (ex-info
-                 (str "Currency " (id c) " already exists in a registry.")
+                 (str "Currency " cid " already exists in a registry.")
                  {:currency c, :existing-currency p}))))
-     (let [currency-id (id c registry)
-           registry    (assoc-in (unregister registry c) [:cur-id->cur currency-id] c)
-           numeric-id  (nr c registry)
+     (let [registry    (unregister registry c)
+           cid-to-cur  (.cur-id->cur ^Registry registry)
+           registry    (assoc registry :cur-id->cur (assoc cid-to-cur cid c))
+           numeric-id  (.nr ^Currency c)
+           nr-to-cur   (.cur-nr->cur ^Registry registry)
            registry    (if (<= numeric-id 0) registry
-                           (assoc-in registry [:cur-nr->cur numeric-id] c))
-           country-ids (when country-ids
-                         (if (sequential? country-ids) country-ids
-                             (if (and (seqable? country-ids) (not (string? country-ids)))
-                               (seq country-ids)
-                               (list country-ids))))]
-       (if (nil? (seq country-ids)) registry
-           (let [cids (map keyword country-ids)]
-             (as-> registry regi
-               (apply update-in regi [:cur-id->ctr-ids currency-id] (fnil conj #{}) (set cids))
-               (update regi :ctr-id->cur (partial apply assoc) (interleave cids (repeat c))))))))))
-
+                           (assoc registry :cur-nr->cur (assoc nr-to-cur numeric-id c)))]
+       (add-countries registry currency country-ids)))))
 
 (defn ^Registry register!
   "Adds currency and (optional) country to the global registry. Returns updated
@@ -409,11 +450,23 @@
   [^Currency currency]
   (swap! R unregister currency))
 
-(defn ^Registry unregister-country!
-  "Removes country from the global registry. Automatically removes currency constrains
-  when necessary. Returns updated registry."
-  [^clojure.lang.Keyword country-id]
-  (swap! R unregister-country (keyword country-id)))
+(defn ^Registry add-countries!
+  "Associates the given country (a keyword) or countries (seqable collection of
+  keywords) with a currency in the global registry. If the currency does not exist,
+  exception is thrown. If the currency exists but differs in any detail from the
+  existing currency from the registry, exception is thrown. If the currency exists
+  and equals to the given in any aspect, country associations are added. Links from
+  other countries to the currency are not removed unless the country is already
+  linked with some other currency; in this case it will be unlinked first."
+  [country-ids]
+  (swap! R add-countries country-ids))
+
+(defn ^Registry remove-countries!
+  "Removes country (a keyword) or countries (seqable collection of keywords) from the
+  global registry. Automatically removes currency constrains when necessary. Returns
+  updated registry."
+  [country-ids]
+  (swap! R remove-countries country-ids))
 
 ;;
 ;; Predicates.
