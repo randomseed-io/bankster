@@ -65,6 +65,12 @@
   [^clojure.lang.IPersistentMap m ^clojure.lang.ISeq keyseq]
   (select-keys m keyseq))
 
+(defn ^clojure.lang.IPersistentMap remove-by-if-value-in
+  [^clojure.lang.IPersistentMap m
+   ^clojure.lang.IFn pred
+   ^clojure.lang.PersistentHashSet only]
+  (reduce #(if (pred (get %1 %2)) (dissoc %1 %2) %1) m only))
+
 (defn ^clojure.lang.IPersistentMap remove-empty-values
   [^clojure.lang.IPersistentMap m]
   (remove-if-value
