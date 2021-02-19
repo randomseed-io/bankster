@@ -509,6 +509,11 @@
   (^Boolean [ns c] (= ns (.ns ^Currency (of c))))
   (^Boolean [ns c ^Registry registry] (= ns (.ns ^Currency (of c registry)))))
 
+(defn ^{:tag Boolean} big?
+  "Returns true if the given currency has unlimited decimal places."
+  (^Boolean [c] (= any-decimal-places (.dp ^Currency (of c))))
+  (^Boolean [c ^Registry registry] (= any-decimal-places (.dp ^Currency (of c registry)))))
+
 (defn ^Boolean crypto?
   "Returns true if the given currency is a cryptocurrency. It is just a helper that
   check if the domain of a currency equals to :CRYPTO."
