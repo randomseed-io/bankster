@@ -292,16 +292,16 @@
   "Returns a currency code as a string for the given currency object. If the currency
   identifier is namespaced the namespace will be used as a prefix and slash character
   as a separator."
-  (^String [c] (subs 1 (str (id c))))
-  (^String [c ^Registry registry] (subs 1 (str (id c registry)))))
+  (^String [c] (subs (str (id c)) 1))
+  (^String [c ^Registry registry] (subs (str (id c registry)) 1)))
 
 (defn ^String short-code
   "Returns a currency code as a string for the given currency object. If the currency
   identifier is namespaced only the base code (without a namespace) will be
   returned (which may lead to misinformation if there are two or more currencies with
   the same base ID but different namespaces)."
-  (^String [c] (subs 1 (name (id c))))
-  (^String [c ^Registry registry] (subs 1 (name (id c registry)))))
+  (^String [c] (name (id c)))
+  (^String [c ^Registry registry] (name (id c registry))))
 
 ;;
 ;; Currency - country relations.
