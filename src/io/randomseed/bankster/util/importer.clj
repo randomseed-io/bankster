@@ -8,6 +8,7 @@
             [clojure.data.csv                :as      csv]
             [clojure.edn                     :as      edn]
             [puget.printer                   :as    puget]
+            [io.randomseed.bankster.scale    :as    scale]
             [io.randomseed.bankster.registry :as registry]
             [io.randomseed.bankster.currency :as currency]
             [io.randomseed.bankster.util.fs  :as       fs]
@@ -72,8 +73,8 @@
     (let [id             (keyword id)
           numeric        (or (fs/try-parse-long numeric) currency/no-numeric-id)
           numeric        (if (< numeric 0) currency/no-numeric-id numeric)
-          decimal-places (or (fs/try-parse-int decimal-places) currency/any-decimal-places)
-          decimal-places (if (< decimal-places 0) currency/any-decimal-places decimal-places)
+          decimal-places (or (fs/try-parse-int decimal-places) scale/auto)
+          decimal-places (if (< decimal-places 0) scale/auto)
           kind           (get special-kinds id :FIAT)]
       (apply currency/new-currency [id numeric decimal-places kind]))))
 
@@ -144,4 +145,4 @@
 
 (defn joda->bankster-dump
   []
-  (time (dump (joda-import))))
+  (println (time (dump (joda-import)))))
