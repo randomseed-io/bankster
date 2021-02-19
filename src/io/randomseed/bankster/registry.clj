@@ -84,11 +84,10 @@
               ^clojure.lang.PersistentHashMap cur-nr->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->ctr-ids]
-   (set! R
-         (new-registry cur-id->cur
-                       cur-nr->cur
-                       ctr-id->cur
-                       cur-id->ctr-ids))))
+   (set! R (new-registry cur-id->cur
+                         cur-nr->cur
+                         ctr-id->cur
+                         cur-id->ctr-ids))))
 
 ;;
 ;; Getters and helpers.
@@ -98,3 +97,17 @@
 (defmacro currency-by-nr              [nr registry] `(get (cur-nr->cur     ^Registry registry) nr))
 (defmacro currency-by-country-id      [id registry] `(get (ctr-id->cur     ^Registry registry) id))
 (defmacro country-ids-for-currency-id [id registry] `(get (cur-id->ctr-ids ^Registry registry) id))
+
+;;
+;; Printing.
+;;
+
+(defmethod print-method Registry
+  [r w]
+  (let [sid (Integer/toHexString (System/identityHashCode r))]
+    (print-simple
+     (str "#" "Registry["
+          (count (.cur-id->cur ^Registry r)) " currencies, "
+          (count (.ctr-id->cur ^Registry r)) " countries, "
+          sid "]")
+     w)))

@@ -584,3 +584,23 @@
   "Returns true if the given currency is a kind of :EXPERIMENTAL."
   (^Boolean [c] (= :EXPERIMENTAL (.kind ^Currency (of c))))
   (^Boolean [c ^Registry registry] (= :EXPERIMENTAL (.kind ^Currency (of c)))))
+
+;;
+;; Printing.
+;;
+
+(defmethod print-method Currency
+  [c w]
+  (let [dp  (.dp ^Currency c)
+        nr  (.nr ^Currency c)
+        ki  (.kind ^Currency c)
+        nr  (when (> 0 nr) nr)]
+    (print-simple
+     (str "#" "Currency["
+          "id: " (.id ^Currency c)
+          ", domain: " (.ns ^Currency c)
+          (when ki (str ", kind: " ki) )
+          (when nr (str ", numeric: "))
+          ", scale: " (if (< dp 0) "unlimited" dp)
+          "]")
+     w)))
