@@ -24,9 +24,13 @@
   "Name of a default resource container."
   "io/randomseed/bankster/db")
 
-(def ^String ^private ^const default-edn-filename
-  "Default EDN file."
-  "currency-data-imported.edn")
+(def ^String ^private ^const default-dump-filename
+  "Default EDN dump file."
+  "registry-dump.edn")
+
+(def ^String ^private ^const default-export-filename
+  "Default EDN export file."
+  "registry-export.edn")
 
 (def ^String ^private ^const default-countries-csv
   "Default CSV file with country database."
@@ -68,8 +72,8 @@
     (let [id             (keyword id)
           numeric        (or (fs/try-parse-long numeric) currency/no-numeric-id)
           numeric        (if (< numeric 0) currency/no-numeric-id numeric)
-          decimal-places (or (fs/try-parse-long decimal-places) currency/unknown-decimal-places)
-          decimal-places (if (< decimal-places 0) currency/unknown-decimal-places decimal-places)
+          decimal-places (or (fs/try-parse-int decimal-places) currency/any-decimal-places)
+          decimal-places (if (< decimal-places 0) currency/any-decimal-places decimal-places)
           kind           (get special-kinds id :FIAT)]
       (apply currency/new-currency [id numeric decimal-places kind]))))
 
@@ -115,19 +119,29 @@
              registry currencies))))
 
 ;;
-;; EDN exporter.
+;; EDN dumper and exporter.
 ;;
 
+(defn dump
+  ([^Registry registry]
+   (dump default-dump-filename registry))
+  ([^String   filename
+    ^Registry registry]
+   (when-some [rdir (fs/resource-pathname default-resource-name)]
+     (spit (io/file rdir filename) (puget/pprint-str registry)))))
+
 (defn export
-  [^String filename
-   data]
-  (when-some [rdir (fs/resource-pathname default-resource-name)]
-    (spit (io/file rdir filename) (puget/pprint-str data))))
+  ([^Registry registry]
+   (export default-export-filename registry))
+  ([^String   filename
+    ^Registry registry]
+   (when-some [rdir (fs/resource-pathname default-resource-name)]
+     (spit (io/file rdir filename) (currency/export-registry registry)))))
 
 ;;
 ;; High-level operations.
 ;;
 
-(defn joda->bankster
+(defn joda->bankster-dump
   []
-  (export default-edn-filename (joda-import)))
+  (time (dump (joda-import))))
