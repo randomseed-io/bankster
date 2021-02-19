@@ -109,7 +109,7 @@
 (defn scale-core
   "Internal scaling function."
   {:no-doc true}
-  (^int [m]
+  ([m]
    (scale/of ^BigDecimal (.amount ^Money m)))
   (^Money [^Money m s]
    (-> m
