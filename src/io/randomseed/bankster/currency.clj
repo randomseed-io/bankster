@@ -18,7 +18,7 @@
 ;; Constants.
 ;;
 
-(def ^{:tag 'long} unknown-decimal-places (long -1))
+(def ^{:tag 'int} any-decimal-places (int -1))
 (def ^{:tag 'long} no-numeric-id (long 0))
 
 ;;
@@ -40,27 +40,27 @@
 (defn new-currency
   "Creates new currency record from values passed as arguments."
   (^Currency [^clojure.lang.Keyword id]
-   (->Currency id no-numeric-id unknown-decimal-places
-               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
-               nil))
+   (Currency. id no-numeric-id any-decimal-places
+              (keyword (or (try-upper-case (namespace id)) :ISO-4217))
+              nil))
   (^Currency [^clojure.lang.Keyword id, ^long numeric-id]
-   (->Currency id numeric-id unknown-decimal-places
-               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
-               nil))
+   (Currency. id numeric-id any-decimal-places
+              (keyword (or (try-upper-case (namespace id)) :ISO-4217))
+              nil))
   (^Currency [^clojure.lang.Keyword id, ^long numeric-id, ^long decimal-places]
-   (->Currency id numeric-id decimal-places
-               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
-               nil))
-  (^Currency [^clojure.lang.Keyword id, ^long numeric-id, ^long decimal-places, ^clojure.lang.Keyword kind]
-   (->Currency id numeric-id decimal-places
-               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
-               kind)))
+   (Currency. id numeric-id decimal-places
+              (keyword (or (try-upper-case (namespace id)) :ISO-4217))
+              nil))
+  (^Currency [^clojure.lang.Keyword id, ^long numeric-id, decimal-places, ^clojure.lang.Keyword kind]
+   (Currency. id numeric-id decimal-places
+              (keyword (or (try-upper-case (namespace id)) :ISO-4217))
+              kind)))
 
 (def ^{:tag Currency
        :arglists '(^Currency [^clojure.lang.Keyword id]
                    ^Currency [^clojure.lang.Keyword id, ^long numeric-id]
-                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, ^long decimal-places]
-                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, ^long decimal-places, ^clojure.lang.Keyword kind])}
+                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, ^int decimal-places]
+                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, ^int decimal-places, ^clojure.lang.Keyword kind])}
   new
   "Alias for new-currency."
   new-currency)
@@ -82,7 +82,7 @@
    [id] [id registry]
    "Returns a currency object for the given id and registry. If the registry is not
     given it will use the default one. If the currency record is passed, it will be
-    returned as is.")
+    returned as is without consulting the registry.")
 
   (^{:tag Boolean :added "1.0.0"}
    defined?
@@ -247,14 +247,14 @@
   "Alias for nr."
   nr)
 
-(defn ^{:tag 'long} dp
+(defn ^{:tag 'int} dp
   "Returns currency's decimal places as a long number. For currencies without the
   assigned decimal places it will return -1."
-  (^long [c] (.dp ^Currency (of c)))
-  (^long [c ^Registry registry] (.dp ^Currency (of c registry))))
+  ([c] (.dp ^Currency (of c)))
+  ([c ^Registry registry] (.dp ^Currency (of c registry))))
 
-(def ^{:tag 'long
-       :arglists '([c] [c, ^Registry registry])}
+(def ^{:tag 'int
+       :arglists '(^int [c] ^int [c, ^Registry registry])}
   decimal-places
   "Alias for dp."
   dp)
