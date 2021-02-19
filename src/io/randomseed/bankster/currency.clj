@@ -465,6 +465,14 @@
   (swap! R remove-countries country-ids))
 
 ;;
+;; Exporting.
+;;
+
+(defn ^clojure.lang.PersistentArrayMap export-registry
+  [^Currency c]
+  nil)
+
+;;
 ;; Predicates.
 ;;
 
