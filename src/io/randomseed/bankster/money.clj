@@ -119,8 +119,9 @@
                        (.setScale ^BigDecimal v s rounding-mode)))))
 
 (defmacro scale
-  "Scales the given money using a number of decimal places and a an optional rounding
-  mode (required when downscaling). If no scale is given, returns the current scale."
+  "Re-scales the given money using a number of decimal places and a an optional
+  rounding mode (required when downscaling). Additionally the internal scale for a
+  currency object is also updated. If no scale is given, returns the current scale."
   ([money]
    `(scale-core money))
   ([money scale]
