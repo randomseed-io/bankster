@@ -91,14 +91,14 @@
     the default one is used.")
 
   (^{:tag Boolean :added "1.0.0"}
-   same?
+   same-ids?
    [a b] [a b registry]
    "Returns true if two currencies have the same ID. That does not mean the objects
-   are of the same contents (e.g. numerical IDs or decimal places may differ) but
-   it's more performant in 99% cases."))
+   are of the same contents (e.g. numerical IDs or scales may differ) but it's more
+   performant in 99% cases."))
 
 ;;
-;; Currency querying functions
+;; Currency querying functions, payable implementation.
 ;;
 
 (extend-protocol Payable
@@ -119,7 +119,7 @@
     (^Boolean [currency, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) (.id ^Currency currency))))
 
-  (same?
+  (same-ids?
     (^Boolean [a b] (= (.id ^Currency a) (id b)))
     (^Boolean [a b ^Registry registry] (= (.id ^Currency a) (id b registry))))
 
@@ -151,7 +151,7 @@
     (^Boolean [num, ^Registry registry]
      (contains? (.cur-nr->cur ^Registry registry) num)))
 
-  (same?
+  (same-ids?
     (^Boolean [a b]
      (if-some [c (get (.cur-nr->cur ^Registry @R) a)]
        (= (.id ^Currency c) (id b @R))
@@ -186,7 +186,7 @@
     (^Boolean [id, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) id)))
 
-  (same?
+  (same-ids?
     (^Boolean [a b] (= a (id b @R)))
     (^Boolean [a b ^Registry registry] (= a (id b registry))))
 
@@ -206,7 +206,7 @@
     (^Boolean [id, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) (keyword id))))
 
-  (same?
+  (same-ids?
     (^Boolean [a b] (= (keyword a) (id b)))
     (^Boolean [a b ^Registry registry] (= (keyword a) (id b registry))))
 
@@ -226,7 +226,7 @@
     (^Boolean [id, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) (keyword id))))
 
-  (same?
+  (same-ids?
     (^Boolean [a b] (= (keyword a) (id b)))
     (^Boolean [a b ^Registry registry] (= (keyword a) (id b registry)))))
 
