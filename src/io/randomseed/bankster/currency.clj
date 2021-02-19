@@ -19,7 +19,6 @@
 ;; Constants.
 ;;
 
-(def ^{:tag 'int} any-decimal-places (int -1))
 (def ^{:tag 'long} no-numeric-id (long 0))
 
 ;;
@@ -248,17 +247,17 @@
   "Alias for nr."
   nr)
 
-(defn ^{:tag 'int} dp
-  "Returns currency's decimal places as a long number. For currencies without the
-  assigned decimal places it will return -1."
-  ([c] (.dp ^Currency (of c)))
-  ([c ^Registry registry] (.dp ^Currency (of c registry))))
+(defn ^{:tag 'int} sc
+  "Returns currency scale (decimal places) as an integer number. For currencies without
+  the assigned decimal places it will return -1 (the value of currency/scale/auto)."
+  ([c] (.sc ^Currency (of c)))
+  ([c ^Registry registry] (.sc ^Currency (of c registry))))
 
 (def ^{:tag 'int
        :arglists '(^int [c] ^int [c, ^Registry registry])}
-  decimal-places
-  "Alias for dp."
-  dp)
+  scale
+  "Alias for sc."
+  sc)
 
 (defn ^clojure.lang.Keyword domain
   "Returns currency domain as a keyword. For currencies with simple identifiers it will
@@ -511,9 +510,9 @@
   (^Boolean [ns c ^Registry registry] (= ns (.ns ^Currency (of c registry)))))
 
 (defn ^{:tag Boolean} big?
-  "Returns true if the given currency has unlimited decimal places."
-  (^Boolean [c] (= any-decimal-places (.dp ^Currency (of c))))
-  (^Boolean [c ^Registry registry] (= any-decimal-places (.dp ^Currency (of c registry)))))
+  "Returns true if the given currency has unlimited scale (decimal places)."
+  (^Boolean [c] (scale/auto? (.sc ^Currency (of c))))
+  (^Boolean [c ^Registry registry] (scale/auto? (.sc ^Currency (of c registry)))))
 
 (defn ^Boolean crypto?
   "Returns true if the given currency is a cryptocurrency. It is just a helper that
