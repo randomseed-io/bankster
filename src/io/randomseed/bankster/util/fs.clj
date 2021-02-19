@@ -76,8 +76,7 @@
 
 (defn ^java.net.URL paths->resource
   "For the given pathnames creates a resource object that resides within one of the
-  Java resource directories. The resource must exist for the whole URI to be
-  returned."
+  Java resource directories. The resource must exist for the URI to be returned."
   ([] (some-> (io/resource "")))
   ([& paths] (some->> paths (remove nil?) seq
                       (apply io/file) str
