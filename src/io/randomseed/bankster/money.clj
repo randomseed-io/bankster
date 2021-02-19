@@ -9,7 +9,7 @@
   (:require [clojure.string                  :as           str]
             [clojure.reflect                 :as            cr]
             [io.randomseed.bankster          :refer       :all]
-            [io.randomseed.bankster.scalable :as      scalable]
+            [io.randomseed.bankster.scale    :as         scale]
             [io.randomseed.bankster.currency :as      currency]
             [io.randomseed.bankster.registry :as      registry]
             [io.randomseed.bankster.util.map :as           map]
@@ -34,15 +34,6 @@
 ;;
 ;; Rounding modes.
 ;;
-
-(def ^{:const true :tag 'int} ROUND_CEILING     (int BigDecimal/ROUND_CEILING))
-(def ^{:const true :tag 'int} ROUND_FLOOR       (int BigDecimal/ROUND_FLOOR))
-(def ^{:const true :tag 'int} ROUND_HALF_UP     (int BigDecimal/ROUND_HALF_UP))
-(def ^{:const true :tag 'int} ROUND_HALF_DOWN   (int BigDecimal/ROUND_HALF_DOWN))
-(def ^{:const true :tag 'int} ROUND_HALF_EVEN   (int BigDecimal/ROUND_HALF_EVEN))
-(def ^{:const true :tag 'int} ROUND_UP          (int BigDecimal/ROUND_UP))
-(def ^{:const true :tag 'int} ROUND_DOWN        (int BigDecimal/ROUND_DOWN))
-(def ^{:const true :tag 'int} ROUND_UNNECESSARY (int BigDecimal/ROUND_UNNECESSARY))
 
 (defn ^:private parse-rounding
   "Internal helper for parsing rounding modes in macros. Accepted input:
@@ -72,9 +63,9 @@
   "Internal parser."
   {:tag Money, :no-doc true}
   (^Money [currency]
-   (parse currency 0M ROUND_UNNECESSARY))
+   (parse currency 0M scale/ROUND_UNNECESSARY))
   (^Money [currency amount]
-   (parse currency amount ROUND_UNNECESSARY))
+   (parse currency amount scale/ROUND_UNNECESSARY))
   (^Money [currency amount rounding-mode]
    (let [^Currency c (currency/of currency (or *registry* @R))
          s (.dp ^Currency c)]

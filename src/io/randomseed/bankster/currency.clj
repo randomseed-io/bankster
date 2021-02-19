@@ -8,6 +8,7 @@
 
   (:require [io.randomseed.bankster          :refer       :all]
             [io.randomseed.bankster.registry :as      registry]
+            [io.randomseed.bankster.scale    :as         scale]
             [io.randomseed.bankster.util.map :as           map]
             [io.randomseed.bankster.util.fs  :as            fs]
             [io.randomseed.bankster.util     :refer       :all])
@@ -40,27 +41,27 @@
 (defn new-currency
   "Creates new currency record from values passed as arguments."
   (^Currency [^clojure.lang.Keyword id]
-   (Currency. id no-numeric-id any-decimal-places
+   (Currency. id no-numeric-id scale/auto
               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
               nil))
   (^Currency [^clojure.lang.Keyword id, ^long numeric-id]
-   (Currency. id numeric-id any-decimal-places
+   (Currency. id numeric-id scale/auto
               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
               nil))
-  (^Currency [^clojure.lang.Keyword id, ^long numeric-id, ^long decimal-places]
-   (Currency. id numeric-id decimal-places
+  (^Currency [^clojure.lang.Keyword id, ^long numeric-id, scale]
+   (Currency. id numeric-id (int scale)
               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
               nil))
-  (^Currency [^clojure.lang.Keyword id, ^long numeric-id, decimal-places, ^clojure.lang.Keyword kind]
-   (Currency. id numeric-id decimal-places
+  (^Currency [^clojure.lang.Keyword id, ^long numeric-id, scale, ^clojure.lang.Keyword kind]
+   (Currency. id numeric-id (int scale)
               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
               kind)))
 
 (def ^{:tag Currency
        :arglists '(^Currency [^clojure.lang.Keyword id]
                    ^Currency [^clojure.lang.Keyword id, ^long numeric-id]
-                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, ^int decimal-places]
-                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, ^int decimal-places, ^clojure.lang.Keyword kind])}
+                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, ^int scale]
+                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, ^int scale, ^clojure.lang.Keyword kind])}
   new
   "Alias for new-currency."
   new-currency)
