@@ -144,38 +144,18 @@
 
 (defn amount
   [^Money money]
-  "Returns the amount of money"
+  "Returns amount of the given money"
   {:tag BigDecimal}
   (.amount ^Money money))
 
 (defn currency
   [^Money money]
-  ""
+  "Returns currency of the given money."
   {:tag Currency}
   (.currency ^Money money))
 
-(defn countries
-  ""
-  {:tag clojure.lang.Keyword}
-  (^clojure.lang.Keyword [^Money money]
-   (currency/countries ^Currency (.currency ^Money money)))
-  (^clojure.lang.Keyword [^Money money ^Registry registry]
-   (currency/countries ^Currency (.currency ^Money money) registry)))
-
-(defn kind
-  ""
-  {:tag clojure.lang.Keyword}
-  [^Money money]
-  (.kind ^Currency (.currency ^Money money)))
-
-(defn domain
-  ""
-  {:tag clojure.lang.Keyword}
-  [^Money money]
-  (.ns ^Currency (.currency ^Money money)))
-
 ;;
-;; Reverse relation to a currency.
+;; Relation to a currency.
 ;;
 
 (extend-protocol currency/Payable
