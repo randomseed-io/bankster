@@ -6,12 +6,8 @@
 
   (:refer-clojure :exclude [ns new])
 
-  (:require [clojure.string                  :as           str]
-            [clojure.edn                     :as           edn]
-            [clojure.java.io                 :as            io]
-            [io.randomseed.bankster          :refer       :all]
+  (:require [io.randomseed.bankster          :refer       :all]
             [io.randomseed.bankster.registry :as      registry]
-            [io.randomseed.bankster.db       :as            db]
             [io.randomseed.bankster.util.map :as           map]
             [io.randomseed.bankster.util.fs  :as            fs]
             [io.randomseed.bankster.util     :refer       :all])
