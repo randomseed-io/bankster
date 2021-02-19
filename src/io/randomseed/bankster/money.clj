@@ -68,10 +68,10 @@
    (parse currency amount scale/ROUND_UNNECESSARY))
   (^Money [currency amount rounding-mode]
    (let [^Currency c (currency/of currency (or *registry* @R))
-         s (.dp ^Currency c)]
-     (if (= s currency/any-decimal-places)
-       (Money. ^Currency c ^BigDecimal (scalable/of amount))
-       (Money. ^Currency c ^BigDecimal (scalable/of amount s rounding-mode))))))
+         s (scale/of ^Currency c)]
+     (if (scale/auto? s)
+       (Money. ^Currency c ^BigDecimal (scale/of amount scale/auto))
+       (Money. ^Currency c ^BigDecimal (scale/of amount s rounding-mode))))))
 
 (defmacro of
   "Returns the amount of money as a Money object consisting of a currency and a
@@ -109,14 +109,16 @@
 (defn scale-core
   "Internal scaling function."
   {:no-doc true}
-  ([m]
-   (.scale ^BigDecimal (.amount ^Money m)))
+  (^int [m]
+   (scale/of ^BigDecimal (.amount ^Money m)))
   (^Money [^Money m s]
-   (update m :amount (fn ^BigDecimal [^BigDecimal v]
-                       (.setScale ^BigDecimal v s))))
+   (-> m
+       (assoc :amount   ^BigDecimal (scale/of ^BigDecimal (.amount   ^Money m) s))
+       (assoc :currency ^Currency   (scale/of ^Currency   (.currency ^Money m)))))
   (^Money [^Money m s rounding-mode]
-   (update m :amount (fn ^BigDecimal [^BigDecimal v]
-                       (.setScale ^BigDecimal v s rounding-mode)))))
+   (-> m
+       (assoc :amount   ^BigDecimal (scale/of ^BigDecimal (.amount   ^Money m) s rounding-mode))
+       (assoc :currency ^Currency   (scale/of ^Currency   (.currency ^Money m))))))
 
 (defmacro scale
   "Re-scales the given money using a number of decimal places and a an optional

@@ -586,12 +586,25 @@
   (^Boolean [c ^Registry registry] (= :EXPERIMENTAL (.kind ^Currency (of c)))))
 
 ;;
+;; Scalable implementation.
+;;
+
+(extend-protocol scale/Scalable
+
+  Currency
+
+  (of
+    ([c]                               (.sc ^Currency c))
+    (^Currency [c scale]               (assoc c :sc scale))
+    (^Currency [c scale rounding-mode] (assoc c :sc scale))))
+
+;;
 ;; Printing.
 ;;
 
 (defmethod print-method Currency
   [c w]
-  (let [dp  (.dp ^Currency c)
+  (let [sc  (.sc ^Currency c)
         nr  (.nr ^Currency c)
         ki  (.kind ^Currency c)
         nr  (when (> 0 nr) nr)]
@@ -601,6 +614,6 @@
           ", domain: " (.ns ^Currency c)
           (when ki (str ", kind: " ki) )
           (when nr (str ", numeric: "))
-          ", scale: " (if (< dp 0) "unlimited" dp)
+          ", scale: " (if (scale/auto? sc) "auto" sc)
           "]")
      w)))
