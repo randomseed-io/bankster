@@ -4,6 +4,8 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
+  (:refer-clojure :exclude [apply])
+
   (:import [java.math MathContext RoundingMode BigDecimal]))
 
 ;;
@@ -36,14 +38,14 @@
     "Returns a scale. If the given value is not of type that scales it will be
      converted to such.")
 
-  (scaled
+  (apply
     [num] [num scale] [num scale rounding-mode]
     "Converts the given value to a scalable with or without changing its scale (if
     any). For values that already are scalable changes their scale if called with a
     second argument. The third argument, rounding-mode, must be present when
     downscaling.")
 
-  (scales?
+  (applied?
     [num]
     "Returns true if the value is of type which contains scaling information.")
 
@@ -56,11 +58,11 @@
   BigDecimal
 
   (^Boolean scalable? [num] true)
-  (^Boolean scales?   [num] true)
+  (^Boolean applied?  [num] true)
 
   (of [num] (.scale ^BigDecimal num))
 
-  (^BigDecimal scaled
+  (^BigDecimal apply
    (^BigDecimal [num]
     ^BigDecimal num)
    (^BigDecimal [num scale]
@@ -75,11 +77,11 @@
   clojure.lang.BigInt
 
   (^Boolean scalable? [num] true)
-  (^Boolean scales?   [num] false)
+  (^Boolean applied?  [num] false)
 
   (of [num] (.scale ^BigDecimal (.toBigDecimal ^clojure.lang.BigInt num)))
 
-  (^BigDecimal scaled
+  (^BigDecimal apply
    (^BigDecimal [num]
     (.toBigDecimal ^clojure.lang.BigInt num))
    (^BigDecimal [num scale]
@@ -90,11 +92,11 @@
   BigInteger
 
   (^Boolean scalable? [num] true)
-  (^Boolean scales?   [num] false)
+  (^Boolean applied?  [num] false)
 
   (of [num] (.scale ^BigDecimal (BigDecimal. ^BigInteger num)))
 
-  (^BigDecimal scaled
+  (^BigDecimal apply
    (^BigDecimal [num]
     (BigDecimal. ^BigInteger num))
    (^BigDecimal [num scale]
@@ -105,11 +107,11 @@
   Double
 
   (^Boolean scalable? [num] true)
-  (^Boolean scales?   [num] false)
+  (^Boolean applied?  [num] false)
 
   (of [num] (.scale ^BigDecimal (BigDecimal/valueOf num)))
 
-  (^BigDecimal scaled
+  (^BigDecimal apply
    (^BigDecimal [num]
     (BigDecimal/valueOf num))
    (^BigDecimal [num scale]
@@ -120,11 +122,11 @@
   Float
 
   (^Boolean scalable? [num] true)
-  (^Boolean scales?   [num] false)
+  (^Boolean applied?  [num] false)
 
   (of [num] (.scale ^BigDecimal (BigDecimal/valueOf (double num))))
 
-  (^BigDecimal scaled
+  (^BigDecimal apply
    (^BigDecimal [num]
     (BigDecimal/valueOf (double num)))
    (^BigDecimal [num scale]
@@ -135,56 +137,44 @@
   clojure.lang.Ratio
 
   (^Boolean scalable? [num] true)
-  (^Boolean scales?   [num] false)
+  (^Boolean applied?  [num] false)
 
   (of [num] (.scale ^BigDecimal (/ (of (.numerator ^clojure.lang.Ratio num))
                                    (of (.denominator ^clojure.lang.Ratio num)))))
 
-  (^BigDecimal scaled
+  (^BigDecimal apply
    (^BigDecimal [num]
-    (/ (scaled (.numerator ^clojure.lang.Ratio num))
-       (scaled (.denominator ^clojure.lang.Ratio num))))
+    (/ (apply (.numerator ^clojure.lang.Ratio num))
+       (apply (.denominator ^clojure.lang.Ratio num))))
    (^BigDecimal [num scale]
-    (/ (scaled (.numerator ^clojure.lang.Ratio num) (int scale))
-       (scaled (.denominator ^clojure.lang.Ratio num) (int scale))))
+    (/ (apply (.numerator ^clojure.lang.Ratio num) (int scale))
+       (apply (.denominator ^clojure.lang.Ratio num) (int scale))))
    (^BigDecimal [num scale r]
-    (/ (scaled (.numerator ^clojure.lang.Ratio num) (int scale) (int r))
-       (scaled (.denominator ^clojure.lang.Ratio num) (int scale) (int r)))))
+    (/ (apply (.numerator ^clojure.lang.Ratio num) (int scale) (int r))
+       (apply (.denominator ^clojure.lang.Ratio num) (int scale) (int r)))))
 
   Number
 
   (^Boolean scalable? [num] true)
-  (^Boolean scales?   [num] false)
+  (^Boolean applied?  [num] false)
 
   (of [num] (.scale ^BigDecimal (BigDecimal/valueOf (long num))))
 
-  (^BigDecimal scaled
+  (^BigDecimal apply
    (^BigDecimal [num] (BigDecimal/valueOf (long num)))
    (^BigDecimal [num scale]
     (.setScale ^BigDecimal (BigDecimal/valueOf (long num)) (int scale)))
    (^BigDecimal [num scale r]
     (.setScale ^BigDecimal (BigDecimal/valueOf (long num)) (int scale) (int r))))
 
-  nil
-
-  (^Boolean scalable? [num] false)
-  (^Boolean scales?   [num] false)
-
-  (of [num] nil)
-
-  (scaled
-    ([num]         nil)
-    ([num scale]   nil)
-    ([num scale r] nil))
-
   String
 
   (^Boolean scalable? [num] true)
-  (^Boolean scales?   [num] false)
+  (^Boolean applied?  [num] false)
 
   (of [num] (.scale ^BigDecimal (BigDecimal. num ^MathContext unscaled-context)))
 
-  (^BigDecimal scaled
+  (^BigDecimal apply
    (^BigDecimal [num]
     (BigDecimal. num ^MathContext unscaled-context))
    (^BigDecimal [num scale]
@@ -192,14 +182,26 @@
    (^BigDecimal [num scale r]
     (.setScale ^BigDecimal (BigDecimal. num ^MathContext unscaled-context) (int scale) (int r))))
 
+  nil
+
+  (^Boolean scalable? [num] false)
+  (^Boolean applied?  [num] false)
+
+  (of [num] nil)
+
+  (apply
+    ([num]         nil)
+    ([num scale]   nil)
+    ([num scale r] nil))
+
   Object
 
   (^Boolean    scalable? [num] nil)
-  (^Boolean    scales?   [num] nil)
+  (^Boolean    applied?  [num] nil)
 
   (of [num] (.scale ^BigDecimal (BigDecimal. num ^MathContext unscaled-context)))
 
-  (^BigDecimal scaled
+  (^BigDecimal apply
    (^BigDecimal [num]
     (BigDecimal. num ^MathContext unscaled-context))
    (^BigDecimal [num scale]

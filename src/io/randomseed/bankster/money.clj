@@ -4,8 +4,6 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [ns])
-
   (:require [clojure.string                  :as           str]
             [clojure.reflect                 :as            cr]
             [io.randomseed.bankster          :refer       :all]
@@ -72,14 +70,14 @@
    (let [^Currency c (currency/of currency (or *registry* @R))
          s (int (scale/of ^Currency c))]
      (if (currency/auto-scaled? s)
-       (Money. ^Currency c ^BigDecimal (scale/scaled amount))
-       (Money. ^Currency c ^BigDecimal (scale/scaled amount (int s))))))
+       (Money. ^Currency c ^BigDecimal (scale/apply amount))
+       (Money. ^Currency c ^BigDecimal (scale/apply amount (int s))))))
   (^Money [^Currency currency amount rounding-mode]
    (let [^Currency c (currency/of currency (or *registry* @R))
          s (int (scale/of ^Currency c))]
      (if (currency/auto-scaled? s)
-       (Money. ^Currency c ^BigDecimal (scale/scaled amount))
-       (Money. ^Currency c ^BigDecimal (scale/scaled amount (int s) (int rounding-mode)))))))
+       (Money. ^Currency c ^BigDecimal (scale/apply amount))
+       (Money. ^Currency c ^BigDecimal (scale/apply amount (int s) (int rounding-mode)))))))
 
 (defmacro of
   "Returns the amount of money as a Money object consisting of a currency and a
@@ -121,12 +119,12 @@
    (.scale ^BigDecimal (.amount ^Money m)))
   (^Money [^Money m s]
    (-> m
-       (assoc :amount   ^BigDecimal (.setScale    ^BigDecimal (.amount   ^Money m) (int s)))
-       (assoc :currency ^Currency   (scale/scaled ^Currency   (.currency ^Money m) (int s)))))
+       (assoc :amount   ^BigDecimal (.setScale   ^BigDecimal (.amount   ^Money m) (int s)))
+       (assoc :currency ^Currency   (scale/apply ^Currency   (.currency ^Money m) (int s)))))
   (^Money [^Money m s rounding-mode]
    (-> m
-       (assoc :amount   ^BigDecimal (.setScale    ^BigDecimal (.amount   ^Money m) (int s) (int rounding-mode)))
-       (assoc :currency ^Currency   (scale/scaled ^Currency   (.currency ^Money m) (int s) (int rounding-mode))))))
+       (assoc :amount   ^BigDecimal (.setScale   ^BigDecimal (.amount   ^Money m) (int s) (int rounding-mode)))
+       (assoc :currency ^Currency   (scale/apply ^Currency   (.currency ^Money m) (int s) (int rounding-mode))))))
 
 (defmacro scale
   "Re-scales the given money using a scale (number of decimal places) and an optional
@@ -197,11 +195,11 @@
   Money
 
   (^Boolean scalable? [m] true)
-  (^Boolean scales?   [m] true)
+  (^Boolean applied?  [m] true)
 
   (of [m] (.scale ^BigDecimal (.amount ^Money m)))
 
-  (^Money scaled
+  (^Money apply
    (^Money [m] ^Money m)
    (^Money [m scale]               (scale-core ^Money m (int scale)))
    (^Money [m scale rounding-mode] (scale-core ^Money m (int scale) rounding-mode))))

@@ -22,7 +22,6 @@
 (def ^{:tag 'long, :const true} no-numeric-id (long 0))
 (def ^{:tag 'int,  :const true} auto-scaled   (int -1))
 
-
 ;;
 ;; Global registry.
 ;;
@@ -604,11 +603,11 @@
   Currency
 
   (^Boolean scalable? [c] true)
-  (^Boolean scales?   [c] true)
+  (^Boolean applied?  [c] true)
 
   (of [c] (.sc ^Currency c))
 
-  (^Currency scaled
+  (^Currency apply
    (^Currency [c] ^Currency c)
    (^Currency [c scale]               (assoc c :sc (int scale)))
    (^Currency [c scale rounding-mode] (assoc c :sc (int scale)))))
