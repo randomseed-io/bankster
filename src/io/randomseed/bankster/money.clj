@@ -29,7 +29,11 @@
 ;; Dynamic registry.
 ;;
 
-(def ^:dynamic *registry* nil)
+(def ^:dynamic
+  *registry*
+  "Registry that if set to a truthy value (not nil and not false), will be used
+  instead of a global, shared registry."
+  nil)
 
 ;;
 ;; Rounding modes.
@@ -142,21 +146,22 @@
 
 (defn amount
   [^Money money]
-  "Returns amount of the given money"
+  "Returns the amount of the given money"
   {:tag BigDecimal}
   (.amount ^Money money))
 
 (defn currency
   [^Money money]
-  "Returns currency of the given money."
+  "Returns the currency of the given money."
   {:tag Currency}
   (.currency ^Money money))
 
 ;;
-;; Relation to a currency.
+;; Payable implementation.
 ;;
 
 (extend-protocol currency/Payable
+
   Money
 
   (of
