@@ -205,6 +205,61 @@
    (^Money [m scale rounding-mode] (scale-core ^Money m (int scale) rounding-mode))))
 
 ;;
+;; Operations.
+;;
+
+(defn equal?
+  ([^Money a ^Money b]
+   nil))
+
+(defn add
+  "Adds two or more amounts of money of the same currency."
+  (^Money [] nil)
+  (^Money [^Money a] a)
+  (^Money [^Money a ^Money b]
+   (if (nil? a) b
+       (if (nil? b) a
+           (let [^Currency cur-a (.currency ^Money a)]
+             (if (= (.id ^Currency cur-a)
+                    (.id ^Currency (.currency ^Money b)))
+               (let [^BigDecimal x (.amount ^Money a)
+                     ^BigDecimal y (.amount ^Money b)
+                     ^BigDecimal r (.subtract ^BigDecimal x ^BigDecimal y)]
+                 (if (= ^int (.scale ^BigDecimal x)
+                        ^int (.scale ^BigDecimal y))
+                   (Money. ^Currency cur-a ^BigDecimal r)
+                   (Money. ^Currency (assoc cur-a :sc ^int (.scale ^BigDecimal r)) ^BigDecimal r)))
+               (throw (ex-info
+                       (str "Cannot add amounts of two different currencies.")
+                       {:addend-1 a :addend-2 b})))))))
+  (^Money [^Money a ^Money b ^Money c & more]
+   (reduce add (add ^Money a ^Money b) more)))
+
+(defn subtract
+  "Subtracts two or more amounts of money of the same currency."
+  (^Money [] nil)
+  (^Money [^Money a]
+   (Money. ^Currency   (.currency ^Money a)
+           ^BigDecimal (.subtract 0M ^BigDecimal (.amount ^Money a))))
+  (^Money [^Money a ^Money b]
+   (if (nil? b) a
+       (let [^Currency cur-a (.currency ^Money a)]
+         (if (= (.id ^Currency cur-a)
+                (.id ^Currency (.currency ^Money b)))
+           (let [^BigDecimal x (.amount ^Money a)
+                 ^BigDecimal y (.amount ^Money b)
+                 ^BigDecimal r (.subtract ^BigDecimal x ^BigDecimal y)]
+             (if (= ^int (.scale x)
+                    ^int (.scale y))
+               (Money. ^Currency cur-a ^BigDecimal r)
+               (Money. ^Currency (assoc cur-a :sc ^int (.scale ^BigDecimal r)) ^BigDecimal r)))
+           (throw (ex-info
+                   (str "Cannot subtract amounts of two different currencies.")
+                   {:minuend a :subtrahend b}))))))
+  (^Money [^Money a ^Money b ^Money c & more]
+   (reduce subtract (subtract ^Money a ^Money b) more)))
+
+;;
 ;; Printing.
 ;;
 
