@@ -35,15 +35,15 @@
 (defprotocol Scalable
   (of
     [num]
-    "Returns a scale. If the given value is not of type that scales it will be
-     converted to such.")
+    "Returns a scale. If the given value is not of type that scales (or is used to
+  produce scaled types) it will be converted to such.")
 
   (apply
     [num] [num scale] [num scale rounding-mode]
     "Converts the given value to a scalable with or without changing its scale (if
-    any). For values that already are scalable changes their scale if called with a
-    second argument. The third argument, rounding-mode, must be present when
-    downscaling.")
+  any). For values that already are scalable changes their scale if called with a
+  second argument. The third argument, rounding-mode, must be present when
+  downscaling.")
 
   (applied?
     [num]

@@ -83,28 +83,28 @@
    id
    [id] [id registry]
    "Returns currency identifier as keyword. If the registry is not given it will use
-    the default one. If the given argument is already an identifier (a keyword), it
-    will be returned as is.")
+  the default one. If the given argument is already an identifier (a keyword), it
+  will be returned as is.")
 
   (^{:tag Currency :added "1.0.0"}
    of
    [id] [id registry]
    "Returns a currency object for the given id and registry. If the registry is not
-    given it will use the default one. If the currency record is passed, it will be
-    returned as is without consulting the registry.")
+  given it will use the default one. If the currency record is passed, it will be
+  returned as is without consulting the registry.")
 
   (^{:tag Boolean :added "1.0.0"}
    defined?
    [id] [id registry]
    "Returns true if the given currency exists in a registry. If the registry is not given,
-    the default one is used.")
+  the default one is used.")
 
   (^{:tag Boolean :added "1.0.0"}
    same-ids?
    [a b] [a b registry]
    "Returns true if two currencies have the same ID. That does not mean the objects
-   are of the same contents (e.g. numerical IDs or scales may differ) but it's more
-   performant in 99% cases."))
+  are of the same contents (e.g. numerical IDs or scales may differ) but it's more
+  performant in 99% cases."))
 
 ;;
 ;; Currency querying functions, payable implementation.
