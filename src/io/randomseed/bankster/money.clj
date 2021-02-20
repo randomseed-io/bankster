@@ -189,6 +189,24 @@
      (= (.id ^Currency (.currency ^Money a)) (currency/id b registry)))))
 
 ;;
+;; Scalable implementation.
+;;
+
+(extend-protocol scale/Scalable
+
+  Money
+
+  (^Boolean scalable? [m] true)
+  (^Boolean scales?   [m] true)
+
+  (of [m] (.scale ^BigDecimal (.amount ^Money m)))
+
+  (^Money scaled
+   (^Money [m] ^Money m)
+   (^Money [m scale]               (scale-core ^Money m (int scale)))
+   (^Money [m scale rounding-mode] (scale-core ^Money m (int scale) rounding-mode))))
+
+;;
 ;; Printing.
 ;;
 
