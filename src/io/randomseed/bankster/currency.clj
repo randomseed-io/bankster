@@ -19,13 +19,23 @@
 ;; Constants.
 ;;
 
-(def ^{:tag 'long} no-numeric-id (long 0))
+(def ^{:tag 'long, :const true} no-numeric-id (long 0))
+(def ^{:tag 'int,  :const true} auto-scaled   (int -1))
+
 
 ;;
 ;; Global registry.
 ;;
 
 (def ^:private R (registry/global))
+
+;;
+;; Auto-scaling predicate.
+;;
+
+(defn ^Boolean auto-scaled?
+  [scale]
+  (= auto-scaled scale))
 
 ;;
 ;; Currency constructor
@@ -40,27 +50,27 @@
 (defn new-currency
   "Creates new currency record from values passed as arguments."
   (^Currency [^clojure.lang.Keyword id]
-   (Currency. id no-numeric-id scale/auto
+   (Currency. id no-numeric-id auto-scaled
               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
               nil))
   (^Currency [^clojure.lang.Keyword id, ^long numeric-id]
-   (Currency. id numeric-id scale/auto
+   (Currency. id (long numeric-id) auto-scaled
               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
               nil))
   (^Currency [^clojure.lang.Keyword id, ^long numeric-id, scale]
-   (Currency. id numeric-id (int scale)
+   (Currency. id (long numeric-id) (int scale)
               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
               nil))
   (^Currency [^clojure.lang.Keyword id, ^long numeric-id, scale, ^clojure.lang.Keyword kind]
-   (Currency. id numeric-id (int scale)
+   (Currency. id (long numeric-id) (int scale)
               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
               kind)))
 
 (def ^{:tag Currency
        :arglists '(^Currency [^clojure.lang.Keyword id]
                    ^Currency [^clojure.lang.Keyword id, ^long numeric-id]
-                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, ^int scale]
-                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, ^int scale, ^clojure.lang.Keyword kind])}
+                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, scale]
+                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, scale, ^clojure.lang.Keyword kind])}
   new
   "Alias for new-currency."
   new-currency)
@@ -247,9 +257,9 @@
   "Alias for nr."
   nr)
 
-(defn ^{:tag 'int} sc
+(defn sc
   "Returns currency scale (decimal places) as an integer number. For currencies without
-  the assigned decimal places it will return -1 (the value of currency/scale/auto)."
+  the assigned decimal places it will return -1 (the value of auto-scaled)."
   ([c] (.sc ^Currency (of c)))
   ([c ^Registry registry] (.sc ^Currency (of c registry))))
 
@@ -510,9 +520,9 @@
   (^Boolean [ns c ^Registry registry] (= ns (.ns ^Currency (of c registry)))))
 
 (defn ^{:tag Boolean} big?
-  "Returns true if the given currency has unlimited scale (decimal places)."
-  (^Boolean [c] (scale/auto? (.sc ^Currency (of c))))
-  (^Boolean [c ^Registry registry] (scale/auto? (.sc ^Currency (of c registry)))))
+  "Returns true if the given currency has an automatic scale (decimal places)."
+  (^Boolean [c] (auto-scaled? (.sc ^Currency (of c))))
+  (^Boolean [c ^Registry registry] (auto-scaled? (.sc ^Currency (of c registry)))))
 
 (defn ^Boolean crypto?
   "Returns true if the given currency is a cryptocurrency. It is just a helper that
@@ -604,8 +614,8 @@
 
 (defmethod print-method Currency
   [c w]
-  (let [sc  (.sc ^Currency c)
-        nr  (.nr ^Currency c)
+  (let [sc  (.sc   ^Currency c)
+        nr  (.nr   ^Currency c)
         ki  (.kind ^Currency c)
         nr  (when (> 0 nr) nr)]
     (print-simple
@@ -614,6 +624,6 @@
           ", domain: " (.ns ^Currency c)
           (when ki (str ", kind: " ki) )
           (when nr (str ", numeric: "))
-          ", scale: " (if (scale/auto? sc) "auto" sc)
+          ", scale: " (if (auto-scaled? sc) "auto" sc)
           "]")
      w)))

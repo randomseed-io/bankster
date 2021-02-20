@@ -68,15 +68,15 @@
 (defn make-currency
   "Shapes currency entry. Gets a sequence of linear collections describing currency and
   returns a currency object."
-  [[id numeric decimal-places]]
+  [[id numeric scale]]
   (when (some? id)
-    (let [id             (keyword id)
-          numeric        (or (fs/try-parse-long numeric) currency/no-numeric-id)
-          numeric        (if (< numeric 0) currency/no-numeric-id numeric)
-          decimal-places (or (fs/try-parse-int decimal-places) scale/auto)
-          decimal-places (if (< decimal-places 0) scale/auto)
-          kind           (get special-kinds id :FIAT)]
-      (apply currency/new-currency [id numeric decimal-places kind]))))
+    (let [id       (keyword id)
+          numeric  (or (fs/try-parse-long numeric) currency/no-numeric-id)
+          numeric  (if (< numeric 0) currency/no-numeric-id numeric)
+          scale    (or (fs/try-parse-int scale) currency/auto-scaled)
+          scale    (if (< scale 0) currency/auto-scaled scale)
+          kind     (get special-kinds id :FIAT)]
+      (apply currency/new-currency [id (long numeric) (int scale) kind]))))
 
 ;;
 ;; Joda Money CSV importer.
