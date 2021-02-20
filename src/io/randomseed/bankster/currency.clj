@@ -603,10 +603,15 @@
 
   Currency
 
-  (of
-    ([c]                               (.sc ^Currency c))
-    (^Currency [c scale]               (assoc c :sc scale))
-    (^Currency [c scale rounding-mode] (assoc c :sc scale))))
+  (^Boolean scalable? [c] true)
+  (^Boolean scales?   [c] true)
+
+  (of [c] (.sc ^Currency c))
+
+  (^Currency scaled
+   (^Currency [c] ^Currency c)
+   (^Currency [c scale]               (assoc c :sc (int scale)))
+   (^Currency [c scale rounding-mode] (assoc c :sc (int scale)))))
 
 ;;
 ;; Printing.
