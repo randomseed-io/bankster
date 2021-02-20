@@ -208,3 +208,13 @@
     (.setScale ^BigDecimal (BigDecimal. num ^MathContext unscaled-context) (int scale)))
    (^BigDecimal [num scale r]
     (.setScale ^BigDecimal (BigDecimal. num ^MathContext unscaled-context) (int scale) (int r)))))
+
+;;
+;; Aliases.
+;;
+
+(defn ^io.randomseed.bankster.scale.Scalable with
+  "Alias for scale/apply."
+  (^io.randomseed.bankster.scale.Scalable [num]         (apply num))
+  (^io.randomseed.bankster.scale.Scalable [num scale]   (apply num scale))
+  (^io.randomseed.bankster.scale.Scalable [num scale rounding-mode] (apply num scale rounding-mode)))
