@@ -180,7 +180,7 @@
      (contains? (.cur-id->cur ^Registry registry)
                 (.id ^Currency (.currency ^Money money)))))
 
-  (same-id?
+  (same-ids?
     (^Boolean [a b]
      (= (.id ^Currency (.currency ^Money a)) (currency/id b)))
     (^Boolean [a b ^Registry registry]
