@@ -30,7 +30,7 @@
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur]
    (bankster/->Registry cur-id->cur
-                        (map/kmap-v :numeric cur-id->cur {})
+                        (map/map-keys-by-v :nr cur-id->cur)
                         ctr-id->cur
                         (map/invert-in-sets ctr-id->cur)))
   (^Registry [^clojure.lang.PersistentHashMap m]
