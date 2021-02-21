@@ -12,6 +12,7 @@
 
    [io.randomseed.bankster                 :as         bankster]
    [io.randomseed.bankster.scale           :as            scale]
+   [io.randomseed.bankster.config          :as           config]
    [io.randomseed.bankster.registry        :as         registry]
    [io.randomseed.bankster.currency        :as         currency]
    [io.randomseed.bankster.money           :as            money]

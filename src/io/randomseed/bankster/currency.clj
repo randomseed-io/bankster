@@ -6,12 +6,12 @@
 
   (:refer-clojure :exclude [ns new])
 
-  (:require [io.randomseed.bankster          :refer       :all]
-            [io.randomseed.bankster.registry :as      registry]
-            [io.randomseed.bankster.scale    :as         scale]
-            [io.randomseed.bankster.util.map :as           map]
-            [io.randomseed.bankster.util.fs  :as            fs]
-            [io.randomseed.bankster.util     :refer       :all])
+  (:require [io.randomseed.bankster          :refer      :all]
+            [io.randomseed.bankster.config   :as       config]
+            [io.randomseed.bankster.registry :as     registry]
+            [io.randomseed.bankster.scale    :as        scale]
+            [io.randomseed.bankster.util.map :as          map]
+            [io.randomseed.bankster.util     :refer      :all])
 
   (:import  [io.randomseed.bankster Currency Registry]))
 
