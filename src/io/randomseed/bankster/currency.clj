@@ -334,11 +334,44 @@
    (get (.ctr-id->cur ^Registry registry))))
 
 ;;
-;; Adding and removing to/from registry.
+;; Parsing helpers.
 ;;
 
+(defn- ^Currency prep-currency
+  "Prepares currency attributes which may come from an external data source. Returns a
+  currency."
+  ([[id {:keys [numeric kind scale]}]]
+   (prep-currency id numeric kind scale))
+  ([id {:keys [numeric kind scale]}]
+   (prep-currency id numeric kind scale))
+  ([id numeric kind scale]
+   (when (some? id)
+     (let [numeric (if (number? numeric) numeric (or (try-parse-long numeric) no-numeric-id))
+           numeric (if (< numeric 0) no-numeric-id numeric)
+           scale   (if (number? scale) scale (or (try-parse-int scale) auto-scaled))
+           scale   (if (< scale 0) auto-scaled scale)
+           kind    (when (some? kind) (keyword kind))]
+       (new-currency (keyword id) (long numeric) (int scale) kind)))))
+
+(defn- prep-currencies
+  "Prepares a map of currency ID to currency based on a configuration map of currency
+  ID to currency attributes."
+  [m]
+  (map prep-currency m))
+
+(defn- prep-cur->ctr
+  "Prepares countries map which may come from an external data source. Expects a map of
+  country ID to currency ID. Returns a map of currency ID to sets of country IDs."
+  [ctr-id->cur-id]
+  (->> ctr-id->cur-id
+       (map/remove-empty-values)
+       (map/map-keys-and-vals #(vector (keyword %1) (keyword %2)))
+       (map/invert-in-sets)
+       (map/remove-empty-values)))
+
 (defn- prep-country-ids
-  "Prepares country identifiers by converting the object into a sequence of keywords."
+  "Prepares country identifiers by converting the given object into a sequence of
+  keywords."
   [country-ids]
   (when country-ids
     (let [cids (if (sequential? country-ids) country-ids
@@ -347,6 +380,10 @@
                      (list country-ids)))
           cids (if (set? cids) cids (distinct cids))]
       (map keyword cids))))
+
+;;
+;; Adding and removing to/from registry.
+;;
 
 (defn- ^Registry remove-countries-core
   "Removes countries from the given registry. Also unlinks constrained currencies in
@@ -417,11 +454,16 @@
   countries, use add-countries."
   (^Registry [^Registry registry, currency]
    (register registry currency nil false))
-  (^Registry [^Registry registry, currency, country-ids-or-update?]
+  (^Registry [^Registry registry
+              ^Currency currency
+              country-ids-or-update?]
    (if (boolean? country-ids-or-update?)
      (register registry currency nil country-ids-or-update?)
      (register registry currency country-ids-or-update? false)))
-  (^Registry [^Registry registry, currency, country-ids, ^Boolean update?]
+  (^Registry [^Registry registry
+              ^Currency currency
+              country-ids
+              ^Boolean update?]
    (let [^Currency c (of currency registry)
          cid         (.id ^Currency c)
          cid-to-cur  (.cur-id->cur ^Registry registry)]
@@ -435,8 +477,8 @@
            registry    (assoc registry :cur-id->cur (assoc cid-to-cur cid c))
            numeric-id  (.nr ^Currency c)
            nr-to-cur   (.cur-nr->cur ^Registry registry)
-           registry    (if (<= numeric-id 0) registry
-                           (assoc registry :cur-nr->cur (assoc nr-to-cur numeric-id c)))]
+           registry    (if (or (nil? numeric-id) (<= numeric-id 0)) registry
+                           (assoc registry :cur-nr->cur (assoc nr-to-cur (long numeric-id) c)))]
        (add-countries registry currency country-ids)))))
 
 (defn ^Registry register!
@@ -474,12 +516,36 @@
   (swap! R remove-countries country-ids))
 
 ;;
-;; Exporting.
+;; Currencies loading.
 ;;
 
-(defn ^clojure.lang.PersistentArrayMap export-registry
-  [^Currency c]
-  nil)
+(defn ^Registry config->registry
+  "Loads currencies and countries from an EDN file. First argument should be a function
+  used to construct new currency objects and the second should be a string with a
+  path to an EDN resource file containing registry data. Returns a registry
+  initialized using values from the EDN file."
+  ([]
+   (config->registry config/default-resource-path))
+  ([^String resource-path]
+   (when-some [cfg (config/load resource-path)]
+     (let [regi (registry/new-registry)
+           curs (prep-currencies (config/currencies cfg))
+           ctrs (prep-cur->ctr   (config/countries  cfg))
+           vers (get cfg :version)
+           regi (if (nil? vers) regi (assoc regi :version (str vers)))]
+       (reduce (fn ^Registry [^Registry r, ^Currency c]
+                 (register r c (get ctrs (.id ^Currency c))))
+               regi curs)))))
+
+;;
+;; Setting default registry.
+;;
+
+(defn ^Registry set-default-registry!
+  (^Registry []
+   (set-default-registry! config/default-resource-path))
+  (^Registry [resource-path]
+   (registry/set! (config->registry resource-path))))
 
 ;;
 ;; Predicates.
@@ -631,3 +697,9 @@
           ", scale: " (if (auto-scaled? sc) "auto" sc)
           "]")
      w)))
+
+;;
+;; Populating registry with defaults.
+;;
+
+(set-default-registry!)
