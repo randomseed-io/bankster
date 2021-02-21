@@ -224,7 +224,7 @@
                     (.id ^Currency (.currency ^Money b)))
                (let [^BigDecimal x (.amount ^Money a)
                      ^BigDecimal y (.amount ^Money b)
-                     ^BigDecimal r (.subtract ^BigDecimal x ^BigDecimal y)]
+                     ^BigDecimal r (.add  ^BigDecimal x ^BigDecimal y)]
                  (if (= ^int (.scale ^BigDecimal x)
                         ^int (.scale ^BigDecimal y))
                    (Money. ^Currency cur-a ^BigDecimal r)
