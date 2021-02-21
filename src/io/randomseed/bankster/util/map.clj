@@ -82,17 +82,17 @@
                                  (and (counted? %) (< (count %) 1))
                                  (and (seqable? %) (nil? (seq %)))) only)))
 
-(defn fmap-k
+(defn map-vals-by-k
   "For each key and value of the given map m calls a function passed as the first
   argument (passing successive keys during calls to it) and generates a map with
-  values updated by the results returned by the function. When the third argument is
+  values updated by results returned by the function. When the third argument is
   given it should be a map on which operations are performed instead of using the
   original map. This may be helpful when we want to avoid merging the results with
   another map."
   {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   ([^clojure.lang.IFn f
     ^clojure.lang.IPersistentMap m]
-   (fmap-k f m m))
+   (map-vals-by-k f m m))
   ([^clojure.lang.IFn f
     ^clojure.lang.IPersistentMap m
     ^clojure.lang.IPersistentMap dst]
@@ -100,17 +100,17 @@
     (fn [^clojure.lang.IPersistentMap mp k v] (assoc mp k (f k)))
     dst m)))
 
-(defn fmap-kv
+(defn map-vals-by-kv
   "For each key and value of the given map m calls a function passed as the first
   argument (passing successive keys and values during calls to it) and generates a
-  map with values updated by the results returned by the function. When the third
+  map with values updated by results returned by the function. When the third
   argument is given it should be a map on which operations are performed instead of
   using the original map. This may be helpful when we want to avoid merging the
   results with another map."
   {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   ([^clojure.lang.IFn f
     ^clojure.lang.IPersistentMap m]
-   (fmap-k f m m))
+   (map-vals-by-kv f m m))
   ([^clojure.lang.IFn f
     ^clojure.lang.IPersistentMap m
     ^clojure.lang.IPersistentMap dst]
@@ -118,17 +118,17 @@
     (fn [^clojure.lang.IPersistentMap mp k v] (assoc mp k (f k v)))
     dst m)))
 
-(defn fmap-v
+(defn map-vals
   "For each key and value of the given map m calls a function passed as the first
   argument (passing successive values during calls to it) and generates a map with
-  values updated by the results returned by the function. When the third argument is
+  values updated by results returned by the function. When the third argument is
   given it should be a map on which operations are performed instead of using the
   original map. This may be helpful when we want to avoid merging the results with
   another map."
   {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   ([^clojure.lang.IFn f
     ^clojure.lang.IPersistentMap m]
-   (fmap-v f m m))
+   (map-vals f m m))
   ([^clojure.lang.IFn f
     ^clojure.lang.IPersistentMap m
     ^clojure.lang.IPersistentMap dst]
@@ -136,22 +136,59 @@
     (fn [^clojure.lang.IPersistentMap mp k v] (assoc mp k (f v)))
     dst m)))
 
-(defn kmap-v
+(defn map-keys-by-v
   "For each key and value of the given map m calls a function passed as the first
-  argument (passing successive keys during calls to it) and generates a map with
-  keys updated by the results returned by the function. When the third argument is
-  given it should be a map on which operations are performed instead of using the
-  original map. This may be helpful when we want to avoid merging the results with
-  another map."
+  argument (passing successive values during calls to it) and generates a map with
+  keys updated by results returned by the function. When the third argument is
+  given then it should be a map on which operations are performed instead of using
+  and empty map."
   {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   ([^clojure.lang.IFn f
     ^clojure.lang.IPersistentMap m]
-   (kmap-v f m m))
+   (map-keys-by-v f m {}))
   ([^clojure.lang.IFn f
     ^clojure.lang.IPersistentMap m
     ^clojure.lang.IPersistentMap dst]
    (reduce-kv
     (fn [^clojure.lang.IPersistentMap mp k v] (assoc mp (f v) v))
+    dst m)))
+
+(defn map-keys
+  "For each key and value of the given map m calls a function passed as the first
+  argument (passing successive keys during calls to it) and generates a map with keys
+  updated by results returned by the function. When the third argument is given then
+  it should be a map on which operations are performed instead of using an empty
+  map."
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
+  ([^clojure.lang.IFn f
+    ^clojure.lang.IPersistentMap m]
+   (map-keys f m {}))
+  ([^clojure.lang.IFn f
+    ^clojure.lang.IPersistentMap m
+    ^clojure.lang.IPersistentMap dst]
+   (reduce-kv
+    (fn [^clojure.lang.IPersistentMap mp k v] (assoc mp (f k) v))
+    dst m)))
+
+(defn map-keys-and-vals
+  "For each key and value of the given map m calls a function passed as the first
+  argument (passing successive keys during calls to it) and generates a map with keys
+  updated by results returned by the function and values also updated by results of
+  the same function. The function should return a sequential collection of 2
+  elements: first containing a new value of a key and second containing a new value
+  of a transformed value associated with that key. When the third argument is given
+  then it should be a map on which operations are performed instead of using an empty
+  map."
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
+  ([^clojure.lang.IFn f
+    ^clojure.lang.IPersistentMap m]
+   (map-keys-and-vals f m {}))
+  ([^clojure.lang.IFn f
+    ^clojure.lang.IPersistentMap m
+    ^clojure.lang.IPersistentMap dst]
+   (reduce-kv
+    (fn [^clojure.lang.IPersistentMap mp k v]
+      (let [[new-k new-v] (f k v)] (assoc mp new-k new-v)))
     dst m)))
 
 (defn map-of-sets-invert
@@ -193,8 +230,8 @@
              (empty coll) coll))
 
 (defn update-values
-  "Returns the map with its values identified with keys from vmap updated with the
-  associated functions from vmap."
+  "Returns the given map with its values identified with keys from vmap updated with
+  the associated functions from vmap."
   {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   ([^clojure.lang.IPersistentMap map
     ^clojure.lang.IPersistentMap vmap]
@@ -213,9 +250,10 @@
       map vmap))))
 
 (defn update-values-recur
-  "Returns the map with its values identified with keys from vmap recursively updated
-  with the associated functions from vmap. Shape is not reflected, second map (vmap)
-  should be flat, searching for keys is recursive, including nested vectors."
+  "Returns the given map with its values identified with keys from vmap recursively
+  updated with the associated functions from vmap. Shape is not reflected, second
+  map (vmap) should be flat, searching for keys is recursive, including nested
+  vectors."
   {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   ([^clojure.lang.IPersistentMap map
     ^clojure.lang.IPersistentMap vmap]
