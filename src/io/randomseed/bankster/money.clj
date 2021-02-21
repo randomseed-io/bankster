@@ -155,10 +155,10 @@
   (.currency ^Money money))
 
 ;;
-;; Payable implementation.
+;; Monetary implementation.
 ;;
 
-(extend-protocol currency/Payable
+(extend-protocol currency/Monetary
 
   Money
 

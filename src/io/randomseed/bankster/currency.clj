@@ -75,10 +75,10 @@
   new-currency)
 
 ;;
-;; Payable protocol.
+;; Monetary protocol.
 ;;
 
-(defprotocol ^{:added "1.0.0"} Payable
+(defprotocol ^{:added "1.0.0"} Monetary
   (^{:tag clojure.lang.Keyword :added "1.0.0"}
    id
    [id] [id registry]
@@ -107,10 +107,10 @@
   performant in 99% cases."))
 
 ;;
-;; Currency querying functions, payable implementation.
+;; Currency querying functions, Monetary implementation.
 ;;
 
-(extend-protocol Payable
+(extend-protocol Monetary
 
   Currency
 
