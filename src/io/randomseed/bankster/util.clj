@@ -276,3 +276,25 @@
 (defn ^String try-upper-case
   [^String s]
   (when (some? s) (str/upper-case s)))
+
+(defn try-parse-int
+  "Returns integer from an object or nil if the given object does not contain valid
+  integer."
+  {:tag Integer}
+  [s]
+  (if (number? s)
+    (try (int s) (catch IllegalArgumentException e nil))
+    (when (and (seqable? s) (some? (seq s)))
+      (try (Integer/parseInt s)
+           (catch NumberFormatException e nil)))))
+
+(defn try-parse-long
+  "Returns long from an object or nil if the given object does not contain valid
+  long."
+  {:tag Long}
+  [s]
+  (if (number? s)
+    (try (long s) (catch IllegalArgumentException e nil))
+    (when (some? (seq s))
+      (try (Long/parseLong s)
+           (catch NumberFormatException e nil)))))

@@ -71,9 +71,9 @@
   [[id numeric scale]]
   (when (some? id)
     (let [id       (keyword id)
-          numeric  (or (fs/try-parse-long numeric) currency/no-numeric-id)
+          numeric  (or (try-parse-long numeric) currency/no-numeric-id)
           numeric  (if (< numeric 0) currency/no-numeric-id numeric)
-          scale    (or (fs/try-parse-int scale) currency/auto-scaled)
+          scale    (or (try-parse-int scale) currency/auto-scaled)
           scale    (if (< scale 0) currency/auto-scaled scale)
           kind     (get special-kinds id :FIAT)]
       (apply currency/new-currency [id (long numeric) (int scale) kind]))))

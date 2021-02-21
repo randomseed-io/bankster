@@ -89,22 +89,6 @@
     (boolean (and (some? s) (Integer/parseInt s)))
     (catch NumberFormatException e false)))
 
-(defn ^Integer try-parse-int
-  [^String s]
-  "Returns integer from a string or nil if the given string does not contain valid
-  integer."
-  (when (some? (seq s))
-    (try (Integer/parseInt s)
-         (catch NumberFormatException e nil))))
-
-(defn ^Long try-parse-long
-  [^String s]
-  "Returns long from a string or nil if the given string does not contain valid
-  long."
-  (when (some? (seq s))
-    (try (Long/parseLong s)
-         (catch NumberFormatException e nil))))
-
 (def ^longs ^:private bom-utf-ary
   "Array of BOM encodings."
   (into-array [ByteOrderMark/UTF_16LE
