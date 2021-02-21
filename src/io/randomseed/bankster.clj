@@ -28,8 +28,8 @@
     [^clojure.lang.PersistentHashMap cur-id->cur      ; currency ID to currency record
      ^clojure.lang.PersistentHashMap cur-nr->cur      ; currency numeric ID to currency record
      ^clojure.lang.PersistentHashMap ctr-id->cur      ; country ID to currency record
-     ^clojure.lang.PersistentHashMap cur-id->ctr-ids] ; currency ID to set of country IDs
-
+     ^clojure.lang.PersistentHashMap cur-id->ctr-ids ; currency ID to set of country IDs
+     ^String version]
   Object
   (toString [^Registry r] (pr-str r)))
 

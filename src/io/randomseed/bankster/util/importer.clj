@@ -6,7 +6,6 @@
 
   (:require [clojure.java.io                 :as       io]
             [clojure.data.csv                :as      csv]
-            [clojure.edn                     :as      edn]
             [puget.printer                   :as    puget]
             [io.randomseed.bankster.scale    :as    scale]
             [io.randomseed.bankster.registry :as registry]
@@ -15,7 +14,8 @@
             [io.randomseed.bankster.util.map :as      map]
             [io.randomseed.bankster.util     :refer  :all])
 
-  (:import  [io.randomseed.bankster Currency Registry]))
+  (:import  [io.randomseed.bankster Currency Registry]
+            [java.time LocalDateTime format.DateTimeFormatter]))
 
 ;;
 ;; Pathnames and URIs.

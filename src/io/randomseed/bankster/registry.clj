@@ -4,56 +4,31 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [new])
+  (:refer-clojure :exclude [new set!])
 
-  (:require [clojure.string                  :as      str]
-            [io.randomseed.bankster          :as bankster]
-            [io.randomseed.bankster.util.map :as      map]
-            [io.randomseed.bankster.util.fs  :as       fs]
-            [io.randomseed.bankster.util     :refer  :all])
+  (:require     [clojure.string                  :as      str]
+                [io.randomseed.bankster          :as bankster]
+                [io.randomseed.bankster.util.map :as      map]
+                [io.randomseed.bankster.util.fs  :as       fs]
+                [io.randomseed.bankster.util     :refer  :all])
 
-  (:import  [io.randomseed.bankster Registry]))
+  (:import  [io.randomseed.bankster Registry]
+            [io.randomseed.bankster Currency Registry]
+            [java.time LocalDateTime format.DateTimeFormatter]))
 
 ;;
-;; Registry constructor.
+;; Registry version generator.
 ;;
 
-(defn ^Registry new-registry
-  "Creates a new registry."
-  (^Registry []
-   (bankster/->Registry {} {} {} {}))
-  (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
-              ^clojure.lang.PersistentHashMap cur-nr->cur
-              ^clojure.lang.PersistentHashMap ctr-id->cur
-              ^clojure.lang.PersistentHashMap cur-id->ctr-ids]
-   (bankster/->Registry cur-id->cur cur-nr->cur ctr-id->cur cur-id->ctr-ids))
-  (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
-              ^clojure.lang.PersistentHashMap ctr-id->cur]
-   (bankster/->Registry cur-id->cur
-                        (map/map-keys-by-v :nr cur-id->cur)
-                        ctr-id->cur
-                        (map/invert-in-sets ctr-id->cur)))
-  (^Registry [^clojure.lang.PersistentHashMap m]
-   (bankster/map->Registry m)))
-
-(def ^{:tag Registry
-       :arglists '(^Registry []
-                   ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
-                              ^clojure.lang.PersistentHashMap cur-nr->cur
-                              ^clojure.lang.PersistentHashMap ctr-id->cur
-                              ^clojure.lang.PersistentHashMap cur-id->ctr-ids]
-                   ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
-                              ^clojure.lang.PersistentHashMap ctr-id->cur]
-                   ^Registry [^clojure.lang.PersistentHashMap m])}
-  new
-  "Alias for new-registry."
-  new-registry)
+(defn ^String default-version
+  []
+  (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "YYYYMMddHHmmssSS")))
 
 ;;
 ;; Global, shared registry.
 ;;
 
-(def ^:private R (atom (new-registry)))
+(def ^:private R (atom (Registry. {} {} {} {} (default-version))))
 
 (defn ^clojure.lang.Atom global
   "Returns global registry object."
@@ -64,6 +39,60 @@
   "Returns current state of a global registry."
   []
   (deref R))
+
+;;
+;; Registry constructor.
+;;
+
+(defn ^Registry new-registry
+  "Creates a new registry."
+  (^Registry []
+   (bankster/->Registry {} {} {} {} (default-version)))
+  (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+              ^clojure.lang.PersistentHashMap cur-nr->cur
+              ^clojure.lang.PersistentHashMap ctr-id->cur
+              ^clojure.lang.PersistentHashMap cur-id->ctr-ids
+              ^String version]
+   (bankster/->Registry cur-id->cur cur-nr->cur ctr-id->cur cur-id->ctr-ids version))
+  (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+              ^clojure.lang.PersistentHashMap cur-nr->cur
+              ^clojure.lang.PersistentHashMap ctr-id->cur
+              ^clojure.lang.PersistentHashMap cur-id->ctr-ids]
+   (new-registry cur-id->cur cur-nr->cur ctr-id->cur cur-id->ctr-ids (default-version)))
+  (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+              ^clojure.lang.PersistentHashMap ctr-id->cur
+              ^String version]
+   (bankster/->Registry cur-id->cur
+                        (map/map-keys-by-v :nr cur-id->cur)
+                        ctr-id->cur
+                        (map/invert-in-sets ctr-id->cur)
+                        version))
+  (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+              ^clojure.lang.PersistentHashMap ctr-id->cur]
+   (new-registry cur-id->cur ctr-id->cur (default-version)))
+  (^Registry [^clojure.lang.PersistentHashMap m]
+   (bankster/map->Registry m)))
+
+(def ^{:tag Registry
+       :arglists '(^Registry []
+                   ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+                              ^clojure.lang.PersistentHashMap cur-nr->cur
+                              ^clojure.lang.PersistentHashMap ctr-id->cur
+                              ^clojure.lang.PersistentHashMap cur-id->ctr-ids
+                              ^String version]
+                   ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+                              ^clojure.lang.PersistentHashMap cur-nr->cur
+                              ^clojure.lang.PersistentHashMap ctr-id->cur
+                              ^clojure.lang.PersistentHashMap cur-id->ctr-ids]
+                   ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+                              ^clojure.lang.PersistentHashMap ctr-id->cur
+                              ^String version]
+                   ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+                              ^clojure.lang.PersistentHashMap ctr-id->cur]
+                   ^Registry [^clojure.lang.PersistentHashMap m])}
+  new
+  "Alias for new-registry."
+  new-registry)
 
 ;;
 ;; Registry operations.
@@ -87,7 +116,18 @@
    (set! R (new-registry cur-id->cur
                          cur-nr->cur
                          ctr-id->cur
-                         cur-id->ctr-ids))))
+                         cur-id->ctr-ids
+                         (default-version))))
+  (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+              ^clojure.lang.PersistentHashMap cur-nr->cur
+              ^clojure.lang.PersistentHashMap ctr-id->cur
+              ^clojure.lang.PersistentHashMap cur-id->ctr-ids
+              ^String version]
+   (set! R (new-registry cur-id->cur
+                         cur-nr->cur
+                         ctr-id->cur
+                         cur-id->ctr-ids
+                         version))))
 
 ;;
 ;; Getters and helpers.
@@ -106,8 +146,8 @@
   [r w]
   (let [sid (Integer/toHexString (System/identityHashCode r))]
     (print-simple
-     (str "#" "Registry["
+     (str "#" "Registry@" sid "["
           (count (.cur-id->cur ^Registry r)) " currencies, "
           (count (.ctr-id->cur ^Registry r)) " countries, "
-          sid "]")
+          "version: " (.version ^Registry r) "]")
      w)))
