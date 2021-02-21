@@ -23,7 +23,7 @@
 
 (def ^String ^private ^const default-resource-name
   "Name of a default resource container."
-  "io/randomseed/bankster/db")
+  "io/randomseed/bankster")
 
 (def ^String ^private ^const default-dump-filename
   "Default EDN dump file."
@@ -76,7 +76,7 @@
           scale    (or (try-parse-int scale) currency/auto-scaled)
           scale    (if (< scale 0) currency/auto-scaled scale)
           kind     (get special-kinds id :FIAT)]
-      (apply currency/new-currency [id (long numeric) (int scale) kind]))))
+      (currency/new-currency id (long numeric) (int scale) kind))))
 
 ;;
 ;; Joda Money CSV importer.
@@ -123,6 +123,24 @@
 ;; EDN dumper and exporter.
 ;;
 
+(defn currency->map
+  [{:keys [:nr :sc :kind]}]
+  (as-> (sorted-map) m
+    (if (and (number? nr) (pos? nr))   (assoc m :numeric nr) m)
+    (if-not (and (some? sc) (neg? sc)) (assoc m :scale   sc) m)
+    (if (some? kind)                   (assoc m :kind  kind) m)))
+
+(defn registry->map
+  ([]
+   (registry->map (registry/state)))
+  ([^Registry registry]
+   (when (some? registry)
+     (sorted-map-by
+      #(compare %2 %1)
+      :version    (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "YYYYMMddHHmmssSS"))
+      :currencies (into (sorted-map) (map/map-vals currency->map (:cur-id->cur registry)))
+      :countries  (into (sorted-map) (map/map-vals :id (:ctr-id->cur registry)))))))
+
 (defn dump
   ([^Registry registry]
    (dump default-dump-filename registry))
@@ -137,7 +155,7 @@
   ([^String   filename
     ^Registry registry]
    (when-some [rdir (fs/resource-pathname default-resource-name)]
-     (spit (io/file rdir filename) (currency/export-registry registry)))))
+     (spit (io/file rdir filename) (puget/pprint-str (registry->map registry))))))
 
 ;;
 ;; High-level operations.
@@ -146,3 +164,7 @@
 (defn joda->bankster-dump
   []
   (println (time (dump (joda-import)))))
+
+(defn joda->bankster-export
+  []
+  (println (time (export (joda-import)))))
