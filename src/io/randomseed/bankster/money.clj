@@ -255,7 +255,7 @@
                (throw (ex-info
                        (str "Cannot add amounts of two different currencies.")
                        {:addend-1 a :addend-2 b})))))))
-  (^Money [^Money a ^Money b ^Money c & more]
+  (^Money [^Money a ^Money b & more]
    (reduce add (add ^Money a ^Money b) more)))
 
 (defn subtract
@@ -279,7 +279,7 @@
            (throw (ex-info
                    (str "Cannot subtract amounts of two different currencies.")
                    {:minuend a :subtrahend b}))))))
-  (^Money [^Money a ^Money b ^Money c & more]
+  (^Money [^Money a ^Money b & more]
    (reduce subtract (subtract ^Money a ^Money b) more)))
 
 ;;
