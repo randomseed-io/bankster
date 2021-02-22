@@ -282,6 +282,44 @@
   (^Money [^Money a ^Money b & more]
    (reduce subtract (subtract ^Money a ^Money b) more)))
 
+(defn divide
+  "Divides two or more amounts of money of the same currency or a number."
+  (^Money [] nil)
+  ([a]
+   (if (money? a)
+     (Money. ^Currency   (.currency ^Money a)
+             (if *rounding-mode*
+               ^BigDecimal (.divide 1M ^BigDecimal (.amount ^Money a) (int *rounding-mode*))
+               ^BigDecimal (.divide 1M ^BigDecimal (.amount ^Money a))))
+     (if *rounding-mode*
+       (.divide 1M ^BigDecimal (scale/apply a) (int *rounding-mode*))
+       (.divide 1M ^BigDecimal (scale/apply a)))))
+  ([^Money a b]
+   (divide ^Money a b *rounding-mode*))
+  ([^Money a b rounding-mode]
+   (if (money? b)
+     (let [b ^Money b]
+       (if (= (.id ^Currency (.currency ^Money a))
+              (.id ^Currency (.currency ^Money b)))
+         (let [^BigDecimal x (.amount ^Money a)
+               ^BigDecimal y (.amount ^Money b)]
+           (if (= y BigDecimal/ONE) a
+               (if rounding-mode
+                 (.divide ^BigDecimal x ^BigDecimal y (int rounding-mode))
+                 (.divide ^BigDecimal x ^BigDecimal y))))
+         (throw (ex-info
+                 (str "Cannot divide by an amount of different currency.")
+                 {:dividend a :divider b}))))
+     (let [^BigDecimal x (.amount ^Money a)
+           ^BigDecimal y (scale/apply b)]
+       (if (= y BigDecimal/ONE) a
+           (Money. ^Currency   (.currency ^Money a)
+                   ^BigDecimal (if rounding-mode
+                                 (.divide ^BigDecimal x ^BigDecimal y (int rounding-mode))
+                                 (.divide ^BigDecimal x ^BigDecimal y)))))))
+  (^Money [^Money a b r & more]
+   (reduce #(divide ^Money %1 %2 ^int r) (divide ^Money a b ^int r) more)))
+
 ;;
 ;; Printing.
 ;;
