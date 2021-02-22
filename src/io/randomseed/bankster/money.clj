@@ -257,11 +257,12 @@
      false)))
 
 (defn ^Boolean different?
-  (^Boolean [^Money a] true)
+  "Returns true if the money amounts or their currencies are different."
+  (^Boolean [^Money a] false)
   (^Boolean [^Money a ^Money b]
-   (and (.equal (.amount ^Money a) (.amount ^Money b))
-        (currency/same-ids?  (.currency ^Money a)
-                             (.currency ^Money b)))))
+   (not (equal? ^Money a ^Money b)))
+  (^Boolean [^Money a ^Money b & more]
+   (not (apply equal? ^Money a ^Money b more))))
 
 ;;
 ;; Operations.
