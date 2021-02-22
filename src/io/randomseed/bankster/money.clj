@@ -18,19 +18,28 @@
             [java.math MathContext RoundingMode]))
 
 ;;
-;; Global registry.
+;; Global registry of currencies.
 ;;
 
 (def ^:private R (registry/global))
 
 ;;
-;; Dynamic registry.
+;; Dynamic registry of currencies.
 ;;
 
 (def ^:dynamic
   *registry*
   "Registry that if set to a truthy value (not nil and not false), will be used
   instead of a global, shared registry."
+  nil)
+
+;;
+;; Default rounding mode.
+;;
+
+(def ^:dynamic
+  *rounding-mode*
+  "Default rounding mode."
   nil)
 
 ;;
@@ -49,6 +58,7 @@
                    #{"BigDecimal"
                      "Money"
                      "money"
+                     "scale"
                      (cr/typename Money)
                      (cr/typename BigDecimal)} ns) true)]
       (if-not ns-ok n
@@ -205,12 +215,16 @@
    (^Money [m scale rounding-mode] (scale-core ^Money m (int scale) rounding-mode))))
 
 ;;
-;; Operations.
+;; Predicates.
 ;;
 
 (defn equal?
   ([^Money a ^Money b]
    nil))
+
+;;
+;; Operations.
+;;
 
 (defn add
   "Adds two or more amounts of money of the same currency."
