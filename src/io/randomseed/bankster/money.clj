@@ -129,6 +129,18 @@
 ;; Scaling and rounding.
 ;;
 
+(def ^:private ^clojure.lang.PersistentArrayMap
+  rounding->context
+  "Mapping of BigDecimal's rounding modes to MathContext objects."
+  {BigDecimal/ROUND_UP          (MathContext. 0 ^RoundingMode (RoundingMode/valueOf (int BigDecimal/ROUND_UP)))
+   BigDecimal/ROUND_DOWN        (MathContext. 0 ^RoundingMode (RoundingMode/valueOf (int BigDecimal/ROUND_DOWN)))
+   BigDecimal/ROUND_CEILING     (MathContext. 0 ^RoundingMode (RoundingMode/valueOf (int BigDecimal/ROUND_CEILING)))
+   BigDecimal/ROUND_FLOOR       (MathContext. 0 ^RoundingMode (RoundingMode/valueOf (int BigDecimal/ROUND_FLOOR)))
+   BigDecimal/ROUND_HALF_DOWN   (MathContext. 0 ^RoundingMode (RoundingMode/valueOf (int BigDecimal/ROUND_HALF_DOWN)))
+   BigDecimal/ROUND_HALF_EVEN   (MathContext. 0 ^RoundingMode (RoundingMode/valueOf (int BigDecimal/ROUND_HALF_EVEN)))
+   BigDecimal/ROUND_HALF_UP     (MathContext. 0 ^RoundingMode (RoundingMode/valueOf (int BigDecimal/ROUND_HALF_UP)))
+   BigDecimal/ROUND_UNNECESSARY (MathContext. 0 ^RoundingMode (RoundingMode/valueOf (int BigDecimal/ROUND_UNNECESSARY)))})
+
 (defn scale-core
   "Internal scaling function."
   {:no-doc true}
@@ -317,7 +329,7 @@
               (.id ^Currency (.currency ^Money b)))
          (let [^BigDecimal x (.amount ^Money a)
                ^BigDecimal y (.amount ^Money b)]
-           (if (= y BigDecimal/ONE) a
+           (if (.equals y BigDecimal/ONE) a
                (if scale/*rounding-mode*
                  (.divide ^BigDecimal x ^BigDecimal y (int scale/*rounding-mode*))
                  (.divide ^BigDecimal x ^BigDecimal y))))
@@ -326,7 +338,7 @@
                  {:dividend a :divider b}))))
      (let [^BigDecimal x (.amount ^Money a)
            ^BigDecimal y (scale/apply b)]
-       (if (= y BigDecimal/ONE) a
+       (if (.equals y BigDecimal/ONE) a
            (Money. ^Currency   (.currency ^Money a)
                    ^BigDecimal (if scale/*rounding-mode*
                                  (scale/apply (.divide ^BigDecimal x ^BigDecimal y (int scale/*rounding-mode*))
