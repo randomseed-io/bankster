@@ -344,8 +344,8 @@
      (let [b ^Money b]
        (if (= (.id ^Currency (.currency ^Money a))
               (.id ^Currency (.currency ^Money b)))
-         (let [^BigDecimal x (.amount ^Money a)
-               ^BigDecimal y (.amount ^Money b)]
+         (let [^BigDecimal x (.amount   ^Money a)
+               ^BigDecimal y (.amount   ^Money b)]
            (if (.equals y BigDecimal/ONE) a
                (if scale/*rounding-mode*
                  (.divide ^BigDecimal x ^BigDecimal y (int scale/*rounding-mode*))
@@ -380,29 +380,32 @@
   re-scaled to match the scale of a currency. If the scaling requires rounding
   enclosing the expression within with-rounding is required."
   ([]
-   (if currency/*default* (.Money ^Currency currency/*default* 1M) 1M))
+   (if currency/*default* (.Money ^Currency currency/*default* 1M) 1))
   ([^Money a] ^Money a)
   ([a b]
-   (let [^Boolean ma (money? a)]
-     (when (= ma (money? b))
-       (throw (ex-info
-               (str "Exactly one value must be a kind of Money.")
-               {:multiplicant a :multiplier b})))
-     (let [[^Money m ^BigDecimal n] (if ma [a (scale/apply b)] [b (scale/apply a)])]
-       (if (.equals BigDecimal/ONE n) m
-           (let [^BigDecimal x (.amount   ^Money m)
-                 ^Currency   c (.currency ^Money m)]
-             (if (.equals BigDecimal/ONE ^BigDecimal x)
-               (Money. ^Currency c ^BigDecimal (scale/apply n (.scale ^Money m)))
-               (if (or (.equals BigDecimal/ZERO ^BigDecimal n)
-                       (.equals BigDecimal/ZERO ^BigDecimal x))
-                 (Money. ^Currency c (scale/apply BigDecimal/ZERO (.scale ^Money m)))
-                 (Money. ^Currency c
-                         ^BigDecimal (if scale/*rounding-mode*
-                                       (scale/apply (.multiply ^BigDecimal x ^BigDecimal n
-                                                               ^MathContext (rounding->context scale/*rounding-mode*))
-                                                    (.scale x))
-                                       (scale/apply (.multiply ^BigDecimal x ^BigDecimal n) (.scale x)))))))))))
+   (let [^Boolean ma (money? a)
+         ^Boolean mb (money? b)]
+     (when (and ma mb)
+       (throw (ex-info (str "At least one value must be a regular number.")
+                       {:multiplicant a :multiplier b})))
+     (if-not (or ma mb)
+       (clojure.core/* a b)
+       (let [[^Money m ^BigDecimal n] (if ma [a (scale/apply b)] [b (scale/apply a)])]
+         (if (.equals BigDecimal/ONE n) m
+             (let [^BigDecimal x (.amount   ^Money m)
+                   ^Currency   c (.currency ^Money m)
+                   s (.scale ^BigDecimal x)]
+               (if (.equals BigDecimal/ONE ^BigDecimal x)
+                 (Money. ^Currency c ^BigDecimal (scale/apply n (int s)))
+                 (if (or (.equals BigDecimal/ZERO ^BigDecimal n)
+                         (.equals BigDecimal/ZERO ^BigDecimal x))
+                   (Money. ^Currency c (scale/apply BigDecimal/ZERO (int s)))
+                   (Money. ^Currency c
+                           ^BigDecimal (if scale/*rounding-mode*
+                                         (scale/apply (.multiply ^BigDecimal x ^BigDecimal n
+                                                                 ^MathContext (rounding->context scale/*rounding-mode*))
+                                                      (int s))
+                                         (scale/apply (.multiply ^BigDecimal x ^BigDecimal n) (int s))))))))))))
   (^Money [a b & more]
    (reduce multiply (multiply a b) more)))
 
