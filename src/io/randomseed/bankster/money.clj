@@ -32,8 +32,11 @@
   nil)
 
 ;;
+;; Accountable protocol.
 ;;
 
+(defprotocol Accountable
+  (funds [num] [a b] [a b rounding-mode]))
 
 ;;
 ;; Main coercer.
@@ -65,6 +68,35 @@
              (str "Cannot create money amount without a valid currency and a default currency was not set.")
              {:amount amount :currency currency})))))
 
+(extend-protocol Accountable
+
+  Currency
+
+  (funds
+    (^Money [a]     (parse ^Currency currency/*default* a))
+    (^Money [c b]   (parse ^Currency c b))
+    (^Money [c b r] (parse ^Currency c b r)))
+
+  Number
+
+  (funds
+    (^Money [a]               (parse ^Currency currency/*default* a))
+    (^Money [a ^Currency c]   (parse ^Currency c a))
+    (^Money [a ^Currency c r] (parse ^Currency c a r)))
+
+  nil
+
+  (funds
+    ([c]     nil)
+    ([a b]   nil)
+    ([a c r] (parse a c r)))
+
+  Object
+
+  (funds
+    (^Money [a]     (parse ^Currency currency/*default* a))
+    (^Money [a c]   (parse a c))
+    (^Money [a c r] (parse a c r))))
 
 (defmacro of
   "Returns the amount of money as a Money object consisting of a currency and a
@@ -88,12 +120,12 @@
   UP          – rounds away from zero
   UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
   ([currency]
-   `(parse ~currency))
+   `(funds ~currency))
   ([currency amount]
-   `(parse ~currency ~amount))
+   `(funds ~currency ~amount))
   ([currency amount rounding-mode]
-   (let [rms# (parse-rounding rounding-mode)]
-     `(parse ~currency ~amount ~rms#))))
+   (let [rms# (scale/parse-rounding rounding-mode)]
+     `(funds ~currency ~amount ~rms#))))
 
 ;;
 ;; Scaling and rounding.
@@ -301,6 +333,13 @@
   "Alias for scale/with-rounding."
   [rounding-mode & body]
   (list* 'io.randomseed.bankster.scale/with-rounding rounding-mode body))
+
+(defmacro with-currency
+  "Sets a default currency in a lexical context of the body."
+  [currency & body]
+  `(binding [currency/*default* (currency/of ~currency)]
+     ~@body))
+
 ;;
 ;; Printing.
 ;;
