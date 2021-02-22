@@ -48,16 +48,14 @@
   (^Money [amount]
    (parse ^Currency currency/*default* amount))
   (^Money [currency amount]
-   (if scale/*rounding-mode*
-     (parse currency amount scale/*rounding-mode*)
-     (if-some [^Currency c (currency/of currency (or *registry* @R))]
-       (let [s (int (scale/of ^Currency c))]
-         (if (currency/auto-scaled? s)
-           (Money. ^Currency c ^BigDecimal (scale/apply amount))
-           (Money. ^Currency c ^BigDecimal (scale/apply amount (int s)))))
-       (throw (ex-info
-               (str "Cannot create money amount without a valid currency and a default currency was not set.")
-               {:amount amount :currency currency})))))
+   (if-some [^Currency c (currency/of currency (or *registry* @R))]
+     (let [s (int (scale/of ^Currency c))]
+       (if (currency/auto-scaled? s)
+         (Money. ^Currency c ^BigDecimal (scale/apply amount))
+         (Money. ^Currency c ^BigDecimal (scale/apply amount (int s)))))
+     (throw (ex-info
+             (str "Cannot create money amount without a valid currency and a default currency was not set.")
+             {:amount amount :currency currency}))))
   (^Money [^Currency currency amount rounding-mode]
    (if-some [^Currency c (currency/of currency (or *registry* @R))]
      (let [s (int (scale/of ^Currency c))]
@@ -137,14 +135,12 @@
   ([m]
    (.scale ^BigDecimal (.amount ^Money m)))
   (^Money [^Money m s]
-   (if scale/*rounding-mode*
-     (scale-core m s scale/*rounding-mode*)
-     (-> m
-         (assoc :amount   ^BigDecimal (.setScale   ^BigDecimal (.amount   ^Money m) (int s)))
-         (assoc :currency ^Currency   (scale/apply ^Currency   (.currency ^Money m) (int s))))))
+   (-> m
+       (assoc :amount   ^BigDecimal (scale/apply ^BigDecimal (.amount   ^Money m) (int s)))
+       (assoc :currency ^Currency   (scale/apply ^Currency   (.currency ^Money m) (int s)))))
   (^Money [^Money m s rounding-mode]
    (-> m
-       (assoc :amount   ^BigDecimal (.setScale   ^BigDecimal (.amount   ^Money m) (int s) (int rounding-mode)))
+       (assoc :amount   ^BigDecimal (scale/apply ^BigDecimal (.amount   ^Money m) (int s) (int rounding-mode)))
        (assoc :currency ^Currency   (scale/apply ^Currency   (.currency ^Money m) (int s) (int rounding-mode))))))
 
 (defmacro scale
@@ -313,15 +309,17 @@
                  (.divide ^BigDecimal x ^BigDecimal y (int scale/*rounding-mode*))
                  (.divide ^BigDecimal x ^BigDecimal y))))
          (throw (ex-info
-                 (str "Cannot divide by an amount of different currency.")
+                 (str "Cannot divide by the amount of a different currency.")
                  {:dividend a :divider b}))))
      (let [^BigDecimal x (.amount ^Money a)
            ^BigDecimal y (scale/apply b)]
        (if (= y BigDecimal/ONE) a
            (Money. ^Currency   (.currency ^Money a)
                    ^BigDecimal (if scale/*rounding-mode*
-                                 (.divide ^BigDecimal x ^BigDecimal y (int scale/*rounding-mode*))
-                                 (.divide ^BigDecimal x ^BigDecimal y)))))))
+                                 (scale/apply (.divide ^BigDecimal x ^BigDecimal y (int scale/*rounding-mode*))
+                                              (.scale x))
+                                 (scale/apply (.divide ^BigDecimal x ^BigDecimal y)
+                                              (.scale x))))))))
   (^Money [^Money a b & more]
    (reduce divide (divide ^Money a b) more)))
 
