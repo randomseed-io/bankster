@@ -18,7 +18,7 @@
      ^clojure.lang.Keyword kind]                     ; currency kind (e.g. :FIAT or :DECENTRALIZED)
 
   Object
-  (toString [^Currency c] (pr-str c)))
+  (toString [^Currency c] (name (.id ^Currency c))))
 
 ;;
 ;; Registry record.
@@ -42,4 +42,5 @@
      ^BigDecimal amount]                              ; currency amount
 
   Object
-  (toString [^Money m] (pr-str m)))
+  (toString [^Money m]
+    (str (.amount ^Money m) " " (.currency ^Money m))))
