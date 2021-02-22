@@ -247,7 +247,25 @@
 
   (same-ids?
     (^Boolean [a b] (= (keyword a) (id b)))
-    (^Boolean [a b ^Registry registry] (= (keyword a) (id b registry)))))
+    (^Boolean [a b ^Registry registry] (= (keyword a) (id b registry))))
+
+  nil
+
+  (of
+    ([currency] nil)
+    ([currency, ^Registry registry] nil))
+
+  (id
+    (^clojure.lang.Keyword [currency] nil)
+    (^clojure.lang.Keyword [currency, ^Registry registry] nil))
+
+  (defined?
+    (^Boolean [currency] false)
+    (^Boolean [currency, ^Registry registry] false))
+
+  (same-ids?
+    (^Boolean [a b] false)
+    (^Boolean [a b ^Registry registry] false)))
 
 ;;
 ;; Currency properties.
