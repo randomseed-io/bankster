@@ -242,17 +242,18 @@
   [a]
   (instance? Money a))
 
-(defn ^Boolean equals?
+(defn ^Boolean equal?
+  "Return true if the money amounts and their currencies are equal."
   (^Boolean [^Money a] true)
   (^Boolean [^Money a ^Money b]
    (and (.equals (.amount ^Money a) (.amount ^Money b))
         (currency/same-ids? (.currency ^Money a)
                             (.currency ^Money b))))
   (^Boolean [^Money a ^Money b & more]
-   (if (equals? a b)
+   (if (equal? a b)
      (if (next more)
        (recur b (first more) (next more))
-       (equals? b (first more)))
+       (equal? b (first more)))
      false)))
 
 (defn ^Boolean different?
