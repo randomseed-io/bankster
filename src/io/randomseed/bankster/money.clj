@@ -75,13 +75,15 @@
   "Internal parser."
   {:tag Money, :no-doc true}
   (^Money [^Currency currency]
-   (parse ^Currency currency 0M))
+   (parse ^Currency currency 0M)) ;; FIXME
   (^Money [^Currency currency amount]
-   (let [^Currency c (currency/of currency (or *registry* @R))
-         s (int (scale/of ^Currency c))]
-     (if (currency/auto-scaled? s)
-       (Money. ^Currency c ^BigDecimal (scale/apply amount))
-       (Money. ^Currency c ^BigDecimal (scale/apply amount (int s))))))
+   (if *rounding-mode*
+     (parse currency amount *rounding-mode*)
+     (let [^Currency c (currency/of currency (or *registry* @R))
+           s (int (scale/of ^Currency c))]
+       (if (currency/auto-scaled? s)
+         (Money. ^Currency c ^BigDecimal (scale/apply amount))
+         (Money. ^Currency c ^BigDecimal (scale/apply amount (int s)))))))
   (^Money [^Currency currency amount rounding-mode]
    (let [^Currency c (currency/of currency (or *registry* @R))
          s (int (scale/of ^Currency c))]
@@ -128,9 +130,11 @@
   ([m]
    (.scale ^BigDecimal (.amount ^Money m)))
   (^Money [^Money m s]
-   (-> m
-       (assoc :amount   ^BigDecimal (.setScale   ^BigDecimal (.amount   ^Money m) (int s)))
-       (assoc :currency ^Currency   (scale/apply ^Currency   (.currency ^Money m) (int s)))))
+   (if *rounding-mode*
+     (scale-core m s *rounding-mode*)
+     (-> m
+         (assoc :amount   ^BigDecimal (.setScale   ^BigDecimal (.amount   ^Money m) (int s)))
+         (assoc :currency ^Currency   (scale/apply ^Currency   (.currency ^Money m) (int s))))))
   (^Money [^Money m s rounding-mode]
    (-> m
        (assoc :amount   ^BigDecimal (.setScale   ^BigDecimal (.amount   ^Money m) (int s) (int rounding-mode)))
@@ -212,11 +216,16 @@
   (^Money apply
    (^Money [m] ^Money m)
    (^Money [m scale]               (scale-core ^Money m (int scale)))
-   (^Money [m scale rounding-mode] (scale-core ^Money m (int scale) rounding-mode))))
+   (^Money [m scale rounding-mode] (scale-core ^Money m (int scale) (int rounding-mode)))))
 
 ;;
 ;; Predicates.
 ;;
+
+(defn ^Boolean money?
+  "Returns true if the given value is a kind of Money."
+  [a]
+  (instance? Money a))
 
 (defn equal?
   ([^Money a ^Money b]
