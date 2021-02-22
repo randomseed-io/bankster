@@ -348,6 +348,47 @@
   (^Money [^Money a b & more]
    (reduce divide (divide ^Money a b) more)))
 
+(defn multiply
+  "Multiplies two or more amounts of money of the same currency or a number. If the two
+  values are a kind of Money, . If the first
+  value is a kind of Money and the second is a number, the result will be a
+  Money. For a single value it returns a division of 1 by that number, even if it is
+  a kind of Money. For more than 2 arguments it repeatedly divides them as
+  described.
+
+  When there are two amounts of the same currency, scale may vary depending on the
+  result and rounding is applied only when there is no exact decimal representation.
+
+  When there is a division of an amount by the regular number, the result is
+  re-scaled to match the scale of a currency. If the scaling requires rounding
+  enclosing the expression within with-rounding is required."
+  ([]
+   (if currency/*default* (.Money ^Currency currency/*default* 1M) 1M))
+  ([^Money a] ^Money a)
+  ([a b]
+   (let [^Boolean ma (money? a)]
+     (when (= ma (money? b))
+       (throw (ex-info
+               (str "Exactly one value must be a kind of Money.")
+               {:multiplicant a :multiplier b})))
+     (let [[^Money m ^BigDecimal n] (if ma [a (scale/apply b)] [b (scale/apply a)])]
+       (if (.equals BigDecimal/ONE n) m
+           (let [^BigDecimal x (.amount   ^Money m)
+                 ^Currency   c (.currency ^Money m)]
+             (if (.equals BigDecimal/ONE ^BigDecimal x)
+               (Money. ^Currency c ^BigDecimal (scale/apply n (.scale ^Money m)))
+               (if (or (.equals BigDecimal/ZERO ^BigDecimal n)
+                       (.equals BigDecimal/ZERO ^BigDecimal x))
+                 (Money. ^Currency c (scale/apply BigDecimal/ZERO (.scale ^Money m)))
+                 (Money. ^Currency c
+                         ^BigDecimal (if scale/*rounding-mode*
+                                       (scale/apply (.multiply ^BigDecimal x ^BigDecimal n
+                                                               ^MathContext (rounding->context scale/*rounding-mode*))
+                                                    (.scale x))
+                                       (scale/apply (.multiply ^BigDecimal x ^BigDecimal n) (.scale x)))))))))))
+  (^Money [a b & more]
+   (reduce multiply (multiply a b) more)))
+
 ;;
 ;; Contextual macros.
 ;;
