@@ -6,7 +6,10 @@
 
   (:refer-clojure :exclude [apply])
 
-  (:import [java.math MathContext RoundingMode BigDecimal]))
+  (:require [clojure.string  :as str]
+            [clojure.reflect :as  cr])
+
+  (:import  [java.math MathContext RoundingMode BigDecimal]))
 
 ;;
 ;; Initial math context.
@@ -218,3 +221,52 @@
   (^io.randomseed.bankster.scale.Scalable [num]         (apply num))
   (^io.randomseed.bankster.scale.Scalable [num scale]   (apply num scale))
   (^io.randomseed.bankster.scale.Scalable [num scale rounding-mode] (apply num scale rounding-mode)))
+
+;;
+;; Rounding.
+;;
+
+(def ^:dynamic
+  *rounding-mode*
+  "Default rounding mode."
+  nil)
+
+;;
+;; Rounding modes.
+;;
+
+(defn parse-rounding
+  "Helper for parsing rounding modes in macros. Accepted input:
+  ROUND_mode, :ROUND_mode, BigDecimal/ROUND_mode, money/ROUND_mode, :mode, mode."
+  [n]
+  (if (ident? n)
+    (let [sname (name n)
+          ns-ok (if-some [ns (namespace n)]
+                  (contains?
+                   #{"BigDecimal"
+                     "scale"
+                     (cr/typename BigDecimal)} ns) true)]
+      (if-not ns-ok n
+              (if (str/starts-with? sname "ROUND_")
+                (symbol "java.math.BigDecimal" sname)
+                (symbol "java.math.BigDecimal" (str "ROUND_" sname)))))
+    n))
+
+
+(defmacro with-rounding
+  "Sets the rounding mode for operations on scaled values.
+
+  The first argument should be one of the following:
+
+  CEILING     - rounds towards positive infinity.
+  DOWN        - rounds towards zero.
+  FLOOR       - rounds towards negative infinity.
+  HALF_DOWN   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
+  HALF_EVEN   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
+  HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
+  UP          – rounds away from zero
+  UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
+  [rounding-mode & body]
+  (let [rms# (parse-rounding rounding-mode)]
+    `(binding [*rounding-mode* ~rms#]
+       ~@body)))

@@ -4,9 +4,7 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:require [clojure.string                  :as           str]
-            [clojure.reflect                 :as            cr]
-            [io.randomseed.bankster          :refer       :all]
+  (:require [io.randomseed.bankster          :refer       :all]
             [io.randomseed.bankster.scale    :as         scale]
             [io.randomseed.bankster.currency :as      currency]
             [io.randomseed.bankster.registry :as      registry]
@@ -27,45 +25,15 @@
 ;; Dynamic registry of currencies.
 ;;
 
-(def ^:dynamic
+(def ^:dynamic ^Registry
   *registry*
   "Registry that if set to a truthy value (not nil and not false), will be used
   instead of a global, shared registry."
   nil)
 
 ;;
-;; Default rounding mode.
 ;;
 
-(def ^:dynamic
-  *rounding-mode*
-  "Default rounding mode."
-  nil)
-
-;;
-;; Rounding modes.
-;;
-
-(defn ^:private parse-rounding
-  "Internal helper for parsing rounding modes in macros. Accepted input:
-  ROUND_mode, :ROUND_mode, BigDecimal/ROUND_mode, money/ROUND_mode, :mode,
-  mode."
-  [n]
-  (if (ident? n)
-    (let [sname (name n)
-          ns-ok (if-some [ns (namespace n)]
-                  (contains?
-                   #{"BigDecimal"
-                     "Money"
-                     "money"
-                     "scale"
-                     (cr/typename Money)
-                     (cr/typename BigDecimal)} ns) true)]
-      (if-not ns-ok n
-              (if (str/starts-with? sname "ROUND_")
-                (symbol "java.math.BigDecimal" sname)
-                (symbol "java.math.BigDecimal" (str "ROUND_" sname)))))
-    n))
 
 ;;
 ;; Main coercer.
@@ -74,22 +42,29 @@
 (defn parse
   "Internal parser."
   {:tag Money, :no-doc true}
-  (^Money [^Currency currency]
-   (parse ^Currency currency 0M)) ;; FIXME
-  (^Money [^Currency currency amount]
-   (if *rounding-mode*
-     (parse currency amount *rounding-mode*)
-     (let [^Currency c (currency/of currency (or *registry* @R))
-           s (int (scale/of ^Currency c))]
+  (^Money [amount]
+   (parse ^Currency currency/*default* amount))
+  (^Money [currency amount]
+   (if scale/*rounding-mode*
+     (parse currency amount scale/*rounding-mode*)
+     (if-some [^Currency c (currency/of currency (or *registry* @R))]
+       (let [s (int (scale/of ^Currency c))]
+         (if (currency/auto-scaled? s)
+           (Money. ^Currency c ^BigDecimal (scale/apply amount))
+           (Money. ^Currency c ^BigDecimal (scale/apply amount (int s)))))
+       (throw (ex-info
+               (str "Cannot create money amount without a valid currency and a default currency was not set.")
+               {:amount amount :currency currency})))))
+  (^Money [^Currency currency amount rounding-mode]
+   (if-some [^Currency c (currency/of currency (or *registry* @R))]
+     (let [s (int (scale/of ^Currency c))]
        (if (currency/auto-scaled? s)
          (Money. ^Currency c ^BigDecimal (scale/apply amount))
-         (Money. ^Currency c ^BigDecimal (scale/apply amount (int s)))))))
-  (^Money [^Currency currency amount rounding-mode]
-   (let [^Currency c (currency/of currency (or *registry* @R))
-         s (int (scale/of ^Currency c))]
-     (if (currency/auto-scaled? s)
-       (Money. ^Currency c ^BigDecimal (scale/apply amount))
-       (Money. ^Currency c ^BigDecimal (scale/apply amount (int s) (int rounding-mode)))))))
+         (Money. ^Currency c ^BigDecimal (scale/apply amount (int s) (int rounding-mode)))))
+     (throw (ex-info
+             (str "Cannot create money amount without a valid currency and a default currency was not set.")
+             {:amount amount :currency currency})))))
+
 
 (defmacro of
   "Returns the amount of money as a Money object consisting of a currency and a
@@ -130,8 +105,8 @@
   ([m]
    (.scale ^BigDecimal (.amount ^Money m)))
   (^Money [^Money m s]
-   (if *rounding-mode*
-     (scale-core m s *rounding-mode*)
+   (if scale/*rounding-mode*
+     (scale-core m s scale/*rounding-mode*)
      (-> m
          (assoc :amount   ^BigDecimal (.setScale   ^BigDecimal (.amount   ^Money m) (int s)))
          (assoc :currency ^Currency   (scale/apply ^Currency   (.currency ^Money m) (int s))))))
@@ -149,7 +124,7 @@
   ([money scale]
    `(scale-core ~money ~scale))
   ([money scale rounding-mode]
-   (let [rms# (parse-rounding rounding-mode)]
+   (let [rms# (scale/parse-rounding rounding-mode)]
      `(scale-core money ~scale ~rms#))))
 
 ;;
@@ -288,15 +263,13 @@
   ([a]
    (if (money? a)
      (Money. ^Currency   (.currency ^Money a)
-             (if *rounding-mode*
-               ^BigDecimal (.divide 1M ^BigDecimal (.amount ^Money a) (int *rounding-mode*))
+             (if scale/*rounding-mode*
+               ^BigDecimal (.divide 1M ^BigDecimal (.amount ^Money a) (int scale/*rounding-mode*))
                ^BigDecimal (.divide 1M ^BigDecimal (.amount ^Money a))))
-     (if *rounding-mode*
-       (.divide 1M ^BigDecimal (scale/apply a) (int *rounding-mode*))
+     (if scale/*rounding-mode*
+       (.divide 1M ^BigDecimal (scale/apply a) (int scale/*rounding-mode*))
        (.divide 1M ^BigDecimal (scale/apply a)))))
   ([^Money a b]
-   (divide ^Money a b *rounding-mode*))
-  ([^Money a b rounding-mode]
    (if (money? b)
      (let [b ^Money b]
        (if (= (.id ^Currency (.currency ^Money a))
@@ -304,8 +277,8 @@
          (let [^BigDecimal x (.amount ^Money a)
                ^BigDecimal y (.amount ^Money b)]
            (if (= y BigDecimal/ONE) a
-               (if rounding-mode
-                 (.divide ^BigDecimal x ^BigDecimal y (int rounding-mode))
+               (if scale/*rounding-mode*
+                 (.divide ^BigDecimal x ^BigDecimal y (int scale/*rounding-mode*))
                  (.divide ^BigDecimal x ^BigDecimal y))))
          (throw (ex-info
                  (str "Cannot divide by an amount of different currency.")
@@ -314,12 +287,20 @@
            ^BigDecimal y (scale/apply b)]
        (if (= y BigDecimal/ONE) a
            (Money. ^Currency   (.currency ^Money a)
-                   ^BigDecimal (if rounding-mode
-                                 (.divide ^BigDecimal x ^BigDecimal y (int rounding-mode))
+                   ^BigDecimal (if scale/*rounding-mode*
+                                 (.divide ^BigDecimal x ^BigDecimal y (int scale/*rounding-mode*))
                                  (.divide ^BigDecimal x ^BigDecimal y)))))))
-  (^Money [^Money a b r & more]
-   (reduce #(divide ^Money %1 %2 ^int r) (divide ^Money a b ^int r) more)))
+  (^Money [^Money a b & more]
+   (reduce divide (divide ^Money a b) more)))
 
+;;
+;; Contextual macros.
+;;
+
+(defmacro with-rounding
+  "Alias for scale/with-rounding."
+  [rounding-mode & body]
+  (list* 'io.randomseed.bankster.scale/with-rounding rounding-mode body))
 ;;
 ;; Printing.
 ;;
