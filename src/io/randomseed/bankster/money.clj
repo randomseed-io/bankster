@@ -239,8 +239,11 @@
 ;;
 
 (defn add
-  "Adds two or more amounts of money of the same currency."
-  (^Money [] nil)
+  "Adds two or more amounts of money of the same currency. When called without any
+  arguments, returns 0 or a Money of 0 with a default currency (if the default
+  currency is set)."
+  (^Money []
+   (if currency/*default* (.Money ^Currency currency/*default* 0M) 0M))
   (^Money [^Money a] a)
   (^Money [^Money a ^Money b]
    (if (nil? a) b
@@ -263,7 +266,6 @@
 
 (defn subtract
   "Subtracts two or more amounts of money of the same currency."
-  (^Money [] nil)
   (^Money [^Money a]
    (Money. ^Currency   (.currency ^Money a)
            ^BigDecimal (.subtract 0M ^BigDecimal (.amount ^Money a))))
@@ -286,8 +288,19 @@
    (reduce subtract (subtract ^Money a ^Money b) more)))
 
 (defn divide
-  "Divides two or more amounts of money of the same currency or a number."
-  (^Money [] nil)
+  "Divides two or more amounts of money of the same currency or a number. If the two
+  values are a kind of Money, the result will be of BigDecimal number. If the first
+  value is a kind of Money and the second is a number, the result will be a
+  Money. For a single value it returns a division of 1 by that number, even if it is
+  a kind of Money. For more than 2 arguments it repeatedly divides them as
+  described.
+
+  When there are two amounts of the same currency, scale may vary depending on the
+  result and rounding is applied only when there is no exact decimal representation.
+
+  When there is a division of an amount by the regular number, the result is
+  re-scaled to match the scale of a currency. If the scaling requires rounding
+  enclosing the expression within with-rounding is required."
   ([a]
    (if (money? a)
      (Money. ^Currency   (.currency ^Money a)
