@@ -719,6 +719,16 @@
    (^Currency [c scale rounding-mode] (assoc c :sc (int scale)))))
 
 ;;
+;; Contextual macro.
+;;
+
+(defmacro with
+  "Sets a default currency in a lexical context of the body."
+  [currency & body]
+  `(binding [*default* (currency/of ~currency)]
+     ~@body))
+
+;;
 ;; Printing.
 ;;
 
