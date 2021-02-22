@@ -23,6 +23,16 @@
 (def ^{:tag 'int,  :const true} auto-scaled   (int -1))
 
 ;;
+;; Default currency.
+;;
+
+(def ^:dynamic ^Currency
+  *default*
+  "Default currency unit to be applied when creating Money objects without the currency
+  specified."
+  nil)
+
+;;
 ;; Global registry.
 ;;
 
@@ -546,6 +556,18 @@
    (set-default-registry! config/default-resource-path))
   (^Registry [resource-path]
    (registry/set! (config->registry resource-path))))
+
+;;
+;; Setting default currency.
+;;
+
+(defn set-default!
+  [c]
+  (alter-var-root #'*default* (constantly ^Currency (of c))))
+
+(defn unset-default!
+  []
+  (alter-var-root #'*default* (constantly nil)))
 
 ;;
 ;; Predicates.
