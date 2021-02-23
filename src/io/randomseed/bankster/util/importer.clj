@@ -6,7 +6,9 @@
 
   (:require [clojure.java.io                 :as       io]
             [clojure.data.csv                :as      csv]
+            [clojure.string                  :as      str]
             [puget.printer                   :as    puget]
+            [io.randomseed.bankster          :as bankster]
             [io.randomseed.bankster.scale    :as    scale]
             [io.randomseed.bankster.registry :as registry]
             [io.randomseed.bankster.currency :as currency]
@@ -32,6 +34,18 @@
 (def ^String ^private ^const default-export-filename
   "Default EDN export file."
   "registry-export.edn")
+
+(def ^String ^private ^const default-reader-filenames
+  "Default data reader filenames."
+  ["data_readers.clj" "data_readers.cljc"])
+
+(def ^String ^private ^const default-handlers-pathname
+  "Default pathname of a reader handlers file."
+  "io/randomseed/bankster/money/reader_handlers.clj")
+
+(def ^String ^private ^const default-handlers-namespace
+  "Default namespace of a reader handlers."
+  "io.randomseed.bankster.money.reader-handlers")
 
 (def ^String ^private ^const default-countries-csv
   "Default CSV file with country database."
@@ -156,6 +170,62 @@
     ^Registry registry]
    (when-some [rdir (fs/resource-pathname default-resource-name)]
      (spit (io/file rdir filename) (puget/pprint-str (registry->map registry))))))
+
+;;
+;; Readers generator.
+;;
+
+(defn handler-preamble
+  ([]
+   (handler-preamble default-handlers-namespace))
+  ([handlers-namespace]
+   `(ns ~(symbol handlers-namespace))))
+
+(defn handler-gen
+  [names]
+  (map
+   (fn [n]
+     (list 'defn (symbol (str "funds-" n))
+           '[[a b]]
+           (list 'let '[[c am] (if (number? a) [b a] [a b])]
+                 (list 'io.randomseed.bankster.money/funds
+                       (list 'keyword (str n) '(str (symbol c))) 'am))))
+   names))
+
+(defn readers-export
+  ([]
+   (readers-export (registry/state) default-reader-filenames default-handlers-pathname default-handlers-namespace))
+  ([^Registry registry]
+   (readers-export registry default-reader-filenames default-handlers-pathname default-handlers-namespace))
+  ([^Registry registry filenames]
+   (readers-export registry filenames default-handlers-pathname default-handlers-namespace))
+  ([^Registry registry filenames handlers-pathname handlers-namespace]
+   (when-some [nsses (->> (.cur-id->cur ^Registry registry)
+                          (map (comp namespace first))
+                          (filter identity)
+                          set seq)]
+     (let [m (->> nsses
+                  (map #(vector (symbol "money" %) (symbol handlers-namespace (str "funds-" %))))
+                  (into {'money 'io.randomseed.bankster.money/funds}))]
+       (when-some [fdir (io/resource (first default-reader-filenames))]
+         (when-some [pdir (.getParent (io/file fdir))]
+           (when-some [hfile (io/file pdir handlers-pathname)]
+             (println)
+             (println "------------------- readers map:")
+             (println)
+             (puget/cprint m)
+             (println)
+             (doseq [f filenames]
+               (let [fname (io/file pdir f)]
+                 (println "Exporting to:" (str fname))
+                 (spit fname (puget/pprint-str m))))
+             (println "Generating handlers code to:" (str hfile))
+             (some->> nsses
+                      handler-gen
+                      (cons (handler-preamble handlers-namespace))
+                      (map puget/pprint-str)
+                      (str/join (str \newline \newline))
+                      (spit hfile)))))))))
 
 ;;
 ;; High-level operations.

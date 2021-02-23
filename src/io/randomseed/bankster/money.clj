@@ -10,7 +10,8 @@
             [io.randomseed.bankster.registry :as      registry]
             [io.randomseed.bankster.util.map :as           map]
             [io.randomseed.bankster.util.fs  :as            fs]
-            [io.randomseed.bankster.util     :refer       :all])
+            [io.randomseed.bankster.util     :refer       :all]
+            [io.randomseed.bankster.money.reader-handlers])
 
   (:import  [io.randomseed.bankster Currency Registry Money]
             [java.math MathContext RoundingMode]))
