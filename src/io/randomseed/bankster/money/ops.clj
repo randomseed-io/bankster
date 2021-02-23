@@ -4,7 +4,7 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [+ - * / =])
+  (:refer-clojure :exclude [+ - * / = not=])
 
   (:require [io.randomseed.bankster          :refer       :all]
             [io.randomseed.bankster.scale    :as         scale]
@@ -57,3 +57,12 @@
   =
   "Alias for io.randomseed.bankster.money/equal?."
   money/equal?)
+
+(def ^{:tag Boolean
+       :arglists '(^Boolean []
+                   ^Boolean [^Money a]
+                   ^Boolean [^Money a ^Money b]
+                   ^Boolean [^Money a ^Money b & more])}
+  not=
+  "Alias for io.randomseed.bankster.money/different?."
+  money/different?)
