@@ -456,7 +456,9 @@
   "For the given currency identifier or a currency object it creates a tagged literal
   in a form of #m/CURRENCY where the CURRENCY is a short currency code. As a side
   effect it creates a function of name io.randomseed.bankster.money/of-CURRENCY that
-  will handle the literal."
+  will handle the literal.
+
+  The literals will be bound to *data-readers* in a local thread."
   [c]
   (when-some [^Currency c (currency/of c)]
     (let [cush (currency/short-code c)
@@ -477,7 +479,7 @@
   (let [^Currency c (.currency ^Money m)
         a (.amount ^Money m)]
     (print-simple
-     (str "#" "Money["
+     (str "#money["
           a " "
           (currency/short-code c)
           "]")
