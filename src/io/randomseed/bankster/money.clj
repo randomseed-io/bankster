@@ -438,6 +438,26 @@
      ~@body))
 
 ;;
+;; Tagged literals.
+;;
+
+(defn defliteral
+  "For the given currency identifier or a currency object it creates a tagged literal
+  in a form of #m/CURRENCY where the CURRENCY is a short currency code. As a side
+  effect it creates a function of name io.randomseed.bankster.money/of-CURRENCY that
+  will handle the literal."
+  [c]
+  (when-some [^Currency c (currency/of c)]
+    (let [cush (currency/short-code c)
+          name (str "of-" cush)
+          nsnm "io.randomseed.bankster.money"
+          mkfn (fn ^Money [amount] ^Money (of c amount))
+          varn (intern (symbol nsnm) (symbol name) mkfn)]
+      (set! clojure.core/*data-readers*
+            (assoc clojure.core/*data-readers*
+                   (symbol "m" cush) varn)))))
+
+;;
 ;; Printing.
 ;;
 
