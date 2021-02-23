@@ -36,6 +36,7 @@
 ;;
 
 (defprotocol Accountable
+  "This protocol is used to create monetary values."
   (funds [num] [a b] [a b rounding-mode]))
 
 ;;
@@ -69,7 +70,6 @@
              {:amount amount :currency currency})))))
 
 (extend-protocol Accountable
-  "This protocol is used to create monetary values."
 
   Currency
 
