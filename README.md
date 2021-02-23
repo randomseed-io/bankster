@@ -3,28 +3,79 @@
 
 [![Bankster on Clojars](https://img.shields.io/clojars/v/io.randomseed/bankster.svg)](https://clojars.org/io.randomseed/bankster)
 
-Clojure library to operate on monetary units with cryptocurrency and other
-non-standard token support.
+Clojure library to operate on monetary units with cryptocurrencies and other
+non-standard currencies support.
 
 ## Features
 
-* Pure Clojure implementation.
+* Pure Clojure implementation based on Java's BigDecimal.
 
-* Polymorphic interface (registered currencies can be expressed as currency records,
-  numbers, strings or keywords).
+* Built-in standard currencies database, extendable using EDN file.
 
-* Supported operations: calculation, validation, matching, formatting.
+* Uses records to organize data: Registry, Currency, Money.
+
+* Polymorphic interface for currencies and monetary amounts.
 
 * Namespaced identifiers for non-ISO currencies (e.g. `crypto/ETH`).
+
+* Additional, common operators that can also be used on other numeric data.
+
+* Tagged literals for monetary amounts.
 
 ## Sneak peeks
 
 * It **shows information** about a currency:
 
 ```clojure
-(require '[io.randomseed.bankster.currency :as currency])
+(currency/of :PLN)
+#currency{:id :PLN, :ns :ISO-4217, :kind :FIAT, :nr 985, :sc 2}
 
-TBD
+(currency/of "crypto/BTC")
+#currency{:id :crypto/BTC, :ns :CRYPTO, :kind :DECENTRALIZED, :sc 8}
+
+(currency/of 'crypto/ETH)
+#currency{:id :crypto/ETH, :ns :CRYPTO, :kind :DECENTRALIZED, :sc 18}
+
+(currency/of 840)
+currency{:id :USD, :ns :ISO-4217, :kind :FIAT, :nr 840, :sc 2}
+```
+
+* It allows to **create a currency** and **register it**:
+
+```clojure
+(currency/new :petro/USD 999 2 :COMBANK)
+#currency{:id :petro/USD, :ns :PETRO, :kind :COMBANK, :nr 999, :sc 2}
+
+(currency/register! (currency/new :petro/USD 999 2 :COMBANK) :USA)
+#Registry@11efe93f[221 currencies, 250 countries, version: 2021022121170359]
+
+(currency/of :petro/USD)
+#currency{:id :petro/USD, :ns :PETRO, :kind :COMBANK, :nr 999, :sc 2}
+```
+
+* It allows to create **monetary amounts** with a currency:
+
+``` clojure
+(money/of :EUR 25)
+#money[25.00 EUR]
+
+(money/of EUR 25)
+#money[25.00 EUR]
+
+(money/of 25 :EUR)
+#money[25.00 EUR]
+
+(money/of crypto/BTC 10.1)
+#money/crypto[10.10000000 BTC]
+
+#money/crypto[1.31337 ETH]
+#money/crypto[1.313370000000000000 ETH]
+
+#money/crypto[BTC 1.31337]
+#money/crypto[1.31337000 BTC]
+
+#money[PLN 2.50]
+#money[2.50 PLN]
 ```
 
 And more…
