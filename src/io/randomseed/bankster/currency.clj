@@ -737,15 +737,15 @@
   (let [sc  (.sc   ^Currency c)
         nr  (.nr   ^Currency c)
         ki  (.kind ^Currency c)
-        nr  (when (> 0 nr) nr)]
+        nr  (when (> nr 0) nr)]
     (print-simple
-     (str "#" "Currency["
-          "id: " (.id ^Currency c)
-          ", domain: " (.ns ^Currency c)
-          (when ki (str ", kind: " ki) )
-          (when nr (str ", numeric: "))
-          ", scale: " (if (auto-scaled? sc) "auto" sc)
-          "]")
+     (str "#currency{"
+          ":id " (.id ^Currency c)
+          ", :ns " (.ns ^Currency c)
+          (when ki (str ", :kind " ki) )
+          (when nr (str ", :nr " nr))
+          (when-not (auto-scaled? sc)  (str ", :sc " sc))
+          "}")
      w)))
 
 ;;
