@@ -192,7 +192,7 @@
     (^Currency [^clojure.lang.Keyword id, ^Registry registry]
      (or (get (.cur-id->cur ^Registry registry) id)
          (throw (ex-info
-                 (str "Currency " id " not found in a registry.")
+                 (str "Currency " (symbol id) " not found in a registry.")
                  {:registry registry})))))
 
   (id
