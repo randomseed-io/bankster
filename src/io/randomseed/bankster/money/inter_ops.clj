@@ -20,27 +20,23 @@
   ([]            (money/add))
   ([a]           a)
   ([a b]         (if (money? a) (money/add a b) (clojure.core/+ a b)))
-  ([a b  & more] (if (money? a)
-                   (apply money/add a b more)
-                   (apply clojure.core/+ a b more))))
+  ([a b  & more] (if (money? a) (apply money/add a b more) (apply clojure.core/+ a b more))))
 
 (defn -
   ([a]           (if (money? a) (money/subtract a) (clojure.core/- a)))
   ([a b]         (if (money? a) (money/subtract a b) (clojure.core/- a b)))
-  ([a b & more]  (if (money? a)
-                   (apply money/subtract a b more)
-                   (apply clojure.core/- a b more))))
+  ([a b & more]  (if (money? a) (apply money/subtract a b more) (apply clojure.core/- a b more))))
 
 (defn *
   ([]            (money/multiply))
   ([a]           (if (money? a)     (money/multiply a) (clojure.core/* a)))
   ([a b]         (if (or (money? a) (money? b)) (money/multiply a b) (clojure.core/* a b)))
-  ([a b & more]  (reduce * (* a b) more)))
+  ([a b & more]  (apply money/multiply a b more)))
 
 (defn /
   ([a]           (if (money? a) (money/divide a) (clojure.core// a)))
   ([a b]         (if (money? a) (money/divide a b) (clojure.core// a b)))
-  ([a b & more]  (reduce / (/ a b) more)))
+  ([a b & more]  (if (money? a) (apply money/divide a b more) (apply clojure.core// a b more))))
 
 (defn =
   ([a]           true)
@@ -50,3 +46,12 @@
                      (recur b (first more) (next more))
                      (= b (first more)))
                    false)))
+
+(defn not=
+  ([a]           false)
+  ([a b]         (if (money? a) (if (money? b) (money/different? a b) true) (if (money? b) true (clojure.core/not= a b))))
+  ([a b & more]  (if (not= a b)
+                   (if (next more)
+                     (recur b (first more) (next more))
+                     (not= b (first more)))
+                   true)))
