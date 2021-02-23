@@ -96,6 +96,15 @@
     (^Money [a c]   (parse a c))
     (^Money [a c r] (parse a c r))))
 
+(defn- parse-currency-symbol
+  [c]
+  (if (and (symbol? c)
+           (if *registry*
+             (currency/defined? c *registry*)
+             (currency/defined? c)))
+    (keyword c)
+    c))
+
 (defmacro of
   "Returns the amount of money as a Money object consisting of a currency and a
   value. Currency can be a currency object and for registered currencies: a keyword,
@@ -118,12 +127,15 @@
   UP          – rounds away from zero
   UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
   ([currency]
-   `(funds ~currency))
+   (let [cur# (parse-currency-symbol currency)]
+     `(funds ~cur#)))
   ([currency amount]
-   `(funds ~currency ~amount))
+   (let [cur# (parse-currency-symbol currency)]
+     `(funds ~cur# ~amount)))
   ([currency amount rounding-mode]
-   (let [rms# (scale/parse-rounding rounding-mode)]
-     `(funds ~currency ~amount ~rms#))))
+   (let [rms# (scale/parse-rounding rounding-mode)
+         cur# (parse-currency-symbol currency)]
+     `(funds ~cur# ~amount ~rms#))))
 
 ;;
 ;; Scaling and rounding.
