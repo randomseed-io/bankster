@@ -206,7 +206,8 @@
                           set seq)]
      (let [m (->> nsses
                   (map #(vector (symbol "money" %) (symbol handlers-namespace (str "funds-" %))))
-                  (into {'money 'io.randomseed.bankster.money/funds}))]
+                  (into {'money    'io.randomseed.bankster.money/funds
+                         'currency 'io.randomseed.bankster.currency/unit}))]
        (when-some [fdir (io/resource (first default-reader-filenames))]
          (when-some [pdir (.getParent (io/file fdir))]
            (when-some [hfile (io/file pdir handlers-pathname)]
