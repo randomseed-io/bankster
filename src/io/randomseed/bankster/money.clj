@@ -52,7 +52,7 @@
      (apply parse ^Currency (first amount) (rest amount))
      (parse ^Currency currency/*default* amount)))
   (^Money [currency amount]
-   (if-some [^Currency c (currency/of currency (or *registry* @R))]
+   (if-some [^Currency c (currency/unit currency)]
      (let [s (int (scale/of ^Currency c))]
        (if (currency/auto-scaled? s)
          (Money. ^Currency c ^BigDecimal (scale/apply amount))
@@ -61,7 +61,7 @@
              (str "Cannot create money amount without a valid currency and a default currency was not set.")
              {:amount amount :currency currency}))))
   (^Money [^Currency currency amount rounding-mode]
-   (if-some [^Currency c (currency/of currency (or *registry* @R))]
+   (if-some [^Currency c (currency/unit currency)]
      (let [s (int (scale/of ^Currency c))]
        (if (currency/auto-scaled? s)
          (Money. ^Currency c ^BigDecimal (scale/apply amount))
@@ -108,15 +108,6 @@
     (^Money [a c]   (parse a c))
     (^Money [a c r] (parse a c r))))
 
-(defn- parse-currency-symbol
-  [c]
-  (if (and (symbol? c)
-           (if *registry*
-             (currency/defined? c *registry*)
-             (currency/defined? c)))
-    (keyword c)
-    c))
-
 (defmacro of
   "Returns the amount of money as a Money object consisting of a currency and a
   value. Currency can be a currency object and for registered currencies: a keyword,
@@ -139,16 +130,16 @@
   UP          – rounds away from zero
   UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
   ([currency]
-   (let [cur# (parse-currency-symbol currency)]
+   (let [cur# (currency/parse-currency-symbol currency)]
      `(funds ~cur#)))
   ([a b]
    (let [[currency amount] (if (number? a) [b a] [a b])
-         cur# (parse-currency-symbol currency)]
+         cur# (currency/parse-currency-symbol currency)]
      `(funds ~cur# ~amount)))
   ([a b rounding-mode]
    (let [[currency amount] (if (number? a) [b a] [a b])
          rms# (scale/parse-rounding rounding-mode)
-         cur# (parse-currency-symbol currency)]
+         cur# (currency/parse-currency-symbol currency)]
      `(funds ~cur# ~amount ~rms#))))
 
 ;;
@@ -448,8 +439,9 @@
 (defmacro with-currency
   "Sets a default currency in a lexical context of the body."
   [currency & body]
-  `(binding [currency/*default* (currency/of ~currency)]
-     ~@body))
+  (let [cur# (if (symbol? currency) (keyword currency) currency)]
+    `(binding [currency/*default* (currency/unit ~cur#)]
+       ~@body)))
 
 ;;
 ;; Tagged literals.
@@ -463,7 +455,7 @@
 
   The literals will be bound to *data-readers* in a local thread."
   [c]
-  (when-some [^Currency c (currency/of c)]
+  (when-some [^Currency c (currency/unit c)]
     (let [cush (currency/short-code c)
           name (str "of-" cush)
           nsnm "io.randomseed.bankster.money"
