@@ -23,16 +23,6 @@
 (def ^:private R (registry/global))
 
 ;;
-;; Dynamic registry of currencies.
-;;
-
-(def ^:dynamic ^Registry
-  *registry*
-  "Registry that if set to a truthy value (not nil and not false), will be used
-  instead of a global, shared registry."
-  nil)
-
-;;
 ;; Accountable protocol.
 ;;
 

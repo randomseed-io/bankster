@@ -39,6 +39,16 @@
 (def ^:private R (registry/global))
 
 ;;
+;; Dynamic registry of currencies.
+;;
+
+(def ^:dynamic ^Registry
+  *registry*
+  "Registry, that if set to a truthy value (not nil and not false), will be used
+  instead of a global, shared registry."
+  nil)
+
+;;
 ;; Auto-scaling predicate.
 ;;
 
@@ -92,29 +102,33 @@
   (^{:tag clojure.lang.Keyword :added "1.0.0"}
    id
    [id] [id registry]
-   "Returns currency identifier as keyword. If the registry is not given it will use
-  the default one. If the given argument is already an identifier (a keyword), it
+   "Returns currency identifier as a keyword. If the registry is not given, it will
+  use the global one, but will first try a registry bound to the currency/*registry*
+  dynamic variable. If the given argument is already an identifier (a keyword), it
   will be returned as is.")
 
   (^{:tag Currency :added "1.0.0"}
    unit
    [id] [id registry]
    "Returns a currency object for the given id and registry. If the registry is not
-  given it will use the default one. If the currency record is passed, it will be
+  given, it will use the global one, but will first try a registry bound to the
+  currency/*registry* dynamic variable. If the currency record is passed, it will be
   returned as is without consulting the registry.")
 
   (^{:tag Boolean :added "1.0.0"}
    defined?
    [id] [id registry]
    "Returns true if the given currency exists in a registry. If the registry is not given,
-  the default one is used.")
+  the global one will be used, trying a registry bound to the currency/*registry*
+  first.")
 
   (^{:tag Boolean :added "1.0.0"}
    same-ids?
    [a b] [a b registry]
    "Returns true if two currencies have the same ID. That does not mean the objects
   are of the same contents (e.g. numerical IDs or scales may differ) but it's more
-  performant in 99% cases."))
+  performant in 99% cases. If the registry is not given, it will use the global one,
+  but will first try a registry bound to the currency/*registry* dynamic variable."))
 
 ;;
 ;; Currency querying functions, Monetary implementation.
@@ -134,7 +148,7 @@
 
   (defined?
     (^Boolean [currency]
-     (contains? (.cur-id->cur ^Registry @R) (.id ^Currency currency)))
+     (contains? (.cur-id->cur ^Registry (or *registry* @R)) (.id ^Currency currency)))
     (^Boolean [currency, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) (.id ^Currency currency))))
 
@@ -156,7 +170,7 @@
 
   (id
     (^clojure.lang.Keyword [num]
-     (id (long num) @R))
+     (id (long num) (or *registry* @R)))
     (^clojure.lang.Keyword [num, ^Registry registry]
      (if-some [c (get (.cur-nr->cur ^Registry registry) num)]
        (.id ^Currency c)
@@ -166,17 +180,18 @@
 
   (defined?
     (^Boolean [num]
-     (contains? (.cur-nr->cur ^Registry @R) num))
+     (contains? (.cur-nr->cur ^Registry (or *registry* @R)) num))
     (^Boolean [num, ^Registry registry]
      (contains? (.cur-nr->cur ^Registry registry) num)))
 
   (same-ids?
     (^Boolean [a b]
-     (if-some [c (get (.cur-nr->cur ^Registry @R) a)]
-       (= (.id ^Currency c) (id b @R))
-       (throw (ex-info
-               (str "Currency with the numeric ID of " num " not found in a registry.")
-               {:registry @R}))))
+     (let [r (or *registry* @R)]
+       (if-some [c (get (.cur-nr->cur ^Registry r) a)]
+         (= (.id ^Currency c) (id b r))
+         (throw (ex-info
+                 (str "Currency with the numeric ID of " num " not found in a registry.")
+                 {:registry r})))))
     (^Boolean [a b ^Registry registry]
      (if-some [c (get (.cur-nr->cur ^Registry registry) a)]
        (= (.id ^Currency c) (id b registry))
@@ -201,12 +216,12 @@
 
   (defined?
     (^Boolean [id]
-     (contains? (.cur-id->cur ^Registry @R) id))
+     (contains? (.cur-id->cur ^Registry (or *registry*@R)) id))
     (^Boolean [id, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) id)))
 
   (same-ids?
-    (^Boolean [a b] (= a (id b @R)))
+    (^Boolean [a b] (= a (id b (or *registry* @R))))
     (^Boolean [a b ^Registry registry] (= a (id b registry))))
 
   String
@@ -221,7 +236,7 @@
 
   (defined?
     (^Boolean [id]
-     (contains? (.cur-id->cur ^Registry @R) (keyword id)))
+     (contains? (.cur-id->cur ^Registry (or *registry* @R)) (keyword id)))
     (^Boolean [id, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) (keyword id))))
 
@@ -241,7 +256,7 @@
 
   (defined?
     (^Boolean [id]
-     (contains? (.cur-id->cur ^Registry @R) (keyword id)))
+     (contains? (.cur-id->cur ^Registry (or *registry* @R)) (keyword id)))
     (^Boolean [id, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) (keyword id))))
 
@@ -369,7 +384,7 @@
   "Returns a set of country IDs (keywords) for which the given currency is main
   currency. If there are no countries associated with a currency, returns nil."
   (^clojure.lang.PersistentHashSet [c]
-   (countries c @R))
+   (countries c (or *registry* @R)))
   (^clojure.lang.PersistentHashSet [c, ^Registry registry]
    (get (.cur-id->ctr-ids ^Registry registry) ^clojure.lang.Keyword (id c))))
 
@@ -623,7 +638,7 @@
   that it is a currency with a keyword identifier or any other data type that can be
   successfully converted into such using the registry provided."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (keyword? (id c @R)))
+  (^Boolean [c] (keyword? (id c (or *registry* @R))))
   (^Boolean [c, ^Registry registry] (keyword? (id c registry))))
 
 (defn ^Boolean has-numeric-id?
@@ -635,7 +650,7 @@
   "Returns true if the given currency has at least one country for which it is an
   official currency."
   (^Boolean [c]
-   (has-country? c @R))
+   (has-country? c (or *registry* @R)))
   (^Boolean [c, ^Registry registry]
    (contains? (.cur-id->ctr-ids ^Registry registry) (id c))))
 
