@@ -46,7 +46,9 @@
   "Internal parser."
   {:tag Money, :no-doc true}
   (^Money [amount]
-   (parse ^Currency currency/*default* amount))
+   (if (sequential? amount)
+     (apply parse ^Currency (first amount) (rest amount))
+     (parse ^Currency currency/*default* amount)))
   (^Money [currency amount]
    (if-some [^Currency c (currency/of currency (or *registry* @R))]
      (let [s (int (scale/of ^Currency c))]
@@ -67,6 +69,7 @@
              {:amount amount :currency currency})))))
 
 (extend-protocol Accountable
+  "This protocol is used to create monetary values."
 
   Currency
 
@@ -88,6 +91,14 @@
     ([c]     nil)
     ([a b]   nil)
     ([a c r] (parse a c r)))
+
+
+  clojure.lang.Sequential
+
+  (funds
+    (^Money [v]     (apply funds v))
+    (^Money [v r]   (funds (first v) (second v) r))
+    (^Money [v b r] (funds (first v) b r)))
 
   Object
 
