@@ -37,7 +37,7 @@ non-standard currencies support.
 #currency{:id :crypto/ETH, :ns :CRYPTO, :kind :DECENTRALIZED, :sc 18}
 
 (currency/of 840)
-currency{:id :USD, :ns :ISO-4217, :kind :FIAT, :nr 840, :sc 2}
+#currency{:id :USD, :ns :ISO-4217, :kind :FIAT, :nr 840, :sc 2}
 ```
 
 * It allows to **create a currency** and **register it**:

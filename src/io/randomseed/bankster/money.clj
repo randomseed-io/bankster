@@ -141,11 +141,13 @@
   ([currency]
    (let [cur# (parse-currency-symbol currency)]
      `(funds ~cur#)))
-  ([currency amount]
-   (let [cur# (parse-currency-symbol currency)]
+  ([a b]
+   (let [[currency amount] (if (number? a) [b a] [a b])
+         cur# (parse-currency-symbol currency)]
      `(funds ~cur# ~amount)))
-  ([currency amount rounding-mode]
-   (let [rms# (scale/parse-rounding rounding-mode)
+  ([a b rounding-mode]
+   (let [[currency amount] (if (number? a) [b a] [a b])
+         rms# (scale/parse-rounding rounding-mode)
          cur# (parse-currency-symbol currency)]
      `(funds ~cur# ~amount ~rms#))))
 
