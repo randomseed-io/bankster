@@ -32,27 +32,27 @@ common operations. Please check it in a few days.
 ```clojure
 ;; global registry lookup with a keyword
 (currency/of :PLN)
-#currency{:id :PLN, :ns :ISO-4217, :kind :FIAT, :nr 985, :sc 2}
+#currency{:id :PLN, :domain :ISO-4217, :kind :FIAT, :nr 985, :sc 2}
 
 ;; global registry lookup with a string (incl. namespace a.k.a domain)
 (currency/of "crypto/BTC")
-#currency{:id :crypto/BTC, :ns :CRYPTO, :kind :DECENTRALIZED, :sc 8}
+#currency{:id :crypto/BTC, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 8}
 
 ;; global registry lookup using namespaced symbol
 (currency/of 'crypto/ETH)
-#currency{:id :crypto/ETH, :ns :CRYPTO, :kind :DECENTRALIZED, :sc 18}
+#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 18}
 
 ;; global registry lookup using ISO currency number
 (currency/of 840)
-#currency{:id :USD, :ns :ISO-4217, :kind :FIAT, :nr 840, :sc 2}
+#currency{:id :USD, :domain :ISO-4217, :kind :FIAT, :nr 840, :sc 2}
 
 ;; global registry lookup using tagged literal with a namespace
 #currency crypto/XLM
-#currency{:id :crypto/XLM, :ns :CRYPTO, :kind :FIDUCIARY, :sc 8}
+#currency{:id :crypto/XLM, :domain :CRYPTO, :kind :FIDUCIARY, :sc 8}
 
 ;; global registry lookup using tagged literal with an ISO currency number
 #currency 978
-#currency{:id :EUR, :ns :ISO-4217, :kind :FIAT, :nr 978, :sc 2}
+#currency{:id :EUR, :domain :ISO-4217, :kind :FIAT, :nr 978, :sc 2}
 ```
 
 * It allows to **create a currency** and **register it**:
@@ -60,15 +60,15 @@ common operations. Please check it in a few days.
 ```clojure
 ;; getting currency from a global registry
 (currency/of :petro/USD)
-#currency{:id :petro/USD, :ns :PETRO, :kind :COMBANK, :nr 999, :sc 2}
+#currency{:id :petro/USD, :domain :PETRO, :kind :COMBANK, :nr 999, :sc 2}
 
 ;; ad-hoc currency creation using constructor function
 (currency/new :petro/USD 999 2 :COMBANK)
-#currency{:id :petro/USD, :ns :PETRO, :kind :COMBANK, :nr 999, :sc 2}
+#currency{:id :petro/USD, :domain :PETRO, :kind :COMBANK, :nr 999, :sc 2}
 
 ;; ad-hoc currency creation using tagged literal
 #currency{:id :crypto/ETH :sc 18}
-#currency{:id :crypto/ETH, :ns :CRYPTO, :sc 18}
+#currency{:id :crypto/ETH, :domain :CRYPTO, :sc 18}
 
 ;; putting new currency into a global registry
 (currency/register! (currency/new :petro/USD 999 2 :COMBANK) :USA)
@@ -129,6 +129,7 @@ It allows to perform **math operations** on monetary amounts:
 ;;
 ;; using inter-ops
 ;;
+
 (require '[io.randomseed.bankster.money.inter-ops :refer :all])
 
 (+ 1 2 3)
