@@ -44,35 +44,44 @@
 ;; Currency constructor
 ;;
 
+(declare map->new)
+
 (defn new-currency
   "Creates new currency record from values passed as arguments."
   (^Currency [id]
-   (Currency. (keyword id) (long no-numeric-id) (int auto-scaled)
-              (keyword (or (try-upper-case (namespace id)) :ISO-4217))
-              nil))
+   (if (map? id)
+     (map->new id)
+     (when (some? id)
+       (Currency. (keyword id) (long no-numeric-id) (int auto-scaled)
+                  (keyword (or (try-upper-case (namespace id)) :ISO-4217))
+                  nil))))
   (^Currency [id numeric-id]
-   (Currency. (keyword id) (long numeric-id) (int auto-scaled)
-              (keyword (or (try-upper-case (namespace id)) :ISO-4217))
-              nil))
-  (^Currency [id numeric-id, scale]
-   (Currency. (keyword id) (long numeric-id) (int scale)
-              (keyword (or (try-upper-case (namespace id)) :ISO-4217))
-              nil))
+   (when (some? id)
+     (Currency. (keyword id) (long numeric-id) (int auto-scaled)
+                (keyword (or (try-upper-case (namespace id)) :ISO-4217))
+                nil)))
+  (^Currency [id numeric-id scale]
+   (when (some? id)
+     (Currency. (keyword id) (long numeric-id) (int scale)
+                (keyword (or (try-upper-case (namespace id)) :ISO-4217))
+                nil)))
   (^Currency [id numeric-id scale kind]
-   (Currency. (keyword id) (long numeric-id) (int scale)
-              (keyword (or (try-upper-case (namespace id)) :ISO-4217))
-              (keyword kind))))
+   (when (some? id)
+     (Currency. (keyword id) (long numeric-id) (int scale)
+                (keyword (or (try-upper-case (namespace id)) :ISO-4217))
+                (keyword kind)))))
 
 (defn ^Currency map->new
   "Creates new currency record from a map."
   [^clojure.lang.IPersistentMap m]
-  (when-some [c ^Currency(new-currency (:id m)
-                                       (or (:nr m) (:numeric m) no-numeric-id)
-                                       (or (:sc m) (:scale   m) auto-scaled)
-                                       (:kind m))]
-    (if (> (count m) 1)
-      (merge c (dissoc m :id :nr :numeric :sc :scale :kind))
-      c)))
+  (when (and (some? m) (> (count m) 0))
+    (when-some [c ^Currency (new-currency (:id m)
+                                          (or (:nr m) (:numeric m) no-numeric-id)
+                                          (or (:sc m) (:scale   m) auto-scaled)
+                                          (:kind m))]
+      (if (> (count m) 1)
+        (merge c (dissoc m :id :nr :numeric :sc :scale :kind))
+        c))))
 
 (def ^{:tag Currency
        :arglists '(^Currency [id]
