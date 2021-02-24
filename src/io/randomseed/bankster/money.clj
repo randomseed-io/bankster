@@ -210,7 +210,7 @@
 
   (defined?
     (^Boolean [money]
-     (contains? (.cur-id->cur ^Registry @R)
+     (contains? (.cur-id->cur ^Registry (registry/get))
                 (.id ^Currency (.currency ^Money money))))
     (^Boolean [money, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry)
@@ -427,7 +427,8 @@
   (list* 'io.randomseed.bankster.scale/with-rounding rounding-mode body))
 
 (defmacro with-currency
-  "Sets a default currency in a lexical context of the body."
+  "Sets a default currency in a lexical context of the body. Has the same effect as
+  currency/with."
   [currency & body]
   (let [cur# (if (symbol? currency) (keyword currency) currency)]
     `(binding [currency/*default* (currency/unit ~cur#)]

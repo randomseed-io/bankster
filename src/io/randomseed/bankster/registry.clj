@@ -4,7 +4,7 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [new set!])
+  (:refer-clojure :exclude [new get set!])
 
   (:require     [clojure.string                  :as      str]
                 [io.randomseed.bankster          :as bankster]
@@ -28,7 +28,9 @@
 ;; Global, shared registry.
 ;;
 
-(def ^:private R (atom (Registry. {} {} {} {} (default-version))))
+(def R
+  "Global registry object based on an Atom."
+  (atom (Registry. {} {} {} {} (default-version))))
 
 (defn ^clojure.lang.Atom global
   "Returns global registry object."
@@ -39,6 +41,26 @@
   "Returns current state of a global registry."
   []
   (deref R))
+
+;;
+;; Dynamic registry.
+;;
+
+(def ^:dynamic ^Registry
+  *default*
+  "Registry, that if set to a truthy value (not nil and not false), will be used
+  instead of a global, shared registry."
+  nil)
+
+;;
+;; Registry state getter.
+;;
+
+(defmacro get
+  "Gets the current state of a global registry. If the dynamic variable *default* is
+  set to a truthy value, it will be used instead."
+  []
+  `(or *default* (deref R)))
 
 ;;
 ;; Registry constructor.
@@ -130,13 +152,24 @@
                          version))))
 
 ;;
+;; Contextual macro.
+;;
+
+(defmacro with
+  "Sets a registry in a lexical context of the body to be used instead of a global one
+  in functions which require the registry and it was not passed as an argument."
+  [^Registry registry & body]
+  `(binding [*default* ^Registry registry]
+     ~@body))
+
+;;
 ;; Getters and helpers.
 ;;
 
-(defmacro currency-by-id              [id registry] `(get (cur-id->cur     ^Registry registry) id))
-(defmacro currency-by-nr              [nr registry] `(get (cur-nr->cur     ^Registry registry) nr))
-(defmacro currency-by-country-id      [id registry] `(get (ctr-id->cur     ^Registry registry) id))
-(defmacro country-ids-for-currency-id [id registry] `(get (cur-id->ctr-ids ^Registry registry) id))
+(defmacro currency-by-id              [id registry] `(clojure.core/get (cur-id->cur     ^Registry registry) id))
+(defmacro currency-by-nr              [nr registry] `(clojure.core/get (cur-nr->cur     ^Registry registry) nr))
+(defmacro currency-by-country-id      [id registry] `(clojure.core/get (ctr-id->cur     ^Registry registry) id))
+(defmacro country-ids-for-currency-id [id registry] `(clojure.core/get (cur-id->ctr-ids ^Registry registry) id))
 
 ;;
 ;; Printing.
