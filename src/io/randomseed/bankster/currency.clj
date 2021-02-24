@@ -809,6 +809,16 @@
      ~@body))
 
 ;;
+;; Tagged literal handler.
+;;
+
+(defn lit
+  "Tagged literal handler."
+  [arg]
+  (if (or (nil? arg) (and (map? arg) (< (count arg) 1)))
+    '(quote nil) (unit arg)))
+
+;;
 ;; Printing.
 ;;
 

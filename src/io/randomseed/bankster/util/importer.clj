@@ -185,10 +185,10 @@
   [names]
   (map
    (fn [n]
-     (list 'defn (symbol (str "funds-" n))
+     (list 'defn (symbol (str "lit-" n))
            '[[a b]]
            (list 'let '[[c am] (if (number? a) [b a] [a b])]
-                 (list 'io.randomseed.bankster.money/funds
+                 (list 'io.randomseed.bankster.money/lit
                        (list 'keyword (str n) '(str (symbol c))) 'am))))
    names))
 
@@ -205,9 +205,9 @@
                           (filter identity)
                           set seq)]
      (let [m (->> nsses
-                  (map #(vector (symbol "money" %) (symbol handlers-namespace (str "funds-" %))))
-                  (into {'money    'io.randomseed.bankster.money/funds
-                         'currency 'io.randomseed.bankster.currency/unit}))]
+                  (map #(vector (symbol "money" %) (symbol handlers-namespace (str "lit-" %))))
+                  (into {'money    'io.randomseed.bankster.money/lit
+                         'currency 'io.randomseed.bankster.currency/lit}))]
        (when-some [fdir (io/resource (first default-reader-filenames))]
          (when-some [pdir (.getParent (io/file fdir))]
            (when-some [hfile (io/file pdir handlers-pathname)]

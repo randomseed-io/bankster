@@ -10,8 +10,7 @@
             [io.randomseed.bankster.registry :as      registry]
             [io.randomseed.bankster.util.map :as           map]
             [io.randomseed.bankster.util.fs  :as            fs]
-            [io.randomseed.bankster.util     :refer       :all]
-            [io.randomseed.bankster.money.reader-handlers])
+            [io.randomseed.bankster.util     :refer       :all])
 
   (:import  [io.randomseed.bankster Currency Registry Money]
             [java.math MathContext RoundingMode]))
@@ -438,6 +437,16 @@
 ;; Tagged literals.
 ;;
 
+;;
+;; Tagged literal handler.
+;;
+
+(defn lit
+  "Tagged literal handler."
+  [arg]
+  (if (or (nil? arg) (and (map? arg) (< (count arg) 1)))
+    '(quote nil) (funds arg)))
+
 (defn defliteral
   "For the given currency identifier or a currency object it creates a tagged literal
   in a form of #m/CURRENCY where the CURRENCY is a short currency code. As a side
@@ -455,6 +464,8 @@
       (set! clojure.core/*data-readers*
             (assoc clojure.core/*data-readers*
                    (symbol "m" cush) varn)))))
+
+(require '[io.randomseed.bankster.money.reader-handlers])
 
 ;;
 ;; Printing.
