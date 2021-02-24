@@ -43,7 +43,7 @@
   (^Money [currency amount]
    (if-some [^Currency c (currency/unit currency)]
      (let [s (int (scale/of ^Currency c))]
-       (if (currency/auto-scaled? s)
+       (if (currency/val-auto-scaled? s)
          (Money. ^Currency c ^BigDecimal (scale/apply amount))
          (Money. ^Currency c ^BigDecimal (scale/apply amount (int s)))))
      (throw (ex-info
@@ -52,7 +52,7 @@
   (^Money [^Currency currency amount rounding-mode]
    (if-some [^Currency c (currency/unit currency)]
      (let [s (int (scale/of ^Currency c))]
-       (if (currency/auto-scaled? s)
+       (if (currency/val-auto-scaled? s)
          (Money. ^Currency c ^BigDecimal (scale/apply amount))
          (Money. ^Currency c ^BigDecimal (scale/apply amount (int s) (int rounding-mode)))))
      (throw (ex-info
