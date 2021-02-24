@@ -60,36 +60,41 @@
 ;; Currency constructor
 ;;
 
-(defn ^Currency map->new
-  "Creates new currency record from a map."
-  [^clojure.lang.IPersistentMap map]
-  (when-some [c (map->Currency map)]
-    (assoc c :ns (keyword (or (namespace (.id ^Currency c)) :ISO-4217)))))
-
 (defn new-currency
   "Creates new currency record from values passed as arguments."
-  (^Currency [^clojure.lang.Keyword id]
-   (Currency. id no-numeric-id auto-scaled
+  (^Currency [id]
+   (Currency. (keyword id) (long no-numeric-id) (int auto-scaled)
               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
               nil))
-  (^Currency [^clojure.lang.Keyword id, ^long numeric-id]
-   (Currency. id (long numeric-id) auto-scaled
+  (^Currency [id numeric-id]
+   (Currency. (keyword id) (long numeric-id) (int auto-scaled)
               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
               nil))
-  (^Currency [^clojure.lang.Keyword id, ^long numeric-id, scale]
-   (Currency. id (long numeric-id) (int scale)
+  (^Currency [id numeric-id, scale]
+   (Currency. (keyword id) (long numeric-id) (int scale)
               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
               nil))
-  (^Currency [^clojure.lang.Keyword id, ^long numeric-id, scale, ^clojure.lang.Keyword kind]
-   (Currency. id (long numeric-id) (int scale)
+  (^Currency [id numeric-id scale kind]
+   (Currency. (keyword id) (long numeric-id) (int scale)
               (keyword (or (try-upper-case (namespace id)) :ISO-4217))
-              kind)))
+              (keyword kind))))
+
+(defn ^Currency map->new
+  "Creates new currency record from a map."
+  [^clojure.lang.IPersistentMap m]
+  (when-some [c ^Currency(new-currency (:id m)
+                                       (or (:nr m) (:numeric m) no-numeric-id)
+                                       (or (:sc m) (:scale   m) auto-scaled)
+                                       (:kind m))]
+    (if (> (count m) 1)
+      (merge c (dissoc m :id :nr :numeric :sc :scale :kind))
+      c)))
 
 (def ^{:tag Currency
-       :arglists '(^Currency [^clojure.lang.Keyword id]
-                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id]
-                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, scale]
-                   ^Currency [^clojure.lang.Keyword id, ^long numeric-id, scale, ^clojure.lang.Keyword kind])}
+       :arglists '(^Currency [id]
+                   ^Currency [id numeric-id]
+                   ^Currency [id numeric-id scale]
+                   ^Currency [id numeric-id scale kind])}
   new
   "Alias for new-currency."
   new-currency)
