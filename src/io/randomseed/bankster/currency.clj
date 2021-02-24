@@ -269,6 +269,26 @@
     (^Boolean [a b] (= (keyword a) (id b)))
     (^Boolean [a b ^Registry registry] (= (keyword a) (id b registry))))
 
+  clojure.lang.IPersistentMap
+
+  (unit
+    (^Currency [m] (map->new m))
+    (^Currency [m, ^Registry registry] (map->new m)))
+
+  (id
+    (^clojure.lang.Keyword [m] (keyword (:id m)))
+    (^clojure.lang.Keyword [m, ^Registry registry] (keyword (:id m))))
+
+  (defined?
+    (^Boolean [m]
+     (contains? (.cur-id->cur ^Registry (or *registry* @R)) (keyword (:id m))))
+    (^Boolean [m, ^Registry registry]
+     (contains? (.cur-id->cur ^Registry registry) (keyword (:id m)))))
+
+  (same-ids?
+    (^Boolean [m b] (= (keyword (:id m)) (id b)))
+    (^Boolean [m b ^Registry registry] (= (keyword (:id m)) (id b registry))))
+
   nil
 
   (unit
