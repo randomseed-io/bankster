@@ -181,6 +181,6 @@
     (print-simple
      (str "#Registry@" sid "{"
           ":currencies " (count (.cur-id->cur ^Registry r)) ", "
-          ":countries"   (count (.ctr-id->cur ^Registry r)) ", "
-          ":version "    (.version ^Registry r) "}")
+          ":countries "  (count (.ctr-id->cur ^Registry r)) ", "
+          ":version \""  (.version ^Registry r) "\"}")
      w)))
