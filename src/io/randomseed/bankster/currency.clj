@@ -342,9 +342,9 @@
 (defn ^clojure.lang.Keyword domain
   "Returns currency domain as a keyword. For currencies with simple identifiers it will
   be :ISO-4217. For currencies with namespace-qualified identifiers it will be the
-  upper-cased namespace name (e.g. CRYPTO) set during creation a currency object."
-  (^clojure.lang.Keyword [c] (.ns ^Currency (unit c)))
-  (^clojure.lang.Keyword [c, ^Registry registry] (.ns ^Currency (unit c registry))))
+  upper-cased namespace name (e.g. :CRYPTO) set during creation a currency object."
+  (^clojure.lang.Keyword [c] (.do ^Currency (unit c)))
+  (^clojure.lang.Keyword [c, ^Registry registry] (.do ^Currency (unit c registry))))
 
 (def ^{:tag clojure.lang.Keyword
        :arglists '(^clojure.lang.Keyword [c]
@@ -693,8 +693,8 @@
 (defn ^Boolean in-domain?
   "Returns true if the given currency has a domain set to the first given
   argument."
-  (^Boolean [ns c] (= ns (.ns ^Currency (unit c))))
-  (^Boolean [ns c ^Registry registry] (= ns (.ns ^Currency (unit c registry)))))
+  (^Boolean [ns c] (= ns (.do ^Currency (unit c))))
+  (^Boolean [ns c ^Registry registry] (= ns (.do ^Currency (unit c registry)))))
 
 (defn ^{:tag Boolean} big?
   "Returns true if the given currency has an automatic scale (decimal places)."
@@ -704,15 +704,15 @@
 (defn ^Boolean crypto?
   "Returns true if the given currency is a cryptocurrency. It is just a helper that
   check if the domain of a currency equals to :CRYPTO."
-  (^Boolean [c] (= :CRYPTO (.ns ^Currency (unit c))))
-  (^Boolean [c ^Registry registry] (= :CRYPTO (.ns ^Currency (unit c registry)))))
+  (^Boolean [c] (= :CRYPTO (.do ^Currency (unit c))))
+  (^Boolean [c ^Registry registry] (= :CRYPTO (.do ^Currency (unit c registry)))))
 
 (defn ^Boolean iso?
   "Returns true if the given currency is an official currency and its identifier is
-  compliant with ISO standard. It is just a helper that check if the :ns field of a
+  compliant with ISO standard. It is just a helper that check if the :do field of a
   currency equals :ISO-4217."
-  (^Boolean [c] (= :ISO-4217 (.ns ^Currency (unit c))))
-  (^Boolean [c ^Registry registry] (= :ISO-4217 (.ns ^Currency (unit c registry)))))
+  (^Boolean [c] (= :ISO-4217 (.do ^Currency (unit c))))
+  (^Boolean [c ^Registry registry] (= :ISO-4217 (.do ^Currency (unit c registry)))))
 
 (def ^{:tag Boolean
        :arglists '(^Boolean [c] ^Boolean [c ^Registry registry])}
@@ -821,7 +821,7 @@
     (print-simple
      (str "#currency{"
           ":id " (.id ^Currency c)
-          ", :ns " (.ns ^Currency c)
+          ", :domain " (.do ^Currency c)
           (when ki (str ", :kind " ki) )
           (when nr (str ", :nr " nr))
           (when-not (auto-scaled? sc)  (str ", :sc " sc))

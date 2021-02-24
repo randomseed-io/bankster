@@ -14,7 +14,7 @@
     [^clojure.lang.Keyword id                        ; currency ID (e.g. :EUR or :crypto/ETH)
      ^long                 nr                        ; currency numeric ID (e.g. 978 or 0)
      ^int                  sc                        ; currency supported scale (decimal places, e.g. 2 or -1)
-     ^clojure.lang.Keyword ns                        ; currency domain (e.g. :ISO-4217 or :CRYPTO)
+     ^clojure.lang.Keyword do                        ; currency domain (e.g. :ISO-4217 or :CRYPTO)
      ^clojure.lang.Keyword kind]                     ; currency kind (e.g. :FIAT or :DECENTRALIZED)
 
   Object
