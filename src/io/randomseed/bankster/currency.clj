@@ -402,7 +402,7 @@
   (^Currency [^clojure.lang.Keyword country-id]
    (of-country country-id (registry/get)))
   (^Currency [^clojure.lang.Keyword country-id, ^Registry registry]
-   (get (.ctr-id->cur ^Registry registry))))
+   (get (.ctr-id->cur ^Registry registry) (keyword country-id))))
 
 ;;
 ;; Parsing helpers.
@@ -471,19 +471,42 @@
           (assoc :ctr-id->cur (apply dissoc ctr-to-cur country-ids))))))
 
 (defn ^Registry unregister
-  "Removes currency from the given registry. Also removes country constrains when
-  necessary. Returns updated registry."
-  [^Registry registry, currency]
-  (let [^Currency c (unit currency registry)
-        currency-id (id c)
-        country-ids (get (.cur-id->ctr-ids ^Registry registry) currency-id)
-        ^Registry registry (-> registry
-                               (map/dissoc-in [:cur-id->cur currency-id])
-                               (map/dissoc-in [:cur-nr->cur (nr c)]))]
-    (if-not (contains? (.cur-id->ctr-ids ^Registry registry) currency-id) registry
-            (as-> registry regi
-              (map/dissoc-in regi [:cur-id->ctr-ids currency-id])
-              (apply update regi :ctr-id->cur dissoc country-ids)))))
+  "Removes currency from the given registry. Also removes country and numeric ID
+  constrains when necessary. Returns updated registry.
+
+  Please note that removal of a currency whose identifier and numeric identifier are
+  the same as the currencies which are already registered, will not only remove the
+  existing currency identified by the ID but also remove numeric ID from within
+  currency objects present."
+  [^Registry registry currency]
+  (let [^Currency cur       (unit currency registry)
+        proposed-nr         (.nr ^Currency cur)
+        proposed-nr         (when (not= proposed-nr no-numeric-id) proposed-nr)
+        registered-id       (.id ^Currency cur)
+        registered-cur      (get (.cur-id->cur ^Registry registry) registered-id)
+        registered-nr       (when registered-cur (.nr ^Currency registered-cur))
+        registered-nr       (when (and registered-nr (not= registered-nr no-numeric-id)) registered-nr)
+        registered-by-nr    (when proposed-nr (get (.cur-nr->cur ^Registry registry) (long proposed-nr)))
+        registered-by-nr-id (when registered-by-nr (.id ^Currency registered-by-nr))
+        new-by-nr           (when (and registered-by-nr-id
+                                       (or (not= registered-by-nr-id registered-id)
+                                           (not= registered-by-nr registered-nr)))
+                              (assoc registered-by-nr :nr (long no-numeric-id)))
+        country-ids         (get (.cur-id->ctr-ids ^Registry registry) registered-id)
+        ^Registry registry  (if-not new-by-nr
+                              registry
+                              (-> registry
+                                  (assoc-in [:cur-id->cur registered-by-nr-id] new-by-nr)
+                                  (assoc-in [:ctr-id->cur registered-by-nr-id] new-by-nr)
+                                  (map/dissoc-in [:cur-nr->cur proposed-nr])))
+        ^Registry registry  (-> registry
+                                (map/dissoc-in [:cur-id->cur registered-id])
+                                (map/dissoc-in [:cur-nr->cur registered-nr]))]
+    (if-not (contains? (.cur-id->ctr-ids ^Registry registry) registered-id)
+      registry
+      (as-> registry regi
+        (map/dissoc-in regi [:cur-id->ctr-ids registered-id])
+        (apply update regi :ctr-id->cur dissoc country-ids)))))
 
 (defn ^Registry remove-countries
   "Removes countries from the given registry. Also unlinks constrained currencies in
@@ -537,19 +560,25 @@
               ^Boolean update?]
    (let [^Currency c (unit currency registry)
          cid         (.id ^Currency c)
-         cid-to-cur  (.cur-id->cur ^Registry registry)]
+         cnr         (.nr ^Currency c)
+         cid-to-cur  (.cur-id->cur ^Registry registry)
+         cnr-to-cur  (.cur-nr->cur ^Registry registry)]
      (when-not update?
        (when-some [^Currency p (get cid-to-cur cid)]
          (throw (ex-info
                  (str "Currency " cid " already exists in a registry.")
+                 {:currency c, :existing-currency p})))
+       (when-some [^Currency p (get cnr-to-cur cnr)]
+         (throw (ex-info
+                 (str "Currency with numeric ID of " cnr " already exists in a registry.")
                  {:currency c, :existing-currency p}))))
      (let [registry    (unregister registry c)
            cid-to-cur  (.cur-id->cur ^Registry registry)
            registry    (assoc registry :cur-id->cur (assoc cid-to-cur cid c))
            numeric-id  (.nr ^Currency c)
-           nr-to-cur   (.cur-nr->cur ^Registry registry)
+           cnr-to-cur  (.cur-nr->cur ^Registry registry)
            registry    (if (or (nil? numeric-id) (<= numeric-id 0)) registry
-                           (assoc registry :cur-nr->cur (assoc nr-to-cur (long numeric-id) c)))]
+                           (assoc registry :cur-nr->cur (assoc cnr-to-cur (long numeric-id) c)))]
        (add-countries registry currency country-ids)))))
 
 (defn ^Registry register!
