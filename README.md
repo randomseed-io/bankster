@@ -6,13 +6,16 @@
 Clojure library to operate on monetary units with cryptocurrencies and other
 non-standard currencies support.
 
+**This code is in alpha stage.** It should work but lacks tests, formatting and some
+common operations. Please check it in a few days.
+
 ## Features
 
 * Pure Clojure implementation based on Java's BigDecimal.
 
 * Built-in standard currencies database, extendable using EDN file.
 
-* Uses records to organize data: Registry, Currency, Money.
+* Uses records to organize data: `Registry`, `Currency`, `Money`.
 
 * Polymorphic interface for currencies and monetary amounts.
 
@@ -20,62 +23,122 @@ non-standard currencies support.
 
 * Additional, common operators that can also be used on other numeric data.
 
-* Tagged literals for monetary amounts.
+* Tagged literals for currencies and monetary amounts.
 
 ## Sneak peeks
 
 * It **shows information** about a currency:
 
 ```clojure
+;; global registry lookup with a keyword
 (currency/of :PLN)
 #currency{:id :PLN, :ns :ISO-4217, :kind :FIAT, :nr 985, :sc 2}
 
+;; global registry lookup with a string (incl. namespace a.k.a domain)
 (currency/of "crypto/BTC")
 #currency{:id :crypto/BTC, :ns :CRYPTO, :kind :DECENTRALIZED, :sc 8}
 
+;; global registry lookup using namespaced symbol
 (currency/of 'crypto/ETH)
 #currency{:id :crypto/ETH, :ns :CRYPTO, :kind :DECENTRALIZED, :sc 18}
 
+;; global registry lookup using ISO currency number
 (currency/of 840)
 #currency{:id :USD, :ns :ISO-4217, :kind :FIAT, :nr 840, :sc 2}
+
+;; global registry lookup using tagged literal with a namespace
+#currency crypto/XLM
+#currency{:id :crypto/XLM, :ns :CRYPTO, :kind :FIDUCIARY, :sc 8}
+
+;; global registry lookup using tagged literal with an ISO currency number
+#currency 978
+#currency{:id :EUR, :ns :ISO-4217, :kind :FIAT, :nr 978, :sc 2}
 ```
 
 * It allows to **create a currency** and **register it**:
 
 ```clojure
+;; getting currency from a global registry
+(currency/of :petro/USD)
+#currency{:id :petro/USD, :ns :PETRO, :kind :COMBANK, :nr 999, :sc 2}
+
+;; ad-hoc currency creation using constructor function
 (currency/new :petro/USD 999 2 :COMBANK)
 #currency{:id :petro/USD, :ns :PETRO, :kind :COMBANK, :nr 999, :sc 2}
 
-(currency/register! (currency/new :petro/USD 999 2 :COMBANK) :USA)
-#Registry@11efe93f[221 currencies, 250 countries, version: 2021022121170359]
+;; ad-hoc currency creation using tagged literal
+#currency{:id :crypto/ETH :sc 18}
+#currency{:id :crypto/ETH, :ns :CRYPTO, :sc 18}
 
-(currency/of :petro/USD)
-#currency{:id :petro/USD, :ns :PETRO, :kind :COMBANK, :nr 999, :sc 2}
+;; putting new currency into a global registry
+(currency/register! (currency/new :petro/USD 999 2 :COMBANK) :USA)
+#Registry@11efe93f{:currencies 221, :countries 250, :version "2021022121170359"}
+
+;; registering new currency expressed as a tagged literal
+(currency/register! #currency{:id :crypto/AAA :sc 8})
+#Registry@7eaf7a70{:currencies 221, :countries 249, :version "2021022121170359"}
 ```
 
-* It allows to create **monetary amounts** with a currency:
+* It allows to create **monetary amounts**:
 
-``` clojure
+```clojure
+;; using money/of macro with keyword ID and an amount
 (money/of :EUR 25)
 #money[25.00 EUR]
 
-(money/of EUR 25)
-#money[25.00 EUR]
-
+;; using money/of macro with keyword ID and an amount as a first argument
 (money/of 25 :EUR)
 #money[25.00 EUR]
 
+;; using money/of macro with unquoted symbolic ID and an amount
+(money/of EUR 25)
+#money[25.00 EUR]
+
+;; using money/of macro with namespaced keyword ID and an amount
 (money/of crypto/BTC 10.1)
 #money/crypto[10.10000000 BTC]
 
+;; using tagged literal
+#money[PLN 2.50]
+#money[2.50 PLN]
+
+;; using tagged literal with a namespace
 #money/crypto[1.31337 ETH]
 #money/crypto[1.313370000000000000 ETH]
 
+;; using tagged literal with a namespace but the amount goes first
 #money/crypto[BTC 1.31337]
 #money/crypto[1.31337000 BTC]
+```
 
-#money[PLN 2.50]
-#money[2.50 PLN]
+It allows to perform **math operations** on monetary amounts:
+
+``` clojure
+;; adding money expressed with tagged literals and with a macro call
+(money/add #money[EUR 7] #money[0.54 EUR] (money/of 4.40 EUR))
+#money[11.94 EUR]
+
+;; dividing money by a number
+(money/divide #money/crypto[5 BTC] 2)
+#money/crypto[2.50000000 BTC]
+
+;; dividing money by a number of money (of the same currency)
+(money/divide #money/crypto[5 BTC] #money/crypto[2 BTC])
+2.5M
+
+;;
+;; using inter-ops
+;;
+(require '[io.randomseed.bankster.money.inter-ops :refer :all])
+
+(+ 1 2 3)
+6
+
+(+ #money[USD 8] #money[USD 7.12])
+#money[15.12 USD]
+
+(* 1 2 3 4 5 #money/crypto[0.7 ETH])
+#money/crypto[84.000000000000000000 ETH]
 ```
 
 And more…
