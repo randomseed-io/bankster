@@ -19,8 +19,8 @@
 ;; Constants.
 ;;
 
-(def ^{:tag 'long, :const true} no-numeric-id (long 0))
-(def ^{:tag 'int,  :const true} auto-scaled   (int -1))
+(def ^{:tag 'long, :const true} no-numeric-id (long -1))
+(def ^{:tag 'int,  :const true} auto-scaled   (int  -1))
 
 ;;
 ;; Default currency.
@@ -316,7 +316,7 @@
 
 (defn ^{:tag 'long} nr
   "Returns currency numeric ID as a long number. For currencies without the assigned
-  number it will return 0."
+  number it will return -1 (or currency/no-numeric-id)."
   (^long [c] (.nr ^Currency (unit c)))
   (^long [c ^Registry registry] (.nr ^Currency (unit c registry))))
 
@@ -418,7 +418,7 @@
   ([id numeric kind scale]
    (when (some? id)
      (let [numeric (if (number? numeric) numeric (or (try-parse-long numeric) no-numeric-id))
-           numeric (if (< numeric 0) no-numeric-id numeric)
+           numeric (if (< numeric 1) no-numeric-id numeric)
            scale   (if (number? scale) scale (or (try-parse-int scale) auto-scaled))
            scale   (if (< scale 0) auto-scaled scale)
            kind    (when (some? kind) (keyword kind))]
@@ -577,7 +577,7 @@
            registry    (assoc registry :cur-id->cur (assoc cid-to-cur cid c))
            numeric-id  (.nr ^Currency c)
            cnr-to-cur  (.cur-nr->cur ^Registry registry)
-           registry    (if (or (nil? numeric-id) (<= numeric-id 0)) registry
+           registry    (if (or (nil? numeric-id) (= numeric-id no-numeric-id) (<= numeric-id 0)) registry
                            (assoc registry :cur-nr->cur (assoc cnr-to-cur (long numeric-id) c)))]
        (add-countries registry currency country-ids)))))
 
@@ -679,8 +679,8 @@
 
 (defn ^Boolean has-numeric-id?
   "Returns true if the given currency has a numeric ID."
-  (^Boolean [c] (> 0 (.nr ^Currency (unit c))))
-  (^Boolean [c ^Registry registry] (> 0 (.nr ^Currency (unit c registry)))))
+  (^Boolean [c] (not= no-numeric-id (.nr ^Currency (unit c))))
+  (^Boolean [c ^Registry registry] (not= no-numeric-id (.nr ^Currency (unit c registry)))))
 
 (defn ^Boolean has-country?
   "Returns true if the given currency has at least one country for which it is an
@@ -827,7 +827,7 @@
   (let [sc  (.sc   ^Currency c)
         nr  (.nr   ^Currency c)
         ki  (.kind ^Currency c)
-        nr  (when (> nr 0) nr)]
+        nr  (when (and no-numeric-id (not= nr no-numeric-id)) nr)]
     (print-simple
      (str "#currency{"
           ":id " (.id ^Currency c)
