@@ -679,19 +679,20 @@
   creating an empty one."
   {:tag Registry :added "1.0.0"}
   (^Registry []
-   (config->registry config/default-resource-path))
+   (config->registry config/default-resource-path (registry/new-registry)))
   (^Registry [^String resource-path]
    (config->registry resource-path (registry/new-registry)))
   (^Registry [^String resource-path ^Registry regi]
-   (when (some? regi)
-     (when-some [cfg (config/load resource-path)]
-       (let [curs (prep-currencies (config/currencies cfg))
-             ctrs (prep-cur->ctr   (config/countries  cfg))
-             vers (get cfg :version)
-             regi (if (nil? vers) regi (assoc regi :version (str vers)))]
-         (reduce (fn ^Registry [^Registry r, ^Currency c]
-                   (register r c (get ctrs (.id ^Currency c))))
-                 regi curs))))))
+   (if-some [cfg (config/load resource-path)]
+     (let [regi (or regi (registry/new-registry))
+           curs (prep-currencies (config/currencies cfg))
+           ctrs (prep-cur->ctr   (config/countries  cfg))
+           vers (get cfg :version)
+           regi (if (nil? vers) regi (assoc regi :version (str vers)))]
+       (reduce (fn ^Registry [^Registry r, ^Currency c]
+                 (register r c (get ctrs (.id ^Currency c))))
+               regi curs))
+     regi)))
 
 ;;
 ;; Setting default registry.
