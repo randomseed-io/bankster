@@ -469,7 +469,7 @@
          (funds c)
          (if (nil? r)
            (funds c amount)
-           (funds c amount r)))))))
+           (funds c amount (scale/parse-rounding r))))))))
 
 (defn defliteral
   "For the given currency identifier or a currency object it creates a tagged literal
@@ -491,6 +491,15 @@
                       (when (thread-bound? #'clojure.core/*data-readers*)
                         (set! clojure.core/*data-readers*
                               (assoc clojure.core/*data-readers* snam varn)))))))
+
+(defn ns-lit
+  {:private true :added "1.0.0"}
+  [kw arg]
+  (let
+      [[a b r] (if (sequential? arg) arg [arg nil nil])
+       [c am]  (if (and (some? b) (number? a)) [b a] [a b])
+       c       (if (number? c) c (keyword kw (str (symbol c))))]
+    (lit [c am r])))
 
 (load "money/reader_handlers")
 

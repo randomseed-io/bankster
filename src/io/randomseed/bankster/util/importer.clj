@@ -179,18 +179,14 @@
   ([]
    (handler-preamble default-handlers-namespace))
   ([handlers-namespace]
-   (list 'in-ns (quote (symbol handlers-namespace)))))
+   (let [nsp (symbol (str "'" handlers-namespace))]
+     (list 'in-ns nsp))))
 
 (defn handler-gen
+  "Generates handler functions for tagged literals for each namespaced currency."
   [names]
   (map
-   (fn [n]
-     (list 'defn (symbol (str "lit-" n))
-           '[arg]
-           (list 'let '[[a b]  (if (sequential? arg) arg [arg nil])
-                        [c am] (if (number? a) [b a] [a b])]
-                 (list 'io.randomseed.bankster.money/lit
-                       (list 'keyword (str n) '(str (symbol c))) 'am))))
+   (fn [n] (list 'defn (symbol (str "lit-" n)) '[arg] (list 'ns-lit (str n) 'arg)))
    names))
 
 (defn readers-export
