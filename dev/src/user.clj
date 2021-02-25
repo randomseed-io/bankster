@@ -25,7 +25,9 @@
    [puget.printer                          :refer      [cprint]]
    [midje.repl                             :refer          :all]
    [kaocha.repl                            :refer          :all]
-   [infra]))
+   [infra])
+
+  (:import [io.randomseed.bankster Registry Currency Money]))
 
 (set! *warn-on-reflection* true)
 
@@ -45,6 +47,11 @@
   (refresh)
   (cst/with-instrument-disabled
     (load-facts :print-facts)))
+
+(alter-var-root #'*warn-on-reflection*
+                (constantly true)
+                (when (thread-bound? #'*warn-on-reflection*)
+                  (set! *warn-on-reflection* true)))
 
 (comment 
   (refresh-all)
