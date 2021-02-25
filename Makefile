@@ -12,7 +12,10 @@ docs:
 			bin/docs
 
 push-docs:
-			git subtree push --prefix=docs docs master
+			git subtree push --prefix=docs docs main
+
+readers:
+			bin/readers
 
 test-clj:
 			bin/test --no-profiling

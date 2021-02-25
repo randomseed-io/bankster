@@ -55,6 +55,10 @@
                                    org.clojure/spec.alpha               {:mvn/version "0.2.194"}
                                    jonase/eastwood                      {:mvn/version "0.3.13"}}}
 
+           :readers {
+                     :extra-paths ["aliases/readers"]
+                     :main-opts ["-m" "io.randomseed.bankster.readers.main"]}
+
            :docs {
                   :extra-paths ["aliases/codox"]
                   :extra-deps {org.clojure/tools.deps.alpha         {:mvn/version "0.9.857"}

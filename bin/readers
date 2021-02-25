@@ -1,0 +1,6 @@
+#!/bin/sh
+
+echo "[bankster] Generating reader handlers..."
+
+clojure -A:readers
+
