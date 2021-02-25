@@ -45,7 +45,7 @@
 
 (def ^String ^private ^const default-handlers-namespace
   "Default namespace of a reader handlers."
-  "io.randomseed.bankster.money.reader-handlers")
+  "io.randomseed.bankster.money")
 
 (def ^String ^private ^const default-countries-csv
   "Default CSV file with country database."
@@ -179,15 +179,16 @@
   ([]
    (handler-preamble default-handlers-namespace))
   ([handlers-namespace]
-   `(ns ~(symbol handlers-namespace))))
+   (list 'in-ns (quote (symbol handlers-namespace)))))
 
 (defn handler-gen
   [names]
   (map
    (fn [n]
      (list 'defn (symbol (str "lit-" n))
-           '[[a b]]
-           (list 'let '[[c am] (if (number? a) [b a] [a b])]
+           '[arg]
+           (list 'let '[[a b]  (if (sequential? arg) arg [arg nil])
+                        [c am] (if (number? a) [b a] [a b])]
                  (list 'io.randomseed.bankster.money/lit
                        (list 'keyword (str n) '(str (symbol c))) 'am))))
    names))

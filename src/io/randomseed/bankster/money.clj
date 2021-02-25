@@ -437,15 +437,17 @@
 ;; Tagged literals.
 ;;
 
-;;
-;; Tagged literal handler.
-;;
-
 (defn lit
   "Tagged literal handler."
-  [arg]
-  (if (or (nil? arg) (and (map? arg) (< (count arg) 1)))
-    '(quote nil) (funds arg)))
+  ([arg]
+   (let [[c amount r] (if (sequential? arg) arg [arg nil nil])]
+     (if (or (nil? c) (and (sequential? c) (nil? (seq c))))
+       '(quote nil)
+       (if (nil? amount)
+         (funds c)
+         (if (nil? r)
+           (funds c amount)
+           (funds c amount r)))))))
 
 (defn defliteral
   "For the given currency identifier or a currency object it creates a tagged literal
@@ -459,13 +461,16 @@
     (let [cush (currency/short-code c)
           name (str "of-" cush)
           nsnm "io.randomseed.bankster.money"
-          mkfn (fn ^Money [amount] ^Money (of c amount))
-          varn (intern (symbol nsnm) (symbol name) mkfn)]
-      (set! clojure.core/*data-readers*
-            (assoc clojure.core/*data-readers*
-                   (symbol "m" cush) varn)))))
+          mkfn (fn ^Money [amount] (if (nil? amount) '(quote nil) (of c amount)))
+          varn (intern (symbol nsnm) (symbol name) mkfn)
+          snam (symbol "m" cush)]
+      (alter-var-root #'clojure.core/*data-readers*
+                      (fn [m _] (assoc m snam varn))
+                      (when (thread-bound? #'clojure.core/*data-readers*)
+                        (set! clojure.core/*data-readers*
+                              (assoc clojure.core/*data-readers* snam varn)))))))
 
-(require '[io.randomseed.bankster.money.reader-handlers])
+(load "money/reader_handlers")
 
 ;;
 ;; Printing.
