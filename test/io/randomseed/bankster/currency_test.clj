@@ -51,4 +51,13 @@
 (facts "about currency tagged literal"
        (fact "when it returns nil for nil or empty map"
              #currency nil => nil
-             #currency {} => nil))
+             #currency {} => nil)
+       (fact "when it returns a currency object"
+             #currency {:id :EUR} => {:id :EUR :do :ISO-4217 :kind nil :nr -1 :sc -1}
+             #currency {:id :crypto/EUR} => {:id :crypto/EUR :do :CRYPTO :kind nil :nr -1 :sc -1}
+             #currency {:id :EUR :nr 1000} => {:id :EUR :do :ISO-4217 :kind nil :nr 1000 :sc -1}
+             #currency {:id :EUR :sc 2} => {:id :EUR :do :ISO-4217 :kind nil :nr -1 :sc 2}
+             #currency {:id :EUR :nr 1000 :sc 2 :kind :FIAT} => {:id :EUR :do :ISO-4217 :kind :FIAT :nr 1000 :sc 2}
+             #currency {:id :EUR :kind :FIAT} => {:id :EUR :do :ISO-4217 :kind :FIAT :nr -1 :sc -1}
+             #currency {:id :EUR :nr 1000 :kind :FIAT} => {:id :EUR :do :ISO-4217 :kind :FIAT :nr 1000 :sc -1}
+             #currency {:id :EUR :sc 2 :kind :FIAT} => {:id :EUR :do :ISO-4217 :kind :FIAT :nr -1 :sc 2}))
