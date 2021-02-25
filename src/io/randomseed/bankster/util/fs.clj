@@ -4,15 +4,15 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:import [org.apache.commons.io.input BOMInputStream]
-           [org.apache.commons.io        ByteOrderMark])
-
   (:require [clojure.string              :as      str]
             [clojure.java.io             :as       io]
             [clojure.java.classpath      :as       cp]
             [clojure.data.csv            :as      csv]
             [clojure.edn                 :as      edn]
-            [io.randomseed.bankster.util :refer  :all]))
+            [io.randomseed.bankster.util :refer  :all])
+
+  (:import [org.apache.commons.io.input BOMInputStream]
+           [org.apache.commons.io        ByteOrderMark]))
 
 (def ^String ^private ^const default-encoding
   "Default encoding for input files."
