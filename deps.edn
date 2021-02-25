@@ -88,7 +88,7 @@
                                                 :sha "2769a6224bfb938e777906ea311b3daf7d2220f5"}}}}
 
  :codox {:name        "bankster"
-         :description "Currencies and money processing in Clojure"
+         :description "Money Creation Made Easy"
          :license     "GNU Lesser General Public License 3.0"
          :package     io.randomseed/bankster
          :version     "1.0.0"
