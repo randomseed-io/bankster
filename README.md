@@ -1,5 +1,6 @@
 # Bankster /ˈbæŋkstə/
-## Money Creation Made Easy!
+
+**Money Creation Made Easy!**
 
 [![Bankster on Clojars](https://img.shields.io/clojars/v/io.randomseed/bankster.svg)](https://clojars.org/io.randomseed/bankster)
 
