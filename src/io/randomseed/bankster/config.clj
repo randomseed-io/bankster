@@ -8,7 +8,8 @@
 
   (:require [clojure.edn                    :as      edn]
             [io.randomseed.bankster.util    :refer  :all]
-            [io.randomseed.bankster.util.fs :as       fs])
+            [io.randomseed.bankster.util.fs :as       fs]
+            [io.randomseed.bankster])
 
   (:import  [io.randomseed.bankster Currency Registry]))
 

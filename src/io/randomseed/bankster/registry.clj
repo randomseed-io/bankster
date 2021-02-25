@@ -59,8 +59,9 @@
 (defmacro get
   "Gets the current state of a global registry. If the dynamic variable *default* is
   set to a truthy value, it will be used instead."
+  {:added "1.0.0"}
   []
-  `(or *default* (deref R)))
+  `(or ^Registry *default* ^Registry (deref R)))
 
 ;;
 ;; Registry constructor.
@@ -125,9 +126,10 @@
   [obj]
   (instance? Registry obj))
 
-(defn ^Registry set!
+(defn set-state
   "Sets current state of a global registry."
-  (^Registry [registry]
+  {:added "1.0.0" :tag Registry :private true}
+  (^Registry [^Registry registry]
    (if (registry? registry)
      (reset! R ^Registry registry)
      (reset! R (new-registry ^clojure.lang.PersistentHashMap registry))))
@@ -135,21 +137,36 @@
               ^clojure.lang.PersistentHashMap cur-nr->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->ctr-ids]
-   (set! R (new-registry cur-id->cur
-                         cur-nr->cur
-                         ctr-id->cur
-                         cur-id->ctr-ids
-                         (default-version))))
+   (set-state (new-registry cur-id->cur
+                            cur-nr->cur
+                            ctr-id->cur
+                            cur-id->ctr-ids
+                            (default-version))))
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
               ^clojure.lang.PersistentHashMap cur-nr->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->ctr-ids
               ^String version]
-   (set! R (new-registry cur-id->cur
-                         cur-nr->cur
-                         ctr-id->cur
-                         cur-id->ctr-ids
-                         version))))
+   (set-state (new-registry cur-id->cur
+                            cur-nr->cur
+                            ctr-id->cur
+                            cur-id->ctr-ids
+                            version))))
+
+(def ^{:tag Registry :added "1.0.0"
+       :arglists '(^Registry [^Registry registry]
+                   ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+                              ^clojure.lang.PersistentHashMap cur-nr->cur
+                              ^clojure.lang.PersistentHashMap ctr-id->cur
+                              ^clojure.lang.PersistentHashMap cur-id->ctr-ids]
+                   ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
+                              ^clojure.lang.PersistentHashMap cur-nr->cur
+                              ^clojure.lang.PersistentHashMap ctr-id->cur
+                              ^clojure.lang.PersistentHashMap cur-id->ctr-ids
+                              ^String version])}
+  set!
+  "Sets current state of a global registry."
+  set-state)
 
 ;;
 ;; Contextual macro.

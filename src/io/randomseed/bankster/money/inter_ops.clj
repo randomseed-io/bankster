@@ -29,7 +29,7 @@
 
 (defn *
   ([]            (money/multiply))
-  ([a]           (if (money? a)     (money/multiply a) (clojure.core/* a)))
+  ([a]           (if (money? a) (money/multiply a) (num a)))
   ([a b]         (if (or (money? a) (money? b)) (money/multiply a b) (clojure.core/* a b)))
   ([a b & more]  (apply money/multiply a b more)))
 

@@ -13,7 +13,8 @@
             [io.randomseed.bankster.util.map :as          map]
             [io.randomseed.bankster.util     :refer      :all])
 
-  (:import  [io.randomseed.bankster Currency Registry]))
+  (:import  [io.randomseed.bankster Currency Registry]
+            [java.math RoundingMode]))
 
 ;;
 ;; Constants.
@@ -158,7 +159,7 @@
 
   (defined?
     (^Boolean [currency]
-     (contains? (.cur-id->cur ^Registry (registry/get)) (.id ^Currency currency)))
+     (contains? (.cur-id->cur (registry/get)) (.id ^Currency currency)))
     (^Boolean [currency, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) (.id ^Currency currency))))
 
@@ -190,7 +191,7 @@
 
   (defined?
     (^Boolean [num]
-     (contains? (.cur-nr->cur ^Registry (registry/get)) num))
+     (contains? (.cur-nr->cur (registry/get)) num))
     (^Boolean [num, ^Registry registry]
      (contains? (.cur-nr->cur ^Registry registry) num)))
 
@@ -226,7 +227,7 @@
 
   (defined?
     (^Boolean [id]
-     (contains? (.cur-id->cur ^Registry (registry/get)) id))
+     (contains? (.cur-id->cur (registry/get)) id))
     (^Boolean [id, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) id)))
 
@@ -246,7 +247,7 @@
 
   (defined?
     (^Boolean [id]
-     (contains? (.cur-id->cur ^Registry (registry/get)) (keyword id)))
+     (contains? (.cur-id->cur (registry/get)) (keyword id)))
     (^Boolean [id, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) (keyword id))))
 
@@ -266,7 +267,7 @@
 
   (defined?
     (^Boolean [id]
-     (contains? (.cur-id->cur ^Registry (registry/get)) (keyword id)))
+     (contains? (.cur-id->cur (registry/get)) (keyword id)))
     (^Boolean [id, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) (keyword id))))
 
@@ -286,7 +287,7 @@
 
   (defined?
     (^Boolean [m]
-     (contains? (.cur-id->cur ^Registry (registry/get)) (keyword (:id m))))
+     (contains? (.cur-id->cur (registry/get)) (keyword (:id m))))
     (^Boolean [m, ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry) (keyword (:id m)))))
 
@@ -515,42 +516,45 @@
   currency objects present."
   {:tag Registry :added "1.0.0"}
   [^Registry registry currency]
-  (let [^Currency cur       (unit currency registry)
-        proposed-nr         (.nr ^Currency cur)
-        proposed-nr         (when (not= proposed-nr no-numeric-id) proposed-nr)
-        registered-id       (.id ^Currency cur)
-        registered-cur      (get (.cur-id->cur ^Registry registry) registered-id)
-        registered-nr       (when registered-cur (.nr ^Currency registered-cur))
-        registered-nr       (when (and registered-nr (not= registered-nr no-numeric-id)) registered-nr)
-        registered-by-nr    (when proposed-nr (get (.cur-nr->cur ^Registry registry) (long proposed-nr)))
-        registered-by-nr-id (when registered-by-nr (.id ^Currency registered-by-nr))
-        new-by-nr           (when (and registered-by-nr-id
-                                       (or (not= registered-by-nr-id registered-id)
-                                           (not= registered-by-nr registered-nr)))
-                              (assoc registered-by-nr :nr (long no-numeric-id)))
-        country-ids         (get (.cur-id->ctr-ids ^Registry registry) registered-id)
-        ^Registry registry  (if-not new-by-nr
-                              registry
-                              (-> registry
-                                  (assoc-in [:cur-id->cur registered-by-nr-id] new-by-nr)
-                                  (assoc-in [:ctr-id->cur registered-by-nr-id] new-by-nr)
-                                  (map/dissoc-in [:cur-nr->cur proposed-nr])))
-        ^Registry registry  (-> registry
-                                (map/dissoc-in [:cur-id->cur registered-id])
-                                (map/dissoc-in [:cur-nr->cur registered-nr]))]
-    (if-not (contains? (.cur-id->ctr-ids ^Registry registry) registered-id)
-      registry
-      (as-> registry regi
-        (map/dissoc-in regi [:cur-id->ctr-ids registered-id])
-        (apply update regi :ctr-id->cur dissoc country-ids)))))
+  (when registry
+    (let [^Currency cur       (unit currency registry)
+          proposed-nr         (.nr ^Currency cur)
+          proposed-nr         (when (not= proposed-nr no-numeric-id) proposed-nr)
+          registered-id       (.id ^Currency cur)
+          registered-cur      (get (.cur-id->cur ^Registry registry) registered-id)
+          registered-nr       (when registered-cur (.nr ^Currency registered-cur))
+          registered-nr       (when (and registered-nr (not= registered-nr no-numeric-id)) registered-nr)
+          registered-by-nr    (when proposed-nr (get (.cur-nr->cur ^Registry registry) (long proposed-nr)))
+          registered-by-nr-id (when registered-by-nr (.id ^Currency registered-by-nr))
+          new-by-nr           (when (and registered-by-nr-id
+                                         (or (not= registered-by-nr-id registered-id)
+                                             (not= registered-by-nr registered-nr)))
+                                (assoc registered-by-nr :nr (long no-numeric-id)))
+          country-ids         (get (.cur-id->ctr-ids ^Registry registry) registered-id)
+          ^Registry registry  (if-not new-by-nr
+                                registry
+                                (-> registry
+                                    (assoc-in [:cur-id->cur registered-by-nr-id] new-by-nr)
+                                    (assoc-in [:ctr-id->cur registered-by-nr-id] new-by-nr)
+                                    (map/dissoc-in [:cur-nr->cur proposed-nr])))
+          ^Registry registry  (-> registry
+                                  (map/dissoc-in [:cur-id->cur registered-id])
+                                  (map/dissoc-in [:cur-nr->cur registered-nr]))]
+      (if-not (contains? (.cur-id->ctr-ids ^Registry registry) registered-id)
+        registry
+        (as-> registry regi
+          (map/dissoc-in regi [:cur-id->ctr-ids registered-id])
+          (apply update regi :ctr-id->cur dissoc country-ids))))))
 
 (defn ^Registry remove-countries
   "Removes countries from the given registry. Also unlinks constrained currencies in
   proper locations. Returns updated registry."
   {:tag Registry :added "1.0.0"}
   [^Registry registry country-ids]
-  (when (and registry country-ids)
-    (remove-countries-core registry (prep-country-ids country-ids))))
+  (when registry
+    (if (nil? country-ids)
+      registry
+      (remove-countries-core registry (prep-country-ids country-ids)))))
 
 (defn ^Registry add-countries
   "Associates the given country or countries with a currency. If the currency does not
@@ -561,7 +565,7 @@
   linked with some other currency; in this case it will be unlinked first."
   {:tag Registry :added "1.0.0"}
   [^Registry registry ^Currency currency country-ids]
-  (when (and registry currency country-ids)
+  (when (some? registry)
     (when-not (defined? currency registry)
       (throw
        (ex-info (str "Currency "
@@ -599,7 +603,7 @@
               ^Currency currency
               country-ids
               ^Boolean update?]
-   (when (and registry currency)
+   (when (some? registry)
      (let [^Currency c (unit currency registry)
            cid         (.id ^Currency c)
            cnr         (.nr ^Currency c)
@@ -625,21 +629,21 @@
 
 (defn ^Registry register!
   "Adds currency and (optional) country to the global registry. Returns updated
-  registry."
+  registry. When the currency is nil, returns current state of the registry."
   {:tag Registry :added "1.0.0"}
   (^Registry [^Currency currency]
-   (when currency (swap! registry/R register currency)))
+   (if (nil? currency) @registry/R (swap! registry/R register currency)))
   (^Registry [^Currency currency ^clojure.lang.Keyword country-id-or-update?]
-   (when currency (swap! registry/R register currency country-id-or-update?)))
+   (if (nil? currency) @registry/R (swap! registry/R register currency country-id-or-update?)))
   (^Registry [^Currency currency ^clojure.lang.Keyword country-id, ^Boolean update?]
-   (when currency (swap! registry/R register currency country-id update?))))
+   (if (nil? currency) @registry/R (swap! registry/R register currency country-id update?))))
 
 (defn ^Registry unregister!
   "Removes currency from the global registry. Automatically removes country constrains
   when necessary. Returns updated registry."
   {:tag Registry :added "1.0.0"}
   [^Currency currency]
-  (when currency (swap! registry/R unregister currency)))
+  (if (nil? currency) @registry/R (swap! registry/R unregister currency)))
 
 (defn ^Registry add-countries!
   "Associates the given country (a keyword) or countries (seqable collection of
@@ -651,7 +655,7 @@
   linked with some other currency; in this case it will be unlinked first."
   {:tag Registry :added "1.0.0"}
   [^Currency currency country-ids]
-  (when (and currency country-ids) (swap! registry/R add-countries currency country-ids)))
+  (when (nil? currency) @registry/R (swap! registry/R add-countries currency country-ids)))
 
 (defn ^Registry remove-countries!
   "Removes country (a keyword) or countries (seqable collection of keywords) from the
@@ -659,7 +663,7 @@
   updated registry."
   {:tag Registry :added "1.0.0"}
   [country-ids]
-  (when country-ids (swap! registry/R remove-countries country-ids)))
+  (if (nil? country-ids) @registry/R (swap! registry/R remove-countries country-ids)))
 
 ;;
 ;; Currencies loading.
@@ -855,8 +859,8 @@
 
   (^Currency apply
    (^Currency [c] ^Currency c)
-   (^Currency [c scale]               (assoc c :sc (int scale)))
-   (^Currency [c scale rounding-mode] (assoc c :sc (int scale)))))
+   (^Currency [c scale] (assoc c :sc (int scale)))
+   (^Currency [c scale ^RoundingMode rounding-mode] (assoc c :sc (int scale)))))
 
 ;;
 ;; Contextual macros.

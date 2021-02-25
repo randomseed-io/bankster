@@ -77,19 +77,19 @@
 (defn ^java.net.URL paths->resource
   "For the given pathnames creates a resource object that resides within one of the
   Java resource directories. The resource must exist for the URI to be returned."
-  ([] (some-> (io/resource "")))
+  ([] (when-some [r (io/resource "")] r))
   ([& paths] (some->> paths (remove nil?) seq
                       (apply io/file) str
                       io/resource)))
 
 (defn ^Boolean integer-string?
-  [^String s]
   "Returns true if string contains valid integer number."
+  [^String s]
   (try
     (boolean (and (some? s) (Integer/parseInt s)))
     (catch NumberFormatException e false)))
 
-(def ^longs ^:private bom-utf-ary
+(def ^:private bom-utf-ary
   "Array of BOM encodings."
   (into-array [ByteOrderMark/UTF_16LE
                ByteOrderMark/UTF_16BE
@@ -116,7 +116,7 @@
   "Reads CSV file and returns a lazy sequence of rows."
   [resource]
   (let [stream   (io/input-stream resource)
-        bstream  (BOMInputStream. stream true bom-utf-ary)
+        bstream  (BOMInputStream. stream true ^longs bom-utf-ary)
         bomenc   (.getBOM bstream)
         encoding (if (some? bomenc) (.getCharsetName bomenc) default-encoding)]
     (with-open [reader (io/reader bstream :encoding encoding)]
