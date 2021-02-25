@@ -1,13 +1,13 @@
-# Bankster
-## Currency and Money Processing in Clojure
+# Bankster /ˈbæŋkstə/
+## Money Creation Made Easy!
 
 [![Bankster on Clojars](https://img.shields.io/clojars/v/io.randomseed/bankster.svg)](https://clojars.org/io.randomseed/bankster)
 
-Clojure library to operate on monetary units with cryptocurrencies and other
-non-standard currencies support.
+Clojure library to operate on monetary units with cryptocurrencies and custom
+currencies support.
 
-**This code is in alpha stage.** It should work but lacks tests, formatting and some
-common operations. Please check it in a few days.
+**This code is in alpha stage.** It should work but lacks some tests, string
+formatting functions and some common operations. Please check it in a few days.
 
 ## Features
 
@@ -53,6 +53,14 @@ common operations. Please check it in a few days.
 ;; global registry lookup using tagged literal with an ISO currency number
 #currency 978
 #currency{:id :EUR, :domain :ISO-4217, :kind :FIAT, :nr 978, :sc 2}
+
+;; global registry lookup using money tagged literal without an amount
+#money EUR
+#currency{:id :EUR, :domain :ISO-4217, :kind :FIAT, :nr 978, :sc 2}
+
+;; global registry lookup using namespaced money tagged literal
+#money/crypto ETH
+#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 18}
 ```
 
 * It allows to **create a currency** and **register it**:
@@ -109,6 +117,14 @@ common operations. Please check it in a few days.
 ;; using tagged literal with a namespace but the amount goes first
 #money/crypto[BTC 1.31337]
 #money/crypto[1.31337000 BTC]
+
+;; using default currency in a lexical context
+(currency/with EUR (money/of 1000))
+#money[1000.00 EUR]
+
+;; using default currency in a lexical context (alias for the above)
+(money/with-currency EUR (money/of 1000))
+#money[1000.00 EUR]
 ```
 
 It allows to perform **math operations** on monetary amounts:
