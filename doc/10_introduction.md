@@ -1,4 +1,6 @@
-# Bankster /ˈbæŋkstə/
+# Introduction
+
+## Bankster /ˈbæŋkstə/
 
 **Money Creation Made Easy!**
 
@@ -14,17 +16,11 @@ formatting functions and some common operations. Please check it in a few days.
 ## Features
 
 * Pure Clojure implementation based on Java's BigDecimal.
-
 * Built-in standard currencies database, extendable using EDN file.
-
 * Uses records to organize data: `Registry`, `Currency`, `Money`.
-
 * Polymorphic interface for currencies and monetary amounts.
-
 * Namespaced identifiers for non-ISO currencies (e.g. `crypto/ETH`).
-
 * Additional, common operators that can also be used on other numeric data.
-
 * Tagged literals for currencies and monetary amounts.
 
 ## Sneak peeks
@@ -205,6 +201,5 @@ FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-
 
 [LICENSE]:    https://github.com/randomseed-io/bankster/blob/master/LICENSE
