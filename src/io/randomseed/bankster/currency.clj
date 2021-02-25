@@ -673,32 +673,43 @@
   "Loads currencies and countries from an EDN file. First argument should be a function
   used to construct new currency objects and the second should be a string with a
   path to an EDN resource file containing registry data. Returns a registry
-  initialized using values from the EDN file."
+  initialized using values from the EDN file.
+
+  If there are 2 arguments the last one should be an existing registry to use instead
+  creating an empty one."
   {:tag Registry :added "1.0.0"}
   (^Registry []
    (config->registry config/default-resource-path))
   (^Registry [^String resource-path]
-   (when-some [cfg (config/load resource-path)]
-     (let [regi (registry/new-registry)
-           curs (prep-currencies (config/currencies cfg))
-           ctrs (prep-cur->ctr   (config/countries  cfg))
-           vers (get cfg :version)
-           regi (if (nil? vers) regi (assoc regi :version (str vers)))]
-       (reduce (fn ^Registry [^Registry r, ^Currency c]
-                 (register r c (get ctrs (.id ^Currency c))))
-               regi curs)))))
+   (config->registry resource-path (registry/new-registry)))
+  (^Registry [^String resource-path ^Registry regi]
+   (when (some? regi)
+     (when-some [cfg (config/load resource-path)]
+       (let [curs (prep-currencies (config/currencies cfg))
+             ctrs (prep-cur->ctr   (config/countries  cfg))
+             vers (get cfg :version)
+             regi (if (nil? vers) regi (assoc regi :version (str vers)))]
+         (reduce (fn ^Registry [^Registry r, ^Currency c]
+                   (register r c (get ctrs (.id ^Currency c))))
+                 regi curs))))))
 
 ;;
 ;; Setting default registry.
 ;;
 
 (defn ^Registry set-default-registry!
-  "Sets default, global registry using a configuration file."
+  "Sets default, global registry using a global configuration file and optional user's
+  configuration file. The highlighted version of a registry will be sourced from the
+  last configuration used."
   {:tag Registry :added "1.0.0"}
   (^Registry []
-   (set-default-registry! config/default-resource-path))
+   (set-default-registry! config/default-resource-path config/user-resource-path))
   (^Registry [resource-path]
-   (registry/set! (config->registry resource-path))))
+   (registry/set! (config->registry resource-path)))
+  (^Registry [resource-path & more]
+   (set-default-registry! resource-path)
+   (doseq [path more]
+     (registry/update! (partial config->registry path)))))
 
 ;;
 ;; Setting default currency.

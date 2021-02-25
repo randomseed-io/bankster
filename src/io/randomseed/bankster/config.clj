@@ -21,6 +21,10 @@
   "Default registry resource file – relative path."
   "io/randomseed/bankster/config.edn")
 
+(def ^String ^private ^const user-resource-path
+  "Additional registry resource file – relative path."
+  "META-INF/io/randomseed/bankster/currencies.edn")
+
 ;;
 ;; Config file reader.
 ;;

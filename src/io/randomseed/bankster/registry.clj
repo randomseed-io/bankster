@@ -4,7 +4,7 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [new get set!])
+  (:refer-clojure :exclude [new get set! update])
 
   (:require     [clojure.string                  :as      str]
                 [io.randomseed.bankster          :as bankster]
@@ -126,6 +126,14 @@
   [obj]
   (instance? Registry obj))
 
+(defn update
+  "Updates a registry with a function that should take a registry as its first argument
+  and return the updated one. It is a simple apply-based implementation provided for
+  the sake of symmetry with update! which operates on a global registry object."
+  {:added "1.0.0" :tag Registry}
+  [^Registry r ^clojure.lang.IFn fun & more]
+  (apply fun r more))
+
 (defn set-state
   "Sets current state of a global registry."
   {:added "1.0.0" :tag Registry :private true}
@@ -167,6 +175,12 @@
   set!
   "Sets current state of a global registry."
   set-state)
+
+(defn update!
+  "Updates a global registry using a function that should take a registry and return
+  the updated version of it."
+  [^clojure.lang.IFn fun & more]
+  (apply swap! R fun more))
 
 ;;
 ;; Contextual macro.
