@@ -28,17 +28,17 @@
   nil)
 
 ;;
-;; Constants describing rounding modes.
+;; Rounding modes.
 ;;
 
-(def ^{:const true :tag RoundingMode} ROUND_CEILING     RoundingMode/CEILING)
-(def ^{:const true :tag RoundingMode} ROUND_FLOOR       RoundingMode/FLOOR)
-(def ^{:const true :tag RoundingMode} ROUND_HALF_UP     RoundingMode/HALF_UP)
-(def ^{:const true :tag RoundingMode} ROUND_HALF_DOWN   RoundingMode/HALF_DOWN)
-(def ^{:const true :tag RoundingMode} ROUND_HALF_EVEN   RoundingMode/HALF_EVEN)
-(def ^{:const true :tag RoundingMode} ROUND_UP          RoundingMode/UP)
-(def ^{:const true :tag RoundingMode} ROUND_DOWN        RoundingMode/DOWN)
-(def ^{:const true :tag RoundingMode} ROUND_UNNECESSARY RoundingMode/UNNECESSARY)
+(def ^{:tag RoundingMode} ROUND_CEILING     RoundingMode/CEILING)
+(def ^{:tag RoundingMode} ROUND_FLOOR       RoundingMode/FLOOR)
+(def ^{:tag RoundingMode} ROUND_HALF_UP     RoundingMode/HALF_UP)
+(def ^{:tag RoundingMode} ROUND_HALF_DOWN   RoundingMode/HALF_DOWN)
+(def ^{:tag RoundingMode} ROUND_HALF_EVEN   RoundingMode/HALF_EVEN)
+(def ^{:tag RoundingMode} ROUND_UP          RoundingMode/UP)
+(def ^{:tag RoundingMode} ROUND_DOWN        RoundingMode/DOWN)
+(def ^{:tag RoundingMode} ROUND_UNNECESSARY RoundingMode/UNNECESSARY)
 
 ;;
 ;; Scalable protocol.
