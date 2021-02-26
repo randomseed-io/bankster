@@ -4,7 +4,7 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [> < >= <= + - * / = not=])
+  (:refer-clojure :exclude [> < >= <= + - * / = not= long compare])
 
   (:require [io.randomseed.bankster          :refer       :all]
             [io.randomseed.bankster.scale    :as         scale]
@@ -23,20 +23,20 @@
   ([a b  & more] (if (money? a) (apply money/add a b more) (apply clojure.core/+ a b more))))
 
 (defn -
-  ([a]           (if (money? a) (money/subtract a) (clojure.core/- a)))
-  ([a b]         (if (money? a) (money/subtract a b) (clojure.core/- a b)))
-  ([a b & more]  (if (money? a) (apply money/subtract a b more) (apply clojure.core/- a b more))))
+  ([a]           (if (money? a) (money/sub a) (clojure.core/- a)))
+  ([a b]         (if (money? a) (money/sub a b) (clojure.core/- a b)))
+  ([a b & more]  (if (money? a) (apply money/sub a b more) (apply clojure.core/- a b more))))
 
 (defn *
-  ([]            (money/multiply))
-  ([a]           (if (money? a) (money/multiply a) (num a)))
-  ([a b]         (if (or (money? a) (money? b)) (money/multiply a b) (clojure.core/* a b)))
-  ([a b & more]  (apply money/multiply a b more)))
+  ([]            (money/mul))
+  ([a]           (if (money? a) (money/mul a) (num a)))
+  ([a b]         (if (or (money? a) (money? b)) (money/mul a b) (clojure.core/* a b)))
+  ([a b & more]  (apply money/mul a b more)))
 
 (defn /
-  ([a]           (if (money? a) (money/divide a) (clojure.core// a)))
-  ([a b]         (if (money? a) (money/divide a b) (clojure.core// a b)))
-  ([a b & more]  (if (money? a) (apply money/divide a b more) (apply clojure.core// a b more))))
+  ([a]           (if (money? a) (money/div a) (clojure.core// a)))
+  ([a b]         (if (money? a) (money/div a b) (clojure.core// a b)))
+  ([a b & more]  (if (money? a) (apply money/div a b more) (apply clojure.core// a b more))))
 
 (defn =
   ([a]           true)
@@ -95,3 +95,7 @@
                              (recur b (first more) (next more))
                              (<= b (first more)))
                            false)))
+
+(defn long
+  {:added "1.0.0"}
+  [a] (if (money? a) (money/major->long a) (clojure.core/long a)))

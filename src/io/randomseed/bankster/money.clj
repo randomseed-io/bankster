@@ -265,7 +265,7 @@
 ;; Comparator.
 ;;
 
-(defn compare
+(defn compare-amounts
   "Compares two monetary amounts of the same currency, regardless of their
   scales. Returns -1 if the second one is less than, 0 if equal to, and 1 if it is
   greater than the first."
@@ -275,17 +275,17 @@
    (when-not (currency/same-ids? (.currency ^Money a) (.currency ^Money b))
      (throw (ex-info (str "Cannot compare different currencies.")
                      {:currency-1 a :currency-2 b})))
-   (int (.compareTo (.amount ^Money a) (.amount ^Money b)))))
+   (int (.compareTo ^BigDecimal (.amount ^Money a) ^BigDecimal (.amount ^Money b)))))
 
 ;;
 ;; Predicates.
 ;;
 
-(defn ^Boolean money?
+(defmacro money?
   "Returns true if the given value is a kind of Money."
-  {:tag Boolean :added "1.0.0"}
+  {:added "1.0.0"}
   [a]
-  (instance? Money a))
+  `(instance? Money ~a))
 
 (defn ^Boolean eq?
   "Return true if the money amounts and their currencies are equal. Note that
@@ -318,8 +318,8 @@
        (if (= sa sb)
          (.equals ^BigDecimal a ^BigDecimal b)
          (if (< sa sb)
-           (.equals (scale/apply a sb) ^BigDecimal b)
-           (.equals ^BigDecimal a (scale/apply b sa)))))))
+           (.equals ^BigDecimal (scale/apply a sb) ^BigDecimal b)
+           (.equals ^BigDecimal a ^BigDecimal (scale/apply b sa)))))))
   (^Boolean [^Money a ^Money b & more]
    (if (eq-am? a b)
      (if (next more)
@@ -401,6 +401,7 @@
   "Adds two or more amounts of money of the same currency. When called without any
   arguments, returns 0 or a Money of 0 with a default currency (if the default
   currency is set)."
+  {:tag Money :added "1.0.0"}
   (^Money []
    (if currency/*default* (Money. ^Currency currency/*default* 0M) 0M))
   (^Money [^Money a] a)
@@ -423,8 +424,9 @@
   (^Money [^Money a ^Money b & more]
    (reduce add (add ^Money a ^Money b) more)))
 
-(defn subtract
+(defn sub
   "Subtracts two or more amounts of money of the same currency."
+  {:tag Money :added "1.0.0"}
   (^Money [^Money a]
    (Money. ^Currency   (.currency ^Money a)
            ^BigDecimal (.subtract 0M ^BigDecimal (.amount ^Money a))))
@@ -444,9 +446,9 @@
                    (str "Cannot subtract amounts of two different currencies.")
                    {:minuend a :subtrahend b}))))))
   (^Money [^Money a ^Money b & more]
-   (reduce subtract (subtract ^Money a ^Money b) more)))
+   (reduce sub (sub ^Money a ^Money b) more)))
 
-(defn divide
+(defn div
   "Divides two or more amounts of money of the same currency or a number. If the two
   values are a kind of Money, the result will be of BigDecimal number. If the first
   value is a kind of Money and the second is a number, the result will be a
@@ -460,16 +462,17 @@
   When there is a division of an amount by the regular number, the result is
   re-scaled to match the scale of a currency. If the scaling requires rounding
   enclosing the expression within with-rounding is required."
-  ([a]
+  {:tag Money :added "1.0.0"}
+  (^Money [a]
    (if (money? a)
-     (Money. ^Currency   (.currency ^Money a)
+     (Money. ^Currency (.currency ^Money a)
              (if scale/*rounding-mode*
                ^BigDecimal (.divide 1M ^BigDecimal (.amount ^Money a) ^RoundingMode scale/*rounding-mode*)
                ^BigDecimal (.divide 1M ^BigDecimal (.amount ^Money a))))
      (if scale/*rounding-mode*
        (.divide 1M ^BigDecimal (scale/apply a) ^RoundingMode scale/*rounding-mode*)
        (.divide 1M ^BigDecimal (scale/apply a)))))
-  ([^Money a b]
+  (^Money [^Money a b]
    (if (money? b)
      (let [b ^Money b]
        (if (= (.id ^Currency (.currency ^Money a))
@@ -493,15 +496,13 @@
                                  (scale/apply (.divide ^BigDecimal x ^BigDecimal y)
                                               (.scale x))))))))
   (^Money [^Money a b & more]
-   (reduce divide (divide ^Money a b) more)))
+   (reduce div (div ^Money a b) more)))
 
-(defn multiply
-  "Multiplies two or more amounts of money of the same currency or a number. If the two
-  values are a kind of Money, . If the first
-  value is a kind of Money and the second is a number, the result will be a
+(defn mul
+  "Multiplies two or more amounts of money of the same currency or a number. If the
+  first value is a kind of Money and the second is a number, the result will be a
   Money. For a single value it returns a division of 1 by that number, even if it is
-  a kind of Money. For more than 2 arguments it repeatedly divides them as
-  described.
+  a kind of Money. For more than 2 arguments it repeatedly divides them as described.
 
   When there are two amounts of the same currency, scale may vary depending on the
   result and rounding is applied only when there is no exact decimal representation.
@@ -509,12 +510,13 @@
   When there is a division of an amount by the regular number, the result is
   re-scaled to match the scale of a currency. If the scaling requires rounding
   enclosing the expression within with-rounding is required."
-  ([]
+  {:tag Money :added "1.0.0"}
+  (^Money []
    (if currency/*default* (Money. ^Currency currency/*default* 1M) 1))
   ([^Money a] ^Money a)
-  ([a b]
-   (let [^Boolean ma (money? a)
-         ^Boolean mb (money? b)]
+  (^Money [a b]
+   (let [ma (money? a)
+         mb (money? b)]
      (when (and ma mb)
        (throw (ex-info (str "At least one value must be a regular number.")
                        {:multiplicant a :multiplier b})))
@@ -537,7 +539,65 @@
                                                       (int s))
                                          (scale/apply (.multiply ^BigDecimal x ^BigDecimal n) (int s))))))))))))
   (^Money [a b & more]
-   (reduce multiply (multiply a b) more)))
+   (reduce mul (mul a b) more)))
+
+
+;; (defn rem
+;;   [a b])
+
+;; (defn inc)
+;; (defn dec)
+;; (defn divide-to-integral)
+;; (defn divide-and-rem)
+;; (defn pow)
+;; (defn abs)
+;; (defn neg)
+;; (defn pos)
+;; (defn signum)
+;; (defn round)
+;; (defn strip)
+;; (defn min)
+;; (defn max)
+
+(defn major
+  "Returns the major part of the given amount."
+  {:tag BigDecimal :added "1.0.0"}
+  [^Money a]
+  (scale/apply (.amount ^Money a) 0 scale/ROUND_DOWN))
+
+(defn major->long
+  "Returns the major part of the given amount as a long number."
+  {:tag 'long :added "1.0.0"}
+  [^Money a]
+  (.longValueExact ^BigDecimal (.amount ^Money a)))
+
+(defn major->int
+  "Returns the major part of the given amount as an integer number."
+  {:tag 'int :added "1.0.0"}
+  [^Money a]
+  (.intValueExact ^BigDecimal (.amount ^Money a)))
+
+(defn minor
+  "Returns the minor part of the given amount."
+  {:tag BigDecimal :added "1.0.0"}
+  [^Money a]
+  (let [sc (scale/of (.currency ^Money a))]
+    (-> ^BigDecimal (.amount ^Money a)
+        ^BigDecimal (scale/apply sc scale/ROUND_DOWN)
+        ^BigDecimal (.remainder BigDecimal/ONE)
+        ^BigDecimal (.movePointRight sc))))
+
+(defn minor->long
+  "Returns the minor part of the given amount as a long number."
+  {:tag 'long :added "1.0.0"}
+  [^Money a]
+  (.longValueExact (minor ^Money a)))
+
+(defn minor->int
+  "Returns the minor part of the given amount as an integer number."
+  {:tag 'int :added "1.0.0"}
+  [^Money a]
+  (.intValueExact (minor ^Money a)))
 
 ;;
 ;; Contextual macros.
@@ -596,10 +656,9 @@
 (defn ns-lit
   {:private true :added "1.0.0"}
   [kw arg]
-  (let
-      [[a b r] (if (sequential? arg) arg [arg nil nil])
-       [c am]  (if (and (some? b) (number? a)) [b a] [a b])
-       c       (if (number? c) c (keyword kw (str (symbol c))))]
+  (let [[a b r] (if (sequential? arg) arg [arg nil nil])
+        [c am]  (if (and (some? b) (number? a)) [b a] [a b])
+        c       (if (number? c) c (keyword kw (str (symbol c))))]
     (lit [c am r])))
 
 (load "money/reader_handlers")

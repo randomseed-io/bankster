@@ -4,7 +4,7 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [+ - * / = not=])
+  (:refer-clojure :exclude [+ - * / = not= long > < >= <= compare])
 
   (:require [io.randomseed.bankster          :refer       :all]
             [io.randomseed.bankster.scale    :as         scale]
@@ -30,7 +30,7 @@
                    ^Money [^Money a ^Money b & more])}
   -
   "Alias for io.randomseed.bankster.money/subtract."
-  money/subtract)
+  money/sub)
 
 (def ^{:tag Money
        :arglists '(^Money []
@@ -39,7 +39,7 @@
                    ^Money [a b & more])}
   *
   "Alias for io.randomseed.bankster.money/multiply."
-  money/multiply)
+  money/mul)
 
 (def ^{:tag Money
        :arglists '(^Money [^Money a]
@@ -47,7 +47,7 @@
                    ^Money [^Money a ^Money b & more])}
   /
   "Alias for io.randomseed.bankster.money/divide."
-  money/divide)
+  money/div)
 
 (def ^{:tag Boolean
        :arglists '(^Boolean []
@@ -71,7 +71,7 @@
        :arglists '(^Boolean [^Money a]
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
-  gt?
+  >
   "Alias for io.randomseed.bankster.money/gt?."
   money/gt?)
 
@@ -79,7 +79,7 @@
        :arglists '(^Boolean [^Money a]
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
-  ge?
+  >=
   "Alias for io.randomseed.bankster.money/ge?."
   money/ge?)
 
@@ -87,7 +87,7 @@
        :arglists '(^Boolean [^Money a]
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
-  lt?
+  <
   "Alias for io.randomseed.bankster.money/lt?."
   money/lt?)
 
@@ -95,6 +95,6 @@
        :arglists '(^Boolean [^Money a]
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
-  le?
+  <=
   "Alias for io.randomseed.bankster.money/le?."
   money/le?)
