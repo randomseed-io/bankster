@@ -262,35 +262,136 @@
    (^Money [m scale ^RoundingMode rounding-mode] (scale-core ^Money m (int scale) ^RoundingMode rounding-mode))))
 
 ;;
+;; Comparator.
+;;
+
+(defn compare
+  "Compares two monetary amounts of the same currency, regardless of their
+  scales. Returns -1 if the second one is less than, 0 if equal to, and 1 if it is
+  greater than the first."
+  {:added "1.0.0" :tag 'int}
+  (^Boolean [^Money a] (int 0))
+  (^Boolean [^Money a ^Money b]
+   (when-not (currency/same-ids? (.currency ^Money a) (.currency ^Money b))
+     (throw (ex-info (str "Cannot compare different currencies.")
+                     {:currency-1 a :currency-2 b})))
+   (int (.compareTo (.amount ^Money a) (.amount ^Money b)))))
+
+;;
 ;; Predicates.
 ;;
 
 (defn ^Boolean money?
   "Returns true if the given value is a kind of Money."
+  {:tag Boolean :added "1.0.0"}
   [a]
   (instance? Money a))
 
-(defn ^Boolean equal?
-  "Return true if the money amounts and their currencies are equal."
+(defn ^Boolean eq?
+  "Return true if the money amounts and their currencies are equal. Note that
+  currencies with different scales are considered different."
+  {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money a] true)
   (^Boolean [^Money a ^Money b]
    (and (.equals (.amount ^Money a) (.amount ^Money b))
         (currency/same-ids? (.currency ^Money a)
                             (.currency ^Money b))))
   (^Boolean [^Money a ^Money b & more]
-   (if (equal? a b)
+   (if (eq? a b)
      (if (next more)
        (recur b (first more) (next more))
-       (equal? b (first more)))
+       (eq? b (first more)))
      false)))
 
-(defn ^Boolean different?
-  "Returns true if the money amounts or their currencies are different."
+(defn ^Boolean eq-am?
+  "Return true if the money amounts and their currencies are equal regardless of their
+  scales."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [^Money a] true)
+  (^Boolean [^Money a ^Money b]
+   (if-not (currency/same-ids? (.currency ^Money a) (.currency ^Money b))
+     false
+     (let [^BigDecimal am-a (.amount ^Money a)
+           ^BigDecimal am-b (.amount ^Money b)
+           sa (int (.scale am-a))
+           sb (int (.scale am-b))]
+       (if (= sa sb)
+         (.equals ^BigDecimal a ^BigDecimal b)
+         (if (< sa sb)
+           (.equals (scale/apply a sb) ^BigDecimal b)
+           (.equals ^BigDecimal a (scale/apply b sa)))))))
+  (^Boolean [^Money a ^Money b & more]
+   (if (eq-am? a b)
+     (if (next more)
+       (recur b (first more) (next more))
+       (eq-am? b (first more)))
+     false)))
+
+(defn ^Boolean ne?
+  "Returns true if the money amounts or their currencies are different. Note that
+  currencies with different scales are considered different."
+  {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money a] false)
   (^Boolean [^Money a ^Money b]
-   (not (equal? ^Money a ^Money b)))
+   (not (eq? ^Money a ^Money b)))
   (^Boolean [^Money a ^Money b & more]
-   (not (apply equal? ^Money a ^Money b more))))
+   (not (apply eq? ^Money a ^Money b more))))
+
+(defn gt?
+  "Returns non-nil if monetary amounts are in monotonically decreasing order,
+  otherwise false."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [^Money a] true)
+  (^Boolean [^Money a ^Money b]
+   (> (compare a b) 0))
+  (^Boolean [^Money a ^Money b & more]
+   (if (gt? a b)
+     (if (next more)
+       (recur b (first more) (next more))
+       (gt? b (first more)))
+     false)))
+
+(defn ge?
+  "Returns non-nil if monetary amounts are in monotonically non-increasing order,
+  otherwise false."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [^Money a] true)
+  (^Boolean [^Money a ^Money b]
+   (>= (compare a b) 0))
+  (^Boolean [^Money a ^Money b & more]
+   (if (ge? a b)
+     (if (next more)
+       (recur b (first more) (next more))
+       (ge? b (first more)))
+     false)))
+
+(defn lt?
+  "Returns non-nil if monetary amounts are in monotonically increasing order,
+  otherwise false."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [^Money a] true)
+  (^Boolean [^Money a ^Money b]
+   (< (compare a b) 0))
+  (^Boolean [^Money a ^Money b & more]
+   (if (lt? a b)
+     (if (next more)
+       (recur b (first more) (next more))
+       (lt? b (first more)))
+     false)))
+
+(defn le?
+  "Returns non-nil if monetary amounts are in monotonically non-decreasing order,
+  otherwise false."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [^Money a] true)
+  (^Boolean [^Money a ^Money b]
+   (<= (compare a b) 0))
+  (^Boolean [^Money a ^Money b & more]
+   (if (le? a b)
+     (if (next more)
+       (recur b (first more) (next more))
+       (le? b (first more)))
+     false)))
 
 ;;
 ;; Operations.

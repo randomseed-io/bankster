@@ -4,7 +4,7 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [+ - * / = not=])
+  (:refer-clojure :exclude [> < >= <= + - * / = not=])
 
   (:require [io.randomseed.bankster          :refer       :all]
             [io.randomseed.bankster.scale    :as         scale]
@@ -40,7 +40,7 @@
 
 (defn =
   ([a]           true)
-  ([a b]         (if (money? a) (if (money? b) (money/equal? a b) false) (if (money? b) false (clojure.core/= a b))))
+  ([a b]         (if (money? a) (if (money? b) (money/eq? a b) false) (if (money? b) false (clojure.core/= a b))))
   ([a b & more]  (if (= a b)
                    (if (next more)
                      (recur b (first more) (next more))
@@ -49,9 +49,49 @@
 
 (defn not=
   ([a]           false)
-  ([a b]         (if (money? a) (if (money? b) (money/different? a b) true) (if (money? b) true (clojure.core/not= a b))))
+  ([a b]         (if (money? a) (if (money? b) (money/ne? a b) true) (if (money? b) true (clojure.core/not= a b))))
   ([a b & more]  (if (not= a b)
                    (if (next more)
                      (recur b (first more) (next more))
                      (not= b (first more)))
                    true)))
+
+(defn >
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [a]          true)
+  (^Boolean [a b]        (if (money? a) (if (money? b) (money/gt? a b) false) (if (money? b) false (clojure.core/> a b))))
+  (^Boolean [a b & more] (if (> a b)
+                           (if (next more)
+                             (recur b (first more) (next more))
+                             (> b (first more)))
+                           false)))
+
+(defn >=
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [a]          true)
+  (^Boolean [a b]        (if (money? a) (if (money? b) (money/ge? a b) false) (if (money? b) false (clojure.core/>= a b))))
+  (^Boolean [a b & more] (if (>= a b)
+                           (if (next more)
+                             (recur b (first more) (next more))
+                             (>= b (first more)))
+                           false)))
+
+(defn <
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [a]          true)
+  (^Boolean [a b]        (if (money? a) (if (money? b) (money/lt? a b) false) (if (money? b) false (clojure.core/< a b))))
+  (^Boolean [a b & more] (if (< a b)
+                           (if (next more)
+                             (recur b (first more) (next more))
+                             (< b (first more)))
+                           false)))
+
+(defn <=
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [a]          true)
+  (^Boolean [a b]        (if (money? a) (if (money? b) (money/le? a b) false) (if (money? b) false (clojure.core/<= a b))))
+  (^Boolean [a b & more] (if (<= a b)
+                           (if (next more)
+                             (recur b (first more) (next more))
+                             (<= b (first more)))
+                           false)))

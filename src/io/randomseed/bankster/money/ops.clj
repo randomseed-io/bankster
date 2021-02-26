@@ -55,8 +55,8 @@
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
   =
-  "Alias for io.randomseed.bankster.money/equal?."
-  money/equal?)
+  "Alias for io.randomseed.bankster.money/eq?."
+  money/eq?)
 
 (def ^{:tag Boolean
        :arglists '(^Boolean []
@@ -64,5 +64,37 @@
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
   not=
-  "Alias for io.randomseed.bankster.money/different?."
-  money/different?)
+  "Alias for io.randomseed.bankster.money/ne?."
+  money/ne?)
+
+(def ^{:tag Boolean
+       :arglists '(^Boolean [^Money a]
+                   ^Boolean [^Money a ^Money b]
+                   ^Boolean [^Money a ^Money b & more])}
+  gt?
+  "Alias for io.randomseed.bankster.money/gt?."
+  money/gt?)
+
+(def ^{:tag Boolean
+       :arglists '(^Boolean [^Money a]
+                   ^Boolean [^Money a ^Money b]
+                   ^Boolean [^Money a ^Money b & more])}
+  ge?
+  "Alias for io.randomseed.bankster.money/ge?."
+  money/ge?)
+
+(def ^{:tag Boolean
+       :arglists '(^Boolean [^Money a]
+                   ^Boolean [^Money a ^Money b]
+                   ^Boolean [^Money a ^Money b & more])}
+  lt?
+  "Alias for io.randomseed.bankster.money/lt?."
+  money/lt?)
+
+(def ^{:tag Boolean
+       :arglists '(^Boolean [^Money a]
+                   ^Boolean [^Money a ^Money b]
+                   ^Boolean [^Money a ^Money b & more])}
+  le?
+  "Alias for io.randomseed.bankster.money/le?."
+  money/le?)
