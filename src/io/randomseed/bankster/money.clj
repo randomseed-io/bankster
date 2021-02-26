@@ -273,7 +273,7 @@
   (^Boolean [^Money a] (int 0))
   (^Boolean [^Money a ^Money b]
    (when-not (currency/same-ids? (.currency ^Money a) (.currency ^Money b))
-     (throw (ex-info (str "Cannot compare different currencies.")
+     (throw (ex-info "Cannot compare different currencies."
                      {:currency-1 a :currency-2 b})))
    (int (.compareTo ^BigDecimal (.amount ^Money a) ^BigDecimal (.amount ^Money b)))))
 
@@ -419,7 +419,7 @@
                    (Money. ^Currency cur-a ^BigDecimal r)
                    (Money. ^Currency (assoc cur-a :sc ^int (.scale ^BigDecimal r)) ^BigDecimal r)))
                (throw (ex-info
-                       (str "Cannot add amounts of two different currencies.")
+                       "Cannot add amounts of two different currencies."
                        {:addend-1 a :addend-2 b})))))))
   (^Money [^Money a ^Money b & more]
    (reduce add (add ^Money a ^Money b) more)))
@@ -443,7 +443,7 @@
                (Money. ^Currency cur-a ^BigDecimal r)
                (Money. ^Currency (assoc cur-a :sc ^int (.scale ^BigDecimal r)) ^BigDecimal r)))
            (throw (ex-info
-                   (str "Cannot subtract amounts of two different currencies.")
+                   "Cannot subtract amounts of two different currencies."
                    {:minuend a :subtrahend b}))))))
   (^Money [^Money a ^Money b & more]
    (reduce sub (sub ^Money a ^Money b) more)))
@@ -484,7 +484,7 @@
                  (.divide ^BigDecimal x ^BigDecimal y ^RoundingMode scale/*rounding-mode*)
                  (.divide ^BigDecimal x ^BigDecimal y))))
          (throw (ex-info
-                 (str "Cannot divide by the amount of a different currency.")
+                 "Cannot divide by the amount of a different currency."
                  {:dividend a :divider b}))))
      (let [^BigDecimal x (.amount ^Money a)
            ^BigDecimal y (scale/apply b)]
@@ -518,7 +518,7 @@
    (let [ma (money? a)
          mb (money? b)]
      (when (and ma mb)
-       (throw (ex-info (str "At least one value must be a regular number.")
+       (throw (ex-info "At least one value must be a regular number."
                        {:multiplicant a :multiplier b})))
      (if-not (or ma mb)
        (clojure.core/* a b)
@@ -541,9 +541,14 @@
   (^Money [a b & more]
    (reduce mul (mul a b) more)))
 
+(defn xxx
+  ""
+  {:tag Money :added "1.0.0"}
+  [^Money a] )
 
-;; (defn rem
-;;   [a b])
+
+
+;; (defn rem [a b])
 
 ;; (defn inc)
 ;; (defn dec)
@@ -598,6 +603,83 @@
   {:tag 'int :added "1.0.0"}
   [^Money a]
   (.intValueExact (minor ^Money a)))
+
+(defn add-major
+  "Increases major amount by the given number. If the number has decimal parts, they
+  will be truncated."
+  {:tag Money :added "1.0.0"}
+  [^Money a b]
+  (if (= BigDecimal/ZERO b) a
+      (Money. ^Currency   (.currency ^Money a)
+              ^BigDecimal (.add ^BigDecimal (.amount ^Money a)
+                                ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN)))))
+
+(defn sub-major
+  "Decreases major amount by the given number. If the number has decimal parts, they
+  will be truncated."
+  {:tag Money :added "1.0.0"}
+  [^Money a b]
+  (if (= BigDecimal/ZERO b) a
+      (Money. ^Currency   (.currency ^Money a)
+              ^BigDecimal (.subtract ^BigDecimal (.amount ^Money a)
+                                     ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN)))))
+
+(defn inc-major
+  "Increases major amount by 1."
+  {:tag Money :added "1.0.0"}
+  [^Money a]
+  (add-major a BigDecimal/ONE))
+
+(defn dec-major
+  "Decreases major amount by 1."
+  {:tag Money :added "1.0.0"}
+  [^Money a]
+  (sub-major a BigDecimal/ONE))
+
+(defn add-minor
+  "Increases minor amount by the given number. If the number has decimal parts, they
+  will be truncated."
+  {:tag Money :added "1.0.0"}
+  [^Money a b]
+  (if (= BigDecimal/ZERO b) a
+      (let [cur-a (.currency ^Money a)
+            sc    (scale/of (.currency ^Money a))]
+        (Money.
+         ^Currency cur-a
+         ^BigDecimal (.add
+                      ^BigDecimal (.amount ^Money a)
+                      ^BigDecimal (.movePointLeft
+                                   ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN) sc))))))
+
+(defn sub-minor
+  "Decreases minor amount by the given number. If the number has decimal parts, they
+  will be truncated. If the major component comes from a money object, its currency
+  must match the given money. This check is performed to prevent mistakes; if you
+  need to subtract minor parts of money with different currencies, use (minor x) on
+  the second argument."
+  {:tag Money :added "1.0.0"}
+  [^Money a b]
+  (if (= BigDecimal/ZERO b) a
+      (let [cur-a (.currency ^Money a)
+            sc    (scale/of (.currency ^Money a))]
+        (Money.
+         ^Currency cur-a
+         ^BigDecimal (.subtract
+                      ^BigDecimal (.amount ^Money a)
+                      ^BigDecimal (.movePointLeft
+                                   ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN) sc))))))
+
+(defn inc-minor
+  "Increases minor amount by 1."
+  {:tag Money :added "1.0.0"}
+  [^Money a]
+  (add-minor a BigDecimal/ONE))
+
+(defn dec-minor
+  "Decreases minor amount by 1."
+  {:tag Money :added "1.0.0"}
+  [^Money a]
+  (sub-minor a BigDecimal/ONE))
 
 ;;
 ;; Contextual macros.
