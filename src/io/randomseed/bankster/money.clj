@@ -613,8 +613,9 @@
   "Returns the minor part of the given amount."
   {:tag BigDecimal :added "1.0.0"}
   [^Money a]
-  (let [sc (scale/of (.currency ^Money a))]
-    (-> ^BigDecimal (.amount ^Money a)
+  (let [^BigDecimal am (.amount ^Money a)
+        sc (.scale am)]
+    (-> ^BigDecimal am
         ^BigDecimal (scale/apply sc scale/ROUND_DOWN)
         ^BigDecimal (.remainder BigDecimal/ONE)
         ^BigDecimal (.movePointRight sc))))
@@ -636,20 +637,18 @@
   will be truncated."
   {:tag Money :added "1.0.0"}
   [^Money a b]
-  (if (= BigDecimal/ZERO b) a
-      (Money. ^Currency   (.currency ^Money a)
-              ^BigDecimal (.add ^BigDecimal (.amount ^Money a)
-                                ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN)))))
+  (Money. ^Currency   (.currency ^Money a)
+          ^BigDecimal (.add ^BigDecimal (.amount ^Money a)
+                            ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN))))
 
 (defn sub-major
   "Decreases major amount by the given number. If the number has decimal parts, they
   will be truncated."
   {:tag Money :added "1.0.0"}
   [^Money a b]
-  (if (= BigDecimal/ZERO b) a
-      (Money. ^Currency   (.currency ^Money a)
-              ^BigDecimal (.subtract ^BigDecimal (.amount ^Money a)
-                                     ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN)))))
+  (Money. ^Currency   (.currency ^Money a)
+          ^BigDecimal (.subtract ^BigDecimal (.amount ^Money a)
+                                 ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN))))
 
 (defn inc-major
   "Increases major amount by 1."
@@ -668,15 +667,14 @@
   will be truncated."
   {:tag Money :added "1.0.0"}
   [^Money a b]
-  (if (= BigDecimal/ZERO b) a
-      (let [cur-a (.currency ^Money a)
-            sc    (scale/of (.currency ^Money a))]
-        (Money.
-         ^Currency cur-a
-         ^BigDecimal (.add
-                      ^BigDecimal (.amount ^Money a)
-                      ^BigDecimal (.movePointLeft
-                                   ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN) sc))))))
+  (let [^BigDecimal am (.amount ^Money a)]
+    (Money.
+     ^Currency   (.currency ^Money a)
+     ^BigDecimal (.add
+                  ^BigDecimal am
+                  ^BigDecimal (.movePointLeft
+                               ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN)
+                               (.scale am))))))
 
 (defn sub-minor
   "Decreases minor amount by the given number. If the number has decimal parts, they
@@ -686,15 +684,14 @@
   the second argument."
   {:tag Money :added "1.0.0"}
   [^Money a b]
-  (if (= BigDecimal/ZERO b) a
-      (let [cur-a (.currency ^Money a)
-            sc    (scale/of (.currency ^Money a))]
-        (Money.
-         ^Currency cur-a
-         ^BigDecimal (.subtract
-                      ^BigDecimal (.amount ^Money a)
-                      ^BigDecimal (.movePointLeft
-                                   ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN) sc))))))
+  (let [^BigDecimal am  (.amount ^Money a)]
+    (Money.
+     ^Currency   (.currency ^Money a)
+     ^BigDecimal (.subtract
+                  ^BigDecimal (.amount ^Money a)
+                  ^BigDecimal (.movePointLeft
+                               ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN)
+                               (.scale am))))))
 
 (defn inc-minor
   "Increases minor amount by 1."
