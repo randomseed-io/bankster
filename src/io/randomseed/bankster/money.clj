@@ -196,6 +196,12 @@
   [^Money money]
   (.currency ^Money money))
 
+(defn stripped-amount
+  "Returns the amount of the given money with trailing zeros removed."
+  {:tag BigDecimal :added "1.0.0"}
+  [^Money money]
+  (.stripTrailingZeros ^BigDecimal (.amount ^Money money)))
+
 ;;
 ;; Monetary implementation.
 ;;
@@ -550,34 +556,46 @@
   (^Money [a b & more]
    (reduce mul (mul a b) more)))
 
-(defn xxx
-  ""
-  {:tag Money :added "1.0.0"}
-  [^Money a] )
-
-
-
 ;; (defn rem [a b])
-
-;; (defn inc)
-;; (defn dec)
 ;; (defn divide-to-integral)
 ;; (defn divide-and-rem)
-;; (defn pow)
-;; (defn abs)
-;; (defn neg)
-;; (defn pos)
 ;; (defn signum)
-;; (defn round)
 ;; (defn strip)
 ;; (defn min)
 ;; (defn max)
 
+(defmacro neg
+  "Returns the negated amount of the given money. For negative amount it will reverse
+  their sign. Same as (sub x)."
+  [a]
+  `(sub ~a))
+
+(defn pos
+  "Returns the positive (absolute) amount of the given money."
+  {:tag BigDecimal :added "1.0.0"}
+  [^Money a]
+  (Money. ^Currency   (.currency ^Money a)
+          ^BigDecimal (.abs ^BigDecimal (.amount ^Money a))))
+
+(defn round
+  "Rounds the amount of money using the given scale and rounding mode. Returns money
+  with rounded amount re-scaled to the existing scale. If the rounding mode is not given
+  the one from scale/*rounding-mode* is used."
+  {:tag Money :added "1.0.0"}
+  (^Money [^Money a scale]
+   (round a scale (or scale/*rounding-mode* scale/ROUND_UNNECESSARY)))
+  (^Money [^Money a scale ^RoundingMode rounding-mode]
+   (let [^BigDecimal am (.amount ^Money a)
+         sc (int (.scale am))]
+     (if (>= scale sc) am
+         (Money. ^Currency   (.currency ^Money a)
+                 ^BigDecimal (.setScale (.round am (MathContext. (int scale) rounding-mode)) sc))))))
+
 (defn major
   "Returns the major part of the given amount."
   {:tag BigDecimal :added "1.0.0"}
-  [^Money a]
-  (scale/apply (.amount ^Money a) 0 scale/ROUND_DOWN))
+  ([^Money a]
+   (.setScale ^BigDecimal (.amount ^Money a) 0 scale/ROUND_DOWN)))
 
 (defn major->long
   "Returns the major part of the given amount as a long number."
