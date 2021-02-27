@@ -169,38 +169,23 @@
    RoundingMode/HALF_UP     (MathContext. (int 0) RoundingMode/HALF_UP)
    RoundingMode/UNNECESSARY (MathContext. (int 0) RoundingMode/UNNECESSARY)})
 
-(defn scale-core
-  "Internal scaling function."
-  {:no-doc true :tag 'int}
-  ([m]
-   (.scale ^BigDecimal (.amount ^Money m)))
-  (^Money [^Money m s]
-   (-> m
-       (assoc :amount   ^BigDecimal (scale/apply ^BigDecimal (.amount   ^Money m) (int s)))
-       (assoc :currency ^Currency   (scale/apply ^Currency   (.currency ^Money m) (int s)))))
-  (^Money [^Money m s ^RoundingMode rounding-mode]
-   (-> m
-       (assoc :amount   ^BigDecimal (scale/apply ^BigDecimal (.amount   ^Money m) (int s) ^RoundingMode rounding-mode))
-       (assoc :currency ^Currency   (scale/apply ^Currency   (.currency ^Money m) (int s) ^RoundingMode rounding-mode)))))
+(defn strip
+  "Strips trailing zeros from the amount. The internal scale for a currency object
+  is also updated.
 
-(defmacro scale
-  "Re-scales the given money using a scale (number of decimal places) and an optional
-  rounding mode (required when downscaling). The internal scale for a currency object
-  is also updated. If no scale is given, returns the current scale."
-  ([money]
-   `(scale-core ~money))
-  ([money scale]
-   `(scale-core ~money ~scale))
-  ([money scale rounding-mode]
-   (let [rms# (scale/parse-rounding rounding-mode)]
-     `(scale-core money ~scale ~rms#))))
+  Use with caution since it can make money object no longer compliant with a scale of
+  the currency."
+  {:tag Money :added "1.0.0"}
+  [^Money a]
+  (Money. (.currency ^Money a)
+          (.stripTrailingZeros ^BigDecimal (.amount ^Money a))))
 
 ;;
 ;; Properties.
 ;;
 
 (defn amount
-  "Returns the amount of the given money"
+  "Returns the amount of the given money."
   {:tag BigDecimal :added "1.0.0"}
   [^Money money]
   (.amount ^Money money))
@@ -258,8 +243,8 @@
 
   (^Money apply
    (^Money [m] ^Money m)
-   (^Money [m scale] (scale-core ^Money m (int scale)))
-   (^Money [m scale ^RoundingMode rounding-mode] (scale-core ^Money m (int scale) ^RoundingMode rounding-mode))))
+   (^Money [m scale] (.setScale ^BigDecimal (.amount ^Money m) (int scale)))
+   (^Money [m scale ^RoundingMode rounding-mode] (.setScale ^BigDecimal (.amount^Money m) (int scale) ^RoundingMode rounding-mode))))
 
 ;;
 ;; Comparator.
@@ -396,6 +381,30 @@
 ;;
 ;; Operations.
 ;;
+
+(defn scale
+  "Re-scales the given money using a scale (number of decimal places) and an optional
+  rounding mode (required when downscaling). The internal scale for a currency object
+  is also updated. If no scale is given, returns the current scale.
+
+  Use with caution since it can make money object no longer compliant with a scale of
+  the currency."
+  {:added "1.0.0"}
+  ([^Money money]
+   (int (.scale ^BigDecimal (.amount ^Money money))))
+  (^Money [^Money money scale]
+   (Money. ^Currency   (.currency ^Money money)
+           ^BigDecimal (if scale/*rounding-mode*
+                         (.setScale ^BigDecimal (.amount ^Money money)
+                                    (int scale)
+                                    ^RoundingMode scale/*rounding-mode*)
+                         (.setScale ^BigDecimal (.amount ^Money money)
+                                    (int scale)))))
+  (^Money [^Money money scale ^RoundingMode rounding-mode]
+   (Money. ^Currency   (.currency ^Money money)
+           ^BigDecimal (.setScale ^BigDecimal (.amount ^Money money)
+                                  (int scale)
+                                  ^RoundingMode rounding-mode))))
 
 (defn add
   "Adds two or more amounts of money of the same currency. When called without any
