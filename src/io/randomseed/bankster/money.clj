@@ -518,48 +518,73 @@
   (^Money [^Money a b & more]
    (reduce div (div ^Money a b) more)))
 
+(defn mul-core
+  "Internal multiplier."
+  {:private true}
+  ([a b]
+   (if (instance? Money a)
+     (if (instance? Money b)
+       (throw (ex-info "At least one value must be a regular number."
+                       {:multiplicant a :multiplier b}))
+       (let [^BigDecimal am (.amount ^Money a)]
+         (Money. ^Currency   (.currency ^Money a)
+                 ^BigDecimal (scale/apply (.multiply ^BigDecimal am
+                                                     ^BigDecimal (scale/apply b))
+                                          (.scale am)))))
+     (if (instance? Money b)
+       (let [^BigDecimal am (.amount ^Money b)]
+         (Money. ^Currency   (.currency ^Money b)
+                 ^BigDecimal (scale/apply (.multiply ^BigDecimal (scale/apply a)
+                                                     ^BigDecimal am)
+                                          (.scale am))))
+       (.multiply ^BigDecimal (scale/apply a)
+                  ^BigDecimal (scale/apply b)))))
+  ([a b ^Boolean ma ^Boolean mb]
+   (if ma
+     (if mb
+       (throw (ex-info "At least one value must be a regular number."
+                       {:multiplicant a :multiplier b}))
+       (.multiply ^BigDecimal (.amount ^Money a) ^BigDecimal (scale/apply b)))
+     (if mb
+       (.multiply ^BigDecimal (scale/apply a) ^BigDecimal (.amount ^Money b))
+       (.multiply ^BigDecimal (scale/apply a) ^BigDecimal (scale/apply b))))))
+
 (defn mul
   "Multiplies two or more amounts of money of the same currency or a number. If the
   first value is a kind of Money and the second is a number, the result will be a
   Money. For a single value it returns a division of 1 by that number, even if it is
   a kind of Money. For more than 2 arguments it repeatedly divides them as described.
 
-  When there are two amounts of the same currency, scale may vary depending on the
-  result and rounding is applied only when there is no exact decimal representation.
-
-  When there is a division of an amount by the regular number, the result is
+  When there is a multiplication of an amount by the regular number, the result is
   re-scaled to match the scale of a currency. If the scaling requires rounding
-  enclosing the expression within with-rounding is required."
+  enclosing the expression within with-rounding is required.
+
+  Rounding and re-scaling is performed after all calculations are finished."
   {:tag Money :added "1.0.0"}
-  (^Money []
-   (if currency/*default* (Money. ^Currency currency/*default* 1M) 1))
-  ([^Money a] ^Money a)
-  (^Money [a b]
-   (let [ma (money? a)
-         mb (money? b)]
-     (when (and ma mb)
-       (throw (ex-info "At least one value must be a regular number."
-                       {:multiplicant a :multiplier b})))
-     (if-not (or ma mb)
-       (clojure.core/* a b)
-       (let [[^Money m ^BigDecimal n] (if ma [a (scale/apply b)] [b (scale/apply a)])]
-         (if (.equals BigDecimal/ONE n) m
-             (let [^BigDecimal x (.amount   ^Money m)
-                   ^Currency   c (.currency ^Money m)
-                   s (.scale ^BigDecimal x)]
-               (if (.equals BigDecimal/ONE ^BigDecimal x)
-                 (Money. ^Currency c ^BigDecimal (scale/apply n (int s)))
-                 (if (or (.equals BigDecimal/ZERO ^BigDecimal n)
-                         (.equals BigDecimal/ZERO ^BigDecimal x))
-                   (Money. ^Currency c (scale/apply BigDecimal/ZERO (int s)))
-                   (Money. ^Currency c
-                           ^BigDecimal (if scale/*rounding-mode*
-                                         (scale/apply (.multiply ^BigDecimal x ^BigDecimal n
-                                                                 ^MathContext (rounding->context scale/*rounding-mode*))
-                                                      (int s))
-                                         (scale/apply (.multiply ^BigDecimal x ^BigDecimal n) (int s))))))))))))
-  (^Money [a b & more]
-   (reduce mul (mul a b) more)))
+  ([] 1M)
+  ([a b] (mul-core a b))
+  ([x y & more]
+   (let [mx  (instance? Money x)
+         my  (instance? Money y)
+         fir (mul-core x y mx my)
+         mon (volatile! (if mx x (when my y)))
+         fun (fn [a b]
+               (if @mon
+                 (if (instance? Money b)
+                   (throw (ex-info "Only one value can be a kind of money."
+                                   {:multiplicant a :multiplier b}))
+                   (.multiply ^BigDecimal (scale/apply a)
+                              ^BigDecimal (scale/apply b)))
+                 (if (instance? Money b)
+                   (.multiply ^BigDecimal (scale/apply a)
+                              ^BigDecimal (.amount ^Money (vreset! mon ^Money b)))
+                   (.multiply ^BigDecimal (scale/apply a)
+                              ^BigDecimal (scale/apply b)))))
+         res (reduce fun fir more)]
+     (if-some [m @mon]
+       (Money. ^Currency   (.currency ^Money m)
+               ^BigDecimal (scale/apply res (.scale ^BigDecimal (.amount ^Money m))))
+       res))))
 
 ;; (defn rem [a b])
 ;; (defn divide-to-integral)
