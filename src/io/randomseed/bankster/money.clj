@@ -248,9 +248,14 @@
   (of [m] (.scale ^BigDecimal (.amount ^Money m)))
 
   (^Money apply
-   (^Money [m] ^Money m)
-   (^Money [m scale] (.setScale ^BigDecimal (.amount ^Money m) (int scale)))
-   (^Money [m scale ^RoundingMode rounding-mode] (.setScale ^BigDecimal (.amount^Money m) (int scale) ^RoundingMode rounding-mode))))
+   (^Money [m]
+    ^Money m)
+   (^Money [m scale]
+    (if scale/*rounding-mode*
+      (.setScale ^BigDecimal (.amount ^Money m) (int scale) ^RoundingMode scale/*rounding-mode*)
+      (.setScale ^BigDecimal (.amount ^Money m) (int scale))))
+   (^Money [m scale ^RoundingMode rounding-mode]
+    (.setScale ^BigDecimal (.amount^Money m) (int scale) ^RoundingMode rounding-mode))))
 
 ;;
 ;; Comparator.
