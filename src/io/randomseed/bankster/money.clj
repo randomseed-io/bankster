@@ -562,18 +562,89 @@
                  (if (instance? Money b)
                    (throw (ex-info "Only one value can be a kind of money."
                                    {:multiplicant a :multiplier b}))
-                   (.multiply ^BigDecimal (scale/apply a)
-                              ^BigDecimal (scale/apply b)))
+                   (.multiply ^BigDecimal a ^BigDecimal (scale/apply b)))
                  (if (instance? Money b)
-                   (.multiply ^BigDecimal (scale/apply a)
-                              ^BigDecimal (.amount ^Money (vreset! mon ^Money b)))
-                   (.multiply ^BigDecimal (scale/apply a)
-                              ^BigDecimal (scale/apply b)))))
+                   (.multiply ^BigDecimal a ^BigDecimal (.amount ^Money (vreset! mon ^Money b)))
+                   (.multiply ^BigDecimal a ^BigDecimal (scale/apply b)))))
          res (reduce fun fir more)]
      (if-some [m @mon]
        (Money. ^Currency   (.currency ^Money m)
                ^BigDecimal (scale/apply res (.scale ^BigDecimal (.amount ^Money m))))
        res))))
+
+(defn div-core
+  "Internal divider."
+  {:private true :added "1.0.0"}
+  ([a b ^BigDecimal ma ^BigDecimal mb]
+   (if ma
+     (if mb
+       (if (= (.id ^Currency (.currency ^Money a))
+              (.id ^Currency (.currency ^Money b)))
+         (.divide ^BigDecimal ma ^BigDecimal mb)
+         (throw (ex-info "Cannot divide by the amount of a different currency."
+                         {:dividend a :divider b})))
+       (.divide ^BigDecimal ma ^BigDecimal (scale/apply b)))
+     (if mb
+       (throw (ex-info "Cannot divide a regular number by the monetary amount."
+                       {:dividend a :divider b}))
+       (.divide ^BigDecimal (scale/apply a) ^BigDecimal (scale/apply b))))))
+
+;; (defn div
+;;   ""
+;;   {:added "1.0.0"}
+;;   ([] 1M)
+;;   ([a] a)
+;;   ([a b]
+;;    (let [am (when (instance? Money a) (.amount ^Money a))
+;;          bm (when (instance? Money b) (.amount ^Money b))
+;;          mu (div-core a b am bm)]
+;;      (if am (Money.     (.currency ^Money a) (scale/apply mu (.scale ^BigDecimal am)))
+;;          (if bm (Money. (.currency ^Money b) (scale/apply mu (.scale ^BigDecimal bm)))
+;;              mu))))
+;;   ([x y & more]
+;;    (let [mx  (when (instance? Money x) (.amount ^Money x))
+;;          my  (when (instance? Money y) (.amount ^Money y))
+;;          fir (div-core x y mx my)
+;;          mon (volatile! (when (and (nil? my) mx) x))
+;;          fun (fn [a b]
+;;                (if @mon
+;;                  ()
+
+;;                  (if (instance? Money? b)
+;;                    (do (vreset! mon nil) (.divide a (.amount ^Money b)))
+;;                    )
+
+;;                  (.divide ^BigDecimal (scale/apply a)
+;;                           ^BigDecimal (scale/apply b))
+
+
+;;                  (if (instance? Money b)
+;;                    (.multiply ^BigDecimal (scale/apply a)
+;;                               ^BigDecimal (.amount ^Money (vreset! mon ^Money b)))
+;;                    (.multiply ^BigDecimal (scale/apply a)
+;;                               ^BigDecimal (scale/apply b)))))
+;;          res (reduce fun fir more)]
+;;      (if-some [m @mon]
+;;        (Money. ^Currency   (.currency ^Money m)
+;;                ^BigDecimal (scale/apply res (.scale ^BigDecimal (.amount ^Money m))))
+;;        res))))
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 ;; (defn rem [a b])
 ;; (defn divide-to-integral)
