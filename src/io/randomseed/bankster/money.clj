@@ -520,33 +520,15 @@
 
 (defn mul-core
   "Internal multiplier."
-  {:private true}
-  ([a b]
-   (if (instance? Money a)
-     (if (instance? Money b)
-       (throw (ex-info "At least one value must be a regular number."
-                       {:multiplicant a :multiplier b}))
-       (let [^BigDecimal am (.amount ^Money a)]
-         (Money. ^Currency   (.currency ^Money a)
-                 ^BigDecimal (scale/apply (.multiply ^BigDecimal am
-                                                     ^BigDecimal (scale/apply b))
-                                          (.scale am)))))
-     (if (instance? Money b)
-       (let [^BigDecimal am (.amount ^Money b)]
-         (Money. ^Currency   (.currency ^Money b)
-                 ^BigDecimal (scale/apply (.multiply ^BigDecimal (scale/apply a)
-                                                     ^BigDecimal am)
-                                          (.scale am))))
-       (.multiply ^BigDecimal (scale/apply a)
-                  ^BigDecimal (scale/apply b)))))
-  ([a b ^Boolean ma ^Boolean mb]
+  {:private true :added "1.0.0"}
+  ([a b ^BigDecimal ma ^BigDecimal mb]
    (if ma
      (if mb
        (throw (ex-info "At least one value must be a regular number."
                        {:multiplicant a :multiplier b}))
-       (.multiply ^BigDecimal (.amount ^Money a) ^BigDecimal (scale/apply b)))
+       (.multiply ^BigDecimal ma ^BigDecimal (scale/apply b)))
      (if mb
-       (.multiply ^BigDecimal (scale/apply a) ^BigDecimal (.amount ^Money b))
+       (.multiply ^BigDecimal (scale/apply a) ^BigDecimal mb)
        (.multiply ^BigDecimal (scale/apply a) ^BigDecimal (scale/apply b))))))
 
 (defn mul
@@ -560,12 +542,19 @@
   enclosing the expression within with-rounding is required.
 
   Rounding and re-scaling is performed after all calculations are finished."
-  {:tag Money :added "1.0.0"}
+  {:added "1.0.0"}
   ([] 1M)
-  ([a b] (mul-core a b))
+  ([a] a)
+  ([a b]
+   (let [am (when (instance? Money a) (.amount ^Money a))
+         bm (when (instance? Money b) (.amount ^Money b))
+         mu (mul-core a b am bm)]
+     (if am (Money.     (.currency ^Money a) (scale/apply mu (.scale ^BigDecimal am)))
+         (if bm (Money. (.currency ^Money b) (scale/apply mu (.scale ^BigDecimal bm)))
+             mu))))
   ([x y & more]
-   (let [mx  (instance? Money x)
-         my  (instance? Money y)
+   (let [mx  (when (instance? Money x) (.amount ^Money x))
+         my  (when (instance? Money y) (.amount ^Money y))
          fir (mul-core x y mx my)
          mon (volatile! (if mx x (when my y)))
          fun (fn [a b]
