@@ -531,7 +531,7 @@
          my  (when (instance? Money y) (.amount ^Money y))
          fir (mul-core x y mx my)
          mon (volatile! (if mx x (when my y)))
-         fir (if @mon (scale/apply fir (.scale ^BigDecimal (or my mx))) fir)
+         fir (if @mon (scale/apply fir (.scale (if my ^BigDecimal my ^BigDecimal mx))) fir)
          fun (fn [a b]
                (if @mon
                  (if (instance? Money b)
@@ -656,7 +656,7 @@
      (reduce div-core (div-core (scale/apply a) b) more)
      (let [ma  (.amount ^Money a)
            mb  (when (instance? Money b) (.amount ^Money b))
-           fir  (scale/apply (div-core ma b mb) (.scale (or mb ma)))]
+           fir (scale/apply (div-core ma b mb) (.scale (if mb ^BigDecimal mb ^BigDecimal ma)))]
        (loop [x fir, more more]
          (if-some [y (first more)]
            (if (instance? Money y)
