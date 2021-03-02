@@ -277,11 +277,11 @@
 ;; Predicates.
 ;;
 
-(defmacro money?
+(defn money?
   "Returns true if the given value is a kind of Money."
-  {:added "1.0.0"}
+  {:tag Boolean :added "1.0.0"}
   [a]
-  `(instance? Money ~a))
+  (instance? Money a))
 
 (defn ^Boolean eq?
   "Return true if the money amounts and their currencies are equal. Note that
@@ -609,12 +609,12 @@
   (Money. ^Currency   (.currency ^Money a)
           ^BigDecimal (.remainder ^BigDecimal (.amount ^Money a) (scale/apply b))))
 
-(defmacro neg
+(defn neg
   "Returns the negated amount of the given money. For negative amount it will reverse
   their sign. Same as (sub x)."
   {:added "1.0.0"}
   [a]
-  `(sub ~a))
+  (sub a))
 
 (defn pos
   "Returns the positive (absolute) amount of the given money."
