@@ -449,11 +449,9 @@
 
 (defn add
   "Adds two or more amounts of money of the same currency. When called without any
-  arguments, returns 0 or a Money of 0 with a default currency (if the default
-  currency is set)."
+  arguments, returns 0."
   {:tag Money :added "1.0.0"}
-  (^Money []
-   (if currency/*default* (Money. ^Currency currency/*default* 0M) 0M))
+  (^Money [] 0M)
   (^Money [^Money a] a)
   (^Money [^Money a ^Money b]
    (if (nil? a) b
