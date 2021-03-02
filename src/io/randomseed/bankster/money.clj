@@ -725,12 +725,6 @@
                  (Money. ^Currency  (.currency ^Money a)
                          ^BigDecimal (scale/apply ^BigDecimal x (int (.scale ^BigDecimal ma))))))))))))
 
-;; (defn divide-to-integral)
-;; (defn divide-and-rem)
-;; (defn signum)
-;; (defn strip)
-;; (defn min)
-;; (defn max)
 
 (defn div-rem
   "Returns the remainder of dividing an mount of money by the given number."
@@ -808,9 +802,29 @@
   [^Money a]
   (.intValueExact (minor ^Money a)))
 
+(defn major-minor
+  "Returns a vector with major and minor parts of the given monetary amount."
+  {:tag clojure.lang.IPersistentVector :added "1.0.0"}
+  [^Money a]
+  [(major a) (minor a)])
+
+(defn major-minor->int
+  "Returns a vector with major and minor parts of the given monetary amount represented
+  as integer numbers."
+  {:tag clojure.lang.IPersistentVector :added "1.0.0"}
+  [^Money a]
+  [(major->int a) (minor->int a)])
+
+(defn major-minor->long
+  "Returns a vector with major and minor parts of the given monetary amount represented
+  as long numbers."
+  {:tag clojure.lang.IPersistentVector :added "1.0.0"}
+  [^Money a]
+  [(major->long a) (minor->long a)])
+
 (defn add-major
-  "Increases major amount by the given number. If the number has decimal parts, they
-  will be truncated."
+  "Increases major amount by the given number. If the number is also expressed as money
+  and it has decimal parts, they will be truncated."
   {:tag Money :added "1.0.0"}
   [^Money a b]
   (Money. ^Currency   (.currency ^Money a)
@@ -818,8 +832,8 @@
                             ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN))))
 
 (defn sub-major
-  "Decreases major amount by the given number. If the number has decimal parts, they
-  will be truncated."
+  "Decreases major amount by the given number. If the number is also expressed as money
+  and it has decimal parts, they will be truncated."
   {:tag Money :added "1.0.0"}
   [^Money a b]
   (Money. ^Currency   (.currency ^Money a)
@@ -839,8 +853,8 @@
   (sub-major a BigDecimal/ONE))
 
 (defn add-minor
-  "Increases minor amount by the given number. If the number has decimal parts, they
-  will be truncated."
+  "Increases minor amount by the given number. If the number is also expressed as money
+  and it has decimal parts, they will be truncated.."
   {:tag Money :added "1.0.0"}
   [^Money a b]
   (let [^BigDecimal am (.amount ^Money a)]
@@ -853,18 +867,18 @@
                                (.scale am))))))
 
 (defn sub-minor
-  "Decreases minor amount by the given number. If the number has decimal parts, they
-  will be truncated. If the major component comes from a money object, its currency
-  must match the given money. This check is performed to prevent mistakes; if you
-  need to subtract minor parts of money with different currencies, use (minor x) on
-  the second argument."
+  "Decreases minor amount by the given number. If the number is also expressed as money
+  and it has decimal parts, they will be truncated. If the major component comes from
+  a money object, its currency must match the given money. This check is performed to
+  prevent mistakes; if you need to subtract minor parts of money with different
+  currencies, use (minor x) on the second argument."
   {:tag Money :added "1.0.0"}
   [^Money a b]
-  (let [^BigDecimal am  (.amount ^Money a)]
+  (let [^BigDecimal am (.amount ^Money a)]
     (Money.
      ^Currency   (.currency ^Money a)
      ^BigDecimal (.subtract
-                  ^BigDecimal (.amount ^Money a)
+                  ^BigDecimal am
                   ^BigDecimal (.movePointLeft
                                ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN)
                                (.scale am))))))
