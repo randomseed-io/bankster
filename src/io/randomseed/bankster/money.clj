@@ -339,7 +339,7 @@
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money a] true)
   (^Boolean [^Money a ^Money b]
-   (> (compare a b) 0))
+   (> (compare-amounts a b) 0))
   (^Boolean [^Money a ^Money b & more]
    (if (gt? a b)
      (if (next more)
@@ -353,7 +353,7 @@
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money a] true)
   (^Boolean [^Money a ^Money b]
-   (>= (compare a b) 0))
+   (>= (compare-amounts a b) 0))
   (^Boolean [^Money a ^Money b & more]
    (if (ge? a b)
      (if (next more)
@@ -367,7 +367,7 @@
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money a] true)
   (^Boolean [^Money a ^Money b]
-   (< (compare a b) 0))
+   (< (compare-amounts a b) 0))
   (^Boolean [^Money a ^Money b & more]
    (if (lt? a b)
      (if (next more)
@@ -381,7 +381,7 @@
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money a] true)
   (^Boolean [^Money a ^Money b]
-   (<= (compare a b) 0))
+   (<= (compare-amounts a b) 0))
   (^Boolean [^Money a ^Money b & more]
    (if (le? a b)
      (if (next more)
