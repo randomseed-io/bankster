@@ -170,8 +170,8 @@
    RoundingMode/UNNECESSARY (MathContext. (int 0) RoundingMode/UNNECESSARY)})
 
 (defn strip
-  "Strips trailing zeros from the amount. The internal scale for a currency object
-  is also updated.
+  "Strips trailing zeros from the amount of money. The internal scale for a currency
+  object is also updated.
 
   Use with caution since it can make money object no longer compliant with a scale of
   the currency."
