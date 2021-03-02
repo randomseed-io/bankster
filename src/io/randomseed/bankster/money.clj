@@ -726,6 +726,31 @@
                  (Money. ^Currency  (.currency ^Money a)
                          ^BigDecimal (scale/apply ^BigDecimal x (int (.scale ^BigDecimal ma))))))))))))
 
+(defn min-amount
+  "Returns the least of the monetary amounts."
+  {:tag Money :added "1.0.0"}
+  ([^Money a] a)
+  ([^Money a ^Money b]
+   (when-not (= (.id ^Currency (.currency ^Money a))
+                (.id ^Currency (.currency ^Money b)))
+     (throw (ex-info "Cannot compare amounts of different currencies."
+                     {:money-1 a :money-2 b})))
+   (if (lt? a b) a b))
+  ([^Money a ^Money b & more]
+   (reduce min-amount (min-amount a b) more)))
+
+(defn max-amount
+  "Returns the greatest of the monetary amounts."
+  {:tag Money :added "1.0.0"}
+  ([^Money a] a)
+  ([^Money a ^Money b]
+   (when-not (= (.id ^Currency (.currency ^Money a))
+                (.id ^Currency (.currency ^Money b)))
+     (throw (ex-info "Cannot compare amounts of different currencies."
+                     {:money-1 a :money-2 b})))
+   (if (gt? a b) a b))
+  ([^Money a ^Money b & more]
+   (reduce max-amount (max-amount a b) more)))
 
 (defn div-rem
   "Returns the remainder of dividing an mount of money by the given number."
