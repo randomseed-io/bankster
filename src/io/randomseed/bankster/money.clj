@@ -268,9 +268,10 @@
   {:added "1.0.0" :tag 'int}
   (^Boolean [^Money a] (int 0))
   (^Boolean [^Money a ^Money b]
-   (when-not (currency/same-ids? (.currency ^Money a) (.currency ^Money b))
-     (throw (ex-info "Cannot compare different currencies."
-                     {:currency-1 a :currency-2 b})))
+   (when-not (= (.id ^Currency (.currency ^Money a))
+                (.id ^Currency (.currency ^Money b)))
+     (throw (ex-info "Cannot compare amounts of different currencies."
+                     {:money-1 a :money-2 b})))
    (int (.compareTo ^BigDecimal (.amount ^Money a) ^BigDecimal (.amount ^Money b)))))
 
 ;;
