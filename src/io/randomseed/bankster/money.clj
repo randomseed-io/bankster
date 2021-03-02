@@ -481,6 +481,47 @@
        (.multiply ^BigDecimal (scale/apply a) ^BigDecimal mb)
        (.multiply ^BigDecimal (scale/apply a) ^BigDecimal (scale/apply b))))))
 
+(declare mul)
+
+(defn mul-scaled
+  "Multiplies two or more amounts of money of the same currency or a number. If the
+  first value is a kind of Money and the second is a number, the result will be a
+  Money. For a single value it returns a division of 1 by that number, even if it is
+  a kind of Money. For more than 2 arguments it repeatedly divides them as described.
+
+  When there is a multiplication of an amount by the regular number, the result is
+  re-scaled to match the scale of a currency. If the scaling requires rounding
+  enclosing the expression within io.randomseed.bankster.scale/with-rounding is
+  required (the macro is aliased under the same name in this namespace)."
+  {:added "1.0.0"}
+  ([] 1M)
+  ([a] a)
+  ([a b] (mul a b))
+  ([x y & more]
+   (let [mx  (when (instance? Money x) (.amount ^Money x))
+         my  (when (instance? Money y) (.amount ^Money y))
+         fir (mul-core x y mx my)
+         mon (volatile! (if mx x (when my y)))
+         fir (if @mon (scale/apply fir (.scale ^BigDecimal (or my mx))) fir)
+         fun (fn [a b]
+               (if @mon
+                 (if (instance? Money b)
+                   (throw (ex-info "Only one value can be a kind of Money."
+                                   {:multiplicant a :multiplier b}))
+                   (scale/apply (.multiply ^BigDecimal a ^BigDecimal (scale/apply b))
+                                (.scale ^BigDecimal a)))
+                 (if (instance? Money b)
+                   (let [^BigDecimal ab (.amount ^Money b)]
+                     (do (scale/apply (.multiply ^BigDecimal a ^BigDecimal ab)
+                                      (.scale ^BigDecimal ab))
+                         (vreset! mon ^Money b)))
+                   (.multiply ^BigDecimal a ^BigDecimal (scale/apply b)))))
+         res (reduce fun fir more)]
+     (if-some [m @mon]
+       (Money. ^Currency   (.currency ^Money m)
+               ^BigDecimal (scale/apply res (.scale ^BigDecimal (.amount ^Money m))))
+       res))))
+
 (defn mul
   "Multiplies two or more amounts of money of the same currency or a number. If the
   first value is a kind of Money and the second is a number, the result will be a
@@ -489,9 +530,15 @@
 
   When there is a multiplication of an amount by the regular number, the result is
   re-scaled to match the scale of a currency. If the scaling requires rounding
-  enclosing the expression within with-rounding is required.
+  enclosing the expression within io.randomseed.bankster.scale/with-rounding is
+  required (the macro is aliased under the same name in this namespace), unless
+  with-rescaling, described below, is in place.
 
-  Rounding and re-scaling is performed after all calculations are finished."
+  Rounding and re-scaling are performed after all calculations are done. To change
+  that either use mul-scaled or set the dynamic variable
+  io.randomseed.bankster.scale/*each* to a truthy value. You can also use a macro
+  called io.randomseed.bankster.scale/with-rescaling (aliased in this namespace under
+  the same name)."
   {:added "1.0.0"}
   ([] 1M)
   ([a] a)
@@ -503,24 +550,26 @@
          (if bm (Money. (.currency ^Money b) (scale/apply mu (.scale ^BigDecimal bm)))
              mu))))
   ([x y & more]
-   (let [mx  (when (instance? Money x) (.amount ^Money x))
-         my  (when (instance? Money y) (.amount ^Money y))
-         fir (mul-core x y mx my)
-         mon (volatile! (if mx x (when my y)))
-         fun (fn [a b]
-               (if @mon
-                 (if (instance? Money b)
-                   (throw (ex-info "Only one value can be a kind of money."
-                                   {:multiplicant a :multiplier b}))
-                   (.multiply ^BigDecimal a ^BigDecimal (scale/apply b)))
-                 (if (instance? Money b)
-                   (.multiply ^BigDecimal a ^BigDecimal (.amount ^Money (vreset! mon ^Money b)))
-                   (.multiply ^BigDecimal a ^BigDecimal (scale/apply b)))))
-         res (reduce fun fir more)]
-     (if-some [m @mon]
-       (Money. ^Currency   (.currency ^Money m)
-               ^BigDecimal (scale/apply res (.scale ^BigDecimal (.amount ^Money m))))
-       res))))
+   (if scale/*each*
+     (mul-scaled x y more)
+     (let [mx  (when (instance? Money x) (.amount ^Money x))
+           my  (when (instance? Money y) (.amount ^Money y))
+           fir (mul-core x y mx my)
+           mon (volatile! (if mx x (when my y)))
+           fun (fn [a b]
+                 (if @mon
+                   (if (instance? Money b)
+                     (throw (ex-info "Only one value can be a kind of Money."
+                                     {:multiplicant a :multiplier b}))
+                     (.multiply ^BigDecimal a ^BigDecimal (scale/apply b)))
+                   (if (instance? Money b)
+                     (.multiply ^BigDecimal a ^BigDecimal (.amount ^Money (vreset! mon ^Money b)))
+                     (.multiply ^BigDecimal a ^BigDecimal (scale/apply b)))))
+           res (reduce fun fir more)]
+       (if-some [m @mon]
+         (Money. ^Currency   (.currency ^Money m)
+                 ^BigDecimal (scale/apply res (.scale ^BigDecimal (.amount ^Money m))))
+         res)))))
 
 (defn div-core
   "Internal divider."
@@ -548,6 +597,52 @@
                        {:dividend a :divider b}))
        (.divide ^BigDecimal (scale/apply a) ^BigDecimal (scale/apply b))))))
 
+(declare div)
+
+(defn div-scaled
+  "Divides two or more amounts of money of the same currency or a number. If the two
+  values are a kind of Money, the result will be of BigDecimal number. If the earlier
+  value is a kind of Money and the second is a number, the result will be a Money. If
+  the number is first and the monetary amount is the second argument, an exception
+  will be thrown. The result will always be either a kind of Money or a BigDecimal
+  number.
+
+  For a single value it returns a division of 1 by that number.
+
+  For more than 2 arguments it repeatedly divides their values as described and
+  re-scales each result to match the scale of a currency. If the previous
+  calculations produce a regular number, all consequent dividers must be regular
+  numbers. Practically, if the division begins with a monetary amount, only one
+  monetary amount is permitted later (which will cause the function to switch to the
+  regular numbers calculation since the units will cancel themselves).
+
+  Scaling is applied after each operation but only when the currently accumulated
+  result is a kind of Money. If the scaling requires rounding then enclosing the
+  expression within with-rounding is required."
+  {:added "1.0.0"}
+  ([a]   (div 1M a))
+  ([a b] (div a b))
+  ([a b & more]
+   (if-not (instance? Money a)
+     (reduce div-core (div-core (scale/apply a) b) more)
+     (let [ma  (.amount ^Money a)
+           mb  (when (instance? Money b) (.amount ^Money b))
+           fir  (scale/apply (div-core ma b mb) (.scale (or mb ma)))]
+       (loop [x fir, more more]
+         (if-some [y (first more)]
+           (if (instance? Money y)
+             (if (= (.id ^Currency (.currency ^Money a))
+                    (.id ^Currency (.currency ^Money y)))
+               (reduce div-core (scale/apply (.divide ^BigDecimal x ^BigDecimal (.amount ^Money y))
+                                             (.scale ^BigDecimal ma)) (rest more))
+               (throw (ex-info "Cannot divide by the amount of a different currency."
+                               {:dividend a :divider b})))
+             (recur (scale/apply (.divide ^BigDecimal x ^BigDecimal (scale/apply y))
+                                 (.scale ^BigDecimal ma)) (rest more)))
+           (if mb x
+               (Money. ^Currency  (.currency ^Money a)
+                       ^BigDecimal (scale/apply ^BigDecimal x (.scale ^BigDecimal ma))))))))))
+
 (defn div
   "Divides two or more amounts of money of the same currency or a number. If the two
   values are a kind of Money, the result will be of BigDecimal number. If the earlier
@@ -564,8 +659,13 @@
   one monetary amount at some point later is permitted (which will cause the function
   to switch to the regular numbers calculation since the units will cancel themselves).
 
-  Scaling is applied only when the result is a kind of money. If the scaling requires
-  rounding then enclosing the expression within with-rounding is required."
+  Scaling is applied only when the result is a kind of Money, unless the dynamic
+  variable io.randomseed.bankster.scale/*each* is set to a truthy value (which can
+  also be achieved by enclosing the expression within
+  io.randomseed.bankster.scale/with-rescaling or
+  io.randomseed.bankster.money/with-rescaling macro combining the switch and setting
+  the scale). If the scaling requires rounding then enclosing the expression within
+  with-rounding is required."
   {:added "1.0.0"}
   ([a] (div 1M a))
   ([a b]
@@ -577,23 +677,25 @@
            (Money. (.currency ^Money a) (scale/apply mu (.scale ^BigDecimal am))))
        mu)))
   ([a b & more]
-   (if-not (instance? Money a)
-     (reduce div-core (div-core (scale/apply a) b) more)
-     (let [ma  (.amount ^Money a)
-           mb  (when (instance? Money b) (.amount ^Money b))
-           fir (div-core ma b mb)]
-       (loop [x fir, more more]
-         (if-some [y (first more)]
-           (if (instance? Money y)
-             (if (= (.id ^Currency (.currency ^Money a))
-                    (.id ^Currency (.currency ^Money y)))
-               (reduce div-core (.divide ^BigDecimal x ^BigDecimal (.amount ^Money y)) (rest more))
-               (throw (ex-info "Cannot divide by the amount of a different currency."
-                               {:dividend a :divider b})))
-             (recur (.divide ^BigDecimal x ^BigDecimal (scale/apply y)) (rest more)))
-           (if mb x
-               (Money. ^Currency  (.currency ^Money a)
-                       ^BigDecimal (scale/apply ^BigDecimal x (int (.scale ^BigDecimal ma)))))))))))
+   (if scale/*each*
+     (apply div-scaled a b more)
+     (if-not (instance? Money a)
+       (reduce div-core (div-core (scale/apply a) b) more)
+       (let [ma  (.amount ^Money a)
+             mb  (when (instance? Money b) (.amount ^Money b))
+             fir (div-core ma b mb)]
+         (loop [x fir, more more]
+           (if-some [y (first more)]
+             (if (instance? Money y)
+               (if (= (.id ^Currency (.currency ^Money a))
+                      (.id ^Currency (.currency ^Money y)))
+                 (reduce div-core (.divide ^BigDecimal x ^BigDecimal (.amount ^Money y)) (rest more))
+                 (throw (ex-info "Cannot divide by the amount of a different currency."
+                                 {:dividend a :divider b})))
+               (recur (.divide ^BigDecimal x ^BigDecimal (scale/apply y)) (rest more)))
+             (if mb x
+                 (Money. ^Currency  (.currency ^Money a)
+                         ^BigDecimal (scale/apply ^BigDecimal x (int (.scale ^BigDecimal ma))))))))))))
 
 ;; (defn divide-to-integral)
 ;; (defn divide-and-rem)
@@ -756,13 +858,18 @@
 ;;
 
 (defmacro with-rounding
-  "Alias for scale/with-rounding."
+  "Alias for io.randomseed.bankster.scale/with-rounding."
   [rounding-mode & body]
   (list* 'io.randomseed.bankster.scale/with-rounding rounding-mode body))
 
+(defmacro with-rescaling
+  "Alias for io.randomseed.bankster.scale/with-rescaling."
+  [rounding-mode & body]
+  (list* 'io.ranomseed.bankster.scale/with-rescaling rounding-mode body))
+
 (defmacro with-currency
   "Sets a default currency in a lexical context of the body. Has the same effect as
-  currency/with."
+  io.randomseed.bankster.currency/with."
   [currency & body]
   (let [cur# (if (symbol? currency) (keyword currency) currency)]
     `(binding [currency/*default* (currency/unit ~cur#)]
