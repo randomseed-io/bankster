@@ -389,6 +389,36 @@
        (le? b (first more)))
      false)))
 
+(defn is-zero?
+  "Returns true if the given monetary amount is a positive number."
+  {:tag Boolean :added "1.0.0"}
+  [^Money a]
+  (zero? (.compareTo 0M ^BigDecimal (.amount ^Money a))))
+
+(defn is-neg?
+  "Returns true if the given monetary amount is a negative number."
+  {:tag Boolean :added "1.0.0"}
+  [^Money a]
+  (pos-int? (.compareTo 0M ^BigDecimal (.amount ^Money a))))
+
+(defn is-pos?
+  "Returns true if the given monetary amount is a positive number."
+  {:tag Boolean :added "1.0.0"}
+  [^Money a]
+  (neg-int? (.compareTo 0M ^BigDecimal (.amount ^Money a))))
+
+(defn is-neg-or-zero?
+  "Returns true if the given monetary amount is a negative number or zero."
+  {:tag Boolean :added "1.0.0"}
+  [^Money a]
+  (>= (.compareTo 0M ^BigDecimal (.amount ^Money a)) 0))
+
+(defn is-pos-or-zero?
+  "Returns true if the given monetary amount is a positive number or zero."
+  {:tag Boolean :added "1.0.0"}
+  [^Money a]
+  (<= (.compareTo 0M ^BigDecimal (.amount ^Money a)) 0))
+
 ;;
 ;; Operations.
 ;;
