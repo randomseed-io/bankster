@@ -28,6 +28,15 @@
   nil)
 
 ;;
+;; Re-scaling iterative operations.
+;;
+
+(def ^:dynamic
+  *each*
+  "Enables re-scaling after each consecutive operation."
+  false)
+
+;;
 ;; Rounding modes.
 ;;
 
@@ -270,7 +279,6 @@
                 (symbol "java.math.RoundingMode" sname))))
     n))
 
-
 (defmacro with-rounding
   "Sets the rounding mode for operations on scaled values.
 
@@ -287,4 +295,25 @@
   [rounding-mode & body]
   (let [rms# (parse-rounding rounding-mode)]
     `(binding [*rounding-mode* ~rms#]
+       ~@body)))
+
+(defmacro with-rescaling
+  "Enables re-scaling on some consecutive operations and sets the rounding mode for
+  operations on scaled values. Internally sets *rescale-each* to true and
+  *rounding-mode* to the given value.
+
+  The first argument should be one of the following:
+
+  CEILING     - rounds towards positive infinity.
+  DOWN        - rounds towards zero.
+  FLOOR       - rounds towards negative infinity.
+  HALF_DOWN   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
+  HALF_EVEN   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
+  HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
+  UP          – rounds away from zero
+  UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
+  [rounding-mode & body]
+  (let [rms# (parse-rounding rounding-mode)]
+    `(binding [*each* true
+               *rounding-mode* ~rms#]
        ~@body)))
