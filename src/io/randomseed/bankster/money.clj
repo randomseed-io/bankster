@@ -689,11 +689,11 @@
   to switch to the regular numbers calculation since the units will cancel themselves).
 
   Scaling is applied only when the result is a kind of Money, unless the dynamic
-  variable io.randomseed.bankster.scale/*each* is set to a truthy value (which can
+  variable io.randomseed.bankster.scale/*each* is set to a truthy value. This can
   also be achieved by enclosing the expression within
-  io.randomseed.bankster.scale/with-rescaling or
-  io.randomseed.bankster.money/with-rescaling macro combining the switch and setting
-  the scale). If the scaling requires rounding then enclosing the expression within
+  io.randomseed.bankster.scale/with-rescaling (aliased as
+  io.randomseed.bankster.money/with-rescaling) macro combining the switch and setting
+  the scale. If the scaling requires rounding then enclosing the expression within
   with-rounding is required."
   {:added "1.0.0"}
   ([a] (div 1M a))
