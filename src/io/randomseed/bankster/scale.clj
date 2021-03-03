@@ -90,6 +90,8 @@
 ;;
 
 (defprotocol ^{:added "1.0.0"} Scalable
+  "The Scalable protocol describes values that can be scaled."
+
   (of
     [num]
     "Returns a scale. If the given value is not of type that scales (or is used to
@@ -101,6 +103,11 @@
   any). For values that already are scalable changes their scale if called with a
   second argument. The third argument, rounding-mode, must be present when
   downscaling.")
+
+  (amount
+    [num] [num scale] [num scale rounding-mode]
+    "Returns the amount of a scalable as BigDecimal number. Some scalables may not
+    be numeric so this function is to get the actual number out of them.")
 
   (applied?
     [num]
@@ -133,6 +140,11 @@
       ^BigDecimal num
       (.setScale ^BigDecimal num (int scale) ^RoundingMode r))))
 
+  (^BigDecimal amount
+   (^BigDecimal [num] num)
+   (^BigDecimal [num scale] (apply num scale))
+   (^BigDecimal [num scale r] (apply num scale r)))
+
   clojure.lang.BigInt
 
   (^Boolean scalable? [num] true)
@@ -149,6 +161,11 @@
       (.setScale (.toBigDecimal ^clojure.lang.BigInt num) (int scale))))
    (^BigDecimal [num scale ^RoundingMode r]
     (.setScale (.toBigDecimal ^clojure.lang.BigInt num) (int scale) ^RoundingMode r)))
+
+  (^BigDecimal amount
+   (^BigDecimal [num] (apply num))
+   (^BigDecimal [num scale] (apply num scale))
+   (^BigDecimal [num scale r] (apply num scale r)))
 
   BigInteger
 
@@ -167,6 +184,11 @@
    (^BigDecimal [num scale ^RoundingMode r]
     (.setScale (BigDecimal. ^BigInteger num) (int scale) ^RoundingMode r)))
 
+  (^BigDecimal amount
+   (^BigDecimal [num] (apply num))
+   (^BigDecimal [num scale] (apply num scale))
+   (^BigDecimal [num scale r] (apply num scale r)))
+
   Double
 
   (^Boolean scalable? [num] true)
@@ -184,6 +206,11 @@
    (^BigDecimal [num scale ^RoundingMode r]
     (.setScale (BigDecimal/valueOf num) (int scale) ^RoundingMode r)))
 
+  (^BigDecimal amount
+   (^BigDecimal [num] (apply num))
+   (^BigDecimal [num scale] (apply num scale))
+   (^BigDecimal [num scale r] (apply num scale r)))
+
   Float
 
   (^Boolean scalable? [num] true)
@@ -200,6 +227,11 @@
       (.setScale (BigDecimal/valueOf (double num)) (int scale))))
    (^BigDecimal [num scale ^RoundingMode r]
     (.setScale (BigDecimal/valueOf (double num)) (int scale) ^RoundingMode r)))
+
+  (^BigDecimal amount
+   (^BigDecimal [num] (apply num))
+   (^BigDecimal [num scale] (apply num scale))
+   (^BigDecimal [num scale r] (apply num scale r)))
 
   clojure.lang.Ratio
 
@@ -222,6 +254,11 @@
     (/ (apply (.numerator ^clojure.lang.Ratio num) (int scale) ^RoundingMode r)
        (apply (.denominator ^clojure.lang.Ratio num) (int scale) ^RoundingMode r))))
 
+  (^BigDecimal amount
+   (^BigDecimal [num] (apply num))
+   (^BigDecimal [num scale] (apply num scale))
+   (^BigDecimal [num scale r] (apply num scale r)))
+
   Number
 
   (^Boolean scalable? [num] true)
@@ -237,6 +274,11 @@
       (.setScale (BigDecimal/valueOf (long num)) (int scale))))
    (^BigDecimal [num scale ^RoundingMode r]
     (.setScale (BigDecimal/valueOf (long num)) (int scale) ^RoundingMode r)))
+
+  (^BigDecimal amount
+   (^BigDecimal [num] (apply num))
+   (^BigDecimal [num scale] (apply num scale))
+   (^BigDecimal [num scale r] (apply num scale r)))
 
   String
 
@@ -255,6 +297,11 @@
    (^BigDecimal [num scale ^RoundingMode r]
     (.setScale (BigDecimal. num ^MathContext unscaled-context) (int scale) ^RoundingMode r)))
 
+  (^BigDecimal amount
+   (^BigDecimal [num] (apply num))
+   (^BigDecimal [num scale] (apply num scale))
+   (^BigDecimal [num scale r] (apply num scale r)))
+
   nil
 
   (^Boolean scalable? [num] false)
@@ -266,6 +313,11 @@
     ([num]         nil)
     ([num scale]   nil)
     ([num scale r] nil))
+
+  (^BigDecimal amount
+   (^BigDecimal [num] nil)
+   (^BigDecimal [num scale] nil)
+   (^BigDecimal [num scale r] nil))
 
   Object
 
@@ -282,7 +334,13 @@
       (.setScale (BigDecimal. (long (num n)) ^MathContext unscaled-context) (int scale) ^RoundingMode *rounding-mode*)
       (.setScale (BigDecimal. (long (num n)) ^MathContext unscaled-context) (int scale))))
    (^BigDecimal [n scale ^RoundingMode r]
-    (.setScale (BigDecimal. (long (num n)) ^MathContext unscaled-context) (int scale) ^RoundingMode r))))
+    (.setScale (BigDecimal. (long (num n)) ^MathContext unscaled-context) (int scale) ^RoundingMode r)))
+
+  (^BigDecimal amount
+   (^BigDecimal [num] (apply num))
+   (^BigDecimal [num scale] (apply num scale))
+   (^BigDecimal [num scale r] (apply num scale r))))
+
 
 ;;
 ;; Aliases.
