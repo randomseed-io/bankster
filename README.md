@@ -7,8 +7,8 @@
 Clojure library to operate on monetary units with cryptocurrencies and custom
 currencies support.
 
-**This code is in alpha stage.** It should work but lacks some tests, string
-formatting functions and some common operations. Please check it in a few days.
+**This code is in beta stage.** It lacks some tests and string formatting
+functions. Please check it in a few days.
 
 ## Features
 
