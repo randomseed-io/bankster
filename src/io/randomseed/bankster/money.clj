@@ -499,24 +499,28 @@
   rounding mode (required when downscaling). The internal scale for a currency object
   is also updated. If no scale is given, returns the current scale.
 
+  Auto-scaled monetary values are returned unchanged.
+
   Use with caution since it can make money object no longer compliant with a scale of
   the currency."
   {:added "1.0.0"}
   ([^Money money]
    (int (.scale ^BigDecimal (.amount ^Money money))))
   (^Money [^Money money scale]
-   (Money. ^Currency   (.currency ^Money money)
-           ^BigDecimal (if scale/*rounding-mode*
-                         (.setScale ^BigDecimal (.amount ^Money money)
-                                    (int scale)
-                                    ^RoundingMode scale/*rounding-mode*)
-                         (.setScale ^BigDecimal (.amount ^Money money)
-                                    (int scale)))))
+   (if (currency/val-auto-scaled? scale) money
+       (Money. ^Currency   (.currency ^Money money)
+               ^BigDecimal (if scale/*rounding-mode*
+                             (.setScale ^BigDecimal (.amount ^Money money)
+                                        (int scale)
+                                        ^RoundingMode scale/*rounding-mode*)
+                             (.setScale ^BigDecimal (.amount ^Money money)
+                                        (int scale))))))
   (^Money [^Money money scale ^RoundingMode rounding-mode]
-   (Money. ^Currency   (.currency ^Money money)
-           ^BigDecimal (.setScale ^BigDecimal (.amount ^Money money)
-                                  (int scale)
-                                  ^RoundingMode rounding-mode))))
+   (if (currency/val-auto-scaled? scale) money
+       (Money. ^Currency   (.currency ^Money money)
+               ^BigDecimal (.setScale ^BigDecimal (.amount ^Money money)
+                                      (int scale)
+                                      ^RoundingMode rounding-mode)))))
 
 (defn add
   "Adds two or more amounts of money of the same currency. When called without any
