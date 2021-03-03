@@ -133,6 +133,18 @@
     (^Money [a c]   (parse a c))
     (^Money [a c r] (parse a c r))))
 
+(defn major-funds
+  ""
+  (^Money [c]     (funds c))
+  (^Money [c b]   (funds c (scale/integer b (scale/of c))))
+  (^Money [c b r] (funds c (scale/integer b (scale/of c) r) r)))
+
+(defn minor-funds
+  ""
+  (^Money [c]     (funds c))
+  (^Money [c b]   (funds c (scale/fractional b (scale/of c))))
+  (^Money [c b r] (funds c (scale/fractional b (scale/of c) r) r)))
+
 (defmacro of
   "Returns the amount of money as a Money object consisting of a currency and a
   value. Currency can be a currency object and for registered currencies: a keyword,
@@ -168,6 +180,36 @@
          rms# (scale/parse-rounding rounding-mode)
          cur# (currency/parse-currency-symbol currency)]
      `(funds ~cur# ~amount ~rms#))))
+
+(defmacro of-major
+  "Like io.randomseed.money/of but expects an amount of major part."
+  ([currency]
+   (let [cur# (currency/parse-currency-symbol currency)]
+     `(major-funds ~cur#)))
+  ([a b]
+   (let [[currency amount] (if (number? a) [b a] [a b])
+         cur# (currency/parse-currency-symbol currency)]
+     `(major-funds ~cur# ~amount)))
+  ([a b rounding-mode]
+   (let [[currency amount] (if (number? a) [b a] [a b])
+         rms# (scale/parse-rounding rounding-mode)
+         cur# (currency/parse-currency-symbol currency)]
+     `(major-funds ~cur# ~amount ~rms#))))
+
+(defmacro of-minor
+  "Like io.randomseed.money/of but expects an amount of minor part."
+  ([currency]
+   (let [cur# (currency/parse-currency-symbol currency)]
+     `(minor-funds ~cur#)))
+  ([a b]
+   (let [[currency amount] (if (number? a) [b a] [a b])
+         cur# (currency/parse-currency-symbol currency)]
+     `(minor-funds ~cur# ~amount)))
+  ([a b rounding-mode]
+   (let [[currency amount] (if (number? a) [b a] [a b])
+         rms# (scale/parse-rounding rounding-mode)
+         cur# (currency/parse-currency-symbol currency)]
+     `(minor-funds ~cur# ~amount ~rms#))))
 
 ;;
 ;; Scaling and rounding.
