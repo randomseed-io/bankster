@@ -878,18 +878,26 @@
   io.randomseed.bankster.scale/*rounding-mode* will be used."
   {:tag Money :added "1.0.0"}
   (^Money [^Money a currency multiplier]
-   (let [currency (currency/of currency)]
+   (let [^Currency currency (currency/of currency)
+         sc (int (scale/of ^Currency currency))]
      (Money. ^Currency   currency
-             ^BigDecimal (scale/apply (.multiply ^BigDecimal (.amount ^Money a)
-                                                 ^BigDecimal (scale/apply multiplier))
-                                      (.sc ^Currency currency)))))
+             ^BigDecimal (if (currency/val-auto-scaled? sc)
+                           (.multiply ^BigDecimal (.amount ^Money a)
+                                      ^BigDecimal (scale/apply multiplier))
+                           (scale/apply (.multiply ^BigDecimal (.amount ^Money a)
+                                                   ^BigDecimal (scale/apply multiplier))
+                                        (int sc))))))
   ([^Money a currency multiplier rounding-mode]
-   (let [currency (currency/of currency)]
+   (let [^Currency currency (currency/of currency)
+         sc (int (scale/of ^Currency currency))]
      (Money. ^Currency   currency
-             ^BigDecimal (scale/apply (.multiply ^BigDecimal (.amount ^Money a)
-                                                 ^BigDecimal (scale/apply multiplier))
-                                      (.sc ^Currency currency)
-                                      rounding-mode)))))
+             ^BigDecimal (if (currency/val-auto-scaled? sc)
+                           (.multiply ^BigDecimal (.amount ^Money a)
+                                      ^BigDecimal (scale/apply multiplier))
+                           (scale/apply (.multiply ^BigDecimal (.amount ^Money a)
+                                                   ^BigDecimal (scale/apply multiplier))
+                                        (int sc)
+                                        rounding-mode))))))
 
 (defn div-rem
   "Returns the remainder of dividing an mount of money by the given number."
