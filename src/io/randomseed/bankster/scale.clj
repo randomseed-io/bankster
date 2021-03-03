@@ -341,6 +341,23 @@
    (^BigDecimal [num scale] (apply num scale))
    (^BigDecimal [num scale r] (apply num scale r))))
 
+;;
+;; Conversions to int and long.
+;;
+
+(defn ->int
+  "Converts to int."
+  {:tag 'int :added "1.0.0"}
+  ([n]                     (.intValueExact ^BigDecimal (apply n)))
+  ([n scale]               (.intValueExact ^BigDecimal (apply n scale)))
+  ([n scale rounding-mode] (.intValueExact ^BigDecimal (apply n scale rounding-mode))))
+
+(defn ->long
+  "Converts to long."
+  {:tag 'long :added "1.0.0"}
+  (^long [n]                     (.longValueExact ^BigDecimal (apply n)))
+  (^long [n scale]               (.longValueExact ^BigDecimal (apply n scale)))
+  (^long [n scale rounding-mode] (.longValueExact ^BigDecimal (apply n scale rounding-mode))))
 
 ;;
 ;; Aliases.
