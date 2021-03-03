@@ -42,14 +42,14 @@
   nil)
 
 ;;
-;; Auto-scaling predicate.
+;; Auto-scaling predicate for scale.
 ;;
 
-(defmacro val-auto-scaled?
+(defn val-auto-scaled?
   "Returns true if the given scale is equal to auto-scaled."
   {:added "1.0.0"}
   [scale]
-  `(= auto-scaled ~scale))
+  (= auto-scaled scale))
 
 ;;
 ;; Currency constructor
