@@ -1084,8 +1084,9 @@
 
 (defmacro with-rescaling
   "Alias for io.randomseed.bankster.scale/with-rescaling."
+  {:added "1.0.0"}
   [rounding-mode & body]
-  (list* 'io.ranomseed.bankster.scale/with-rescaling rounding-mode body))
+  (list* 'io.randomseed.bankster.scale/with-rescaling rounding-mode body))
 
 (defmacro with-currency
   "Sets a default currency in a lexical context of the body. Has the same effect as
