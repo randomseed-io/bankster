@@ -768,6 +768,28 @@
   ([^Money a ^Money b & more]
    (reduce max-amount (max-amount a b) more)))
 
+(defn convert
+  "Converts a monetary amount from one currency to another using the given
+  multiplier (expressing a conversion rate).
+
+  When no rounding mode is given and rounding is required during scaling to another
+  currency then the value of dynamic variable
+  io.randomseed.bankster.scale/*rounding-mode* will be used."
+  {:tag Money :added "1.0.0"}
+  (^Money [^Money a currency multiplier]
+   (let [currency (currency/of currency)]
+     (Money. ^Currency   currency
+             ^BigDecimal (scale/apply (.multiply ^BigDecimal (.amount ^Money a)
+                                                 ^BigDecimal (scale/apply multiplier))
+                                      (.sc ^Currency currency)))))
+  ([^Money a currency multiplier rounding-mode]
+   (let [currency (currency/of currency)]
+     (Money. ^Currency   currency
+             ^BigDecimal (scale/apply (.multiply ^BigDecimal (.amount ^Money a)
+                                                 ^BigDecimal (scale/apply multiplier))
+                                      (.sc ^Currency currency)
+                                      rounding-mode)))))
+
 (defn div-rem
   "Returns the remainder of dividing an mount of money by the given number."
   {:tag BigDecimal :added "1.0.0"}
