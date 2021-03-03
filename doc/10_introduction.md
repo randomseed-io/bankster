@@ -49,7 +49,7 @@ org.clojure/test.check {:mvn/version "0.10.0-alpha4"}
 
 You can also download JAR from [Clojars](https://clojars.org/io.randomseed/bankster).
 
- ## Sneak peeks
+## Sneak peeks
 
 * It **shows information** about a currency:
 
