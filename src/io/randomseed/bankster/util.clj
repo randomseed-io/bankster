@@ -265,6 +265,7 @@
       (catch NumberFormatException e default))))
 
 (defn ^clojure.lang.LazySeq juxt-seq
+  "Like juxt but returns a lazy sequence."
   [& functions]
   (fn [& args]
     (map #(apply %1 %2) functions (repeat args))))
