@@ -219,6 +219,8 @@
   :crypto/XMR  {:kind :DECENTRALIZED :scale 12}
   :crypto/XRP  {:kind :COMBANK       :scale  6}
   :crypto/XTZ  {:kind :DECENTRALIZED :scale  6}
+  :crypto/USDT {:kind :COMBANK       :scale 8}
+  :crypto/USDC {:kind :COMBANK       :scale 8}
   :crypto/ZEC  {:kind :DECENTRALIZED :scale  8}}
  :countries {:AD :EUR
              :AE :AED
