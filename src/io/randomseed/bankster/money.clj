@@ -26,10 +26,10 @@
 ;;
 
 (defprotocol ^{:added "1.0.0"} Accountable
-  "This protocol is used to create monetary values using various numeric types and
+  "This protocol is used to express monetary values using various numeric types and
   currency representations."
 
-  (funds
+  (value
     [num] [currency num] [currency num rounding-mode]
     "Creates new Money objects for the given value which will become an amount. If
   the currency is not given it should try to use the default one, taken from
@@ -79,71 +79,71 @@
 
   Currency
 
-  (funds
+  (value
     (^Money [c]     (currency/of c))
     (^Money [c b]   (parse ^Currency c b))
     (^Money [c b r] (parse ^Currency c b r)))
 
   clojure.lang.Symbol
 
-  (funds
+  (value
     (^Money [c]     (currency/of c))
     (^Money [c b]   (parse ^Currency c b))
     (^Money [c b r] (parse ^Currency c b r)))
 
   clojure.lang.Keyword
 
-  (funds
+  (value
     (^Money [c]     (currency/of c))
     (^Money [c b]   (parse ^Currency c b))
     (^Money [c b r] (parse ^Currency c b r)))
 
   String
 
-  (funds
+  (value
     (^Money [c]     (currency/of c))
     (^Money [c b]   (parse ^Currency c b))
     (^Money [c b r] (parse ^Currency c b r)))
 
   Number
 
-  (funds
+  (value
     (^Money [a]               (parse ^Currency currency/*default* a))
     (^Money [a ^Currency c]   (parse ^Currency c a))
     (^Money [a ^Currency c r] (parse ^Currency c a r)))
 
   nil
 
-  (funds
+  (value
     ([c]     nil)
     ([a b]   nil)
     ([a c r] (parse a c r)))
 
   clojure.lang.Sequential
 
-  (funds
-    (^Money [v]     (apply funds v))
-    (^Money [v r]   (funds (first v) (second v) r))
-    (^Money [v b r] (funds (first v) b r)))
+  (value
+    (^Money [v]     (apply value v))
+    (^Money [v r]   (value (first v) (second v) r))
+    (^Money [v b r] (value (first v) b r)))
 
   Object
 
-  (funds
+  (value
     (^Money [a]     (parse ^Currency currency/*default* a))
     (^Money [a c]   (parse a c))
     (^Money [a c r] (parse a c r))))
 
-(defn major-funds
+(defn major-value
   ""
-  (^Money [c]     (funds c))
-  (^Money [c b]   (funds c (scale/integer b (scale/of c))))
-  (^Money [c b r] (funds c (scale/integer b (scale/of c) r) r)))
+  (^Money [c]     (value c))
+  (^Money [c b]   (value c (scale/integer b (scale/of c))))
+  (^Money [c b r] (value c (scale/integer b (scale/of c) r) r)))
 
-(defn minor-funds
+(defn minor-value
   ""
-  (^Money [c]     (funds c))
-  (^Money [c b]   (funds c (scale/fractional b (scale/of c))))
-  (^Money [c b r] (funds c (scale/fractional b (scale/of c) r) r)))
+  (^Money [c]     (value c))
+  (^Money [c b]   (value c (scale/fractional b (scale/of c))))
+  (^Money [c b r] (value c (scale/fractional b (scale/of c) r) r)))
 
 (defmacro of
   "Returns the amount of money as a Money object consisting of a currency and a
@@ -167,49 +167,49 @@
   UP          – rounds away from zero
   UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary.
 
-  To create a monetary object using function, call funds."
+  To create a monetary object using function, call value."
   ([currency]
    (let [cur# (currency/parse-currency-symbol currency)]
-     `(funds ~cur#)))
+     `(value ~cur#)))
   ([a b]
    (let [[currency amount] (if (number? a) [b a] [a b])
          cur# (currency/parse-currency-symbol currency)]
-     `(funds ~cur# ~amount)))
+     `(value ~cur# ~amount)))
   ([a b rounding-mode]
    (let [[currency amount] (if (number? a) [b a] [a b])
          rms# (scale/parse-rounding rounding-mode)
          cur# (currency/parse-currency-symbol currency)]
-     `(funds ~cur# ~amount ~rms#))))
+     `(value ~cur# ~amount ~rms#))))
 
 (defmacro of-major
   "Like io.randomseed.money/of but expects an amount of major part."
   ([currency]
    (let [cur# (currency/parse-currency-symbol currency)]
-     `(major-funds ~cur#)))
+     `(major-value ~cur#)))
   ([a b]
    (let [[currency amount] (if (number? a) [b a] [a b])
          cur# (currency/parse-currency-symbol currency)]
-     `(major-funds ~cur# ~amount)))
+     `(major-value ~cur# ~amount)))
   ([a b rounding-mode]
    (let [[currency amount] (if (number? a) [b a] [a b])
          rms# (scale/parse-rounding rounding-mode)
          cur# (currency/parse-currency-symbol currency)]
-     `(major-funds ~cur# ~amount ~rms#))))
+     `(major-value ~cur# ~amount ~rms#))))
 
 (defmacro of-minor
   "Like io.randomseed.money/of but expects an amount of minor part."
   ([currency]
    (let [cur# (currency/parse-currency-symbol currency)]
-     `(minor-funds ~cur#)))
+     `(minor-value ~cur#)))
   ([a b]
    (let [[currency amount] (if (number? a) [b a] [a b])
          cur# (currency/parse-currency-symbol currency)]
-     `(minor-funds ~cur# ~amount)))
+     `(minor-value ~cur# ~amount)))
   ([a b rounding-mode]
    (let [[currency amount] (if (number? a) [b a] [a b])
          rms# (scale/parse-rounding rounding-mode)
          cur# (currency/parse-currency-symbol currency)]
-     `(minor-funds ~cur# ~amount ~rms#))))
+     `(minor-value ~cur# ~amount ~rms#))))
 
 ;;
 ;; Scaling and rounding.
@@ -1046,10 +1046,10 @@
      (if (or (nil? c) (and (sequential? c) (nil? (seq c))))
        '(quote nil)
        (if (nil? amount)
-         (funds c)
+         (value c)
          (if (nil? r)
-           (funds c amount)
-           (funds c amount (scale/parse-rounding r))))))))
+           (value c amount)
+           (value c amount (scale/parse-rounding r))))))))
 
 (defn defliteral
   "For the given currency identifier or a currency object it creates a tagged literal
