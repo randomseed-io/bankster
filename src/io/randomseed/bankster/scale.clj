@@ -342,6 +342,40 @@
    (^BigDecimal [num scale r] (apply num scale r))))
 
 ;;
+;; Getting integer and fractional parts.
+;;
+
+(defn integer
+  "Returns the integer part of the given number, converted to decimal if
+  required. Optional scale and rounding mode can be given. Makes use of
+  *rounding-mode* if it's set."
+  {:tag BigDecimal :added "1.0.0"}
+  (^BigDecimal [n]
+   (.setScale ^BigDecimal (amount n) 0 ROUND_DOWN))
+  (^BigDecimal [n scale]
+   (.setScale ^BigDecimal (amount n scale) 0 ROUND_DOWN))
+  (^BigDecimal [n scale rounding-mode]
+   (.setScale ^BigDecimal (amount n scale rounding-mode) 0 ROUND_DOWN)))
+
+(defn fractional
+  "Returns the fractional part of the given number, converted to decimal if
+  required. Optional scale and rounding mode can be given. Makes use of
+  *rounding-mode* if it's set."
+  {:tag BigDecimal :added "1.0.0"}
+  (^BigDecimal [n]
+   (let [^BigDecimal n (amount n)]
+     (.movePointRight ^BigDecimal (.remainder n BigDecimal/ONE)
+                      (int (.scale n)))))
+  (^BigDecimal [n scale]
+   (.movePointRight ^BigDecimal (.remainder ^BigDecimal (amount n scale)
+                                            BigDecimal/ONE)
+                    (int scale)))
+  (^BigDecimal [n scale rounding-mode]
+   (.movePointRight ^BigDecimal (.remainder ^BigDecimal (amount n scale rounding-mode)
+                                            BigDecimal/ONE)
+                    (int scale))))
+
+;;
 ;; Conversions to int and long.
 ;;
 
