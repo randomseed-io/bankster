@@ -872,7 +872,19 @@
   (^Currency apply
    (^Currency [c] ^Currency c)
    (^Currency [c scale] (assoc c :sc (int scale)))
-   (^Currency [c scale ^RoundingMode rounding-mode] (assoc c :sc (int scale)))))
+   (^Currency [c scale ^RoundingMode rounding-mode] (assoc c :sc (int scale))))
+
+  clojure.lang.Keyword
+
+  (^Boolean scalable? [c] (defined? c))
+  (^Boolean applied?  [c] (defined? c))
+
+  (of [c] (.sc ^Currency (unit c)))
+
+  (^Currency apply
+   (^Currency [c] ^Currency (unit c))
+   (^Currency [c scale] (assoc (unit c) :sc (int scale)))
+   (^Currency [c scale ^RoundingMode rounding-mode] (assoc (unit c) :sc (int scale)))))
 
 ;;
 ;; Contextual macros.
