@@ -280,6 +280,10 @@
                                    (int scale)
                                    ^RoundingMode rounding-mode))))
 
+  (^BigDecimal amount
+   (^BigDecimal [num]         (.amount ^Money num))
+   (^BigDecimal [num scale]   (.amount ^Money (apply num scale)))
+   (^BigDecimal [num scale r] (.amount ^Money (apply num scale r)))))
 
 ;;
 ;; Comparator.
