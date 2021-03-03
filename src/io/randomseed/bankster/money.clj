@@ -312,14 +312,14 @@
   (id
     (^clojure.lang.Keyword [money]
      (.id ^Currency (.currency ^Money money)))
-    (^clojure.lang.Keyword [money, ^Registry registry]
+    (^clojure.lang.Keyword [money ^Registry registry]
      (.id ^Currency (.currency ^Money money))))
 
   (defined?
     (^Boolean [money]
      (contains? (.cur-id->cur (registry/get))
                 (.id ^Currency (.currency ^Money money))))
-    (^Boolean [money, ^Registry registry]
+    (^Boolean [money ^Registry registry]
      (contains? (.cur-id->cur ^Registry registry)
                 (.id ^Currency (.currency ^Money money)))))
 
@@ -1074,6 +1074,7 @@
 
 (defmacro with-rounding
   "Alias for io.randomseed.bankster.scale/with-rounding."
+  {:added "1.0.0"}
   [rounding-mode & body]
   (list* 'io.randomseed.bankster.scale/with-rounding rounding-mode body))
 
@@ -1085,6 +1086,7 @@
 (defmacro with-currency
   "Sets a default currency in a lexical context of the body. Has the same effect as
   io.randomseed.bankster.currency/with."
+  {:added "1.0.0"}
   [currency & body]
   (let [cur# (if (symbol? currency) (keyword currency) currency)]
     `(binding [currency/*default* (currency/unit ~cur#)]
@@ -1096,6 +1098,7 @@
 
 (defn lit
   "Tagged literal handler."
+  {:added "1.0.0" :no-doc true}
   ([arg]
    (let [[c amount r] (if (sequential? arg) arg [arg nil nil])]
      (if (or (nil? c) (and (sequential? c) (nil? (seq c))))
@@ -1113,6 +1116,7 @@
   will handle the literal.
 
   The literals will be bound to *data-readers* in a local thread."
+  {:added "1.0.0"}
   [c]
   (when-some [^Currency c (currency/unit c)]
     (let [cush (currency/short-code c)

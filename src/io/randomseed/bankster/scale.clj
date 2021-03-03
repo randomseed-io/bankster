@@ -411,7 +411,7 @@
 (defn parse-rounding
   "Helper for parsing rounding modes in macros. Accepted input:
   ROUND_mode, :ROUND_mode, BigDecimal/ROUND_mode, money/ROUND_mode, :mode, mode."
-  {:tag RoundingMode :added "1.0.0"}
+  {:tag RoundingMode :added "1.0.0" :no-doc true}
   [n]
   (if (ident? n)
     (let [sname (name n)
@@ -446,9 +446,9 @@
        ~@body)))
 
 (defmacro with-rescaling
-  "Enables re-scaling on some consecutive operations and sets the rounding mode for
-  operations on scaled values. Internally sets *rescale-each* to true and
-  *rounding-mode* to the given value.
+  "Enables re-scaling on some consecutive operations which support it and sets the
+  rounding mode for operations on scaled values. Internally sets `*each*` to true and
+  `*rounding-mode*` to the given value.
 
   The first argument should be one of the following:
 
@@ -461,8 +461,20 @@
   UP          – rounds away from zero
   UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
   {:added "1.0.0"}
-  [rounding-mode & body]
-  (let [rms# (parse-rounding rounding-mode)]
-    `(binding [*each* true
-               *rounding-mode* ~rms#]
-       ~@body)))
+  ([rounding-mode & body]
+   (let [rms# (parse-rounding rounding-mode)]
+     `(binding [*each* true
+                *rounding-mode* ~rms#]
+        ~@body))))
+
+(defmacro each
+  "Enables re-scaling on some consecutive operations which support it and sets the rounding mode for
+  operations on scaled values. Internally sets *rescale-each* to true and
+  *rounding-mode* to the given value.
+
+  Practically, in most cases it is better to use the with-rescaling macro which also
+  sets rounding mode."
+  {:added "1.0.0"}
+  ([& body]
+   `(binding [*each* true]
+      ~@body)))
