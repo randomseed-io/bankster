@@ -32,8 +32,8 @@
   (value
     [num] [currency num] [currency num rounding-mode]
     "Creates new Money object for the given value which will become an amount. If the
-  currency is not given it should try to use the default one, taken from
-  *default-currency* dynamic variable. Optional rounding-mode should be a rounding
+  currency is not given it should try to use the default one, taken from the
+  `*default-currency*` dynamic variable. Optional rounding-mode should be a rounding
   mode used when the conversion to a scaled monetary amount requires rounding.
 
   In its unary form, when the argument is not numeric, it will try to get a currency
@@ -136,8 +136,8 @@
 (defn major-value
   "Creates new Money object for the given value which will become a major part of the
   amount. If the given number has fractional part it will be truncated. If the
-  currency is not given it should try to use the default one, taken from
-  *default-currency* dynamic variable. Optional rounding-mode should be a rounding
+  currency is not given it should try to use the default one, taken from the
+  `*default-currency*` dynamic variable. Optional rounding-mode should be a rounding
   mode used when the conversion to a scaled monetary amount requires rounding.
 
   In its unary form, when the argument is not numeric, it will try to get a currency
@@ -160,8 +160,8 @@
 (defn minor-value
   "Creates new Money object for the given value which will become a minor part of the
   amount. If the given number has fractional part it will be truncated. If the
-  currency is not given it should try to use the default one, taken from
-  *default-currency* dynamic variable. Optional rounding-mode should be a rounding
+  currency is not given it should try to use the default one, taken from the
+  `*default-currency*` dynamic variable. Optional rounding-mode should be a rounding
   mode used when the conversion to a scaled monetary amount requires rounding.
 
   In its unary form, when the argument is not numeric, it will try to get a currency
@@ -682,9 +682,9 @@
 
   Rounding and re-scaling are performed after all calculations are done. To change
   that either use mul-scaled or set the dynamic variable
-  io.randomseed.bankster.scale/*each* to a truthy value. You can also use a macro
-  called io.randomseed.bankster.scale/with-rescaling (aliased in this namespace under
-  the same name)."
+  `io.randomseed.bankster.scale/*each*` to a truthy value. You can also use a macro
+  called `io.randomseed.bankster.scale/with-rescaling` (aliased in this namespace
+  under the same name)."
   {:added "1.0.0"}
   ([] 1M)
   ([a] a)
@@ -806,12 +806,12 @@
   to switch to the regular numbers calculation since the units will cancel themselves).
 
   Scaling is applied only when the result is a kind of Money, unless the dynamic
-  variable io.randomseed.bankster.scale/*each* is set to a truthy value. This can
+  variable `io.randomseed.bankster.scale/*each*` is set to a truthy value. This can
   also be achieved by enclosing the expression within
-  io.randomseed.bankster.scale/with-rescaling (aliased as
-  io.randomseed.bankster.money/with-rescaling) macro combining the switch and setting
-  the scale. If the scaling requires rounding then enclosing the expression within
-  with-rounding is required."
+  `io.randomseed.bankster.scale/with-rescaling` (aliased as
+  `io.randomseed.bankster.money/with-rescaling`) macro combining the switch and
+  setting the scale. If the scaling requires rounding then enclosing the expression
+  within with-rounding is required."
   {:added "1.0.0"}
   ([a] (div 1M a))
   ([a b]
@@ -875,7 +875,7 @@
 
   When no rounding mode is given and rounding is required during scaling to another
   currency then the value of dynamic variable
-  io.randomseed.bankster.scale/*rounding-mode* will be used."
+  `io.randomseed.bankster.scale/*rounding-mode*` will be used."
   {:tag Money :added "1.0.0"}
   (^Money [^Money a currency multiplier]
    (let [^Currency currency (currency/of currency)

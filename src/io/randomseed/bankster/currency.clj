@@ -114,17 +114,17 @@
    id
    [id] [id registry]
    "Returns currency identifier as a keyword. If the registry is not given, it will
-  use the global one, but will first try a registry bound to the registry/*default*
-  dynamic variable. If the given argument is already an identifier (a keyword), it
-  will be returned as is.")
+  use the global one, but will first try a registry bound to the
+  `io.randomseed.bankster.registry/*default*` dynamic variable. If the given argument
+  is already an identifier (a keyword), it will be returned as is.")
 
   (^{:tag Currency :added "1.0.0"}
    unit
    [id] [id registry]
    "Returns a currency object for the given id and registry. If the registry is not
   given, it will use the global one, but will first try a registry bound to the
-  registry/*default* dynamic variable. If the currency record is passed, it will be
-  returned as is without consulting the registry.")
+  `io.randomseed.bankster.registry/*default*` dynamic variable. If the currency
+  record is passed, it will be returned as is without consulting the registry.")
 
   (^{:tag Boolean :added "1.0.0"}
    defined?
@@ -139,7 +139,8 @@
    "Returns true if two currencies have the same ID. That does not mean the objects
   are of the same contents (e.g. numerical IDs or scales may differ) but it's more
   performant in 99% cases. If the registry is not given, it will use the global one,
-  but will first try a registry bound to the registry/*default* dynamic variable."))
+  but will first try a registry bound to the
+  `io.randomseed.bankster.registry/*default*` dynamic variable."))
 
 ;;
 ;; Currency querying functions, Monetary implementation.
@@ -717,13 +718,13 @@
 ;;
 
 (defn set-default!
-  "Sets default currency by altering *default* dynamic variable."
+  "Sets default currency by altering `*default*` dynamic variable."
   {:tag Currency :added "1.0.0"}
   [c]
   (alter-var-root #'*default* (constantly ^Currency (unit c))))
 
 (defn unset-default!
-  "Sets default currency to nil by altering *default* dynamic variable."
+  "Sets default currency to nil by altering `*default*` dynamic variable."
   {:tag nil :added "1.0.0"}
   []
   (alter-var-root #'*default* (constantly nil)))
