@@ -15,14 +15,16 @@
 ;; Initial math context.
 ;;
 
-(def ^MathContext unscaled-context
+(def ^{:tag MathContext :added "1.0.0"}
+  unscaled-context
+  "MathContext indicating auto-scaling and no rounding."
   (MathContext. 0 RoundingMode/UNNECESSARY))
 
 ;;
 ;; Default rounding mode.
 ;;
 
-(def ^:dynamic
+(def ^{:dynamic true :tag RoundingMode :added "1.0.0"}
   *rounding-mode*
   "Default rounding mode."
   nil)
@@ -31,7 +33,7 @@
 ;; Re-scaling iterative operations.
 ;;
 
-(def ^:dynamic
+(def ^{:dynamic true :tag Boolean :added "1.0.0"}
   *each*
   "Enables re-scaling after each consecutive operation."
   false)
@@ -40,20 +42,54 @@
 ;; Rounding modes.
 ;;
 
-(def ^{:tag RoundingMode} ROUND_CEILING     RoundingMode/CEILING)
-(def ^{:tag RoundingMode} ROUND_FLOOR       RoundingMode/FLOOR)
-(def ^{:tag RoundingMode} ROUND_HALF_UP     RoundingMode/HALF_UP)
-(def ^{:tag RoundingMode} ROUND_HALF_DOWN   RoundingMode/HALF_DOWN)
-(def ^{:tag RoundingMode} ROUND_HALF_EVEN   RoundingMode/HALF_EVEN)
-(def ^{:tag RoundingMode} ROUND_UP          RoundingMode/UP)
-(def ^{:tag RoundingMode} ROUND_DOWN        RoundingMode/DOWN)
-(def ^{:tag RoundingMode} ROUND_UNNECESSARY RoundingMode/UNNECESSARY)
+(def ^{:tag RoundingMode :added "1.0.0"}
+  ROUND_CEILING
+  "Rounding mode to round towards positive infinity."
+  RoundingMode/CEILING)
+
+(def ^{:tag RoundingMode :added "1.0.0"}
+  ROUND_FLOOR
+  "Rounding mode to round towards negative infinity."
+  RoundingMode/FLOOR)
+
+(def ^{:tag RoundingMode :added "1.0.0"}
+  ROUND_HALF_UP
+  "Rounding mode to round towards nearest neighbor, unless neighbors are equidistant,
+  in which case round up."
+  RoundingMode/HALF_UP)
+
+(def ^{:tag RoundingMode :added "1.0.0"}
+  ROUND_HALF_DOWN
+  "Rounding mode to round towards nearest neighbor, unless neighbors are equidistant,
+  in which case round down."
+  RoundingMode/HALF_DOWN)
+
+(def ^{:tag RoundingMode :added "1.0.0"}
+  ROUND_HALF_EVEN
+  "Rounding mode to round towards nearest neighbor, unless neighbors are equidistant,
+  in which case round towards the nearest one."
+  RoundingMode/HALF_EVEN)
+
+(def ^{:tag RoundingMode :added "1.0.0"}
+  ROUND_UP
+  "Rounding mode to round away from zero."
+  RoundingMode/UP)
+
+(def ^{:tag RoundingMode :added "1.0.0"}
+  ROUND_DOWN
+  "Rounding mode to round towards zero."
+  RoundingMode/DOWN)
+
+(def ^{:tag RoundingMode :added "1.0.0"}
+  ROUND_UNNECESSARY
+  "Indication that no rounding is necessary."
+  RoundingMode/UNNECESSARY)
 
 ;;
 ;; Scalable protocol.
 ;;
 
-(defprotocol Scalable
+(defprotocol ^{:added "1.0.0"} Scalable
   (of
     [num]
     "Returns a scale. If the given value is not of type that scales (or is used to
@@ -254,6 +290,7 @@
 
 (defn ^io.randomseed.bankster.scale.Scalable with
   "Alias for scale/apply."
+  {:added "1.0.0"}
   (^io.randomseed.bankster.scale.Scalable [num] (apply num))
   (^io.randomseed.bankster.scale.Scalable [num scale] (apply num scale))
   (^io.randomseed.bankster.scale.Scalable [num scale rounding-mode] (apply num scale rounding-mode)))
@@ -265,6 +302,7 @@
 (defn parse-rounding
   "Helper for parsing rounding modes in macros. Accepted input:
   ROUND_mode, :ROUND_mode, BigDecimal/ROUND_mode, money/ROUND_mode, :mode, mode."
+  {:tag RoundingMode :added "1.0.0"}
   [n]
   (if (ident? n)
     (let [sname (name n)
@@ -292,6 +330,7 @@
   HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
   UP          – rounds away from zero
   UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
+  {:added "1.0.0"}
   [rounding-mode & body]
   (let [rms# (parse-rounding rounding-mode)]
     `(binding [*rounding-mode* ~rms#]
@@ -312,6 +351,7 @@
   HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
   UP          – rounds away from zero
   UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
+  {:added "1.0.0"}
   [rounding-mode & body]
   (let [rms# (parse-rounding rounding-mode)]
     `(binding [*each* true

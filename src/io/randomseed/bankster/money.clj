@@ -25,9 +25,23 @@
 ;; Accountable protocol.
 ;;
 
-(defprotocol Accountable
-  "This protocol is used to create monetary values."
-  (funds [num] [a b] [a b rounding-mode]))
+(defprotocol ^{:added "1.0.0"} Accountable
+  "This protocol is used to create monetary values using various numeric types and
+  currency representations."
+
+  (funds
+    [num] [currency num] [currency num rounding-mode]
+    "Creates new Money objects for the given value which will become an amount. If
+  the currency is not given it should try to use the default one, taken from
+  *default-currency* dynamic variable. Optional rounding-mode should be a rounding
+  mode used when the conversion to a scaled monetary amount requires rounding.
+
+  In its unary form, when the argument is not numeric, it will try to get a currency
+  object (identified by a string, a symbol or a keyword) from a default, global
+  registry of currencies.
+
+  For simple money creation the following macros may be convenient way to go: of,
+  of-major, of-minor."))
 
 ;;
 ;; Main coercer.
@@ -66,28 +80,28 @@
   Currency
 
   (funds
-    (^Money [a]     (currency/of a))
+    (^Money [c]     (currency/of c))
     (^Money [c b]   (parse ^Currency c b))
     (^Money [c b r] (parse ^Currency c b r)))
 
   clojure.lang.Symbol
 
   (funds
-    (^Money [a]     (currency/of a))
+    (^Money [c]     (currency/of c))
     (^Money [c b]   (parse ^Currency c b))
     (^Money [c b r] (parse ^Currency c b r)))
 
   clojure.lang.Keyword
 
   (funds
-    (^Money [a]     (currency/of a))
+    (^Money [c]     (currency/of c))
     (^Money [c b]   (parse ^Currency c b))
     (^Money [c b r] (parse ^Currency c b r)))
 
   String
 
   (funds
-    (^Money [a]     (currency/of a))
+    (^Money [c]     (currency/of c))
     (^Money [c b]   (parse ^Currency c b))
     (^Money [c b r] (parse ^Currency c b r)))
 
@@ -139,7 +153,9 @@
   HALF_EVEN   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
   HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
   UP          – rounds away from zero
-  UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
+  UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary.
+
+  To create a monetary object using function, call funds."
   ([currency]
    (let [cur# (currency/parse-currency-symbol currency)]
      `(funds ~cur#)))
@@ -157,7 +173,7 @@
 ;; Scaling and rounding.
 ;;
 
-(def ^:private ^clojure.lang.PersistentArrayMap
+(def ^{:private true :tag clojure.lang.PersistentArrayMap :added "1.0.0"}
   rounding->context
   "Mapping of rounding modes to MathContext objects."
   {RoundingMode/UP          (MathContext. (int 0) RoundingMode/UP)
@@ -212,7 +228,7 @@
 
   (of
     (^Currency [money] (.currency ^Money money))
-    (^Currency [money, ^Registry registry] money))
+    (^Currency [money ^Registry registry] money))
 
   (id
     (^clojure.lang.Keyword [money]
@@ -301,7 +317,7 @@
      false)))
 
 (defn ^Boolean eq-am?
-  "Return true if the money amounts and their currencies are equal regardless of their
+  "Return true if the money amounts and their currencies are equal, regardless of their
   scales."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money a] true)
