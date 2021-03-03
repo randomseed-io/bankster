@@ -23,7 +23,33 @@ formatting functions and some common operations. Please check it in a few days.
 * Additional, common operators that can also be used on other numeric data.
 * Tagged literals for currencies and monetary amounts.
 
-## Sneak peeks
+## Installation
+
+To use Bankster in your project, add the following to dependencies section of
+`project.clj` or `build.boot`:
+
+```clojure
+[io.randomseed/bankster "1.0.0"]
+```
+
+For `deps.edn` add the following as an element of a map under `:deps` or
+`:extra-deps` key:
+
+```clojure
+io.randomseed/bankster {:mvn/version "1.0.0"}
+```
+
+Additionally, if you want to utilize specs and generators provided by the Bankster
+you can use (in your development profile):
+
+```clojure
+org.clojure/spec.alpha {:mvn/version "0.2.176"}
+org.clojure/test.check {:mvn/version "0.10.0-alpha4"}
+```
+
+You can also download JAR from [Clojars](https://clojars.org/io.randomseed/bankster).
+
+ ## Sneak peeks
 
 * It **shows information** about a currency:
 
@@ -77,7 +103,7 @@ formatting functions and some common operations. Please check it in a few days.
 #currency{:id :crypto/ETH, :domain :CRYPTO, :sc 18}
 
 ;; putting new currency into a global registry
-(currency/register! (currency/new :petro/USD 999 2 :COMBANK) :USA)
+(currency/register! (currency/new :petro/USD 9999 2 :COMBANK) :USA)
 #Registry@11efe93f{:currencies 221, :countries 250, :version "2021022121170359"}
 
 ;; registering new currency expressed as a tagged literal
@@ -125,6 +151,40 @@ formatting functions and some common operations. Please check it in a few days.
 #money[1000.00 EUR]
 ```
 
+It allows to perform **logical operations** on monetary amounts:
+
+``` clojure
+(money/eq? #money[5 GBP] #money[GBP 5])
+true
+
+(money/ne? #money[5 GBP] #money[GBP 5])
+false
+
+(money/eq? #money[5 GBP] #money/crypto[5 ETH])
+false
+
+(money/gt? #money[1 JPY] #money[0 JPY])
+true
+
+(money/ge? #money[1 JPY] #money[1 JPY])
+true
+
+(money/lt? #money[1 JPY] #money[0 JPY])
+false
+
+(money/le? #money[1 JPY] #money[0 JPY])
+false
+
+(money/is-zero? #money[0 USD])
+true
+
+(money/is-neg? #money[-2 XXX])
+true
+
+(money/is-pos? #money[-2 XXX])
+true
+```
+
 It allows to perform **math operations** on monetary amounts:
 
 ``` clojure
@@ -133,12 +193,47 @@ It allows to perform **math operations** on monetary amounts:
 #money[11.94 EUR]
 
 ;; dividing money by a number
-(money/divide #money/crypto[5 BTC] 2)
-#money/crypto[2.50000000 BTC]
+(money/div #money/crypto[5 USDT] 2)
+#money/crypto[2.50000000 USDT]
 
-;; dividing money by a number of money (of the same currency)
-(money/divide #money/crypto[5 BTC] #money/crypto[2 BTC])
+;; dividing money by numbers that separately would require rounding
+(money/div #money[1 GBP] 8 0.5)
+#money[0.25 GBP]
+
+;; dividing money by numbers with rounding after each consecutive calculation
+(money/with-rescaling HALF_UP
+  (money/div #money[1 GBP] 8 0.5))
+#money[0.26 GBP]
+
+;; dividing money by money (of the same currency)
+(money/div #money/crypto[5 BTC] #money/crypto[2 BTC])
 2.5M
+
+;; multiplying money by numbers
+(money/mul #money/crypto[5 ETH] 1 2 3 4 5)
+#money/crypto[600.000000000000000000 ETH]
+
+;; adding to major part
+(money/add-major #money[1.23 PLN] 100)
+#money[101.23 PLN]
+
+;; adding to minor part
+(money/add-minor #money[1.23 PLN] 77)
+#money[2.00 PLN]
+
+;; converting
+(money/convert #money/crypto[1.5 ETH] :crypto/USDT 1646.75)
+#money/crypto[2470.12500000 USDT]
+
+;; comparing
+(sort money/compare-amounts [(money/of 10    PLN)
+                             (money/of  0    PLN)
+                             (money/of 30    PLN)
+                             (money/of  1.23 PLN)])
+(#money[0.00 PLN]
+ #money[1.23 PLN]
+ #money[10.00 PLN]
+ #money[30.00 PLN])
 
 ;;
 ;; using inter-ops
@@ -156,33 +251,61 @@ It allows to perform **math operations** on monetary amounts:
 #money/crypto[84.000000000000000000 ETH]
 ```
 
+
+It allows to perform **generic, polymorphic operations** on monetary amounts and
+currencies:
+
+```clojure
+(scale/of #currency PLN)
+2
+
+(scale/of #currency crypto/ETH)
+18
+
+(scale/of 123.45)
+2
+
+(scale/of #money[100 EUR])
+2
+
+(scale/of :GBP)
+2
+
+(scale/of :XXX)
+-1
+
+(scale/of #money[12.34567 XXX])
+5
+
+(currency/auto-scaled? :XXX)
+true
+
+(currency/auto-scaled? #money[12.34567 XXX])
+true
+
+(scale/apply #money[10 USD] 8) ;; use with caution or better avoid
+#money[10.00000000 USD]
+
+(scale/apply #currency USD 8)  ;; use with caution or better avoid
+#currency{:id :USD, :domain :ISO-4217, :kind :FIAT, :nr 840, :sc 8}
+
+(scale/amount #money[108.11 CHF])
+108.11M
+
+(scale/integer #money[108.11 CHF])
+108M
+
+(scale/fractional #money[108.11 CHF])
+11M
+
+(currency/iso? #money[1 GBP])
+true
+
+(currency/code #money[1 GBP])
+"GBP"
+```
+
 And more…
-
-## Installation
-
-To use Bankster in your project, add the following to dependencies section of
-`project.clj` or `build.boot`:
-
-```clojure
-[io.randomseed/bankster "1.0.0"]
-```
-
-For `deps.edn` add the following as an element of a map under `:deps` or
-`:extra-deps` key:
-
-```clojure
-io.randomseed/bankster {:mvn/version "1.0.0"}
-```
-
-Additionally, if you want to utilize specs and generators provided by the Bankster
-you can use (in your development profile):
-
-```clojure
-org.clojure/spec.alpha {:mvn/version "0.2.176"}
-org.clojure/test.check {:mvn/version "0.10.0-alpha4"}
-```
-
-You can also download JAR from [Clojars](https://clojars.org/io.randomseed/bankster).
 
 ## License
 
