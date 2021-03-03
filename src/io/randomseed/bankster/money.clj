@@ -307,7 +307,11 @@
 
   (of
     (^Currency [money] (.currency ^Money money))
-    (^Currency [money ^Registry registry] money))
+    (^Currency [money ^Registry registry] (.currency ^Money money)))
+
+  (unit
+    (^Currency [money] (.currency ^Money money))
+    (^Currency [money ^Registry registry] (.currency ^Money money)))
 
   (id
     (^clojure.lang.Keyword [money]
