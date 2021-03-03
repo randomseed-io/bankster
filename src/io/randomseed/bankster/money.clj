@@ -31,8 +31,8 @@
 
   (value
     [num] [currency num] [currency num rounding-mode]
-    "Creates new Money objects for the given value which will become an amount. If
-  the currency is not given it should try to use the default one, taken from
+    "Creates new Money object for the given value which will become an amount. If the
+  currency is not given it should try to use the default one, taken from
   *default-currency* dynamic variable. Optional rounding-mode should be a rounding
   mode used when the conversion to a scaled monetary amount requires rounding.
 
@@ -134,16 +134,53 @@
     (^Money [a c r] (parse a c r))))
 
 (defn major-value
-  ""
+  "Creates new Money object for the given value which will become a major part of the
+  amount. If the given number has fractional part it will be truncated. If the
+  currency is not given it should try to use the default one, taken from
+  *default-currency* dynamic variable. Optional rounding-mode should be a rounding
+  mode used when the conversion to a scaled monetary amount requires rounding.
+
+  In its unary form, when the argument is not numeric, it will try to get a currency
+  object (identified by a string, a symbol or a keyword) from a default, global
+  registry of currencies.
+
+  For simple money creation the following macros may be convenient way to go: of,
+  of-major, of-minor."
   (^Money [c]     (value c))
-  (^Money [c b]   (value c (scale/integer b (scale/of c))))
-  (^Money [c b r] (value c (scale/integer b (scale/of c) r) r)))
+  (^Money [c b]   (value c (let [sc (scale/of c)]
+                             (if (currency/val-auto-scaled? sc)
+                               (scale/integer b)
+                               (scale/integer b sc)))))
+  (^Money [c b r] (value c
+                         (let [sc (scale/of c)]
+                           (if (currency/val-auto-scaled? sc)
+                             (scale/integer b)
+                             (scale/integer b sc r))))))
 
 (defn minor-value
-  ""
+  "Creates new Money object for the given value which will become a minor part of the
+  amount. If the given number has fractional part it will be truncated. If the
+  currency is not given it should try to use the default one, taken from
+  *default-currency* dynamic variable. Optional rounding-mode should be a rounding
+  mode used when the conversion to a scaled monetary amount requires rounding.
+
+  In its unary form, when the argument is not numeric, it will try to get a currency
+  object (identified by a string, a symbol or a keyword) from a default, global
+  registry of currencies.
+
+  For simple money creation the following macros may be convenient way to go: of,
+  of-major, of-minor."
   (^Money [c]     (value c))
-  (^Money [c b]   (value c (scale/fractional b (scale/of c))))
-  (^Money [c b r] (value c (scale/fractional b (scale/of c) r) r)))
+  (^Money [c b]   (value c (let [sc (scale/of c)]
+                             (if (currency/val-auto-scaled? sc)
+                               (let [^BigDecimal b (scale/integer b)]
+                                 (.movePointLeft ^BigDecimal b (.scale ^BigDecimal b)))
+                               (.movePointLeft ^BigDecimal (scale/integer b sc) sc)))))
+  (^Money [c b r] (value c (let [sc (scale/of c)]
+                             (if (currency/val-auto-scaled? sc)
+                               (let [^BigDecimal b (scale/integer b)]
+                                 (.movePointLeft ^BigDecimal b (.scale ^BigDecimal b)))
+                               (.movePointLeft ^BigDecimal (scale/integer b sc r) sc))))))
 
 (defmacro of
   "Returns the amount of money as a Money object consisting of a currency and a
