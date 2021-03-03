@@ -775,6 +775,12 @@
   (^Boolean [c] (val-auto-scaled? (.sc ^Currency (unit c))))
   (^Boolean [c ^Registry registry] (val-auto-scaled? (.sc ^Currency (unit c registry)))))
 
+(def ^{:tag Boolean
+       :arglists '(^Boolean [c] ^Boolean [c ^Registry registry])}
+  auto-scaled?
+  "Alias for big?."
+  big?)
+
 (defn ^Boolean crypto?
   "Returns true if the given currency is a cryptocurrency. It is just a helper that
   check if the domain of a currency equals to :CRYPTO."
