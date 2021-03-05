@@ -7,6 +7,7 @@
   (:refer-clojure :exclude [ns new symbol name])
 
   (:require [trptr.java-wrapper.locale       :as            l]
+            [smangler.api                    :as           sm]
             [io.randomseed.bankster          :refer      :all]
             [io.randomseed.bankster.config   :as       config]
             [io.randomseed.bankster.registry :as     registry]
@@ -939,42 +940,88 @@
   nat-helper
   {:EUR :en :USD :en_US})
 
-(defn localized-properties
+(defn get-localized-property
   "Returns localized properties of the currency object for the given locale."
   {:private true :tag clojure.lang.IPersistentMap :added "1.0.0"}
-  ([c]        (localized-properties c (Locale/getDefault) (registry/get)))
-  ([c locale] (localized-properties c locale (registry/get)))
-  ([c locale ^Registry registry]
-   (when-some [p (get (.cur-id->localized ^Registry registry) (id c registry))]
-     (map/lazy-get p locale (get p :*)))))
+  [p ^Locale locale m] (get (get m locale) p))
+
+;; (defn localized-properties
+;;   "Tries different variants of a locale to look up for entry in localized properties.
+;;   Example order: en_US-en_US, en, :*"
+;;   {:private false :tag clojure.lang.IPersistentMap :added "1.0.0"}
+;;   [cid ^Locale locale ^Registry registry]
+;;   (or (get-localized-properties cid locale registry)
+;;       (some #(and (some? %)
+;;                   (not (contains? #{\_\-\.} (.charAt ^String % (unchecked-dec (count %)))))
+;;                   (get-localized-properties cid (l/locale %) registry))
+;;             (sm/all-prefixes #{\_\-\#\.} (str locale)))
+;;       (get-localized-properties cid :* registry)))
 
 (defn localized-property
-  "Returns localized property of the currency object for the given locale."
-  {:private true :tag clojure.lang.IPersistentMap :added "1.0.0"}
-  ([c p]        (localized-property c p nil nil))
-  ([c p locale] (localized-property c p nil nil))
-  ([c p locale ^Registry registry]
-   (get (localized-properties
-         c (or locale (Locale/getDefault)) (or registry (registry/get))) p)))
+  "Tries different variants of a locale to look up for entry in localized properties.
+  Example order: en_US-en_US, en, :*"
+  {:tag clojure.lang.IPersistentMap :added "1.0.0"}
+  ([property currency-id] (localized-property property
+                                              currency-id
+                                              (Locale/getDefault)
+                                              (registry/get)))
+  ([property currency-id locale] (localized-property property
+                                                     currency-id
+                                                     locale
+                                                     (registry/get)))
+  ([property currency-id locale ^Registry registry]
+   (let [cid    (id currency-id)
+         locale (l/locale locale)]
+     (when-some [m (get (.cur-id->localized ^Registry registry) cid)]
+       (or (get (get m locale) property)
+           (some #(and (some? %)
+                       (not (contains? #{\_\-\.} (.charAt ^String % (unchecked-dec (count %)))))
+                       (get (get m (l/locale %)) property))
+                 (sm/all-prefixes #{\_\-\#\.} (str locale)))
+           (get (get m :*) property))))))
+
+;; (defn localized-property
+;;   "Returns a localized property of the currency object for the given locale using the
+;;   registry provided or a global, shared registry. It the locale is not given, the
+;;   default will be used
+
+;;   A locale can be expressed as java.util.Locale object or any other object (like a
+;;   string or a keyword) that can be used to look up the locale."
+;;   {:tag clojure.lang.IPersistentMap :added "1.0.0"}
+;;   ([currency property] (localized-property currency property (Locale/getDefault) (registry/get)))
+;;   ([currency property locale] (localized-property currency property locale (registry/get)))
+;;   ([currency property locale ^Registry registry]
+;;    (get (localized-properties currency (l/locale locale) registry) property)))
 
 (def ^{:tag String :added "1.0.0"
        :arglists '(^String [currency]
                    ^String [currency locale]
                    ^String [currency locale ^Registry registry])}
   symbol
-  "Returns a currency symbol as a string for the given currency object and locale. Uses
-  global registry if a registry is not given.
+  "Returns a currency symbol as a string for the given currency object and locale. If
+  the locale is not given, a default one is used. Uses global registry if a registry
+  is not given.
 
-  If the currency symbol cannot be found in a registry and the currency is
-  ISO-standardized then Java methods will be tried to obtain it."
+  The following tactic is applied:
+
+  - The registry field .cur-id->localized is looked up for the currency ID key. If
+  it's found then a key with the given locale object (a kind of java.util.Locale) is
+  obtained. If there is no such key, the default one :* is tried (a keyword). The
+  resulting value should be a map of localized properties in which an entry under the
+  key :symbol should exist. Its value will be returned, if found.
+
+  - If the above method failed and the given currency is ISO-standardized then Java
+  methods will be tried to obtain it.
+
+  A locale can be expressed as java.util.Locale object or any other object (like a
+  string or a keyword) that can be used to look up the locale."
   (memoize
    (fn symbol
-     (^String [c] (symbol c nil nil))
-     (^String [c locale] (symbol c locale nil))
+     (^String [c]        (symbol c (Locale/getDefault) (registry/get)))
+     (^String [c locale] (symbol c locale (registry/get)))
      (^String [c locale ^Registry registry]
-      (let [lc (l/locale (or locale (Locale/getDefault)))
-            rg (or registry (registry/get))
-            lp (localized-property c :symbol lc registry)]
+      (let [lc (l/locale locale)
+            lp (localized-property :symbol c lc registry)]
         (if (some? lp)
           lp
           (let [scode (short-code c)]
@@ -1002,27 +1049,37 @@
                    ^String [currency locale ^Registry registry])}
   display-name
   "Returns a currency display name as a string for the given currency object and
-  locale. Uses global registry if a registry is not given.
+  locale. If the locale is not given, a default one is used. Uses global registry if
+  a registry is not given.
 
-  If the display name cannot be found in a registry and the currency is
-  ISO-standardized then Java methods will be tried to obtain it."
+  The following tactic is applied:
+
+  - The registry field .cur-id->localized is looked up for the currency ID key. If
+  it's found then a key with the given locale object (a kind of java.util.Locale) is
+  obtained. If there is no such key, the default one :* is tried (a keyword). The
+  resulting value should be a map of localized properties in which an entry under the
+  key :symbol should exist. Its value will be returned, if found.
+
+  - If the above method failed and the given currency is ISO-standardized then Java
+  methods will be tried to obtain it.
+
+  A locale can be expressed as java.util.Locale object or any other object (like a
+  string or a keyword) that can be used to look up the locale."
   (memoize
    (fn display-name
-     (^String [c] (display-name c nil nil))
-     (^String [c locale] (display-name c locale nil))
+     (^String [c]        (display-name c (Locale/getDefault) (registry/get)))
+     (^String [c locale] (display-name c locale (registry/get)))
      (^String [c locale ^Registry registry]
-      (let [lc (l/locale (or locale (Locale/getDefault)))
-            rg (or registry (registry/get))
-            lp (localized-property c :name lc registry)]
-        (if (some? lp)
-          lp
-          (let [scode (short-code c)]
-            (or (when (iso? c)
-                  (try (-> scode
-                           ^java.util.Currency (java.util.Currency/getInstance)
-                           (.getDisplayName lc))
-                       (catch IllegalArgumentException e nil)))
-                scode))))))))
+      (let [lc (l/locale locale)
+            lp (localized-property :name c lc registry)]
+        (if (some? lp) lp
+            (let [scode (short-code c)]
+              (or (when (iso? c)
+                    (try (-> scode
+                             ^java.util.Currency (java.util.Currency/getInstance)
+                             (.getDisplayName lc))
+                         (catch IllegalArgumentException e nil)))
+                  scode))))))))
 
 (defn display-name-native
   "Like display-name but for ISO-standardized currencies uses locale assigned to the
