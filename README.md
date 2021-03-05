@@ -316,6 +316,14 @@ Full documentation including usage examples is available at:
 
 * https://randomseed.io/software/bankster/
 
+## Deum Ethereum
+
+I write Free Software for fun. If you are finding it useful and you are Ethereum
+fan too, here it is: `0x2Bed4D2d9240F9fB321bC0194222A4888F62dd0d`.
+
+Stellar Lumens are cool too:
+`GBMUQ6U6334Y5HWF3XGMCRQZKVMFDCSX4YADEVZO7ZXIBDJDXXX2BSME`.
+
 ## License
 
 Copyright © 2021 Paweł Wilk
