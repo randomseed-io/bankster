@@ -1,4 +1,4 @@
-{:version "2021030420100217"
+{:version "2021030520100217"
  :currencies
  {:ADP {:kind :FIAT :numeric 20  :scale 0}
   :AED {:kind :FIAT :numeric 784 :scale 2}
@@ -471,5 +471,28 @@
              :ZA :ZAR
              :ZM :ZMW
              :ZW :ZWL}
- :localized {:crypto/BTC {:*  {:name "Bitcoin"}
-                          :en {:symbol "₿"}}}}
+ :localized {:crypto/BCH        {:*       {:name "Bitcoin Cash"          :symbol "Ƀ"}}
+             :crypto/BNB        {:*       {:name "Binance Coin"          :symbol "BNB"}}
+             :crypto/BSV        {:*       {:name "Bitcoin SV"            :symbol "Ɓ"}}
+             :crypto/BTC        {:*       {:name "Bitcoin"               :symbol "₿"}}
+             :crypto/ADA        {:*       {:name "Cardano"               :symbol "₳"}}
+             :crypto/DAI        {:*       {:name "Dai"                   :symbol "◈"}}
+             :crypto/DASH       {:*       {:name "DASH"                  :symbol "DASH"}}
+             :crypto/DOGE       {:*       {:name "Dogecoin"              :symbol "Ð"}}
+             :crypto/DOT        {:*       {:name "Polkadot"              :symbol "●"}}
+             :crypto/EOS        {:*       {:name "EOS"                   :symbol "ε"}}
+             :crypto/ETC        {:*       {:name "Ethereum Classic"      :symbol "Ξ"}}
+             :crypto/ETH        {:*       {:name "Ethereum"              :symbol "Ξ"}}
+             :crypto/LTC        {:*       {:name "Litecoin"              :symbol "Ł"}}
+             :crypto/MKR        {:*       {:name "Maker"                 :symbol "Μ"}}
+             :crypto/NMC        {:*       {:name "NMC"                   :symbol "ℕ"}}
+             :crypto/REP        {:*       {:name "REP"                   :symbol "Ɍ"}}
+             :crypto/STEEM      {:*       {:name "Steem"                 :symbol "ȿ"}}
+             :crypto/VTC        {:*       {:name "Vertcoin"              :symbol "✓"}}
+             :crypto/XLM        {:*       {:name "Stellar Lumen"         :symbol "Ø"}}
+             :crypto/XMR        {:*       {:name "Monero"                :symbol "ɱ"}}
+             :crypto/XRP        {:*       {:name "Ripple"                :symbol "✕"}}
+             :crypto/XTZ        {:*       {:name "Tezos"                 :symbol "ꜩ"}}
+             :crypto/USDT       {:*       {:name "Tether"                :symbol "₮"}}
+             :crypto/USDC       {:*       {:name "USD Coin"              :symbol "USDC"}}
+             :crypto/ZEC        {:*       {:name "Zcach"                 :symbol "ⓩ"}}}}
