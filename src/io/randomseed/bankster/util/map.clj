@@ -3,6 +3,8 @@
   (:require [io.randomseed.bankster.util :refer :all]))
 
 (defmacro lazy-get
+  "Like get but the default value is not evaluated if the key is found."
+  {:added "1.0.0"}
   [m k exp]
   `(let [m# ~m, k# ~k]
      (if (and (associative? m#) (contains? m# k#)) (get m# k#) ~exp)))
@@ -11,6 +13,7 @@
   "Updates the key k of the given collection coll by calling a function fun and passing
   optional arguments specified as additional arguments. Will not perform any update
   if the given key does not exist within the collection. Returns a collection."
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   [^clojure.lang.IPersistentMap coll k fun & more]
   (if (contains? coll k)
     (let [fun (if (fn? fun) fun (constantly fun))]
@@ -18,6 +21,7 @@
     coll))
 
 (defn update-missing
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   [coll k fun & more]
   (if-not (contains? coll k)
     (let [fun (if (fn? fun) (fn [& args] (apply fun (next args))) (constantly fun))]
@@ -25,24 +29,29 @@
     coll))
 
 (defmacro assoc-if
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   ([coll pred k val]
    `(let [kol# ~coll] (if ~pred (assoc kol# ~k ~val) kol#))))
 
 (defmacro assoc-if-not
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   ([coll pred k val]
    `(let [kol# ~coll] (if ~pred kol# (assoc kol# ~k ~val)))))
 
 (defmacro assoc-if-key
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   ([coll k pred val]
    `(let [kol# ~coll key# ~k]
       (if (~pred (get kol# key#)) (assoc kol# key# ~val) kol#))))
 
 (defmacro assoc-if-not-key
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   [coll k pred val]
   `(let [kol# ~coll key# ~k]
      (if (~pred (get kol# key#)) kol# (assoc kol# key# ~val))))
 
 (defn ^clojure.lang.IPersistentMap remove-if-value
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   [^clojure.lang.IPersistentMap m
    ^clojure.lang.IFn pred]
   (reduce-kv
@@ -51,27 +60,35 @@
    m m))
 
 (defn ^clojure.lang.IPersistentMap remove-if-value-in
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   [^clojure.lang.IPersistentMap m vals]
   (let [vset (set vals)]
     (remove-if-value m #(contains? vset %))))
 
 (defn ^clojure.lang.IPersistentMap remove-if-value-not-in
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   [^clojure.lang.IPersistentMap m vals]
   (let [vset (set vals)
         not-contains? (complement contains?)]
     (remove-if-value m #(not-contains? vset %))))
 
 (defn ^clojure.lang.IPersistentMap remove-except
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   [^clojure.lang.IPersistentMap m ^clojure.lang.ISeq keyseq]
   (select-keys m keyseq))
 
 (defn ^clojure.lang.IPersistentMap remove-by-if-value-in
+  "Removes map entries if the given predicate returns true and value is in the given
+  set."
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   [^clojure.lang.IPersistentMap m
    ^clojure.lang.IFn pred
    ^clojure.lang.PersistentHashSet only]
   (reduce #(if (pred (get %1 %2)) (dissoc %1 %2) %1) m only))
 
 (defn ^clojure.lang.IPersistentMap remove-empty-values
+  "Removes entries with empty values from a map."
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   (^clojure.lang.IPersistentMap [^clojure.lang.IPersistentMap m]
    (remove-if-value m #(or (nil? %)
                            (and (counted? %) (< (count %) 1))
@@ -203,6 +220,7 @@
 
 (defn invert-in-sets
   "Like `clojure.set/map-invert` but preserves all possible values in sets."
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   ([^clojure.lang.IPersistentMap m]
    (invert-in-sets m #{}))
   ([^clojure.lang.IPersistentMap m ^clojure.lang.PersistentHashSet dst]
@@ -224,6 +242,7 @@
 (defn map-values
   "Recursively transforms values of a coll using function f. The function should take a
   value and return new value."
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   [^clojure.lang.IFn f, ^clojure.lang.IPersistentMap coll]
   (reduce-kv (fn [^clojure.lang.IPersistentMap m, ^clojure.lang.Keyword k, v]
                (assoc m k (if (map? v) (map-values f v) (f v))))
@@ -271,6 +290,7 @@
 
 (defn ^clojure.lang.IPersistentMap dissoc-in
   "Like assoc-in but removes entries. Leaves empty maps."
+  {:added "1.0.0" :tag clojure.lang.IPersistentMap}
   [^clojure.lang.IPersistentMap m [k & ks :as keys]]
   (if ks
     (if-some [nmap (get m k)]
