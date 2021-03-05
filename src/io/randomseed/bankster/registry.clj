@@ -227,8 +227,8 @@
   [r w]
   (let [sid (Integer/toHexString (System/identityHashCode r))]
     (print-simple
-     (str "#Registry@" sid "{"
+     (str "#Registry[{"
           ":currencies " (count (.cur-id->cur ^Registry r)) ", "
           ":countries "  (count (.ctr-id->cur ^Registry r)) ", "
-          ":version \""  (.version ^Registry r) "\"}")
+          ":version \""  (.version ^Registry r) "\"} 0x" sid "]")
      w)))
