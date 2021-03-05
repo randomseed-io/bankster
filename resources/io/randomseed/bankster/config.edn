@@ -1,4 +1,4 @@
-{:version "2021022121170359"
+{:version "2021030420100217"
  :currencies
  {:ADP {:kind :FIAT :numeric 20  :scale 0}
   :AED {:kind :FIAT :numeric 784 :scale 2}
@@ -470,4 +470,6 @@
              :YT :EUR
              :ZA :ZAR
              :ZM :ZMW
-             :ZW :ZWL}}
+             :ZW :ZWL}
+ :localized {:crypto/BTC {:*  {:name "Bitcoin"}
+                          :en {:symbol "₿"}}}}

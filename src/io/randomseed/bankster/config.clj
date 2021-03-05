@@ -40,9 +40,10 @@
          config)))))
 
 ;;
-;; Helpers.
+;; Getters.
 ;;
 
 (defn currencies ([cfg] (get cfg :currencies {})))
-(defn countries  ([cfg] (get cfg :countries {})))
+(defn countries  ([cfg] (get cfg :countries  {})))
+(defn localized  ([cfg] (get cfg :localized  {})))
 (defn version    ([cfg] (get cfg :version)))

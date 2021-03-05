@@ -4,9 +4,10 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [ns new])
+  (:refer-clojure :exclude [ns new symbol name])
 
-  (:require [io.randomseed.bankster          :refer      :all]
+  (:require [trptr.java-wrapper.locale       :as            l]
+            [io.randomseed.bankster          :refer      :all]
             [io.randomseed.bankster.config   :as       config]
             [io.randomseed.bankster.registry :as     registry]
             [io.randomseed.bankster.scale    :as        scale]
@@ -14,7 +15,8 @@
             [io.randomseed.bankster.util     :refer      :all])
 
   (:import  [io.randomseed.bankster Currency Registry]
-            [java.math RoundingMode]))
+            [java.math RoundingMode]
+            [java.util Locale]))
 
 ;;
 ;; Constants.
@@ -129,9 +131,9 @@
   (^{:tag Boolean :added "1.0.0"}
    defined?
    [id] [id registry]
-   "Returns true if the given currency exists in a registry. If the registry is not given,
-  the global one will be used, trying a registry bound to the registry/*default*
-  first.")
+   "Returns true if the given currency exists in a registry. If the registry is not
+  given, the global one will be used, trying a registry bound to the
+  registry/*default* first.")
 
   (^{:tag Boolean :added "1.0.0"}
    same-ids?
@@ -219,7 +221,7 @@
     (^Currency [^clojure.lang.Keyword id, ^Registry registry]
      (or (get (.cur-id->cur ^Registry registry) id)
          (throw (ex-info
-                 (str "Currency " (symbol id) " not found in a registry.")
+                 (str "Currency " (clojure.core/symbol id) " not found in a registry.")
                  {:registry registry})))))
 
   (id
@@ -319,7 +321,7 @@
   "Internal helper that transforms currency codes into keywords."
   {:no-doc true :added "1.0.0"}
   [c]
-  (if (and (symbol? c) (defined? c))
+  (if (and (clojure.core/symbol? c) (defined? c))
     (keyword c) c))
 
 (defmacro of
@@ -410,8 +412,8 @@
   returned (which may lead to misinformation if there are two or more currencies with
   the same base ID but different namespaces)."
   {:tag String :added "1.0.0"}
-  (^String [c] (name (id c)))
-  (^String [c ^Registry registry] (name (id c registry))))
+  (^String [c] (clojure.core/name (id c)))
+  (^String [c ^Registry registry] (clojure.core/name (id c registry))))
 
 ;;
 ;; Currency - country relations.
@@ -424,7 +426,7 @@
   (^clojure.lang.PersistentHashSet [c]
    (countries c (registry/get)))
   (^clojure.lang.PersistentHashSet [c ^Registry registry]
-   (get (.cur-id->ctr-ids ^Registry registry) ^clojure.lang.Keyword (id c))))
+   (get (.cur-id->ctr-ids ^Registry registry) (id c))))
 
 (defn ^Currency of-country
   "Returns a currency for the given country identified by a country ID (which should be
@@ -475,7 +477,7 @@
        (map/invert-in-sets)
        (map/remove-empty-values)))
 
-(defn- prep-country-ids
+(defn prep-country-ids
   "Prepares country identifiers by converting the given object into a sequence of
   keywords."
   {:tag clojure.lang.LazySeq :added "1.0.0" :private true}
@@ -487,6 +489,20 @@
                      (list country-ids)))
           cids (if (set? cids) cids (distinct cids))]
       (map keyword cids))))
+
+(defn prep-localized-props
+  "Prepares localized properties map for a single currency."
+  {:tag clojure.lang.IPersistentMap :added "1.0.0" :private false}
+  [^clojure.lang.IPersistentMap p]
+  (map/map-keys-and-vals
+   #(vector (let [k (keyword %1)] (if (= :* k) k (l/locale k)))
+            (map/map-vals str %2)) p))
+
+(defn prep-all-localized-props
+  "Prepares localized properties map for all currencies in a map."
+  {:tag clojure.lang.IPersistentMap :added "1.0.0" :private false}
+  [^clojure.lang.IPersistentMap p]
+  (map/map-vals prep-localized-props p))
 
 ;;
 ;; Adding and removing to/from registry.
@@ -509,7 +525,8 @@
 
 (defn ^Registry unregister
   "Removes currency from the given registry. Also removes country and numeric ID
-  constrains when necessary. Returns updated registry.
+  constrains when necessary and all localized properties associated with a
+  currency. Returns updated registry.
 
   Please note that removal of a currency whose identifier and numeric identifier are
   the same as the currencies which are already registered, will not only remove the
@@ -544,7 +561,8 @@
       (if-not (contains? (.cur-id->ctr-ids ^Registry registry) registered-id)
         registry
         (as-> registry regi
-          (map/dissoc-in regi [:cur-id->ctr-ids registered-id])
+          (map/dissoc-in regi [:cur-id->localized registered-id])
+          (map/dissoc-in regi [:cur-id->ctr-ids   registered-id])
           (apply update regi :ctr-id->cur dissoc country-ids))))))
 
 (defn ^Registry remove-countries
@@ -586,30 +604,62 @@
             (apply update-in regi [:cur-id->ctr-ids cid] (fnil conj #{}) (set cids))
             (update regi :ctr-id->cur (partial apply assoc) (interleave cids (repeat c))))))))
 
+(defn ^Registry remove-localized-properties
+  "Removes localized properties assigned to a currency. Returns updated registry."
+  {:tag Registry :added "1.0.0"}
+  [^Registry registry ^Currency currency]
+  (when registry
+    (if (nil? currency)
+      registry
+      (map/dissoc-in registry [:cur-id->localized (.id ^Currency currency)]))))
+
+(defn ^Registry add-localized-properties
+  "Adds localized properties for a currency to the given registry. Overwrites existing
+  properties."
+  {:tag Registry :added "1.0.0"}
+  [^Registry registry ^Currency currency properties]
+  (when (some? registry)
+    (when-not (defined? currency registry)
+      (throw
+       (ex-info (str "Currency "
+                     (if (instance? Currency currency) (.id ^Currency currency) currency)
+                     " does not exist in a registry.") {:currency currency})))
+    (let [^Currency c (unit currency registry)
+          cid         (.id ^Currency c)
+          ^Currency p (get (.cur-id->cur ^Registry registry) cid)]
+      (when-not (= c p)
+        (throw
+         (ex-info (str "Currency " cid " differs from the currency existing in a registry.")
+                  {:currency c, :existing-currency p})))
+      (if (and (map? properties) (pos? (count properties)))
+        (assoc-in registry [:cur-id->localized cid] (prep-localized-props properties))
+        registry))))
+
 (defn ^Registry register
   "Adds currency and (optional) countries to the given registry. Returns updated
   registry. If the updating occurs then all of the current countries associated with
   the currency are removed and replaced with the provided ones. To simply add new
   countries, use add-countries."
   {:tag Registry :added "1.0.0"}
-  (^Registry [^Registry registry, currency]
+  (^Registry [^Registry registry currency]
    (register registry currency nil false))
   (^Registry [^Registry registry
               ^Currency currency
               country-ids-or-update?]
    (if (boolean? country-ids-or-update?)
-     (register registry currency nil country-ids-or-update?)
-     (register registry currency country-ids-or-update? false)))
+     (register registry currency nil nil country-ids-or-update?)
+     (register registry currency country-ids-or-update? nil false)))
   (^Registry [^Registry registry
               ^Currency currency
               country-ids
+              localized-properties
               ^Boolean update?]
    (when (some? registry)
      (let [^Currency c (unit currency registry)
            cid         (.id ^Currency c)
            cnr         (.nr ^Currency c)
-           cid-to-cur  (.cur-id->cur ^Registry registry)
-           cnr-to-cur  (.cur-nr->cur ^Registry registry)]
+           cid-to-cur  (.cur-id->cur   ^Registry registry)
+           cnr-to-cur  (.cur-nr->cur   ^Registry registry)]
        (when-not update?
          (when-some [^Currency p (get cid-to-cur cid)]
            (throw (ex-info
@@ -626,7 +676,9 @@
              cnr-to-cur  (.cur-nr->cur ^Registry registry)
              registry    (if (or (nil? numeric-id) (= numeric-id no-numeric-id) (<= numeric-id 0)) registry
                              (assoc registry :cur-nr->cur (assoc cnr-to-cur (long numeric-id) c)))]
-         (add-countries registry currency country-ids))))))
+         (-> registry
+             (add-localized-properties currency localized-properties)
+             (add-countries            currency country-ids)))))))
 
 (defn ^Registry register!
   "Adds currency and (optional) country to the global registry. Returns updated
@@ -636,12 +688,13 @@
    (if (nil? currency) @registry/R (swap! registry/R register currency)))
   (^Registry [^Currency currency ^clojure.lang.Keyword country-id-or-update?]
    (if (nil? currency) @registry/R (swap! registry/R register currency country-id-or-update?)))
-  (^Registry [^Currency currency ^clojure.lang.Keyword country-id, ^Boolean update?]
-   (if (nil? currency) @registry/R (swap! registry/R register currency country-id update?))))
+  (^Registry [^Currency currency ^clojure.lang.Keyword country-id localized-properties ^Boolean update?]
+   (if (nil? currency) @registry/R (swap! registry/R register currency country-id localized-properties update?))))
 
 (defn ^Registry unregister!
   "Removes currency from the global registry. Automatically removes country constrains
-  when necessary. Returns updated registry."
+  when necessary and localized properties associated with a currency. Returns updated
+  registry."
   {:tag Registry :added "1.0.0"}
   [^Currency currency]
   (if (nil? currency) @registry/R (swap! registry/R unregister currency)))
@@ -666,6 +719,18 @@
   [country-ids]
   (if (nil? country-ids) @registry/R (swap! registry/R remove-countries country-ids)))
 
+(defn ^Registry add-localized-props!
+  "Associates the given currency with a map of localized properties."
+  {:tag Registry :added "1.0.0"}
+  [^Currency currency properties]
+  (when (nil? currency) @registry/R (swap! registry/R add-localized-properties currency properties)))
+
+(defn ^Registry remove-localized-props!
+  "Removes localized properties of the given currency from the global registry."
+  {:tag Registry :added "1.0.0"}
+  [^Currency currency]
+  (if (nil? currency) @registry/R (swap! registry/R remove-localized-properties currency)))
+
 ;;
 ;; Currencies loading.
 ;;
@@ -686,10 +751,13 @@
   (^Registry [^String resource-path ^Registry regi]
    (if-some [cfg (config/load resource-path)]
      (let [regi (or regi (registry/new-registry))
-           curs (prep-currencies (config/currencies cfg))
-           ctrs (prep-cur->ctr   (config/countries  cfg))
-           vers (get cfg :version)
-           regi (if (nil? vers) regi (assoc regi :version (str vers)))]
+           curs (prep-currencies          (config/currencies cfg))
+           ctrs (prep-cur->ctr            (config/countries  cfg))
+           lpro (prep-all-localized-props (config/localized  cfg))
+           vers (str                      (config/version    cfg))
+           regi (if (nil? vers) regi (assoc regi
+                                            :version vers
+                                            :cur-id->localized lpro))]
        (reduce (fn ^Registry [^Registry r, ^Currency c]
                  (register r c (get ctrs (.id ^Currency c))))
                regi curs))
@@ -862,6 +930,126 @@
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (= :EXPERIMENTAL (.kind ^Currency (unit c))))
   (^Boolean [c ^Registry registry] (= :EXPERIMENTAL (.kind ^Currency (unit c)))))
+
+;;
+;; Localized properties.
+;;
+
+(def ^{:private true :tag clojure.lang.PersistentArrayMap}
+  nat-helper
+  {:EUR :en :USD :en_US})
+
+(defn localized-properties
+  "Returns localized properties of the currency object for the given locale."
+  {:private true :tag clojure.lang.IPersistentMap :added "1.0.0"}
+  ([c]        (localized-properties c (Locale/getDefault) (registry/get)))
+  ([c locale] (localized-properties c locale (registry/get)))
+  ([c locale ^Registry registry]
+   (when-some [p (get (.cur-id->localized ^Registry registry) (id c registry))]
+     (map/lazy-get p locale (get p :*)))))
+
+(defn localized-property
+  "Returns localized property of the currency object for the given locale."
+  {:private true :tag clojure.lang.IPersistentMap :added "1.0.0"}
+  ([c p]        (localized-property c p nil nil))
+  ([c p locale] (localized-property c p nil nil))
+  ([c p locale ^Registry registry]
+   (get (localized-properties
+         c (or locale (Locale/getDefault)) (or registry (registry/get))) p)))
+
+(def ^{:tag String :added "1.0.0"
+       :arglists '(^String [currency]
+                   ^String [currency locale]
+                   ^String [currency locale ^Registry registry])}
+  symbol
+  "Returns a currency symbol as a string for the given currency object and locale. Uses
+  global registry if a registry is not given.
+
+  If the currency symbol cannot be found in a registry and the currency is
+  ISO-standardized then Java methods will be tried to obtain it."
+  (memoize
+   (fn symbol
+     (^String [c] (symbol c nil nil))
+     (^String [c locale] (symbol c locale nil))
+     (^String [c locale ^Registry registry]
+      (let [lc (l/locale (or locale (Locale/getDefault)))
+            rg (or registry (registry/get))
+            lp (localized-property c :symbol lc registry)]
+        (if (some? lp)
+          lp
+          (let [scode (short-code c)]
+            (or (when (iso? c)
+                  (try (-> scode
+                           ^java.util.Currency (java.util.Currency/getInstance)
+                           (.getSymbol lc))
+                       (catch IllegalArgumentException e nil)))
+                scode))))))))
+
+(defn symbol-native
+  "Like symbol but for ISO-standardized currencies uses locale assigned to the first
+  country where a currency is the default."
+  {:tag String :added "1.0.0"
+   :arglists '(^String [currency]
+               ^String [currency ^Registry registry])}
+  ([c]
+   (symbol c (map/lazy-get nat-helper (id c) (first (countries c)))))
+  ([c registry]
+   (symbol c (map/lazy-get nat-helper (id c) (first (countries c))) registry)))
+
+(def ^{:tag String :added "1.0.0"
+       :arglists '(^String [currency]
+                   ^String [currency locale]
+                   ^String [currency locale ^Registry registry])}
+  display-name
+  "Returns a currency display name as a string for the given currency object and
+  locale. Uses global registry if a registry is not given.
+
+  If the display name cannot be found in a registry and the currency is
+  ISO-standardized then Java methods will be tried to obtain it."
+  (memoize
+   (fn display-name
+     (^String [c] (display-name c nil nil))
+     (^String [c locale] (display-name c locale nil))
+     (^String [c locale ^Registry registry]
+      (let [lc (l/locale (or locale (Locale/getDefault)))
+            rg (or registry (registry/get))
+            lp (localized-property c :name lc registry)]
+        (if (some? lp)
+          lp
+          (let [scode (short-code c)]
+            (or (when (iso? c)
+                  (try (-> scode
+                           ^java.util.Currency (java.util.Currency/getInstance)
+                           (.getDisplayName lc))
+                       (catch IllegalArgumentException e nil)))
+                scode))))))))
+
+(defn display-name-native
+  "Like display-name but for ISO-standardized currencies uses locale assigned to the
+  first country where a currency is the default."
+  {:tag String :added "1.0.0"
+   :arglists '(^String [currency]
+               ^String [currency ^Registry registry])}
+  ([c]
+   (display-name c (map/lazy-get nat-helper (id c) (first (countries c)))))
+  ([c registry]
+   (display-name c (map/lazy-get nat-helper (id c registry) (first (countries c)))
+                 registry)))
+
+(def ^{:tag String :added "1.0.0"
+       :arglists '(^String [currency]
+                   ^String [currency locale]
+                   ^String [currency locale ^Registry registry])}
+  name
+  "Alias for display-name."
+  display-name)
+
+(def ^{:tag String :added "1.0.0"
+       :arglists '(^String [currency]
+                   ^String [currency ^Registry registry])}
+  name-native
+  "Alias for display-name-native."
+  display-name-native)
 
 ;;
 ;; Scalable implementation.
