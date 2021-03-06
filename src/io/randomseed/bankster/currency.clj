@@ -493,7 +493,7 @@
 
 (defn prep-localized-props
   "Prepares localized properties map for a single currency."
-  {:tag clojure.lang.IPersistentMap :added "1.0.0" :private false}
+  {:tag clojure.lang.IPersistentMap :added "1.0.0" :private true}
   [^clojure.lang.IPersistentMap p]
   (map/map-keys-and-vals
    #(vector (let [k (keyword %1)] (if (= :* k) k (l/locale k)))
@@ -501,7 +501,7 @@
 
 (defn prep-all-localized-props
   "Prepares localized properties map for all currencies in a map."
-  {:tag clojure.lang.IPersistentMap :added "1.0.0" :private false}
+  {:tag clojure.lang.IPersistentMap :added "1.0.0" :private true}
   [^clojure.lang.IPersistentMap p]
   (map/map-vals prep-localized-props p))
 
@@ -936,30 +936,69 @@
 ;; Localized properties.
 ;;
 
+(def ^{:private true :tag clojure.lang.PersistentHashSet :added "1.0.0"}
+  locale-seps
+  "Locale parts separators."
+  #{\_\-\.\#})
+
 (def ^{:private true :tag clojure.lang.PersistentArrayMap}
   nat-helper
-  {:EUR :en :USD :en_US})
+  "Translates certain currencies to the preferred locales."
+  {:EUR :en    :USD :en_US :CHF :de_CH :MAD :ar_MA
+   :GBP :en_GB :XPF :fr_PF :XAF :fr_CF :FKP :en_FK
+   :NZD :en_NZ :ILS :he_IL :NOK :nb_NO :AUD :en_AU
+   :XCD :en_CB :DKK :da    :ANG :nl_NL :XOF :fr_CF})
 
 (defn get-localized-property
   "Returns localized properties of the currency object for the given locale."
   {:private true :tag clojure.lang.IPersistentMap :added "1.0.0"}
   [p ^Locale locale m] (get (get m locale) p))
 
-;; (defn localized-properties
-;;   "Tries different variants of a locale to look up for entry in localized properties.
-;;   Example order: en_US-en_US, en, :*"
-;;   {:private false :tag clojure.lang.IPersistentMap :added "1.0.0"}
-;;   [cid ^Locale locale ^Registry registry]
-;;   (or (get-localized-properties cid locale registry)
-;;       (some #(and (some? %)
-;;                   (not (contains? #{\_\-\.} (.charAt ^String % (unchecked-dec (count %)))))
-;;                   (get-localized-properties cid (l/locale %) registry))
-;;             (sm/all-prefixes #{\_\-\#\.} (str locale)))
-;;       (get-localized-properties cid :* registry)))
-
 (defn localized-property
-  "Tries different variants of a locale to look up for entry in localized properties.
-  Example order: en_US-en_US, en, :*"
+  "Gets the localized property of a currency from the given registry and locale. If the
+  registry is not given, the global one will be used. If the locale is not given, the
+  default locale for the environment will be used. Locale can be expressed as a
+  Locale object or any object that can be used to identify the locale (e.g. a keyword
+  or a string).
+
+  Localized properties are maps keyed by currency identifiers, containing another
+  maps keyed by locale objects. There is a special key :* that contains default
+  properties used when there are no properties in locale-keyed maps.
+
+  Let's take a hypothetical entry of a registry database `.cur-id->localized`:
+
+  ```clojure
+  {:XXX {#object[java.util.Locale 0x3f5af72f \"en_US\"] {:symbol \"$\"}}
+        {#object[java.util.Locale 0x3f5af72f \"en\"]    {:symbol \"X$\"}
+        {:* {:symbol \"ABC\"}}
+  ```
+
+  * Calling `(localized-property :symbol :XXX :en_US)` will return `$`.
+  * Calling `(localized-property :symbol :XXX :en_GB)` will return `X$`.
+  * Calling `(localized-property :symbol :XXX :pl_PL)` will return `ABC`.
+
+  The first is self-explanatory.
+
+  The second falls back to `en` because the function will re-try the language
+  part (`en`) alone when the property was not found. The same method is repeatedly
+  applied to other components of a locale (variant, script and extensions – if
+  any). So for the locale identified by `th_TH_TH_#u-nu-thai` the following keys will
+  be tried:
+
+  - `th_TH_TH_#u-nu-thai`,
+  - `th_TH_TH_#u-nu`,
+  - `th_TH_TH_#u`,
+  - `th_TH_TH`,
+  - 0`th_TH` and `th`.
+
+  The third example renders `ABC` because there is an entry of `:symbol` in the
+  default properties map under the key `:*`.
+
+  Please note that functions for getting particular properties may apply additional
+  steps to obtain them. For instance, the display-name function will first call the
+  localized-property and if it fails it will fall back to Java methods (if the
+  currency is ISO-standardized). If that will fail too then it will return a
+  short-code of a currency."
   {:tag clojure.lang.IPersistentMap :added "1.0.0"}
   ([property currency-id] (localized-property property
                                               currency-id
@@ -975,23 +1014,12 @@
      (when-some [m (get (.cur-id->localized ^Registry registry) cid)]
        (or (get (get m locale) property)
            (some #(and (some? %)
-                       (not (contains? #{\_\-\.} (.charAt ^String % (unchecked-dec (count %)))))
+                       (not (contains? locale-seps
+                                       (.charAt ^String %
+                                                (unchecked-dec (count %)))))
                        (get (get m (l/locale %)) property))
-                 (sm/all-prefixes #{\_\-\#\.} (str locale)))
+                 (sm/all-prefixes locale-seps (str locale)))
            (get (get m :*) property))))))
-
-;; (defn localized-property
-;;   "Returns a localized property of the currency object for the given locale using the
-;;   registry provided or a global, shared registry. It the locale is not given, the
-;;   default will be used
-
-;;   A locale can be expressed as java.util.Locale object or any other object (like a
-;;   string or a keyword) that can be used to look up the locale."
-;;   {:tag clojure.lang.IPersistentMap :added "1.0.0"}
-;;   ([currency property] (localized-property currency property (Locale/getDefault) (registry/get)))
-;;   ([currency property locale] (localized-property currency property locale (registry/get)))
-;;   ([currency property locale ^Registry registry]
-;;    (get (localized-properties currency (l/locale locale) registry) property)))
 
 (def ^{:tag String :added "1.0.0"
        :arglists '(^String [currency]
