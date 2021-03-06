@@ -202,8 +202,11 @@
    (dump default-dump-filename registry))
   ([^String   filename
     ^Registry registry]
-   (when-some [rdir (fs/resource-pathname default-resource-name)]
-     (spit (io/file rdir filename) (puget/pprint-str registry)))))
+   (when-some [rdir (fs/resource-pathname default-resource-name
+                                          default-resource-must-exist-file)]
+     (let [pathname (io/file (.getParent ^java.io.File (io/file rdir)) filename)]
+       (println "Dumping registry to" (str pathname))
+       (spit pathname (puget/pprint-str registry))))))
 
 (defn export
   "For the given filename (defaults to default-dump-filename) and a registry (defaults
@@ -218,8 +221,11 @@
    (export default-export-filename registry))
   ([^String   filename
     ^Registry registry]
-   (when-some [rdir (fs/resource-pathname default-resource-name)]
-     (spit (io/file rdir filename) (puget/pprint-str (registry->map registry))))))
+   (when-some [rdir (fs/resource-pathname default-resource-name
+                                          default-resource-must-exist-file)]
+     (let [pathname (io/file (.getParent ^java.io.File (io/file rdir)) filename)]
+       (println "Exporting configuration to" (str pathname))
+       (spit pathname (puget/pprint-str (registry->map registry)))))))
 
 ;;
 ;; Readers generator.
