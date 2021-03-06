@@ -245,7 +245,9 @@
   {:no-doc true :added "1.0.0"}
   [names]
   (map
-   (fn [n] (list 'defn (symbol (str "lit-" n)) '[arg] (list 'ns-lit (str n) 'arg)))
+   (fn [n] (list 'defn (symbol (str "lit-" n))
+                 '{:no-doc true}
+                 '[arg] (list 'ns-lit (str n) 'arg)))
    names))
 
 (defn readers-export
