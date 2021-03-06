@@ -291,7 +291,7 @@
                   (map #(vector (symbol "money" %) (symbol handlers-namespace (str "lit-" %))))
                   (into {'money    'io.randomseed.bankster.money/lit
                          'currency 'io.randomseed.bankster.currency/lit}))]
-       (when-some [fdir (io/resource (first default-reader-filenames))]
+       (when-some [fdir (io/resource (first filenames))]
          (when-some [pdir (.getParent (io/file fdir))]
            (when-some [hfile (io/file pdir handlers-pathname)]
              (println)
