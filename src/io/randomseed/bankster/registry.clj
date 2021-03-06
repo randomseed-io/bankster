@@ -28,17 +28,20 @@
 ;; Global, shared registry.
 ;;
 
-(def R
+(def ^{:tag clojure.lang.Atom :added "1.0.0"}
+  R
   "Global registry object based on an Atom."
   (atom (Registry. {} {} {} {} {} (default-version))))
 
-(defn ^clojure.lang.Atom global
+(defn global
   "Returns global registry object."
+  {:tag clojure.lang.Atom :added "1.0.0"}
   []
   R)
 
-(defn ^Registry state
+(defn state
   "Returns current state of a global registry."
+  {:tag Registry :added "1.0.0"}
   []
   (deref R))
 
@@ -46,7 +49,7 @@
 ;; Dynamic registry.
 ;;
 
-(def ^:dynamic ^Registry
+(def ^{:dynamic true :tag Registry :added "1.0.0"}
   *default*
   "Registry, that if set to a truthy value (not nil and not false), will be used
   instead of a global, shared registry."
@@ -69,6 +72,7 @@
 
 (defn ^Registry new-registry
   "Creates a new registry."
+  {:tag Registry :added "1.0.0"}
   (^Registry []
    (bankster/->Registry {} {} {} {} {} (default-version)))
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
@@ -105,6 +109,7 @@
    (bankster/map->Registry m)))
 
 (def ^{:tag Registry
+       :added "1.0.0"
        :arglists '(^Registry []
                    ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
                               ^clojure.lang.PersistentHashMap cur-nr->cur
@@ -133,8 +138,9 @@
 ;; Registry operations.
 ;;
 
-(defn ^Boolean registry?
+(defn registry?
   "Returns true if the given object is a registry."
+  {:tag Boolean :added "1.0.0"}
   [obj]
   (instance? Registry obj))
 
@@ -142,7 +148,7 @@
   "Updates a registry with a function that should take a registry as its first argument
   and return the updated one. It is a simple apply-based implementation provided for
   the sake of symmetry with update! which operates on a global registry object."
-  {:added "1.0.0" :tag Registry}
+  {:tag Registry :added "1.0.0"}
   [^Registry r ^clojure.lang.IFn fun & more]
   (apply fun r more))
 
@@ -182,7 +188,8 @@
                    ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
                               ^clojure.lang.PersistentHashMap cur-nr->cur
                               ^clojure.lang.PersistentHashMap ctr-id->cur
-                              ^clojure.lang.PersistentHashMap cur-id->ctr-ids]
+                              ^clojure.lang.PersistentHashMap cur-id->ctr-ids
+                              ^clojure.lang.PersistentHashMap cur-id->localized]
                    ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
                               ^clojure.lang.PersistentHashMap cur-nr->cur
                               ^clojure.lang.PersistentHashMap ctr-id->cur
@@ -196,6 +203,7 @@
 (defn update!
   "Updates a global registry using a function that should take a registry and return
   the updated version of it."
+  {:tag Registry :added "1.0.0"}
   [^clojure.lang.IFn fun & more]
   (apply swap! R fun more))
 
@@ -206,6 +214,7 @@
 (defmacro with
   "Sets a registry in a lexical context of the body to be used instead of a global one
   in functions which require the registry and it was not passed as an argument."
+  {:added "1.0.0"}
   [^Registry registry & body]
   `(binding [*default* ^Registry registry]
      ~@body))
@@ -214,10 +223,45 @@
 ;; Getters and helpers.
 ;;
 
-(defmacro currency-by-id              [id registry] `(clojure.core/get (cur-id->cur     ^Registry registry) id))
-(defmacro currency-by-nr              [nr registry] `(clojure.core/get (cur-nr->cur     ^Registry registry) nr))
-(defmacro currency-by-country-id      [id registry] `(clojure.core/get (ctr-id->cur     ^Registry registry) id))
-(defmacro country-ids-for-currency-id [id registry] `(clojure.core/get (cur-id->ctr-ids ^Registry registry) id))
+(defmacro currency-id->currency
+  "Returns the currency ID to currency map from a registry. If the registry is not
+  given the dynamic variable *default* is tried. If it is not set, current state of a
+  global registry is used instead."
+  {:added "1.0.0"}
+  ([] `(.cur-id->cur ^Registry (get)))
+  ([registry] `(.cur-id->cur ^Registry ~registry)))
+
+(defmacro currency-nr->currency
+  "Returns the currency number to currency map from a registry. If the registry is not
+  given the dynamic variable *default* is tried. If it is not set, current state of a
+  global registry is used instead."
+  {:added "1.0.0"}
+  ([] `(.cur-nr->cur ^Registry (get)))
+  ([registry] `(.cur-nr->cur ^Registry ~registry)))
+
+(defmacro country-id->currency
+  "Returns the country ID to currency map from a registry. If the registry is not given
+  the dynamic variable *default* is tried. If it is not set, current state of a
+  global registry is used instead."
+  {:added "1.0.0"}
+  ([] `(.ctr-id->cur ^Registry (get)))
+  ([registry] `(.ctr-id->cur ^Registry ~registry)))
+
+(defmacro currency-id->country-ids
+  "Returns the currency ID to country IDs map from a registry. If the registry is not
+  given the dynamic variable *default* is tried. If it is not set, current state of a
+  global registry is used instead."
+  {:added "1.0.0"}
+  ([] `(.cur-id->ctr-ids ^Registry (get)))
+  ([registry] `(.cur-id->ctr-ids ^Registry ~registry)))
+
+(defmacro currency-id->localized
+  "Returns the currency ID to localized propertied map from a registry. If the registry
+  is not given the dynamic variable *default* is tried. If it is not set, current
+  state of a global registry is used instead."
+  {:added "1.0.0"}
+  ([] `(.cur-id->localized ^Registry (get)))
+  ([registry] `(.cur-id->localized ^Registry ~registry)))
 
 ;;
 ;; Printing.

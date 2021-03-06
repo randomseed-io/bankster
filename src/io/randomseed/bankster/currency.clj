@@ -163,9 +163,9 @@
 
   (defined?
     (^Boolean [currency]
-     (contains? (.cur-id->cur (registry/get)) (.id ^Currency currency)))
+     (contains? (registry/currency-id->currency) (.id ^Currency currency)))
     (^Boolean [currency, ^Registry registry]
-     (contains? (.cur-id->cur ^Registry registry) (.id ^Currency currency))))
+     (contains? (registry/currency-id->currency registry) (.id ^Currency currency))))
 
   (same-ids?
     (^Boolean [a b] (= (.id ^Currency a) (id b)))
@@ -178,7 +178,7 @@
      (unit num (registry/get)))
     (^Currency [^clojure.lang.Keyword num
                 ^Registry registry]
-     (or (get (.cur-nr->cur ^Registry registry) num)
+     (or (get (registry/currency-nr->currency registry) num)
          (throw (ex-info
                  (str "Currency with the numeric ID of " num " not found in a registry.")
                  {:registry registry})))))
@@ -187,7 +187,7 @@
     (^clojure.lang.Keyword [num]
      (id (long num) (registry/get)))
     (^clojure.lang.Keyword [num, ^Registry registry]
-     (if-some [c (get (.cur-nr->cur ^Registry registry) num)]
+     (if-some [c (get (registry/currency-nr->currency registry) num)]
        (.id ^Currency c)
        (throw (ex-info
                (str "Currency with the numeric ID of " num " not found in a registry.")
@@ -195,20 +195,20 @@
 
   (defined?
     (^Boolean [num]
-     (contains? (.cur-nr->cur (registry/get)) num))
+     (contains? (registry/currency-nr->currency) num))
     (^Boolean [num, ^Registry registry]
-     (contains? (.cur-nr->cur ^Registry registry) num)))
+     (contains? (registry/currency-nr->currency registry) num)))
 
   (same-ids?
     (^Boolean [a b]
      (let [r (registry/get)]
-       (if-some [c (get (.cur-nr->cur ^Registry r) a)]
+       (if-some [c (get (registry/currency-nr->currency r) a)]
          (= (.id ^Currency c) (id b r))
          (throw (ex-info
                  (str "Currency with the numeric ID of " num " not found in a registry.")
                  {:registry r})))))
     (^Boolean [a b ^Registry registry]
-     (if-some [c (get (.cur-nr->cur ^Registry registry) a)]
+     (if-some [c (get (registry/currency-nr->currency registry) a)]
        (= (.id ^Currency c) (id b registry))
        (throw (ex-info
                (str "Currency with the numeric ID of " num " not found in a registry.")
@@ -220,7 +220,7 @@
     (^Currency [^clojure.lang.Keyword id]
      (unit id (registry/get)))
     (^Currency [^clojure.lang.Keyword id, ^Registry registry]
-     (or (get (.cur-id->cur ^Registry registry) id)
+     (or (get (registry/currency-id->currency registry) id)
          (throw (ex-info
                  (str "Currency " (clojure.core/symbol id) " not found in a registry.")
                  {:registry registry})))))
@@ -231,9 +231,9 @@
 
   (defined?
     (^Boolean [id]
-     (contains? (.cur-id->cur (registry/get)) id))
+     (contains? (registry/currency-id->currency) id))
     (^Boolean [id, ^Registry registry]
-     (contains? (.cur-id->cur ^Registry registry) id)))
+     (contains? (registry/currency-id->currency registry) id)))
 
   (same-ids?
     (^Boolean [a b] (= a (id b (registry/get))))
@@ -251,9 +251,9 @@
 
   (defined?
     (^Boolean [id]
-     (contains? (.cur-id->cur (registry/get)) (keyword id)))
+     (contains? (registry/currency-id->currency) (keyword id)))
     (^Boolean [id, ^Registry registry]
-     (contains? (.cur-id->cur ^Registry registry) (keyword id))))
+     (contains? (registry/currency-id->currency registry) (keyword id))))
 
   (same-ids?
     (^Boolean [a b] (= (keyword a) (id b)))
@@ -271,9 +271,9 @@
 
   (defined?
     (^Boolean [id]
-     (contains? (.cur-id->cur (registry/get)) (keyword id)))
+     (contains? (registry/currency-id->currency) (keyword id)))
     (^Boolean [id, ^Registry registry]
-     (contains? (.cur-id->cur ^Registry registry) (keyword id))))
+     (contains? (registry/currency-id->currency registry) (keyword id))))
 
   (same-ids?
     (^Boolean [a b] (= (keyword a) (id b)))
@@ -291,9 +291,9 @@
 
   (defined?
     (^Boolean [m]
-     (contains? (.cur-id->cur (registry/get)) (keyword (:id m))))
+     (contains? (registry/currency-id->currency) (keyword (:id m))))
     (^Boolean [m, ^Registry registry]
-     (contains? (.cur-id->cur ^Registry registry) (keyword (:id m)))))
+     (contains? (registry/currency-id->currency registry) (keyword (:id m)))))
 
   (same-ids?
     (^Boolean [m b] (= (keyword (:id m)) (id b)))
@@ -427,7 +427,7 @@
   (^clojure.lang.PersistentHashSet [c]
    (countries c (registry/get)))
   (^clojure.lang.PersistentHashSet [c ^Registry registry]
-   (get (.cur-id->ctr-ids ^Registry registry) (id c))))
+   (get (registry/currency-id->country-ids registry) (id c))))
 
 (defn ^Currency of-country
   "Returns a currency for the given country identified by a country ID (which should be
@@ -437,7 +437,7 @@
   (^Currency [^clojure.lang.Keyword country-id]
    (of-country country-id (registry/get)))
   (^Currency [^clojure.lang.Keyword country-id, ^Registry registry]
-   (get (.ctr-id->cur ^Registry registry) (keyword country-id))))
+   (get (registry/country-id->currency registry) (keyword country-id))))
 
 ;;
 ;; Parsing helpers.
@@ -516,13 +516,13 @@
   [^Registry registry, country-ids]
   (if-not (some? (seq country-ids))
     registry
-    (let [ctr-to-cur   (.ctr-id->cur ^Registry registry)
-          cid-to-ctrs  (.cur-id->ctr-ids ^Registry registry)
+    (let [ctr-to-cur   (registry/country-id->currency registry)
+          cid-to-ctrs  (registry/currency-id->country-ids registry)
           currency-ids (map #(.id ^Currency %) (distinct (filter identity (map ctr-to-cur country-ids))))
           new-cid-ctr  (reduce #(apply update %1 %2 disj country-ids) cid-to-ctrs currency-ids)]
       (-> registry
           (assoc :cur-id->ctr-ids (map/remove-empty-values new-cid-ctr currency-ids))
-          (assoc :ctr-id->cur (apply dissoc ctr-to-cur country-ids))))))
+          (assoc :ctr-id->cur     (apply dissoc ctr-to-cur country-ids))))))
 
 (defn ^Registry unregister
   "Removes currency from the given registry. Also removes country and numeric ID
@@ -540,16 +540,16 @@
           proposed-nr         (.nr ^Currency cur)
           proposed-nr         (when (not= proposed-nr no-numeric-id) proposed-nr)
           registered-id       (.id ^Currency cur)
-          registered-cur      (get (.cur-id->cur ^Registry registry) registered-id)
+          registered-cur      (get (registry/currency-id->currency registry) registered-id)
           registered-nr       (when registered-cur (.nr ^Currency registered-cur))
           registered-nr       (when (and registered-nr (not= registered-nr no-numeric-id)) registered-nr)
-          registered-by-nr    (when proposed-nr (get (.cur-nr->cur ^Registry registry) (long proposed-nr)))
+          registered-by-nr    (when proposed-nr (get (registry/currency-nr->currency registry) (long proposed-nr)))
           registered-by-nr-id (when registered-by-nr (.id ^Currency registered-by-nr))
           new-by-nr           (when (and registered-by-nr-id
                                          (or (not= registered-by-nr-id registered-id)
                                              (not= registered-by-nr registered-nr)))
                                 (assoc registered-by-nr :nr (long no-numeric-id)))
-          country-ids         (get (.cur-id->ctr-ids ^Registry registry) registered-id)
+          country-ids         (get (registry/currency-id->country-ids registry) registered-id)
           ^Registry registry  (if-not new-by-nr
                                 registry
                                 (-> registry
@@ -559,7 +559,7 @@
           ^Registry registry  (-> registry
                                   (map/dissoc-in [:cur-id->cur registered-id])
                                   (map/dissoc-in [:cur-nr->cur registered-nr]))]
-      (if-not (contains? (.cur-id->ctr-ids ^Registry registry) registered-id)
+      (if-not (contains? (registry/currency-id->country-ids registry) registered-id)
         registry
         (as-> registry regi
           (map/dissoc-in regi [:cur-id->localized registered-id])
@@ -593,7 +593,7 @@
                      " does not exist in a registry.") {:currency currency})))
     (let [^Currency c (unit currency registry)
           cid         (.id ^Currency c)
-          ^Currency p (get (.cur-id->cur ^Registry registry) cid)
+          ^Currency p (get (registry/currency-id->currency registry) cid)
           cids        (prep-country-ids country-ids)]
       (when-not (= c p)
         (throw
@@ -627,7 +627,7 @@
                      " does not exist in a registry.") {:currency currency})))
     (let [^Currency c (unit currency registry)
           cid         (.id ^Currency c)
-          ^Currency p (get (.cur-id->cur ^Registry registry) cid)]
+          ^Currency p (get (registry/currency-id->currency registry) cid)]
       (when-not (= c p)
         (throw
          (ex-info (str "Currency " cid " differs from the currency existing in a registry.")
@@ -659,8 +659,8 @@
      (let [^Currency c (unit currency registry)
            cid         (.id ^Currency c)
            cnr         (.nr ^Currency c)
-           cid-to-cur  (.cur-id->cur   ^Registry registry)
-           cnr-to-cur  (.cur-nr->cur   ^Registry registry)]
+           cid-to-cur  (registry/currency-id->currency registry)
+           cnr-to-cur  (registry/currency-nr->currency registry)]
        (when-not update?
          (when-some [^Currency p (get cid-to-cur cid)]
            (throw (ex-info
@@ -671,10 +671,10 @@
                    (str "Currency with numeric ID of " cnr " already exists in a registry.")
                    {:currency c, :existing-currency p}))))
        (let [registry    (unregister registry c)
-             cid-to-cur  (.cur-id->cur ^Registry registry)
+             cid-to-cur  (registry/currency-id->currency registry)
              registry    (assoc registry :cur-id->cur (assoc cid-to-cur cid c))
              numeric-id  (.nr ^Currency c)
-             cnr-to-cur  (.cur-nr->cur ^Registry registry)
+             cnr-to-cur  (registry/currency-nr->currency ^Registry registry)
              registry    (if (or (nil? numeric-id) (= numeric-id no-numeric-id) (<= numeric-id 0)) registry
                              (assoc registry :cur-nr->cur (assoc cnr-to-cur (long numeric-id) c)))]
          (-> registry
@@ -683,7 +683,8 @@
 
 (defn ^Registry register!
   "Adds currency and (optional) country to the global registry. Returns updated
-  registry. When the currency is nil, returns current state of the registry."
+  registry. When the currency is nil, returns current state of the global, shared
+  registry (but not a dynamic registry, even if it is set)."
   {:tag Registry :added "1.0.0"}
   (^Registry [^Currency currency]
    (if (nil? currency) @registry/R (swap! registry/R register currency)))
@@ -695,7 +696,10 @@
 (defn ^Registry unregister!
   "Removes currency from the global registry. Automatically removes country constrains
   when necessary and localized properties associated with a currency. Returns updated
-  registry."
+  registry.
+
+  If the currency is nil, returns current state of a global registry (but not a
+  dynamic registry, even if it is set)."
   {:tag Registry :added "1.0.0"}
   [^Currency currency]
   (if (nil? currency) @registry/R (swap! registry/R unregister currency)))
@@ -707,7 +711,10 @@
   existing currency from the registry, exception is thrown. If the currency exists
   and equals to the given in any aspect, country associations are added. Links from
   other countries to the currency are not removed unless the country is already
-  linked with some other currency; in this case it will be unlinked first."
+  linked with some other currency; in this case it will be unlinked first.
+
+  If the currency is nil, returns current state of a global registry (but not a
+  dynamic registry, even if it is set)."
   {:tag Registry :added "1.0.0"}
   [^Currency currency country-ids]
   (when (nil? currency) @registry/R (swap! registry/R add-countries currency country-ids)))
@@ -715,19 +722,28 @@
 (defn ^Registry remove-countries!
   "Removes country (a keyword) or countries (seqable collection of keywords) from the
   global registry. Automatically removes currency constrains when necessary. Returns
-  updated registry."
+  updated registry.
+
+  If the country-ids is nil, returns current state of a global registry (but not a
+  dynamic registry, even if it is set)."
   {:tag Registry :added "1.0.0"}
   [country-ids]
   (if (nil? country-ids) @registry/R (swap! registry/R remove-countries country-ids)))
 
 (defn ^Registry add-localized-props!
-  "Associates the given currency with a map of localized properties."
+  "Associates the given currency with a map of localized properties.
+
+  If the currency is nil, returns current state of a global registry (but not a
+  dynamic registry, even if it is set)."
   {:tag Registry :added "1.0.0"}
   [^Currency currency properties]
   (when (nil? currency) @registry/R (swap! registry/R add-localized-properties currency properties)))
 
 (defn ^Registry remove-localized-props!
-  "Removes localized properties of the given currency from the global registry."
+  "Removes localized properties of the given currency from the global registry.
+
+  If the currency is nil, returns current state of a global registry (but not a
+  dynamic registry, even if it is set)."
   {:tag Registry :added "1.0.0"}
   [^Currency currency]
   (if (nil? currency) @registry/R (swap! registry/R remove-localized-properties currency)))
@@ -830,7 +846,7 @@
   (^Boolean [c]
    (has-country? c (registry/get)))
   (^Boolean [c, ^Registry registry]
-   (contains? (.cur-id->ctr-ids ^Registry registry) (id c))))
+   (contains? (registry/currency-id->country-ids registry) (id c))))
 
 (defn ^Boolean in-domain?
   "Returns true if the given currency has a domain set to the first given
@@ -1011,7 +1027,7 @@
   ([property currency-id locale ^Registry registry]
    (let [cid    (id currency-id)
          locale (l/locale locale)]
-     (when-some [m (get (.cur-id->localized ^Registry registry) cid)]
+     (when-some [m (get (registry/currency-id->localized registry) cid)]
        (or (get (get m locale) property)
            (some #(and (some? %)
                        (not (contains? locale-seps

@@ -13,13 +13,9 @@
             [io.randomseed.bankster.util     :refer       :all])
 
   (:import  [io.randomseed.bankster Currency Registry Money]
-            [java.math MathContext RoundingMode]))
-
-;;
-;; Global registry of currencies.
-;;
-
-(def ^:private R (registry/global))
+            [java.math MathContext RoundingMode]
+            [java.text NumberFormat DecimalFormat]
+            [java.util Locale]))
 
 ;;
 ;; Accountable protocol.
@@ -321,10 +317,10 @@
 
   (defined?
     (^Boolean [money]
-     (contains? (.cur-id->cur (registry/get))
+     (contains? (registry/currency-id->currency)
                 (.id ^Currency (.currency ^Money money))))
     (^Boolean [money ^Registry registry]
-     (contains? (.cur-id->cur ^Registry registry)
+     (contains? (registry/currency-id->currency registry)
                 (.id ^Currency (.currency ^Money money)))))
 
   (same-ids?
