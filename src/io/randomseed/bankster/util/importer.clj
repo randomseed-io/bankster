@@ -7,6 +7,7 @@
   (:require [clojure.java.io                 :as       io]
             [clojure.data.csv                :as      csv]
             [clojure.string                  :as      str]
+            [trptr.java-wrapper.locale       :as        l]
             [puget.printer                   :as    puget]
             [io.randomseed.bankster          :as bankster]
             [io.randomseed.bankster.scale    :as    scale]
@@ -165,6 +166,13 @@
     (if-not (and (some? sc) (neg? sc)) (assoc m :scale   sc) m)
     (if (some? kind)                   (assoc m :kind  kind) m)))
 
+(defn localized->map
+  "Takes a localized map entry (1st level) and returns a map suitable for putting into
+  a configuration file."
+  {:added "1.0.0"}
+  [m]
+  (map/map-keys (comp keyword str l/locale) m))
+
 (defn registry->map
   "Takes a registry and returns a map suitable for putting into a configuration
   file. Extensions fields are ignored. When registry is not given it uses the global
@@ -177,8 +185,8 @@
      (sorted-map-by
       #(compare %2 %1)
       :version    (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "YYYYMMddHHmmssSS"))
-      :localized  (into (sorted-map) (:cur-id->localized registry)) ;; TODO, locale->kw
-      :currencies (into (sorted-map) (map/map-vals currency->map (:cur-id->cur registry)))
+      :localized  (into (sorted-map) (map/map-vals localized->map (:cur-id->localized registry)))
+      :currencies (into (sorted-map) (map/map-vals currency->map  (:cur-id->cur registry)))
       :countries  (into (sorted-map) (map/map-vals :id (:ctr-id->cur registry)))))))
 
 (defn dump
