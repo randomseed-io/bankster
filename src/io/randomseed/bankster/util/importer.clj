@@ -23,44 +23,58 @@
 ;; Pathnames and URIs.
 ;;
 
-(def ^String ^private ^const default-resource-name
+(def ^{:const true :tag String :added "1.0.0"}
+  default-resource-name
   "Name of a default resource container."
   "io/randomseed/bankster")
 
-(def ^String ^private ^const default-dump-filename
+(def ^{:const true :tag String :added "1.0.0"}
+  default-resource-must-exist-file
+  "Filename in a default resource container that must exist."
+  "config.edn")
+
+(def ^{:const true :tag String :added "1.0.0"}
+  default-dump-filename
   "Default EDN dump file."
   "registry-dump.edn")
 
-(def ^String ^private ^const default-export-filename
+(def ^{:const true :tag String :added "1.0.0"}
+  default-export-filename
   "Default EDN export file."
   "registry-export.edn")
 
-(def ^String ^private ^const default-reader-filenames
+(def ^{:const true :tag String :added "1.0.0"}
+  default-reader-filenames
   "Default data reader filenames."
   ["data_readers.clj" "data_readers.cljc"])
 
-(def ^String ^private ^const default-handlers-pathname
+(def ^{:const true :tag String :added "1.0.0"}
+  default-handlers-pathname
   "Default pathname of a reader handlers file."
   "io/randomseed/bankster/money/reader_handlers.clj")
 
-(def ^String ^private ^const default-handlers-namespace
+(def ^{:const true :tag String :added "1.0.0"}
+  default-handlers-namespace
   "Default namespace of a reader handlers."
   "io.randomseed.bankster.money")
 
-(def ^String ^private ^const default-countries-csv
-  "Default CSV file with country database."
+(def ^{:const true :tag String :added "1.0.0"}
+  default-countries-csv
+  "Default CSV file with countries database."
   "org/joda/money/CountryData.csv")
 
-(def ^String ^private ^const default-currencies-csv
-  "Default CSV file with country database."
+(def ^{:const true :tag String :added "1.0.0"}
+  default-currencies-csv
+  "Default CSV file with currencies database."
   "org/joda/money/CurrencyData.csv")
 
 ;;
 ;; Transformation rules.
 ;;
 
-(def special-kinds
-  "ISO codes for special currencies."
+(def ^{:private true :added "1.0.0"}
+  special-kinds
+  "ISO codes for special kinds of currencies."
   {:USN :FIDUCIARY
    :XSU :FIDUCIARY
    :CLF :FIDUCIARY
@@ -82,14 +96,15 @@
 (defn make-currency
   "Shapes currency entry. Gets a sequence of linear collections describing currency and
   returns a currency object."
+  {:private true :added "1.0.0"}
   [[id numeric scale]]
   (when (some? id)
-    (let [id       (keyword id)
-          numeric  (or (try-parse-long numeric) currency/no-numeric-id)
-          numeric  (if (< numeric 0) currency/no-numeric-id numeric)
-          scale    (or (try-parse-int scale) currency/auto-scaled)
-          scale    (if (< scale 0) currency/auto-scaled scale)
-          kind     (get special-kinds id :FIAT)]
+    (let [id      (keyword id)
+          numeric (or (try-parse-long numeric) currency/no-numeric-id)
+          numeric (if (< numeric 0) currency/no-numeric-id numeric)
+          scale   (or (try-parse-int scale) currency/auto-scaled)
+          scale   (if (< scale 0) currency/auto-scaled scale)
+          kind    (get special-kinds id :FIAT)]
       (currency/new-currency id (long numeric) (int scale) kind))))
 
 ;;
@@ -100,6 +115,7 @@
   "Reads CSV file in a format compliant with Joda Money and returns a map with currency
   to countries associations where countries are as sets. The pathname should be
   relative to resources directory."
+  {:added "1.0.0"}
   ([]
    (countries-load nil))
   ([^String pathname]
@@ -113,6 +129,7 @@
   "Reads CSV file compliant with Joda Money and returns a map with currency
   ID (keyword) as a key and currency data as its value (vector). The pathname should
   be relative to resources directory."
+  {:added "1.0.0"}
   ([]
    (currencies-load nil))
   ([^String pathname]
@@ -120,8 +137,9 @@
      (->> f fs/read-csv (map make-currency)))))
 
 (defn joda-import
-  "Reads CSV files defining countries and currencies (Joda Money format) and returns a
-  Bankster-suitable structure."
+  "Reads CSV files with countries and currencies definitions (Joda Money format) and
+  returns a registry."
+  {:tag Registry :added "1.0.0"}
   ([]
    (joda-import nil nil))
   ([^String countries-pathname
@@ -138,6 +156,9 @@
 ;;
 
 (defn currency->map
+  "Takes a currency and returns a map suitable for putting into a configuration
+  file. Extensions fields are ignored."
+  {:added "1.0.0"}
   [{:keys [:nr :sc :kind]}]
   (as-> (sorted-map) m
     (if (and (number? nr) (pos? nr))   (assoc m :numeric nr) m)
@@ -145,6 +166,10 @@
     (if (some? kind)                   (assoc m :kind  kind) m)))
 
 (defn registry->map
+  "Takes a registry and returns a map suitable for putting into a configuration
+  file. Extensions fields are ignored. When registry is not given it uses the global
+  one. Extension fields are ignored."
+  {:added "1.0.0"}
   ([]
    (registry->map (registry/state)))
   ([^Registry registry]
@@ -157,6 +182,12 @@
       :countries  (into (sorted-map) (map/map-vals :id (:ctr-id->cur registry)))))))
 
 (defn dump
+  "For the given filename (defaults to default-dump-filename) and a registry (defaults
+  to a global registry) creates a dump in EDN format.
+
+  Filename will be placed in the default directory of resources (the same that which
+  config.edn)."
+  {:added "1.0.0"}
   ([^Registry registry]
    (dump default-dump-filename registry))
   ([^String   filename
@@ -165,6 +196,12 @@
      (spit (io/file rdir filename) (puget/pprint-str registry)))))
 
 (defn export
+  "For the given filename (defaults to default-dump-filename) and a registry (defaults
+  to a global registry) creates a configuration file in EDN format.
+
+  Filename will be placed in the default directory of resources (the same which holds
+  config.edn)."
+  {:added "1.0.0"}
   ([^Registry registry]
    (export default-export-filename registry))
   ([^String   filename
@@ -177,6 +214,8 @@
 ;;
 
 (defn handler-preamble
+  "Preamble generator for a handler file."
+  {:no-doc true :added "1.0.0"}
   ([]
    (handler-preamble default-handlers-namespace))
   ([handlers-namespace]
@@ -185,18 +224,56 @@
 
 (defn handler-gen
   "Generates handler functions for tagged literals for each namespaced currency."
+  {:no-doc true :added "1.0.0"}
   [names]
   (map
    (fn [n] (list 'defn (symbol (str "lit-" n)) '[arg] (list 'ns-lit (str n) 'arg)))
    names))
 
 (defn readers-export
+  "Creates clojure source code files with reader functions for tagged literals handling
+  on a basis of registry information and data reader map files referring to the
+  created handlers.
+
+  The purpose of generation is primary to create handlers for literals in forms of
+  #money/NS[…], where NS is a namespace that corresponds to a namespace of a
+  currency. Possible namespaces are taken from a registry (a map from its field
+  .cur-id->cur).
+
+  The function takes a registry (defaults to a global registry if not given), a
+  sequence of reader filenames (defaults to default-reader-filenames), default
+  handlers pathname (defaults to default-handlers-pathname) and default handlers
+  namespace (defaults to default-handlers-namespace).
+
+  Default namespace is a namespace in which money handlers will be defined. These
+  handlers will be written to a file which pathname is constructed using the
+  following tactic:
+
+  1. Obtain the directory of the first filename from the given filenames list using
+     Java's resource lookup. The assumption is it should be src directory of
+     a project.
+
+  2. Append the file path passed as the handlers-pathname.
+
+  As for data reader map files, their directory name is also based on the lookup of
+  the first filename. Each filename will be populated with the same content which is
+  a map associating tagged literal with a function."
+  {:added "1.0.0"}
   ([]
-   (readers-export (registry/state) default-reader-filenames default-handlers-pathname default-handlers-namespace))
+   (readers-export (registry/state)
+                   default-reader-filenames
+                   default-handlers-pathname
+                   default-handlers-namespace))
   ([^Registry registry]
-   (readers-export registry default-reader-filenames default-handlers-pathname default-handlers-namespace))
+   (readers-export registry
+                   default-reader-filenames
+                   default-handlers-pathname
+                   default-handlers-namespace))
   ([^Registry registry filenames]
-   (readers-export registry filenames default-handlers-pathname default-handlers-namespace))
+   (readers-export registry
+                   filenames
+                   default-handlers-pathname
+                   default-handlers-namespace))
   ([^Registry registry filenames handlers-pathname handlers-namespace]
    (when-some [nsses (->> (.cur-id->cur ^Registry registry)
                           (map (comp namespace first))
@@ -231,9 +308,15 @@
 ;;
 
 (defn joda->bankster-dump
+  "Reads Joda Money CSV files and creates a registry dump named
+  resources/io/randomseed/bankster/registry-dump.edn."
+  {:added "1.0.0"}
   []
   (println (time (dump (joda-import)))))
 
 (defn joda->bankster-export
+  "Reads Joda Money CSV files and creates a configuration file named
+  resources/io/randomseed/bankster/registry-export.edn."
+  {:added "1.0.0"}
   []
   (println (time (export (joda-import)))))

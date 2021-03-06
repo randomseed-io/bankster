@@ -30,7 +30,9 @@
 ;;
 
 (defn ^clojure.lang.PersistentHashMap load
-  "Loads data structures from an EDN file."
+  "Loads data structures from an EDN file. The given path should reside in one of the
+  resource directories. If it is not given the default-resource-path will be used."
+  {:added "1.0.0"}
   ([]
    (load default-resource-path))
   ([^String resource-path]
@@ -43,7 +45,22 @@
 ;; Getters.
 ;;
 
-(defn currencies ([cfg] (get cfg :currencies {})))
-(defn countries  ([cfg] (get cfg :countries  {})))
-(defn localized  ([cfg] (get cfg :localized  {})))
-(defn version    ([cfg] (get cfg :version)))
+(defn currencies
+  "Returns currencies map of the given configuration map."
+  {:tag clojure.lang.PersistentHashMap :added "1.0.0"}
+  ([cfg] (get cfg :currencies {})))
+
+(defn countries
+  "Returns countries map of the given configuration map."
+  {:tag clojure.lang.PersistentHashMap :added "1.0.0"}
+  ([cfg] (get cfg :countries {})))
+
+(defn localized
+  "Returns localized properties map of the given configuration map."
+  {:tag clojure.lang.PersistentHashMap :added "1.0.0"}
+  ([cfg] (get cfg :localized {})))
+
+(defn version
+  "Returns version string of the given configuration map."
+  {:tag String :added "1.0.0"}
+  ([cfg] (get cfg :version)))
