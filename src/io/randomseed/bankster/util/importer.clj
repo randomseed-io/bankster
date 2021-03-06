@@ -196,6 +196,8 @@
   Filename will be placed in the default directory of resources (the same that which
   config.edn)."
   {:added "1.0.0"}
+  ([]
+   (dump default-dump-filename (registry/get)))
   ([^Registry registry]
    (dump default-dump-filename registry))
   ([^String   filename
@@ -210,6 +212,8 @@
   Filename will be placed in the default directory of resources (the same which holds
   config.edn)."
   {:added "1.0.0"}
+  ([]
+   (export default-export-filename (registry/get)))
   ([^Registry registry]
    (export default-export-filename registry))
   ([^String   filename
