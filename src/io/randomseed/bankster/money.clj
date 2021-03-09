@@ -47,16 +47,36 @@
 ;; Main coercer.
 ;;
 
+(def ^{:private true :tag clojure.lang.PersistentHashSet :added "1.0.0"}
+  amount?
+  #{\0 \1 \2 \3 \4 \5 \6 \7 \8 \9 \.})
+
+(defn split-amount
+  "Splits the amount and currency."
+  {:private false :tag clojure.lang.PersistentVector :added "1.0.0"}
+  [amount]
+  (let [lseq   (remove #{\_\ } (seq (if (keyword? amount)
+                                      (if-some [n (namespace amount)]
+                                        (str n "/" (name amount))
+                                        (name amount))
+                                      (str amount))))
+        fdigi? (amount? (first lseq))
+        [a b]  (split-with (if fdigi? amount? (complement amount?)) lseq)]
+    (when (and (seq a) (seq b))
+      (if fdigi?
+        [(apply str b) (apply str a)]
+        [(apply str a) (apply str b)]))))
+
 (defn parse
   "Internal parser."
-  {:tag Money, :no-doc true}
+  {:tag Money :no-doc true :added "1.0.0"}
   (^Money [amount]
    (when (some? amount)
-     (if (sequential? amount)
-       (apply parse ^Currency (first amount) (rest amount))
-       (if (number? amount)
-         (parse ^Currency currency/*default* amount)
-         (currency/unit amount)))))
+     (if-some [cur-am (split-amount amount)]
+       (parse (nth cur-am 0) (nth cur-am 1))
+       (throw (ex-info
+               "Do not know how to create money using the given argument."
+               {:amount amount})))))
   (^Money [currency amount]
    (when (some? amount)
      (if-some [^Currency c (currency/unit currency)]
@@ -83,35 +103,35 @@
   Currency
 
   (value
-    (^Money [currency]                    (currency/unit currency))
+    (^Money [currency]                    (parse ^Currency currency 0M))
     (^Money [currency amount]             (parse ^Currency currency amount))
     (^Money [currency amount rounding]    (parse ^Currency currency amount rounding)))
 
   clojure.lang.Symbol
 
   (value
-    (^Money [currency-id]                 (currency/unit currency-id))
+    (^Money [currency-amount]             (parse currency-amount))
     (^Money [currency-id amount]          (parse currency-id amount))
     (^Money [currency-id amount rounding] (parse currency-id amount rounding)))
 
   clojure.lang.Keyword
 
   (value
-    (^Money [currency-id]                 (currency/unit currency-id))
+    (^Money [currency-amount]             (parse currency-amount))
     (^Money [currency-id amount]          (parse currency-id amount))
     (^Money [currency-id amount rounding] (parse currency-id amount rounding)))
 
   String
 
   (value
-    (^Money [currency-id]                 (currency/unit currency-id))
+    (^Money [currency-amount]             (parse currency-amount))
     (^Money [currency-id amount]          (parse currency-id amount))
     (^Money [currency-id amount rounding] (parse currency-id amount rounding)))
 
   Number
 
   (value
-    (^Money [amount]                      (parse currency/*default* amount))
+    (^Money [amount]                      (parse ^Currency currency/*default* amount))
     (^Money [amount currency]             (parse currency amount))
     (^Money [amount currency rounding]    (parse currency amount rounding)))
 
@@ -125,14 +145,14 @@
   clojure.lang.Sequential
 
   (value
-    (^Money [v]     (apply value v))
+    (^Money [v]     (apply parse ^Currency (first v) (rest v)))
     (^Money [v r]   (value (first v) (second v) r))
     (^Money [v b r] (value (first v) b r)))
 
   Object
 
   (value
-    (^Money [a]     (parse ^Currency currency/*default* a))
+    (^Money [a]     (parse a))
     (^Money [a c]   (parse a c))
     (^Money [a c r] (parse a c r))))
 
@@ -1182,6 +1202,9 @@
   - :max-fraction-digits - integer, the maximum number of digits allowed in the fraction portion of an amount
   - :max-integer-digits  - integer, the maximum number of digits allowed in the integer portion of an amount
   - :scale               - sets both :min-fraction-digits and :max-fraction-digits to the same value.
+
+  The function assigned to the :currency-symbol-fn should take 3 arguments:
+  currency, locale and registry.
 
   Note that you may gain some speed by re-using the extended formatter (basic
   formatter is already cached). See the documentation of the format-with function for
