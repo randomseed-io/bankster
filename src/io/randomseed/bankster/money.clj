@@ -1223,8 +1223,8 @@
 
 (defmethod print-method Money
   [m w]
-  (let [^Currency c (.currency ^Money m)
-        ^String   n (namespace (.id ^Currency c))
+  (let [c (.currency ^Money m)
+        n (namespace (currency/id c))
         a (.amount ^Money m)]
     (print-simple
      (str "#money" (when n (str "/" n))
