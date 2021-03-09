@@ -228,7 +228,7 @@
   given the dynamic variable *default* is tried. If it is not set, current state of a
   global registry is used instead."
   {:added "1.0.0"}
-  ([] `(.cur-id->cur ^Registry (get)))
+  ([] `(.cur-id->cur (get)))
   ([registry] `(.cur-id->cur ^Registry ~registry)))
 
 (defmacro currency-nr->currency
@@ -236,7 +236,7 @@
   given the dynamic variable *default* is tried. If it is not set, current state of a
   global registry is used instead."
   {:added "1.0.0"}
-  ([] `(.cur-nr->cur ^Registry (get)))
+  ([] `(.cur-nr->cur (get)))
   ([registry] `(.cur-nr->cur ^Registry ~registry)))
 
 (defmacro country-id->currency
@@ -244,7 +244,7 @@
   the dynamic variable *default* is tried. If it is not set, current state of a
   global registry is used instead."
   {:added "1.0.0"}
-  ([] `(.ctr-id->cur ^Registry (get)))
+  ([] `(.ctr-id->cur (get)))
   ([registry] `(.ctr-id->cur ^Registry ~registry)))
 
 (defmacro currency-id->country-ids
@@ -252,7 +252,7 @@
   given the dynamic variable *default* is tried. If it is not set, current state of a
   global registry is used instead."
   {:added "1.0.0"}
-  ([] `(.cur-id->ctr-ids ^Registry (get)))
+  ([] `(.cur-id->ctr-ids (get)))
   ([registry] `(.cur-id->ctr-ids ^Registry ~registry)))
 
 (defmacro currency-id->localized
@@ -260,7 +260,7 @@
   is not given the dynamic variable *default* is tried. If it is not set, current
   state of a global registry is used instead."
   {:added "1.0.0"}
-  ([] `(.cur-id->localized ^Registry (get)))
+  ([] `(.cur-id->localized (get)))
   ([registry] `(.cur-id->localized ^Registry ~registry)))
 
 ;;
