@@ -1189,6 +1189,16 @@
   display-name-native)
 
 ;;
+;; Converting to Java object.
+;;
+
+(defn java
+  "For ISO-standardized currency, returns corresponding java.util.Currency object."
+  {:tag java.util.Currency :added "1.0.0"}
+  (^java.util.Currency [currency] (java.util.Currency/getInstance (short-code currency)))
+  (^java.util.Currency [currency ^Registry registry] (java.util.Currency/getInstance (short-code currency registry))))
+
+;;
 ;; Scalable implementation.
 ;;
 
