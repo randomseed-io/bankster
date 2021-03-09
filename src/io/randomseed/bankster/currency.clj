@@ -376,27 +376,41 @@
 
 (defn nr
   "Returns currency numeric ID as a long number. For currencies without the assigned
-  number it will return -1 (or currency/no-numeric-id)."
+  number it will return -1 (or currency/no-numeric-id). Locale argument is ignored."
   {:tag 'long :added "1.0.0"}
   (^long [c] (.numeric ^Currency (unit c)))
-  (^long [c ^Registry registry] (.numeric ^Currency (unit c registry))))
+  (^long [c ^Registry registry] (.numeric ^Currency (unit c registry)))
+  (^long [c ^Registry locale registry] (.numeric ^Currency (unit c registry))))
 
 (def ^{:tag 'long
        :arglists '([c]
-                   [c, ^Registry registry])}
+                   [c ^Registry registry]
+                   [c locale ^Registry registry])}
   numeric-id
+  "Alias for nr."
+  nr)
+
+(def ^{:tag 'long
+       :arglists '([c]
+                   [c ^Registry registry]
+                   [c locale ^Registry registry])}
+  numeric
   "Alias for nr."
   nr)
 
 (defn sc
   "Returns currency scale (decimal places) as an integer number. For currencies without
-  the assigned decimal places it will return -1 (the value of auto-scaled)."
+  the assigned decimal places it will return -1 (the value of auto-scaled). Locale
+  argument is ignored."
   {:tag clojure.lang.Keyword :added "1.0.0"}
   ([c] (.scale ^Currency (unit c)))
-  ([c ^Registry registry] (.scale ^Currency (unit c registry))))
+  ([c ^Registry registry] (.scale ^Currency (unit c registry)))
+  ([c ^Registry locale registry] (.scale ^Currency (unit c registry))))
 
 (def ^{:tag 'int
-       :arglists '(^int [c] ^int [c, ^Registry registry])}
+       :arglists '(^int [c]
+                   ^int [c ^Registry registry]
+                   [c locale ^Registry registry])}
   scale
   "Alias for sc."
   sc)
@@ -404,14 +418,17 @@
 (defn ^clojure.lang.Keyword domain
   "Returns currency domain as a keyword. For currencies with simple identifiers it will
   be :ISO-4217. For currencies with namespace-qualified identifiers it will be the
-  upper-cased namespace name (e.g. :CRYPTO) set during creation a currency object."
+  upper-cased namespace name (e.g. :CRYPTO) set during creation a currency
+  object. Locale argument is ignored."
   {:tag clojure.lang.Keyword :added "1.0.0"}
   (^clojure.lang.Keyword [c] (.domain ^Currency (unit c)))
-  (^clojure.lang.Keyword [c, ^Registry registry] (.domain ^Currency (unit c registry))))
+  (^clojure.lang.Keyword [c ^Registry registry] (.domain ^Currency (unit c registry)))
+  (^clojure.lang.Keyword [c locale ^Registry registry] (.domain ^Currency (unit c registry))))
 
 (def ^{:tag clojure.lang.Keyword
        :arglists '(^clojure.lang.Keyword [c]
-                   ^clojure.lang.Keyword [c, ^Registry registry])}
+                   ^clojure.lang.Keyword [c, ^Registry registry]
+                   ^clojure.lang.Keyword [c, locale ^Registry registry])}
   ns
   "Alias for domain."
   domain)
@@ -427,27 +444,31 @@
   - :COMMODITY     - accepted medium of exchange based on commodities
   - :EXPERIMENTAL  - pseudo-currency used for testing purposes.
 
-  The function may return nil if the currency is a no-currency."
+  The function may return nil if the currency is a no-currency. Locale argument is
+  ignored."
   {:tag clojure.lang.Keyword :added "1.0.0"}
   (^clojure.lang.Keyword [c] (.kind ^Currency (unit c)))
-  (^clojure.lang.Keyword [c ^Registry registry] (.kind ^Currency (unit c registry))))
+  (^clojure.lang.Keyword [c ^Registry registry] (.kind ^Currency (unit c registry)))
+  (^clojure.lang.Keyword [c locale ^Registry registry] (.kind ^Currency (unit c registry))))
 
 (defn ^String code
   "Returns a currency code as a string for the given currency object. If the currency
   identifier is namespaced the namespace will be used as a prefix and slash character
-  as a separator."
+  as a separator. Locale argument is ignored."
   {:tag String :added "1.0.0"}
   (^String [c] (subs (str (id c)) 1))
-  (^String [c ^Registry registry] (subs (str (id c registry)) 1)))
+  (^String [c ^Registry registry] (subs (str (id c registry)) 1))
+  (^String [c locale ^Registry registry] (subs (str (id c registry)) 1)))
 
 (defn ^String short-code
   "Returns a currency code as a string for the given currency object. If the currency
   identifier is namespaced only the base code (without a namespace) will be
   returned (which may lead to misinformation if there are two or more currencies with
-  the same base ID but different namespaces)."
+  the same base ID but different namespaces). Locale argument is ignored."
   {:tag String :added "1.0.0"}
   (^String [c] (clojure.core/name (id c)))
-  (^String [c ^Registry registry] (clojure.core/name (id c registry))))
+  (^String [c ^Registry registry] (clojure.core/name (id c registry)))
+  (^String [c locale ^Registry registry] (clojure.core/name (id c registry))))
 
 ;;
 ;; Currency - country relations.
@@ -455,21 +476,26 @@
 
 (defn countries
   "Returns a set of country IDs (keywords) for which the given currency is main
-  currency. If there are no countries associated with a currency, returns nil."
+  currency. If there are no countries associated with a currency, returns nil. Locale
+  argument is ignored."
   {:tag clojure.lang.PersistentHashSet :added "1.0.0"}
   (^clojure.lang.PersistentHashSet [c]
    (countries c (registry/get)))
   (^clojure.lang.PersistentHashSet [c ^Registry registry]
+   (get (registry/currency-id->country-ids registry) (id c)))
+  (^clojure.lang.PersistentHashSet [c locale ^Registry registry]
    (get (registry/currency-id->country-ids registry) (id c))))
 
 (defn ^Currency of-country
   "Returns a currency for the given country identified by a country ID (which should be
   a keyword). If there is no currency or country of the given ID does not exist,
-  returns nil."
+  returns nil. Locale argument is ignored."
   {:tag Currency :added "1.0.0"}
   (^Currency [^clojure.lang.Keyword country-id]
    (of-country country-id (registry/get)))
-  (^Currency [^clojure.lang.Keyword country-id, ^Registry registry]
+  (^Currency [^clojure.lang.Keyword country-id ^Registry registry]
+   (get (registry/country-id->currency registry) (keyword country-id)))
+  (^Currency [^clojure.lang.Keyword country-id locale ^Registry registry]
    (get (registry/country-id->currency registry) (keyword country-id))))
 
 ;;
@@ -1126,13 +1152,15 @@
 
 (defn symbol-native
   "Like symbol but for ISO-standardized currencies uses locale assigned to the first
-  country where a currency is the default."
+  country where a currency is the default. When locale is given it is ignored."
   {:tag String :added "1.0.0"
    :arglists '(^String [currency]
                ^String [currency ^Registry registry])}
   ([c]
    (symbol c (map/lazy-get nat-helper (id c) (first (countries c)))))
   ([c registry]
+   (symbol c (map/lazy-get nat-helper (id c) (first (countries c))) registry))
+  ([c locale registry]
    (symbol c (map/lazy-get nat-helper (id c) (first (countries c))) registry)))
 
 (def ^{:tag String :added "1.0.0"
@@ -1175,13 +1203,16 @@
 
 (defn display-name-native
   "Like display-name but for ISO-standardized currencies uses locale assigned to the
-  first country where a currency is the default."
+  first country where a currency is the default. When locale is given it is ignored."
   {:tag String :added "1.0.0"
    :arglists '(^String [currency]
                ^String [currency ^Registry registry])}
   ([c]
    (display-name c (map/lazy-get nat-helper (id c) (first (countries c)))))
   ([c registry]
+   (display-name c (map/lazy-get nat-helper (id c registry) (first (countries c)))
+                 registry))
+  ([c locale registry]
    (display-name c (map/lazy-get nat-helper (id c registry) (first (countries c)))
                  registry)))
 
@@ -1280,9 +1311,6 @@
   "Reference ISO currency used to construct a formatter for non-ISO currencies."
   (java :XXX))
 
-(defrecord FormatterInstance
-    [^DecimalFormat dformat ^Currency currency ^Locale locale])
-
 (def ^{:no-doc true :tag DecimalFormat :added "1.0.0"}
   formatter-instance
   "For the specified locale and currency, returns a vector of mutable instance of a
@@ -1313,7 +1341,7 @@
           (let [syms (.getDecimalFormatSymbols ^DecimalFormat f)]
             (.setCurrencySymbol ^DecimalFormatSymbols syms ^String (symbol ^Currency cur))
             (.setDecimalFormatSymbols ^DecimalFormat f ^DecimalFormatSymbols syms)))
-        (FormatterInstance. ^DecimalFormat f ^Currency currency ^Locale locale))))))
+        f)))))
 
 (defn formatter
   "Returns currency formatter as java.text.DecimalFormat instance for the given
@@ -1327,23 +1355,20 @@
   {:tag DecimalFormat :added "1.0.0"}
   ([currency]
    (.clone
-    ^DecimalFormat (.dformat
-                    ^FormatterInstance (formatter-instance currency
-                                                           (Locale/getDefault)
-                                                           (registry/get)))))
+    ^DecimalFormat (formatter-instance currency
+                                       (Locale/getDefault)
+                                       (registry/get))))
   ([currency locale]
    (.clone
-    ^DecimalFormat (.dformat
-                    ^FormatterInstance (formatter-instance currency
-                                                           locale
-                                                           (registry/get)))))
+    ^DecimalFormat (formatter-instance currency
+                                       locale
+                                       (registry/get))))
   ([currency locale registry]
    (.clone
-    ^DecimalFormat (.dformat
-                    ^FormatterInstance (formatter-instance
-                                        currency
-                                        locale
-                                        registry)))))
+    ^DecimalFormat (formatter-instance
+                    currency
+                    locale
+                    registry))))
 
 (defn formatter-extended
   "Returns a currency formatter as java.text.DecimalFormat instance for the given
@@ -1377,6 +1402,9 @@
   to that currency. Additionally re-scaling may take place for the amount if scales
   are different.
 
+  The function assigned to the :currency-symbol-fn should take 3 arguments:
+  currency, locale and registry.
+
   It is advised to express locale using a keyword when huge amount of operations is
   expected."
   {:tag DecimalFormat :added "1.0.0"}
@@ -1392,16 +1420,13 @@
             always-sep-dec currency-symbol-fn min-fraction-digits max-fraction-digits
             min-integer-digits max-integer-digits] :as opts}
     registry]
-   (let [instance  (formatter-instance currency locale registry)
-         f         (.clone ^DecimalFormat (.dformat ^FormatterInstance instance))
-         currency  (.currency ^FormatterInstance instance)
-         locale    (.locale   ^FormatterInstance instance)
+   (let [f (.clone ^DecimalFormat (formatter-instance currency locale registry))
          rounding-mode       (or rounding-mode scale/ROUND_UNNECESSARY)
          min-fraction-digits (or scale min-fraction-digits)
          max-fraction-digits (or scale max-fraction-digits)]
      (when currency-symbol-fn
        (let [syms (.getDecimalFormatSymbols ^DecimalFormat f)]
-         (.setCurrencySymbol ^DecimalFormatSymbols syms ^String (currency-symbol-fn currency))
+         (.setCurrencySymbol ^DecimalFormatSymbols syms ^String (currency-symbol-fn currency locale registry))
          (.setDecimalFormatSymbols ^DecimalFormat f ^DecimalFormatSymbols syms)))
      (when (contains? opts :grouping)       (.setGroupingUsed ^DecimalFormat f (boolean grouping)))
      (when (contains? opts :always-sep-dec) (.setDecimalSeparatorAlwaysShown ^DecimalFormat f (boolean always-sep-dec)))
