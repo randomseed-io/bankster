@@ -8,6 +8,7 @@
 
   (:require [trptr.java-wrapper.locale       :as            l]
             [smangler.api                    :as           sm]
+            [clojure.string                  :as          str]
             [io.randomseed.bankster          :refer      :all]
             [io.randomseed.bankster.config   :as       config]
             [io.randomseed.bankster.registry :as     registry]
@@ -67,24 +68,49 @@
    (if (map? id)
      (map->new id)
      (when (some? id)
-       (Currency. (keyword id) (long no-numeric-id) (int auto-scaled)
-                  (keyword (or (try-upper-case (namespace id)) :ISO-4217))
-                  nil))))
+       (Currency. (keyword id)
+                  (long no-numeric-id)
+                  (int auto-scaled)
+                  nil
+                  (when-some [d (try-upper-case (namespace id))] (keyword d))))))
   (^Currency [id numeric-id]
    (when (some? id)
-     (Currency. (keyword id) (long numeric-id) (int auto-scaled)
-                (keyword (or (try-upper-case (namespace id)) :ISO-4217))
-                nil)))
+     (Currency. (keyword id)
+                (long numeric-id)
+                (int auto-scaled)
+                nil
+                (when-some [d (try-upper-case (namespace id))] (keyword d)))))
   (^Currency [id numeric-id scale]
    (when (some? id)
-     (Currency. (keyword id) (long numeric-id) (int scale)
-                (keyword (or (try-upper-case (namespace id)) :ISO-4217))
-                nil)))
+     (Currency. (keyword id)
+                (long numeric-id)
+                (int scale)
+                nil
+                (when-some [d (try-upper-case (namespace id))] (keyword d)))))
   (^Currency [id numeric-id scale kind]
    (when (some? id)
-     (Currency. (keyword id) (long numeric-id) (int scale)
-                (keyword (or (try-upper-case (namespace id)) :ISO-4217))
-                (keyword kind)))))
+     (Currency. (keyword id)
+                (long numeric-id)
+                (int scale)
+                (keyword kind)
+                (when-some [d (try-upper-case (namespace id))] (keyword d)))))
+  (^Currency [id numeric-id scale kind domain]
+   (when (some? id)
+     (let [domain    (when (some? domain)
+                       (str/upper-case
+                        (if (ident? domain)
+                          (clojure.core/name domain)
+                          (let [d (str domain)] (when (seq d) d)))))
+           ns-domain (try-upper-case (namespace id))]
+       (when (and (some? ns-domain) (not= domain ns-domain))
+         (throw (ex-info
+                 (str "Currency domain should reflect its namespace (upper-cased) if the namespace is set.")
+                 {:id id :domain domain :namespace (namespace id)})))
+       (Currency. (keyword id)
+                  (long numeric-id)
+                  (int scale)
+                  (keyword kind)
+                  (keyword domain))))))
 
 (defn map->new
   "Creates new currency record from a map."
@@ -108,7 +134,8 @@
        :arglists '(^Currency [id]
                    ^Currency [id numeric-id]
                    ^Currency [id numeric-id scale]
-                   ^Currency [id numeric-id scale kind])}
+                   ^Currency [id numeric-id scale kind]
+                   ^Currency [id numeric-id scale kind domain])}
   new
   "Alias for new-currency."
   new-currency)
@@ -122,7 +149,7 @@
    id
    [id] [id registry]
    "Returns currency identifier as a keyword. If the registry is not given, it will
-  use the global one, but will first try a registry bound to the
+  use the global one, but will first try a dynamic registry bound to the
   `io.randomseed.bankster.registry/*default*` dynamic variable. If the given argument
   is already an identifier (a keyword), it will be returned as is.")
 
@@ -130,15 +157,15 @@
    unit
    [id] [id registry]
    "Returns a currency object for the given id and registry. If the registry is not
-  given, it will use the global one, but will first try a registry bound to the
-  `io.randomseed.bankster.registry/*default*` dynamic variable. If the currency
+  given, it will use the global one, but will first try a dynamic registry bound to
+  the `io.randomseed.bankster.registry/*default*` dynamic variable. If the currency
   record is passed, it will be returned as is without consulting the registry.")
 
   (^{:tag Boolean :added "1.0.0"}
    defined?
    [id] [id registry]
    "Returns true if the given currency exists in a registry. If the registry is not
-  given, the global one will be used, trying a registry bound to the
+  given, the global one will be used, trying a dynamic registry bound to the
   registry/*default* first.")
 
   (^{:tag Boolean :added "1.0.0"}
@@ -147,7 +174,7 @@
    "Returns true if two currencies have the same ID. That does not mean the objects
   are of the same contents (e.g. numerical IDs or scales may differ) but it's more
   performant in 99% cases. If the registry is not given, it will use the global one,
-  but will first try a registry bound to the
+  but will first try a dynamic registry bound to the
   `io.randomseed.bankster.registry/*default*` dynamic variable."))
 
 ;;

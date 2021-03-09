@@ -95,18 +95,19 @@
    :XXX nil})
 
 (defn make-currency
-  "Shapes currency entry. Gets a sequence of linear collections describing currency and
-  returns a currency object."
+  "Shapes an ISO-standardized currency entry. Gets a sequence of linear collections
+  describing currency and returns a currency object."
   {:private true :added "1.0.0"}
-  [[id numeric scale]]
+  [[id numeric scale domain]]
   (when (some? id)
     (let [id      (keyword id)
           numeric (or (try-parse-long numeric) currency/no-numeric-id)
           numeric (if (< numeric 0) currency/no-numeric-id numeric)
           scale   (or (try-parse-int scale) currency/auto-scaled)
           scale   (if (< scale 0) currency/auto-scaled scale)
-          kind    (get special-kinds id :FIAT)]
-      (currency/new-currency id (long numeric) (int scale) kind))))
+          kind    (get special-kinds id :FIAT)
+          domain  :ISO-4217]
+      (currency/new-currency id (long numeric) (int scale) kind domain))))
 
 ;;
 ;; Joda Money CSV importer.
