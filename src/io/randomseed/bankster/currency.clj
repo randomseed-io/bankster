@@ -674,24 +674,35 @@
         registry))))
 
 (defn ^Registry register
-  "Adds currency and (optional) countries to the given registry. Returns updated
-  registry. If the updating occurs then all of the current countries associated with
-  the currency are removed and replaced with the provided ones. To simply add new
+  "Adds a currency and optional, associated country mappings and/or localized
+  properties to the given registry. Returns updated registry.
+
+  The optional country-ids argument should be a sequence of keywords (however, if a
+  single keyword is given it will be converted to a single-element sequence) with
+  country codes that should be associated with the given currency.
+
+  The optional localized-properties argument should be a map of localized properties
+  of the given currency. See the Data Structures documentation section for more
+  information.
+
+  If the update mode is enabled then all of the current countries associated with the
+  currency are removed and replaced with the provided ones. To simply add new
   countries, use add-countries."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :added "1.0.0"
+   :arglists '(^Registry [^Registry registry currency]
+               ^Registry [^Registry registry currency country-ids]
+               ^Registry [^Registry registry currency update-mode?]
+               ^Registry [^Registry registry currency country-ids update-mode?]
+               ^Registry [^Registry registry currency country-ids localized-properties update-mode?])}
   (^Registry [^Registry registry currency]
-   (register registry currency nil false))
-  (^Registry [^Registry registry
-              ^Currency currency
-              country-ids-or-update?]
+   (register registry currency nil nil false))
+  (^Registry [^Registry registry currency country-ids-or-update?]
    (if (boolean? country-ids-or-update?)
      (register registry currency nil nil country-ids-or-update?)
      (register registry currency country-ids-or-update? nil false)))
-  (^Registry [^Registry registry
-              ^Currency currency
-              country-ids
-              localized-properties
-              ^Boolean update?]
+  (^Registry [^Registry registry currency country-ids ^Boolean update?]
+   (register registry currency country-ids nil update?))
+  (^Registry [^Registry registry currency country-ids localized-properties ^Boolean update?]
    (when (some? registry)
      (let [^Currency c (unit currency registry)
            cid         (.id ^Currency c)

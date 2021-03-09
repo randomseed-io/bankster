@@ -92,7 +92,11 @@
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->ctr-ids
               ^clojure.lang.PersistentHashMap cur-id->localized]
-   (new-registry cur-id->cur cur-nr->cur ctr-id->cur cur-id->ctr-ids (default-version)))
+   (new-registry cur-id->cur
+                 cur-nr->cur
+                 ctr-id->cur
+                 cur-id->ctr-ids
+                 (default-version)))
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->localized
