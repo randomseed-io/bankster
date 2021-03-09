@@ -132,8 +132,8 @@
    (^BigDecimal [num scale]
     (if (= (.scale ^BigDecimal num) (int scale))
       ^BigDecimal num
-      (if *rounding-mode*
-        (.setScale ^BigDecimal num (int scale) ^RoundingMode *rounding-mode*)
+      (if-some [rm *rounding-mode*]
+        (.setScale ^BigDecimal num (int scale) ^RoundingMode rm)
         (.setScale ^BigDecimal num (int scale)))))
    (^BigDecimal [num scale ^RoundingMode r]
     (if (= (.scale ^BigDecimal num) (int scale))
@@ -142,7 +142,7 @@
 
   (^BigDecimal amount
    (^BigDecimal [num] num)
-   (^BigDecimal [num scale] (apply num scale))
+   (^BigDecimal [num scale]   (apply num scale))
    (^BigDecimal [num scale r] (apply num scale r)))
 
   clojure.lang.BigInt
@@ -156,8 +156,8 @@
    (^BigDecimal [num]
     (.toBigDecimal ^clojure.lang.BigInt num))
    (^BigDecimal [num scale]
-    (if *rounding-mode*
-      (.setScale (.toBigDecimal ^clojure.lang.BigInt num) (int scale) ^RoundingMode *rounding-mode*)
+    (if-some [rm *rounding-mode*]
+      (.setScale (.toBigDecimal ^clojure.lang.BigInt num) (int scale) ^RoundingMode rm)
       (.setScale (.toBigDecimal ^clojure.lang.BigInt num) (int scale))))
    (^BigDecimal [num scale ^RoundingMode r]
     (.setScale (.toBigDecimal ^clojure.lang.BigInt num) (int scale) ^RoundingMode r)))
@@ -178,8 +178,8 @@
    (^BigDecimal [num]
     (BigDecimal. ^BigInteger num))
    (^BigDecimal [num scale]
-    (if *rounding-mode*
-      (.setScale (BigDecimal. ^BigInteger num) (int scale) ^RoundingMode *rounding-mode*)
+    (if-some [rm *rounding-mode*]
+      (.setScale (BigDecimal. ^BigInteger num) (int scale) ^RoundingMode rm)
       (.setScale (BigDecimal. ^BigInteger num) (int scale))))
    (^BigDecimal [num scale ^RoundingMode r]
     (.setScale (BigDecimal. ^BigInteger num) (int scale) ^RoundingMode r)))
@@ -200,8 +200,8 @@
    (^BigDecimal [num]
     (BigDecimal/valueOf num))
    (^BigDecimal [num scale]
-    (if *rounding-mode*
-      (.setScale (BigDecimal/valueOf num) (int scale) ^RoundingMode *rounding-mode*)
+    (if-some [rm *rounding-mode*]
+      (.setScale (BigDecimal/valueOf num) (int scale) ^RoundingMode rm)
       (.setScale (BigDecimal/valueOf num) (int scale))))
    (^BigDecimal [num scale ^RoundingMode r]
     (.setScale (BigDecimal/valueOf num) (int scale) ^RoundingMode r)))
@@ -222,8 +222,8 @@
    (^BigDecimal [num]
     (BigDecimal/valueOf (double num)))
    (^BigDecimal [num scale]
-    (if *rounding-mode*
-      (.setScale (BigDecimal/valueOf (double num)) (int scale) ^RoundingMode *rounding-mode*)
+    (if-some [rm *rounding-mode*]
+      (.setScale (BigDecimal/valueOf (double num)) (int scale) ^RoundingMode rm)
       (.setScale (BigDecimal/valueOf (double num)) (int scale))))
    (^BigDecimal [num scale ^RoundingMode r]
     (.setScale (BigDecimal/valueOf (double num)) (int scale) ^RoundingMode r)))
@@ -245,9 +245,9 @@
     (/ (apply (.numerator ^clojure.lang.Ratio num))
        (apply (.denominator ^clojure.lang.Ratio num))))
    (^BigDecimal [num scale]
-    (if *rounding-mode*
-      (/ (apply (.numerator ^clojure.lang.Ratio num) (int scale) ^RoundingMode *rounding-mode*)
-         (apply (.denominator ^clojure.lang.Ratio num) (int scale) ^RoundingMode *rounding-mode*))
+    (if-some [rm *rounding-mode*]
+      (/ (apply (.numerator ^clojure.lang.Ratio num) (int scale) ^RoundingMode rm)
+         (apply (.denominator ^clojure.lang.Ratio num) (int scale) ^RoundingMode rm))
       (/ (apply (.numerator ^clojure.lang.Ratio num) (int scale))
          (apply (.denominator ^clojure.lang.Ratio num) (int scale)))))
    (^BigDecimal [num scale ^RoundingMode r]
@@ -269,8 +269,8 @@
   (^BigDecimal apply
    (^BigDecimal [num] (BigDecimal/valueOf (long num)))
    (^BigDecimal [num scale]
-    (if *rounding-mode*
-      (.setScale (BigDecimal/valueOf (long num)) (int scale) ^RoundingMode *rounding-mode*)
+    (if-some [rm *rounding-mode*]
+      (.setScale (BigDecimal/valueOf (long num)) (int scale) ^RoundingMode rm)
       (.setScale (BigDecimal/valueOf (long num)) (int scale))))
    (^BigDecimal [num scale ^RoundingMode r]
     (.setScale (BigDecimal/valueOf (long num)) (int scale) ^RoundingMode r)))
@@ -291,8 +291,8 @@
    (^BigDecimal [num]
     (BigDecimal. num ^MathContext unscaled-context))
    (^BigDecimal [num scale]
-    (if *rounding-mode*
-      (.setScale (BigDecimal. num ^MathContext unscaled-context) (int scale) ^RoundingMode *rounding-mode*)
+    (if-some [rm *rounding-mode*]
+      (.setScale (BigDecimal. num ^MathContext unscaled-context) (int scale) ^RoundingMode rm)
       (.setScale (BigDecimal. num ^MathContext unscaled-context) (int scale))))
    (^BigDecimal [num scale ^RoundingMode r]
     (.setScale (BigDecimal. num ^MathContext unscaled-context) (int scale) ^RoundingMode r)))
@@ -330,8 +330,8 @@
    (^BigDecimal [n]
     (BigDecimal. (long (num n)) ^MathContext unscaled-context))
    (^BigDecimal [n scale]
-    (if *rounding-mode*
-      (.setScale (BigDecimal. (long (num n)) ^MathContext unscaled-context) (int scale) ^RoundingMode *rounding-mode*)
+    (if-some [rm *rounding-mode*]
+      (.setScale (BigDecimal. (long (num n)) ^MathContext unscaled-context) (int scale) ^RoundingMode rm)
       (.setScale (BigDecimal. (long (num n)) ^MathContext unscaled-context) (int scale))))
    (^BigDecimal [n scale ^RoundingMode r]
     (.setScale (BigDecimal. (long (num n)) ^MathContext unscaled-context) (int scale) ^RoundingMode r)))

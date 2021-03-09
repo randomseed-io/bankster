@@ -353,11 +353,11 @@
     (if (currency/val-auto-scaled? scale)
       (Money. ^Currency   (.currency ^Money m)
               ^BigDecimal (.amount   ^Money m))
-      (if scale/*rounding-mode*
+      (if-some [rm scale/*rounding-mode*]
         (Money. ^Currency   (.currency ^Money m)
                 ^BigDecimal (.setScale ^BigDecimal (.amount ^Money m)
                                        (int scale)
-                                       ^RoundingMode scale/*rounding-mode*))
+                                       ^RoundingMode rm))
         (Money. ^Currency   (.currency ^Money m)
                 ^BigDecimal (.setScale ^BigDecimal (.amount ^Money m) (int scale))))))
    (^Money [m scale ^RoundingMode rounding-mode]
@@ -556,10 +556,10 @@
   (^Money [^Money money scale]
    (if (currency/val-auto-scaled? scale) money
        (Money. ^Currency   (.currency ^Money money)
-               ^BigDecimal (if scale/*rounding-mode*
+               ^BigDecimal (if-some [rm scale/*rounding-mode*]
                              (.setScale ^BigDecimal (.amount ^Money money)
                                         (int scale)
-                                        ^RoundingMode scale/*rounding-mode*)
+                                        ^RoundingMode rm)
                              (.setScale ^BigDecimal (.amount ^Money money)
                                         (int scale))))))
   (^Money [^Money money scale ^RoundingMode rounding-mode]
@@ -1188,7 +1188,7 @@
          (.format ^DecimalFormat f
                   ^BigDecimal (scale/apply (.amount ^Money money)
                                            (max (.getMaximumFractionDigits ^DecimalFormat f)
-                                                (.getMinimumFractionDigits ^DecimalFormat f)))))
+                                                (.getMinimumFractionDigits ^DecimalFormat f)) rm)))
        (.format ^DecimalFormat (.dformat ^FormatterInstance (currency/formatter-instance (.currency ^Money money) locale))
                 ^BigDecimal (.amount ^Money money)))
      (.format ^DecimalFormat (.dformat ^FormatterInstance (currency/formatter-instance (.currency ^Money money) locale))
