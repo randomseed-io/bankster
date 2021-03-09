@@ -51,29 +51,32 @@
   "Internal parser."
   {:tag Money, :no-doc true}
   (^Money [amount]
-   (if (sequential? amount)
-     (apply parse ^Currency (first amount) (rest amount))
-     (if (number? amount)
-       (parse ^Currency currency/*default* amount)
-       (currency/unit amount))))
+   (when (some? amount)
+     (if (sequential? amount)
+       (apply parse ^Currency (first amount) (rest amount))
+       (if (number? amount)
+         (parse ^Currency currency/*default* amount)
+         (currency/unit amount)))))
   (^Money [currency amount]
-   (if-some [^Currency c (currency/unit currency)]
-     (let [s (int (scale/of ^Currency c))]
-       (if (currency/val-auto-scaled? s)
-         (Money. ^Currency c ^BigDecimal (scale/apply amount))
-         (Money. ^Currency c ^BigDecimal (scale/apply amount (int s)))))
-     (throw (ex-info
-             (str "Cannot create money amount without a valid currency and a default currency was not set.")
-             {:amount amount :currency currency}))))
+   (when (some? amount)
+     (if-some [^Currency c (currency/unit currency)]
+       (let [s (int (scale/of ^Currency c))]
+         (if (currency/val-auto-scaled? s)
+           (Money. ^Currency c ^BigDecimal (scale/apply amount))
+           (Money. ^Currency c ^BigDecimal (scale/apply amount (int s)))))
+       (throw (ex-info
+               (str "Cannot create money amount without a valid currency and a default currency was not set.")
+               {:amount amount :currency currency})))))
   (^Money [^Currency currency amount ^RoundingMode rounding-mode]
-   (if-some [^Currency c (currency/unit currency)]
-     (let [s (int (scale/of ^Currency c))]
-       (if (currency/val-auto-scaled? s)
-         (Money. ^Currency c ^BigDecimal (scale/apply amount))
-         (Money. ^Currency c ^BigDecimal (scale/apply amount (int s) ^RoundingMode rounding-mode))))
-     (throw (ex-info
-             (str "Cannot create money amount without a valid currency and a default currency was not set.")
-             {:amount amount :currency currency})))))
+   (when (some? amount)
+     (if-some [^Currency c (currency/unit currency)]
+       (let [s (int (scale/of ^Currency c))]
+         (if (currency/val-auto-scaled? s)
+           (Money. ^Currency c ^BigDecimal (scale/apply amount))
+           (Money. ^Currency c ^BigDecimal (scale/apply amount (int s) ^RoundingMode rounding-mode))))
+       (throw (ex-info
+               (str "Cannot create money amount without a valid currency and a default currency was not set.")
+               {:amount amount :currency currency}))))))
 
 (extend-protocol Accountable
 
