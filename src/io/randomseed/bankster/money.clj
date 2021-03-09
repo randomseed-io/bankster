@@ -28,13 +28,13 @@
   (value
     [num] [currency num] [currency num rounding-mode]
     "Creates new Money object for the given value which will become an amount. If the
-  currency is not given it should try to use the default one, taken from the
+  currency is not given it will try to use the default one, taken from the
   `*default-currency*` dynamic variable. Optional rounding-mode should be a rounding
   mode used when the conversion to a scaled monetary amount requires rounding.
 
-  In its unary form, when the argument is not numeric, it will try to get a currency
-  object (identified by a string, a symbol or a keyword) from a default, global
-  registry of currencies.
+  In its unary form, when the argument is not numeric, it will try to get the
+  currency object (identified by a string, a symbol or a keyword) from a default,
+  global registry of currencies.
 
   For simple money creation the following macros may be convenient way to go: of,
   of-major, of-minor."))
@@ -51,7 +51,7 @@
      (apply parse ^Currency (first amount) (rest amount))
      (if (number? amount)
        (parse ^Currency currency/*default* amount)
-       (currency/of amount))))
+       (currency/unit amount))))
   (^Money [currency amount]
    (if-some [^Currency c (currency/unit currency)]
      (let [s (int (scale/of ^Currency c))]
@@ -76,37 +76,37 @@
   Currency
 
   (value
-    (^Money [c]     (currency/of c))
-    (^Money [c b]   (parse ^Currency c b))
-    (^Money [c b r] (parse ^Currency c b r)))
+    (^Money [currency]                    (currency/unit currency))
+    (^Money [currency amount]             (parse ^Currency currency amount))
+    (^Money [currency amount rounding]    (parse ^Currency currency amount rounding)))
 
   clojure.lang.Symbol
 
   (value
-    (^Money [c]     (currency/of c))
-    (^Money [c b]   (parse ^Currency c b))
-    (^Money [c b r] (parse ^Currency c b r)))
+    (^Money [currency-id]                 (currency/unit currency-id))
+    (^Money [currency-id amount]          (parse currency-id amount))
+    (^Money [currency-id amount rounding] (parse currency-id amount rounding)))
 
   clojure.lang.Keyword
 
   (value
-    (^Money [c]     (currency/of c))
-    (^Money [c b]   (parse ^Currency c b))
-    (^Money [c b r] (parse ^Currency c b r)))
+    (^Money [currency-id]                 (currency/unit currency-id))
+    (^Money [currency-id amount]          (parse currency-id amount))
+    (^Money [currency-id amount rounding] (parse currency-id amount rounding)))
 
   String
 
   (value
-    (^Money [c]     (currency/of c))
-    (^Money [c b]   (parse ^Currency c b))
-    (^Money [c b r] (parse ^Currency c b r)))
+    (^Money [currency-id]                 (currency/unit currency-id))
+    (^Money [currency-id amount]          (parse currency-id amount))
+    (^Money [currency-id amount rounding] (parse currency-id amount rounding)))
 
   Number
 
   (value
-    (^Money [a]               (parse ^Currency currency/*default* a))
-    (^Money [a ^Currency c]   (parse ^Currency c a))
-    (^Money [a ^Currency c r] (parse ^Currency c a r)))
+    (^Money [amount]                      (parse currency/*default* amount))
+    (^Money [amount currency]             (parse currency amount))
+    (^Money [amount currency rounding]    (parse currency amount rounding)))
 
   nil
 
@@ -583,7 +583,7 @@
                  (if (= ^int (.scale ^BigDecimal x)
                         ^int (.scale ^BigDecimal y))
                    (Money. ^Currency cur-a ^BigDecimal r)
-                   (Money. ^Currency (assoc cur-a :sc ^int (.scale ^BigDecimal r)) ^BigDecimal r)))
+                   (Money. ^Currency (assoc cur-a :scale ^int (.scale ^BigDecimal r)) ^BigDecimal r)))
                (throw (ex-info
                        "Cannot add amounts of two different currencies."
                        {:addend-1 a :addend-2 b})))))))
@@ -607,7 +607,7 @@
              (if (= ^int (.scale x)
                     ^int (.scale y))
                (Money. ^Currency cur-a ^BigDecimal r)
-               (Money. ^Currency (assoc cur-a :sc ^int (.scale ^BigDecimal r)) ^BigDecimal r)))
+               (Money. ^Currency (assoc cur-a :scale ^int (.scale ^BigDecimal r)) ^BigDecimal r)))
            (throw (ex-info
                    "Cannot subtract amounts of two different currencies."
                    {:minuend a :subtrahend b}))))))
@@ -878,7 +878,7 @@
   `io.randomseed.bankster.scale/*rounding-mode*` will be used."
   {:tag Money :added "1.0.0"}
   (^Money [^Money a currency multiplier]
-   (let [^Currency currency (currency/of currency)
+   (let [^Currency currency (currency/unit currency)
          sc (int (scale/of ^Currency currency))]
      (Money. ^Currency   currency
              ^BigDecimal (if (currency/val-auto-scaled? sc)
@@ -888,7 +888,7 @@
                                                    ^BigDecimal (scale/apply multiplier))
                                         (int sc))))))
   ([^Money a currency multiplier rounding-mode]
-   (let [^Currency currency (currency/of currency)
+   (let [^Currency currency (currency/unit currency)
          sc (int (scale/of ^Currency currency))]
      (Money. ^Currency   currency
              ^BigDecimal (if (currency/val-auto-scaled? sc)

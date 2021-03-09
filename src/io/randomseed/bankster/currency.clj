@@ -91,13 +91,18 @@
   {:added "1.0.0" :tag Currency}
   [^clojure.lang.IPersistentMap m]
   (when (and (some? m) (> (count m) 0))
-    (when-some [c ^Currency (new-currency (:id m)
-                                          (or (:nr m) (:numeric m) no-numeric-id)
-                                          (or (:sc m) (:scale   m) auto-scaled)
-                                          (:kind m))]
-      (if (> (count m) 1)
-        (merge c (dissoc m :id :nr :numeric :sc :scale :kind))
-        c))))
+    (let [id     (:id m)
+          nr     (or (:nr m) (:numeric m) no-numeric-id)
+          sc     (or (:sc m) (:scale   m) auto-scaled)
+          kind   (or (:ki m) (:kind    m))
+          domain (or (:do m) (:domain  m))]
+      (when-some [c ^Currency
+                  (if (some? domain)
+                    (new-currency id nr sc kind domain)
+                    (new-currency id nr sc kind))]
+        (if (> (count m) 1)
+          (merge c (dissoc m :id :nr :numeric :sc :scale :ki :kind :do :domain))
+          c)))))
 
 (def ^{:tag Currency
        :arglists '(^Currency [id]
@@ -345,8 +350,8 @@
   "Returns currency numeric ID as a long number. For currencies without the assigned
   number it will return -1 (or currency/no-numeric-id)."
   {:tag 'long :added "1.0.0"}
-  (^long [c] (.nr ^Currency (unit c)))
-  (^long [c ^Registry registry] (.nr ^Currency (unit c registry))))
+  (^long [c] (.numeric ^Currency (unit c)))
+  (^long [c ^Registry registry] (.numeric ^Currency (unit c registry))))
 
 (def ^{:tag 'long
        :arglists '([c]
@@ -359,8 +364,8 @@
   "Returns currency scale (decimal places) as an integer number. For currencies without
   the assigned decimal places it will return -1 (the value of auto-scaled)."
   {:tag clojure.lang.Keyword :added "1.0.0"}
-  ([c] (.sc ^Currency (unit c)))
-  ([c ^Registry registry] (.sc ^Currency (unit c registry))))
+  ([c] (.scale ^Currency (unit c)))
+  ([c ^Registry registry] (.scale ^Currency (unit c registry))))
 
 (def ^{:tag 'int
        :arglists '(^int [c] ^int [c, ^Registry registry])}
@@ -373,8 +378,8 @@
   be :ISO-4217. For currencies with namespace-qualified identifiers it will be the
   upper-cased namespace name (e.g. :CRYPTO) set during creation a currency object."
   {:tag clojure.lang.Keyword :added "1.0.0"}
-  (^clojure.lang.Keyword [c] (.do ^Currency (unit c)))
-  (^clojure.lang.Keyword [c, ^Registry registry] (.do ^Currency (unit c registry))))
+  (^clojure.lang.Keyword [c] (.domain ^Currency (unit c)))
+  (^clojure.lang.Keyword [c, ^Registry registry] (.domain ^Currency (unit c registry))))
 
 (def ^{:tag clojure.lang.Keyword
        :arglists '(^clojure.lang.Keyword [c]
@@ -447,18 +452,22 @@
   "Prepares currency attributes which may come from an external data source. Returns a
   currency."
   {:tag Currency :added "1.0.0" :private true}
-  (^Currency [[id {:keys [numeric kind scale]}]]
-   (prep-currency id numeric kind scale))
-  (^Currency [id {:keys [numeric kind scale]}]
-   (prep-currency id numeric kind scale))
+  (^Currency [[id {:keys [numeric kind scale domain]}]]
+   (prep-currency id numeric kind scale domain))
+  (^Currency [id {:keys [numeric kind scale domain]}]
+   (prep-currency id numeric kind scale domain))
   (^Currency [id numeric kind scale]
+   (prep-currency id numeric kind scale nil))
+  (^Currency [id numeric kind scale domain]
    (when (some? id)
      (let [numeric (if (number? numeric) numeric (or (try-parse-long numeric) no-numeric-id))
            numeric (if (< numeric 1) no-numeric-id numeric)
            scale   (if (number? scale) scale (or (try-parse-int scale) auto-scaled))
            scale   (if (< scale 0) auto-scaled scale)
            kind    (when (some? kind) (keyword kind))]
-       (new-currency (keyword id) (long numeric) (int scale) kind)))))
+       (if (some? domain)
+         (new-currency (keyword id) (long numeric) (int scale) kind domain)
+         (new-currency (keyword id) (long numeric) (int scale) kind))))))
 
 (defn prep-currencies
   "Prepares a map of currency ID to currency based on a configuration map of currency
@@ -537,18 +546,18 @@
   [^Registry registry currency]
   (when registry
     (let [^Currency cur       (unit currency registry)
-          proposed-nr         (.nr ^Currency cur)
+          proposed-nr         (.numeric ^Currency cur)
           proposed-nr         (when (not= proposed-nr no-numeric-id) proposed-nr)
           registered-id       (.id ^Currency cur)
           registered-cur      (get (registry/currency-id->currency registry) registered-id)
-          registered-nr       (when registered-cur (.nr ^Currency registered-cur))
+          registered-nr       (when registered-cur (.numeric ^Currency registered-cur))
           registered-nr       (when (and registered-nr (not= registered-nr no-numeric-id)) registered-nr)
           registered-by-nr    (when proposed-nr (get (registry/currency-nr->currency registry) (long proposed-nr)))
           registered-by-nr-id (when registered-by-nr (.id ^Currency registered-by-nr))
           new-by-nr           (when (and registered-by-nr-id
                                          (or (not= registered-by-nr-id registered-id)
                                              (not= registered-by-nr registered-nr)))
-                                (assoc registered-by-nr :nr (long no-numeric-id)))
+                                (assoc registered-by-nr :numeric (long no-numeric-id)))
           country-ids         (get (registry/currency-id->country-ids registry) registered-id)
           ^Registry registry  (if-not new-by-nr
                                 registry
@@ -658,7 +667,7 @@
    (when (some? registry)
      (let [^Currency c (unit currency registry)
            cid         (.id ^Currency c)
-           cnr         (.nr ^Currency c)
+           cnr         (.numeric ^Currency c)
            cid-to-cur  (registry/currency-id->currency registry)
            cnr-to-cur  (registry/currency-nr->currency registry)]
        (when-not update?
@@ -673,7 +682,7 @@
        (let [registry    (unregister registry c)
              cid-to-cur  (registry/currency-id->currency registry)
              registry    (assoc registry :cur-id->cur (assoc cid-to-cur cid c))
-             numeric-id  (.nr ^Currency c)
+             numeric-id  (.numeric ^Currency c)
              cnr-to-cur  (registry/currency-nr->currency ^Registry registry)
              registry    (if (or (nil? numeric-id) (= numeric-id no-numeric-id) (<= numeric-id 0)) registry
                              (assoc registry :cur-nr->cur (assoc cnr-to-cur (long numeric-id) c)))]
@@ -836,8 +845,8 @@
 (defn ^Boolean has-numeric-id?
   "Returns true if the given currency has a numeric ID."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (not= no-numeric-id (.nr ^Currency (unit c))))
-  (^Boolean [c ^Registry registry] (not= no-numeric-id (.nr ^Currency (unit c registry)))))
+  (^Boolean [c] (not= no-numeric-id (.numeric ^Currency (unit c))))
+  (^Boolean [c ^Registry registry] (not= no-numeric-id (.numeric ^Currency (unit c registry)))))
 
 (defn ^Boolean has-country?
   "Returns true if the given currency has at least one country for which it is an
@@ -852,14 +861,14 @@
   "Returns true if the given currency has a domain set to the first given
   argument."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [ns c] (= ns (.do ^Currency (unit c))))
-  (^Boolean [ns c ^Registry registry] (= ns (.do ^Currency (unit c registry)))))
+  (^Boolean [ns c] (= ns (.domain ^Currency (unit c))))
+  (^Boolean [ns c ^Registry registry] (= ns (.domain ^Currency (unit c registry)))))
 
 (defn ^{:tag Boolean} big?
   "Returns true if the given currency has an automatic scale (decimal places)."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (val-auto-scaled? (.sc ^Currency (unit c))))
-  (^Boolean [c ^Registry registry] (val-auto-scaled? (.sc ^Currency (unit c registry)))))
+  (^Boolean [c] (val-auto-scaled? (.scale ^Currency (unit c))))
+  (^Boolean [c ^Registry registry] (val-auto-scaled? (.scale ^Currency (unit c registry)))))
 
 (def ^{:tag Boolean
        :arglists '(^Boolean [c] ^Boolean [c ^Registry registry])}
@@ -871,16 +880,16 @@
   "Returns true if the given currency is a cryptocurrency. It is just a helper that
   check if the domain of a currency equals to :CRYPTO."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (= :CRYPTO (.do ^Currency (unit c))))
-  (^Boolean [c ^Registry registry] (= :CRYPTO (.do ^Currency (unit c registry)))))
+  (^Boolean [c] (= :CRYPTO (.domain ^Currency (unit c))))
+  (^Boolean [c ^Registry registry] (= :CRYPTO (.domain ^Currency (unit c registry)))))
 
 (defn ^Boolean iso?
   "Returns true if the given currency is an official currency and its identifier is
-  compliant with ISO standard. It is just a helper that check if the :do field of a
-  currency equals :ISO-4217."
+  compliant with ISO standard. It is just a helper that check if the :domain field of
+  a currency equals :ISO-4217."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (= :ISO-4217 (.do ^Currency (unit c))))
-  (^Boolean [c ^Registry registry] (= :ISO-4217 (.do ^Currency (unit c registry)))))
+  (^Boolean [c] (= :ISO-4217 (.domain ^Currency (unit c))))
+  (^Boolean [c ^Registry registry] (= :ISO-4217 (.domain ^Currency (unit c registry)))))
 
 (def ^{:tag Boolean
        :arglists '(^Boolean [c] ^Boolean [c ^Registry registry])}
@@ -1163,24 +1172,24 @@
   (^Boolean scalable? [c] true)
   (^Boolean applied?  [c] true)
 
-  (of [c] (.sc ^Currency c))
+  (of [c] (.scale ^Currency c))
 
   (^Currency apply
    (^Currency [c] ^Currency c)
-   (^Currency [c scale] (assoc c :sc (int scale)))
-   (^Currency [c scale ^RoundingMode rounding-mode] (assoc c :sc (int scale))))
+   (^Currency [c scale] (assoc c :scale (int scale)))
+   (^Currency [c scale ^RoundingMode rounding-mode] (assoc c :scale (int scale))))
 
   clojure.lang.Keyword
 
   (^Boolean scalable? [c] (defined? c))
   (^Boolean applied?  [c] (defined? c))
 
-  (of [c] (.sc ^Currency (unit c)))
+  (of [c] (.scale ^Currency (unit c)))
 
   (^Currency apply
    (^Currency [c] ^Currency (unit c))
-   (^Currency [c scale] (assoc (unit c) :sc (int scale)))
-   (^Currency [c scale ^RoundingMode rounding-mode] (assoc (unit c) :sc (int scale)))))
+   (^Currency [c scale] (assoc (unit c) :scale (int scale)))
+   (^Currency [c scale ^RoundingMode rounding-mode] (assoc (unit c) :scale (int scale)))))
 
 ;;
 ;; Contextual macros.
@@ -1219,17 +1228,18 @@
 
 (defmethod ^{:added "1.0.0"} print-method Currency
   [c w]
-  (let [sc  (.sc   ^Currency c)
-        nr  (.nr   ^Currency c)
-        ki  (.kind ^Currency c)
+  (let [sc  (.scale   ^Currency c)
+        nr  (.numeric ^Currency c)
+        ki  (.kind    ^Currency c)
+        do  (.domain  ^Currency c)
         nr  (when (and no-numeric-id (not= nr no-numeric-id)) nr)]
     (print-simple
      (str "#currency{"
           ":id " (.id ^Currency c)
-          ", :domain " (.do ^Currency c)
-          (when ki (str ", :kind " ki) )
-          (when nr (str ", :nr " nr))
-          (when-not (val-auto-scaled? sc)  (str ", :sc " sc))
+          (when do (str ", :domain "  do))
+          (when ki (str ", :kind "    ki))
+          (when nr (str ", :numeric " nr))
+          (when-not (val-auto-scaled? sc)  (str ", :scale " sc))
           "}")
      w)))
 
