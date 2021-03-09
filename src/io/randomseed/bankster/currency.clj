@@ -1415,15 +1415,14 @@
   (let [sc  (.scale   ^Currency c)
         nr  (.numeric ^Currency c)
         ki  (.kind    ^Currency c)
-        do  (.domain  ^Currency c)
-        nr  (when (and no-numeric-id (not= nr no-numeric-id)) nr)]
+        dom (.domain  ^Currency c)]
     (print-simple
      (str "#currency{"
           ":id " (.id ^Currency c)
-          (when do (str ", :domain "  do))
-          (when ki (str ", :kind "    ki))
-          (when nr (str ", :numeric " nr))
-          (when-not (val-auto-scaled? sc)  (str ", :scale " sc))
+          (when (some? dom) (str ", :domain "  dom))
+          (when (some? ki)  (str ", :kind "    ki))
+          (when-not (= nr no-numeric-id)  (str ", :numeric " nr))
+          (when-not (val-auto-scaled? sc) (str ", :scale " sc))
           "}")
      w)))
 
