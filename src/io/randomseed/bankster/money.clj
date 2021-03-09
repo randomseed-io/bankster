@@ -556,11 +556,11 @@
   (^Money [^Money money scale]
    (if (currency/val-auto-scaled? scale) money
        (Money. ^Currency   (.currency ^Money money)
-               ^BigDecimal (if-some [rm scale/*rounding-mode*]
-                             (.setScale ^BigDecimal (.amount ^Money money)
+               (if-some [rm scale/*rounding-mode*]
+                 ^BigDecimal (.setScale ^BigDecimal (.amount ^Money money)
                                         (int scale)
                                         ^RoundingMode rm)
-                             (.setScale ^BigDecimal (.amount ^Money money)
+                 ^BigDecimal (.setScale ^BigDecimal (.amount ^Money money)
                                         (int scale))))))
   (^Money [^Money money scale ^RoundingMode rounding-mode]
    (if (currency/val-auto-scaled? scale) money
