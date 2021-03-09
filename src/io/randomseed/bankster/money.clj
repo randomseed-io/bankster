@@ -926,17 +926,22 @@
 
 (defn round
   "Rounds the amount of money using the given scale and rounding mode. Returns money
-  with rounded amount re-scaled to the existing scale. If the rounding mode is not given
-  the one from scale/*rounding-mode* is used."
+  with rounded amount preserving the original scale. If the rounding mode is not
+  given the one from scale/*rounding-mode* is used."
   {:tag Money :added "1.0.0"}
-  (^Money [^Money a scale]
-   (round a scale (or scale/*rounding-mode* scale/ROUND_UNNECESSARY)))
-  (^Money [^Money a scale ^RoundingMode rounding-mode]
-   (let [^BigDecimal am (.amount ^Money a)
+  (^Money [^Money money scale]
+   (round money scale (or scale/*rounding-mode* scale/ROUND_UNNECESSARY)))
+  (^Money [^Money money scale ^RoundingMode rounding-mode]
+   (let [^BigDecimal am (.amount ^Money money)
          sc (int (.scale am))]
-     (if (>= scale sc) am
-         (Money. ^Currency   (.currency ^Money a)
-                 ^BigDecimal (.setScale (.round am (MathContext. (int scale) rounding-mode)) sc))))))
+     (if (>= scale sc)
+       money
+       (Money. ^Currency   (.currency ^Money money)
+               ^BigDecimal (.setScale
+                            ^BigDecimal (.setScale ^BigDecimal am
+                                                   (int scale)
+                                                   ^RoundingMode rounding-mode)
+                            (int sc)))))))
 
 (defn major
   "Returns the major part of the given amount."
