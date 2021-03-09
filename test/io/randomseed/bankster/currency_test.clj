@@ -96,3 +96,36 @@
              #currency {:id :EUR :kind :FIAT :domain :ISO-4217} => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric -1 :scale -1}
              #currency {:id :EUR :numeric 1000 :kind :FIAT :domain :ISO-4217} => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 1000 :scale -1}
              #currency {:id :EUR :scale 2 :kind :FIAT :domain :ISO-4217} => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric -1 :scale 2}))
+
+(facts "about Monetary protocol"
+       (fact "when it can get ID of a currency"
+             (c/id :PLN) => :PLN
+             (c/id :crypto/ETH) => :crypto/ETH
+             (c/id 'crypto/BTC) => :crypto/BTC
+             (c/id "PLN") => :PLN
+             (c/id #currency PLN) => :PLN
+             (c/id #currency crypto/ETH) => :crypto/ETH)
+       (fact "when it gets a currency unit from a registry or pass it when given directly"
+             (c/unit #currency EUR)  => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2}
+             (c/unit :EUR)  => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2}
+             (c/unit "EUR") => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2}
+             (c/unit 978)   => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2}
+             (c/unit {:id :EUR}) => {:id :EUR :domain nil :kind nil :numeric -1 :scale -1})
+       (fact "when it checks if a currency is defined"
+             (c/defined? :PLN) => true
+             (c/defined? :PPPP) => false
+             (c/defined? "EUR") => true
+             (c/defined? #currency crypto/ETH) => true
+             (c/defined? 978) => true
+             (c/defined? 10101010) => false)
+       (fact "when it checks whether two currencies have the same IDs"
+             (c/same-ids? :PLN :PLN) => true
+             (c/same-ids? :PLN "PLN") => true
+             (c/same-ids? 'PLN :PLN) => true
+             (c/same-ids? 'PLN 'PLN) => true
+             (c/same-ids? :PLN :EUR) => false
+             (c/same-ids? :PLN :crypto/PLN) => false
+             (c/same-ids? :crypto/USDT :crypto/USDT) => true
+             (c/same-ids? :crypto/USDT #currency crypto/USDT) => true
+             (c/same-ids? :USDT #currency crypto/USDT) => false
+             (c/same-ids? #currency crypto/USDT :PLN) => false))
