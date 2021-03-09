@@ -16,7 +16,6 @@
             [io.randomseed.bankster.util     :refer       :all])
 
   (:import  [io.randomseed.bankster Currency Registry Money]
-            [io.randomseed.bankster.currency FormatterInstance]
             [java.math MathContext RoundingMode]
             [java.text NumberFormat DecimalFormat DecimalFormatSymbols]
             [java.util Locale]))
@@ -1215,15 +1214,15 @@
   ([^Money money locale]
    (if-some [rm scale/*rounding-mode*]
      (if (not= rm scale/ROUND_UNNECESSARY)
-       (let [f (.dformat ^FormatterInstance (currency/formatter-instance (.currency ^Money money) locale))]
+       (let [f (currency/formatter-instance (.currency ^Money money) locale)]
          (.format ^DecimalFormat f
                   ^BigDecimal (scale/apply (.amount ^Money money)
                                            (max (.getMaximumFractionDigits ^DecimalFormat f)
                                                 (.getMinimumFractionDigits ^DecimalFormat f)) rm)))
-       (.format ^DecimalFormat (.dformat ^FormatterInstance (currency/formatter-instance (.currency ^Money money) locale))
-                ^BigDecimal (.amount ^Money money)))
-     (.format ^DecimalFormat (.dformat ^FormatterInstance (currency/formatter-instance (.currency ^Money money) locale))
-              ^BigDecimal (.amount ^Money money))))
+       (.format ^DecimalFormat (currency/formatter-instance (.currency ^Money money) locale)
+                ^BigDecimal    (.amount ^Money money)))
+     (.format ^DecimalFormat (currency/formatter-instance (.currency ^Money money) locale)
+              ^BigDecimal    (.amount ^Money money))))
   ([^Money money locale opts]
    (if-some [rmode (or (:rounding-mode opts) scale/*rounding-mode*)]
      (if (not= rmode scale/ROUND_UNNECESSARY)
