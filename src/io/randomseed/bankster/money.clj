@@ -4,7 +4,10 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:require [io.randomseed.bankster          :refer       :all]
+  (:refer-clojure :exclude [format])
+
+  (:require [trptr.java-wrapper.locale       :as             l]
+            [io.randomseed.bankster          :refer       :all]
             [io.randomseed.bankster.scale    :as         scale]
             [io.randomseed.bankster.currency :as      currency]
             [io.randomseed.bankster.registry :as      registry]
@@ -13,8 +16,9 @@
             [io.randomseed.bankster.util     :refer       :all])
 
   (:import  [io.randomseed.bankster Currency Registry Money]
+            [io.randomseed.bankster.currency FormatterInstance]
             [java.math MathContext RoundingMode]
-            [java.text NumberFormat DecimalFormat]
+            [java.text NumberFormat DecimalFormat DecimalFormatSymbols]
             [java.util Locale]))
 
 ;;
@@ -1141,6 +1145,72 @@
     (lit [c am r])))
 
 (load "money/reader_handlers")
+
+;;
+;; Formatting.
+;;
+
+(defn format
+  "Formats the given amount of money as a string according to localization rules. If
+  the locale argument is not given then the default is used.
+
+  It is advised to express locale using a keyword when huge amount of operations is
+  expected.
+
+  If there are 3 arguments passed the third one should be a map of options
+  customizing the formatting. It can have the following keys:
+
+  - :rounding-mode   - RoundingMode, rounding mode to apply when scaling (if `scale/*rounding-mode*` is not set)
+  - :grouping        - Boolean, if true then grouping will be used
+  - :grouping-size   - integer, size of a group when grouping
+  - :negative-prefix - String, negative prefix to use
+  - :negative-suffix - String, negative suffix to use
+  - :positive-prefix - String, positive prefix to use
+  - :positive-suffix - String, positive suffix to use
+  - :always-sep-dec  - Boolean, if true then the decimal separator will always be shown
+  - :currency-symbol-fn  - a function used on a bankster/Currency object to get its symbol as a string
+  - :min-fraction-digits - integer, the minimum number of digits allowed in the fraction portion of an amount
+  - :min-integer-digits  - integer, the minimum number of digits allowed in the integer portion of an amount
+  - :max-fraction-digits - integer, the maximum number of digits allowed in the fraction portion of an amount
+  - :max-integer-digits  - integer, the maximum number of digits allowed in the integer portion of an amount
+  - :scale               - sets both :min-fraction-digits and :max-fraction-digits to the same value.
+
+  Note that you may gain some speed by re-using the extended formatter (basic
+  formatter is already cached). See the documentation of the format-with function for
+  more information."
+  {:tag String :added "1.0.0"}
+  ([^Money money]
+   (format money (Locale/getDefault)))
+  ([^Money money locale]
+   (if-some [rm scale/*rounding-mode*]
+     (if (not= rm scale/ROUND_UNNECESSARY)
+       (let [f (.dformat ^FormatterInstance (currency/formatter-instance (.currency ^Money money) locale))]
+         (.format ^DecimalFormat f
+                  ^BigDecimal (scale/apply (.amount ^Money money)
+                                           (max (.getMaximumFractionDigits ^DecimalFormat f)
+                                                (.getMinimumFractionDigits ^DecimalFormat f)))))
+       (.format ^DecimalFormat (.dformat ^FormatterInstance (currency/formatter-instance (.currency ^Money money) locale))
+                ^BigDecimal (.amount ^Money money)))
+     (.format ^DecimalFormat (.dformat ^FormatterInstance (currency/formatter-instance (.currency ^Money money) locale))
+              ^BigDecimal (.amount ^Money money))))
+  ([^Money money locale opts]
+   (if-some [rmode (or (:rounding-mode opts) scale/*rounding-mode*)]
+     (if (not= rmode scale/ROUND_UNNECESSARY)
+       (.format ^DecimalFormat (currency/formatter-extended (.currency ^Money money) locale
+                                                            (assoc opts :rounding-mode rmode))
+                ^BigDecimal    (.amount ^Money money))
+       (.format ^DecimalFormat (currency/formatter-extended (.currency ^Money money) locale opts)
+                ^BigDecimal    (.amount ^Money money)))
+     (.format ^DecimalFormat (currency/formatter-extended (.currency ^Money money) locale opts)
+              ^BigDecimal    (.amount ^Money money)))))
+
+(defn format-with
+  "Formats the amount of money using the formatter provided. Formatters can be created
+  with io.randomseed.bankster.currency/formatter and
+  io.randomseed.bankster.currency/formatter-extended."
+  {:tag String :added "1.0.0"}
+  [^DecimalFormat formatter ^Money money]
+  (.format ^DecimalFormat formatter ^BigDecimal (.amount ^Money money)))
 
 ;;
 ;; Printing.

@@ -18,6 +18,7 @@
 
   (:import  [io.randomseed.bankster Currency Registry]
             [java.math RoundingMode]
+            [java.text NumberFormat DecimalFormat DecimalFormatSymbols]
             [java.util Locale]))
 
 ;;
@@ -1258,6 +1259,152 @@
   [arg]
   (if (or (nil? arg) (and (map? arg) (< (count arg) 1)))
     '(quote nil) (unit arg)))
+
+;;
+;; Formatting.
+;;
+
+(def ^{:private true :tag java.util.Currency :added "1.0.0"}
+  iso-ref-currency
+  "Reference ISO currency used to construct a formatter for non-ISO currencies."
+  (java :XXX))
+
+(defrecord FormatterInstance
+    [^DecimalFormat dformat ^Currency currency ^Locale locale])
+
+(def ^{:no-doc true :tag DecimalFormat :added "1.0.0"}
+  formatter-instance
+  "For the specified locale and currency, returns a vector of mutable instance of a
+  currency text-formatter, currency object and locale. If no locale is given, uses
+  the default one. If no registry is given, uses dynamic or global registry. Due to
+  caching strategy it is advised to express locale with a keyword.
+
+  Do not use this function directly since operating on the returned object may
+  change it for the whole program. Use formatter instead."
+  (memoize
+   (fn formatter-instance
+     (^DecimalFormat [currency]
+      (formatter-instance currency ^Locale (Locale/getDefault)))
+     (^DecimalFormat [currency locale]
+      (formatter-instance currency locale (registry/get)))
+     (^DecimalFormat [currency locale registry]
+      (let [cur (unit currency registry)
+            ^Locale locale-native (l/locale locale)
+            f     (NumberFormat/getCurrencyInstance ^Locale locale-native)
+            iso   (iso? cur registry)
+            sc    (.scale ^Currency cur)]
+        (.setCurrency              ^DecimalFormat f ^Currency (if iso (java ^Currency cur) iso-ref-currency))
+        (.setRoundingMode          ^DecimalFormat f ^RoundingMode scale/ROUND_UNNECESSARY)
+        (.setParseIntegerOnly      ^DecimalFormat f false)
+        (.setMaximumFractionDigits ^DecimalFormat f (int sc))
+        (.setMinimumFractionDigits ^DecimalFormat f (int sc))
+        (when-not iso
+          (let [syms (.getDecimalFormatSymbols ^DecimalFormat f)]
+            (.setCurrencySymbol ^DecimalFormatSymbols syms ^String (symbol ^Currency cur))
+            (.setDecimalFormatSymbols ^DecimalFormat f ^DecimalFormatSymbols syms)))
+        (FormatterInstance. ^DecimalFormat f ^Currency currency ^Locale locale))))))
+
+(defn formatter
+  "Returns currency formatter as java.text.DecimalFormat instance for the given
+  currency and locale. If locale is not given the default one will be used. Due to
+  caching strategy it is advised to express locale with a keyword.
+
+  The formatter is a mutable clone of Java data structure.
+
+  In case of currencies other than ISO-standardized (and predefined in Java) the
+  currency field of this formatter will be set to the currency of XXX."
+  {:tag DecimalFormat :added "1.0.0"}
+  ([currency]
+   (.clone
+    ^DecimalFormat (.dformat
+                    ^FormatterInstance (formatter-instance currency
+                                                           (Locale/getDefault)
+                                                           (registry/get)))))
+  ([currency locale]
+   (.clone
+    ^DecimalFormat (.dformat
+                    ^FormatterInstance (formatter-instance currency
+                                                           locale
+                                                           (registry/get)))))
+  ([currency locale registry]
+   (.clone
+    ^DecimalFormat (.dformat
+                    ^FormatterInstance (formatter-instance
+                                        currency
+                                        locale
+                                        registry)))))
+
+(defn formatter-extended
+  "Returns a currency formatter as java.text.DecimalFormat instance for the given
+  currency, customizable with the given opts map. If the locale is not given then the
+  default one will be used. Due to caching strategy it is advised to express locale
+  with a keyword.
+
+  The formatter is a mutable clone of Java data structure.
+
+  In case of currencies other than ISO-standardized (and predefined in Java) the
+  currency field of this formatter will be set to the currency of XXX.
+
+  Options map can have the following keys:
+
+  - :rounding-mode   - RoundingMode, rounding mode to apply when scaling
+  - :grouping        - Boolean, if true then grouping will be used
+  - :grouping-size   - integer, size of a group when grouping
+  - :negative-prefix - String, negative prefix to use
+  - :negative-suffix - String, negative suffix to use
+  - :positive-prefix - String, positive prefix to use
+  - :positive-suffix - String, positive suffix to use
+  - :always-sep-dec  - Boolean, if true then the decimal separator will always be shown
+  - :currency-symbol-fn  - a function used on a bankster/Currency object to get its symbol as a string
+  - :min-fraction-digits - integer, the minimum number of digits allowed in the fraction portion of an amount
+  - :min-integer-digits  - integer, the minimum number of digits allowed in the integer portion of an amount
+  - :max-fraction-digits - integer, the maximum number of digits allowed in the fraction portion of an amount
+  - :max-integer-digits  - integer, the maximum number of digits allowed in the integer portion of an amount
+  - :scale               - sets both :min-fraction-digits and :max-fraction digits to the same value.
+
+  When choosing different currency, all parameters of a formatter are initially set
+  to that currency. Additionally re-scaling may take place for the amount if scales
+  are different.
+
+  It is advised to express locale using a keyword when huge amount of operations is
+  expected."
+  {:tag DecimalFormat :added "1.0.0"}
+  ([currency]
+   (formatter currency (Locale/getDefault) (registry/get)))
+  ([currency locale]
+   (formatter currency locale (registry/get)))
+  ([currency locale opts]
+   (formatter-extended currency locale opts (registry/get)))
+  ([currency locale
+    {:keys [scale rounding-mode grouping grouping-size
+            negative-prefix negative-suffix positive-prefix positive-suffix
+            always-sep-dec currency-symbol-fn min-fraction-digits max-fraction-digits
+            min-integer-digits max-integer-digits] :as opts}
+    registry]
+   (let [instance  (formatter-instance currency locale registry)
+         f         (.clone ^DecimalFormat (.dformat ^FormatterInstance instance))
+         currency  (.currency ^FormatterInstance instance)
+         locale    (.locale   ^FormatterInstance instance)
+         rounding-mode       (or rounding-mode scale/ROUND_UNNECESSARY)
+         min-fraction-digits (or scale min-fraction-digits)
+         max-fraction-digits (or scale max-fraction-digits)]
+     (when currency-symbol-fn
+       (let [syms (.getDecimalFormatSymbols ^DecimalFormat f)]
+         (.setCurrencySymbol ^DecimalFormatSymbols syms ^String (currency-symbol-fn currency))
+         (.setDecimalFormatSymbols ^DecimalFormat f ^DecimalFormatSymbols syms)))
+     (when (contains? opts :grouping)       (.setGroupingUsed ^DecimalFormat f (boolean grouping)))
+     (when (contains? opts :always-sep-dec) (.setDecimalSeparatorAlwaysShown ^DecimalFormat f (boolean always-sep-dec)))
+     (when rounding-mode       (.setRoundingMode          ^DecimalFormat f ^RoundingMode rounding-mode))
+     (when grouping-size       (.setGroupingSize          ^DecimalFormat f (int grouping-size)))
+     (when negative-prefix     (.setNegativePrefix        ^DecimalFormat f ^String (str negative-prefix)))
+     (when negative-suffix     (.setNegativeSuffix        ^DecimalFormat f ^String (str negative-suffix)))
+     (when positive-prefix     (.setPositivePrefix        ^DecimalFormat f ^String (str positive-prefix)))
+     (when positive-suffix     (.setPositiveSuffix        ^DecimalFormat f ^String (str positive-suffix)))
+     (when min-integer-digits  (.setMinimumIntegerDigits  ^DecimalFormat f (int min-integer-digits)))
+     (when max-integer-digits  (.setMaximumIntegerDigits  ^DecimalFormat f (int max-integer-digits)))
+     (when min-fraction-digits (.setMinimumFractionDigits ^DecimalFormat f (int min-fraction-digits)))
+     (when max-fraction-digits (.setMaximumFractionDigits ^DecimalFormat f (int max-fraction-digits)))
+     f)))
 
 ;;
 ;; Printing.
