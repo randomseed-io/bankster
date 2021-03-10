@@ -100,14 +100,16 @@
   (apply
     [num] [num scale] [num scale rounding-mode]
     "Converts the given value to a scalable with or without changing its scale (if
-  any). For values that already are scalable changes their scale if called with a
+  any). For values that already are scalable it changes their scales if called with a
   second argument. The third argument, rounding-mode, must be present when
-  downscaling.")
+  downscaling. For compound values (like monetary amounts) it will rescale the amount
+  and update scale information of the unit (e.g. currency component).")
 
   (amount
     [num] [num scale] [num scale rounding-mode]
-    "Returns the amount of a scalable as BigDecimal number. Some scalables may not
-    be numeric so this function is to get the actual number out of them.")
+    "Returns the amount of a scalable as a BigDecimal number. Some scalables may not
+    be purely numeric so this function is to get the actual, calculable value out of
+    them.")
 
   (applied?
     [num]
