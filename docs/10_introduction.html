@@ -14,7 +14,7 @@
   <li>Polymorphic interface for currencies and monetary amounts.</li>
   <li>Useful macros to express currencies and monetary amounts with various forms.</li>
   <li>Namespaced identifiers for non-ISO currencies (e.g. <code>crypto/ETH</code>).</li>
-  <li>Common math operators that can be used interchangeably on other numeric data.</li>
+  <li>Common math operators that can be used interchangeably with other numeric data.</li>
   <li>Tagged literals for currencies and monetary amounts.</li>
   <li>Customizable currency and money formatting with locale support.</li>
 </ul>
@@ -58,11 +58,11 @@ org.clojure/test.check {:mvn/version "0.10.0-alpha4"}
 #currency 978
 #currency{:id :EUR, :domain :ISO-4217, :kind :FIAT, :nr 978, :sc 2}
 
-;; global registry lookup using money tagged literal without an amount
+;; global registry lookup using tagged literal without an amount
 #money EUR
 #currency{:id :EUR, :domain :ISO-4217, :kind :FIAT, :nr 978, :sc 2}
 
-;; global registry lookup using namespaced money tagged literal
+;; global registry lookup using namespaced tagged literal
 #money/crypto ETH
 #currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 18}
 </code></pre>
@@ -117,7 +117,6 @@ org.clojure/test.check {:mvn/version "0.10.0-alpha4"}
 
 (money/of EUR25)
 #money[25.00 EUR]
-
 
 ;; using money/of macro with namespaced keyword ID and an amount
 (money/of crypto/BTC 10.1)
@@ -265,10 +264,10 @@ true
 (currency/auto-scaled? #money[12.34567 XXX])
 true
 
-(scale/apply #money[10 USD] 8) ;; use with caution or better avoid
+(scale/apply #money[10 USD] 8) ;; use with caution
 #money[10.00000000 USD]
 
-(scale/apply #currency USD 8)  ;; use with caution or better avoid
+(scale/apply #currency USD 8)  ;; use with caution
 #currency{:id :USD, :domain :ISO-4217, :kind :FIAT, :nr 840, :sc 8}
 
 (scale/amount #money[108.11 CHF])
