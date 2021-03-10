@@ -53,9 +53,7 @@
              (m/of "12.111 PLN" UP) => {:amount 12.12M :currency #currency PLN}
              (m/of PLN) => {:amount 0M :currency #currency PLN}
              (m/with-currency EUR (m/of 1000)) => {:amount 1000M :currency #currency EUR}
-             (m/of crypto/ETH) => {:amount 0M :currency #currency crypto/ETH}
-             )
-       )
+             (m/of crypto/ETH) => {:amount 0M :currency #currency crypto/ETH}))
 
 (facts "about money tagged literal"
        (fact "when it returns nil for nil or empty map"
@@ -64,15 +62,23 @@
              #money[nil] => nil)
        (fact "when it returns a money object"
              #money PLN => {:amount 0M :currency #currency PLN}
+             #money crypto/ETH => {:amount 0M :currency #currency crypto/ETH}
              #money[19 EUR] => (m/of 19 :EUR)
              #money[19 {:id :EUR :domain :ISO-4217}] => {:amount 19M :currency (c/of {:id :EUR :domain :ISO-4217 :kind nil :numeric -1 :scale -1})}
              #money[19 EUR] => {:amount 19M :currency #currency EUR}
-             #money[19 EUR] => {:amount 19M :currency #currency {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2}}))
+             #money[19 EUR] => {:amount 19M :currency #currency {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2}}
+             #money :19EUR => {:amount 19M :currency #currency EUR}
+             #money EUR_19 => {:amount 19M :currency #currency EUR}
+             #money "19 EUR" => {:amount 19M :currency #currency EUR}
+             #money/crypto ETH1.00000001 => {:amount 1.00000001M :currency #currency crypto/ETH}
+             #money/crypto[ETH 1.00000001] => {:amount 1.00000001M :currency #currency crypto/ETH}
+             #money/crypto[1.00000001 ETH] => {:amount 1.00000001M :currency #currency crypto/ETH}
+             #money crypto/ETH1.00000001 => {:amount 1.00000001M :currency #currency crypto/ETH}))
 
 ;; (facts "about Monetary protocol"
 ;;        (fact "when it can get ID of a currency"
 ;;              (c/id #money[12.12 PLN]) => :PLN)
-;;        (fact "when it gets a currency unit from a registry or pass it when given directly"
+;;        (fact "when it gets a currency unit from a registry or returns it when given directly"
 ;;              (c/unit #money[10 EUR]) => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2}
 ;;              (c/unit #money[10 978]) => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2})
 ;;        (fact "when it checks if a currency is defined"

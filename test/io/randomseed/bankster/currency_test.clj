@@ -105,7 +105,7 @@
              (c/id "PLN") => :PLN
              (c/id #currency PLN) => :PLN
              (c/id #currency crypto/ETH) => :crypto/ETH)
-       (fact "when it gets a currency unit from a registry or pass it when given directly"
+       (fact "when it gets a currency unit from a registry or returns it when given directly"
              (c/unit #currency EUR)  => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2}
              (c/unit :EUR)  => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2}
              (c/unit "EUR") => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2}
