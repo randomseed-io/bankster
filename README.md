@@ -295,10 +295,10 @@ true
 (currency/auto-scaled? #money[12.34567 XXX])
 true
 
-(scale/apply #money[10 USD] 8) ;; use with caution or better avoid
+(scale/apply #money[10 USD] 8) ;; use with caution
 #money[10.00000000 USD]
 
-(scale/apply #currency USD 8)  ;; use with caution or better avoid
+(scale/apply #currency USD 8)  ;; use with caution
 #currency{:id :USD, :domain :ISO-4217, :kind :FIAT, :nr 840, :sc 8}
 
 (scale/amount #money[108.11 CHF])
