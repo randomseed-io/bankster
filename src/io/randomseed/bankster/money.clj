@@ -1270,7 +1270,7 @@
   [m w]
   (let [c (.currency ^Money m)
         n (namespace (currency/id c))
-        a (.amount ^Money m)]
+        a (.toPlainString ^BigDecimal (.amount ^Money m))]
     (print-simple
      (str "#money" (when n (str "/" n))
           "[" a " " (currency/short-code c) "]")

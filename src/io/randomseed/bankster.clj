@@ -45,4 +45,4 @@
 
   Object
   (toString [^Money m]
-    (str (.amount ^Money m) " " (.currency ^Money m))))
+    (str (.toPlainString ^BigDecimal (.amount ^Money m)) " " (.currency ^Money m))))

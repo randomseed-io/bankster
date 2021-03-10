@@ -53,6 +53,7 @@
              (m/of "12.111 PLN" UP) => {:amount 12.12M :currency #currency PLN}
              (m/of PLN) => {:amount 0M :currency #currency PLN}
              (m/with-currency EUR (m/of 1000)) => {:amount 1000M :currency #currency EUR}
+             (m/of crypto/ETH) => {:amount 0M :currency #currency crypto/ETH}
              )
        )
 
@@ -62,6 +63,7 @@
              #money[nil nil] => nil
              #money[nil] => nil)
        (fact "when it returns a money object"
+             #money PLN => {:amount 0M :currency #currency PLN}
              #money[19 EUR] => (m/of 19 :EUR)
              #money[19 {:id :EUR :domain :ISO-4217}] => {:amount 19M :currency (c/of {:id :EUR :domain :ISO-4217 :kind nil :numeric -1 :scale -1})}
              #money[19 EUR] => {:amount 19M :currency #currency EUR}
