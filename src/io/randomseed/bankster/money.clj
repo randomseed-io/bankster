@@ -347,10 +347,6 @@
 
   Money
 
-  (of
-    (^Currency [money] (.currency ^Money money))
-    (^Currency [money ^Registry registry] (.currency ^Money money)))
-
   (unit
     (^Currency [money] (.currency ^Money money))
     (^Currency [money ^Registry registry] (.currency ^Money money)))
