@@ -18,7 +18,7 @@ currencies support.
 * Polymorphic interface for currencies and monetary amounts.
 * Useful macros to express currencies and monetary amounts with various forms.
 * Namespaced identifiers for non-ISO currencies (e.g. `crypto/ETH`).
-* Common math operators that can be used interchangeably on other numeric data.
+* Common math operators that can be used interchangeably with other numeric data.
 * Tagged literals for currencies and monetary amounts.
 * Customizable currency and money formatting with locale support.
 
@@ -77,11 +77,11 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 #currency 978
 #currency{:id :EUR, :domain :ISO-4217, :kind :FIAT, :nr 978, :sc 2}
 
-;; global registry lookup using money tagged literal without an amount
+;; global registry lookup using tagged literal without an amount
 #money EUR
 #currency{:id :EUR, :domain :ISO-4217, :kind :FIAT, :nr 978, :sc 2}
 
-;; global registry lookup using namespaced money tagged literal
+;; global registry lookup using namespaced tagged literal
 #money/crypto ETH
 #currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 18}
 ```
@@ -138,7 +138,6 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 
 (money/of EUR25)
 #money[25.00 EUR]
-
 
 ;; using money/of macro with namespaced keyword ID and an amount
 (money/of crypto/BTC 10.1)
@@ -264,7 +263,6 @@ It allows to perform **math operations** on monetary amounts:
 (* 1 2 3 4 5 #money/crypto[0.7 ETH])
 #money/crypto[84.000000000000000000 ETH]
 ```
-
 
 It allows to perform **generic, polymorphic operations** on monetary amounts and
 currencies:
