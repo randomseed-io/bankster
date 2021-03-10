@@ -335,8 +335,8 @@
   nil
 
   (unit
-    ([currency] nil)
-    ([currency, ^Registry registry] nil))
+    ([currency] (if-some [d *default*] (unit d) nil))
+    ([currency, ^Registry registry] (if-some [d *default*] (unit d) nil)))
 
   (id
     (^clojure.lang.Keyword [currency] nil)
