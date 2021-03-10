@@ -1,7 +1,5 @@
 # Introduction
 
-## Bankster /ˈbæŋkstə/
-
 **Money Creation Made Easy!**
 
 [![Bankster on Clojars](https://img.shields.io/clojars/v/io.randomseed/bankster.svg)](https://clojars.org/io.randomseed/bankster)
@@ -13,12 +11,16 @@ currencies support.
 ## Features
 
 * Pure Clojure implementation based on Java's BigDecimal.
-* Built-in standard currencies database, extendable using EDN file.
 * Uses records to organize data: `Registry`, `Currency`, `Money`.
+* Built-in standard currencies database, extendable using EDN file.
+* Ability to create *ad hoc* currencies (with optional registering).
+* Ability to switch between dynamic, global and local currency registries.
 * Polymorphic interface for currencies and monetary amounts.
+* Useful macros to express currencies and monetary amounts with various forms.
 * Namespaced identifiers for non-ISO currencies (e.g. `crypto/ETH`).
-* Additional, common operators that can also be used on other numeric data.
+* Common math operators that can be used interchangeably on other numeric data.
 * Tagged literals for currencies and monetary amounts.
+* Customizable currency and money formatting with locale support.
 
 ## Installation
 
@@ -55,13 +57,13 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 (currency/of :PLN)
 #currency{:id :PLN, :domain :ISO-4217, :kind :FIAT, :nr 985, :sc 2}
 
+;; global registry lookup using namespaced symbol
+(currency/of crypto/ETH)
+#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 18}
+
 ;; global registry lookup with a string (incl. namespace a.k.a domain)
 (currency/of "crypto/BTC")
 #currency{:id :crypto/BTC, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 8}
-
-;; global registry lookup using namespaced symbol
-(currency/of 'crypto/ETH)
-#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 18}
 
 ;; global registry lookup using ISO currency number
 (currency/of 840)
@@ -91,7 +93,7 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 (currency/of :petro/USD)
 #currency{:id :petro/USD, :domain :PETRO, :kind :COMBANK, :nr 999, :sc 2}
 
-;; ad-hoc currency creation using constructor function
+;; ad hoc currency creation using constructor function
 (currency/new :petro/USD 999 2 :COMBANK)
 #currency{:id :petro/USD, :domain :PETRO, :kind :COMBANK, :nr 999, :sc 2}
 
@@ -99,7 +101,7 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 #currency{:id :crypto/ETH :sc 18}
 #currency{:id :crypto/ETH, :domain :CRYPTO, :sc 18}
 
-;; putting new currency into a global registry
+;; putting new currency into a global, shared registry
 (currency/register! (currency/new :petro/USD 9999 2 :COMBANK) :USA)
 #Registry@11efe93f{:currencies 221, :countries 250, :version "2021022121170359"}
 
@@ -119,9 +121,24 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 (money/of 25 :EUR)
 #money[25.00 EUR]
 
+;; using money/of macro with joint keyword ID and an amount as a first argument
+(money/of :25_EUR)
+#money[25.00 EUR]
+
+(money/of :25EUR)
+#money[25.00 EUR]
+
 ;; using money/of macro with unquoted symbolic ID and an amount
 (money/of EUR 25)
 #money[25.00 EUR]
+
+;; using money/of macro with joint unquoted symbolic ID and an amount
+(money/of EUR_25)
+#money[25.00 EUR]
+
+(money/of EUR25)
+#money[25.00 EUR]
+
 
 ;; using money/of macro with namespaced keyword ID and an amount
 (money/of crypto/BTC 10.1)
@@ -304,6 +321,20 @@ true
 
 And more…
 
+## Documentation
+
+Full documentation including usage examples is available at:
+
+* https://randomseed.io/software/bankster/
+
+## Deum Ethereum
+
+I write Free Software for fun. If you are finding it useful and you are Ethereum
+fan too, here it is: `0x2Bed4D2d9240F9fB321bC0194222A4888F62dd0d`.
+
+Stellar Lumens are cool too:
+`GBMUQ6U6334Y5HWF3XGMCRQZKVMFDCSX4YADEVZO7ZXIBDJDXXX2BSME`.
+
 ## License
 
 Copyright © 2021 Paweł Wilk
@@ -321,5 +352,45 @@ FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
 COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
 IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
+
+## Development
+
+### Building docs
+
+```bash
+make docs
+```
+
+### Building JAR
+
+```bash
+make jar
+```
+
+### Rebuilding POM
+
+```bash
+make pom
+```
+
+### Signing POM
+
+```bash
+make sig
+```
+
+### Deploying to Clojars
+
+```bash
+make deploy
+```
+
+### Interactive development
+
+```bash
+bin/repl
+```
+
+Starts REPL and nREPL server (port number is stored in `.nrepl-port`).
 
 [LICENSE]:    https://github.com/randomseed-io/bankster/blob/master/LICENSE

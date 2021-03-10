@@ -3,6 +3,7 @@
 **Money Creation Made Easy!**
 
 [![Bankster on Clojars](https://img.shields.io/clojars/v/io.randomseed/bankster.svg)](https://clojars.org/io.randomseed/bankster)
+[![CircleCI](https://circleci.com/gh/randomseed-io/bankster.svg?style=svg)](https://circleci.com/gh/randomseed-io/bankster)
 
 Clojure library to operate on monetary units with cryptocurrencies and custom
 currencies support.
@@ -10,25 +11,15 @@ currencies support.
 ## Features
 
 * Pure Clojure implementation based on Java's BigDecimal.
-
 * Uses records to organize data: `Registry`, `Currency`, `Money`.
-
 * Built-in standard currencies database, extendable using EDN file.
-
 * Ability to create *ad hoc* currencies (with optional registering).
-
 * Ability to switch between dynamic, global and local currency registries.
-
 * Polymorphic interface for currencies and monetary amounts.
-
 * Useful macros to express currencies and monetary amounts with various forms.
-
 * Namespaced identifiers for non-ISO currencies (e.g. `crypto/ETH`).
-
 * Common math operators that can be used interchangeably on other numeric data.
-
 * Tagged literals for currencies and monetary amounts.
-
 * Customizable currency and money formatting with locale support.
 
 ## Installation
@@ -363,8 +354,6 @@ IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## Development
-
-[![CircleCI](https://circleci.com/gh/randomseed-io/bankster.svg?style=svg)](https://circleci.com/gh/randomseed-io/bankster)
 
 ### Building docs
 
