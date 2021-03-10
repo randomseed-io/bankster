@@ -11,17 +11,25 @@ currencies support.
 
 * Pure Clojure implementation based on Java's BigDecimal.
 
+* Uses records to organize data: `Registry`, `Currency`, `Money`.
+
 * Built-in standard currencies database, extendable using EDN file.
 
-* Uses records to organize data: `Registry`, `Currency`, `Money`.
+* Ability to create *ad hoc* currencies (with optional registering).
+
+* Ability to switch between dynamic, global and local currency registries.
 
 * Polymorphic interface for currencies and monetary amounts.
 
+* Useful macros to express currencies and monetary amounts with various forms.
+
 * Namespaced identifiers for non-ISO currencies (e.g. `crypto/ETH`).
 
-* Additional, common operators that can also be used on other numeric data.
+* Common math operators that can be used interchangeably on other numeric data.
 
 * Tagged literals for currencies and monetary amounts.
+
+* Customizable currency and money formatting with locale support.
 
 ## Installation
 
@@ -58,13 +66,13 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 (currency/of :PLN)
 #currency{:id :PLN, :domain :ISO-4217, :kind :FIAT, :nr 985, :sc 2}
 
+;; global registry lookup using namespaced symbol
+(currency/of crypto/ETH)
+#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 18}
+
 ;; global registry lookup with a string (incl. namespace a.k.a domain)
 (currency/of "crypto/BTC")
 #currency{:id :crypto/BTC, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 8}
-
-;; global registry lookup using namespaced symbol
-(currency/of 'crypto/ETH)
-#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 18}
 
 ;; global registry lookup using ISO currency number
 (currency/of 840)
@@ -94,7 +102,7 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 (currency/of :petro/USD)
 #currency{:id :petro/USD, :domain :PETRO, :kind :COMBANK, :nr 999, :sc 2}
 
-;; ad-hoc currency creation using constructor function
+;; ad hoc currency creation using constructor function
 (currency/new :petro/USD 999 2 :COMBANK)
 #currency{:id :petro/USD, :domain :PETRO, :kind :COMBANK, :nr 999, :sc 2}
 
@@ -102,7 +110,7 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 #currency{:id :crypto/ETH :sc 18}
 #currency{:id :crypto/ETH, :domain :CRYPTO, :sc 18}
 
-;; putting new currency into a global registry
+;; putting new currency into a global, shared registry
 (currency/register! (currency/new :petro/USD 9999 2 :COMBANK) :USA)
 #Registry@11efe93f{:currencies 221, :countries 250, :version "2021022121170359"}
 
@@ -122,9 +130,24 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 (money/of 25 :EUR)
 #money[25.00 EUR]
 
+;; using money/of macro with joint keyword ID and an amount as a first argument
+(money/of :25_EUR)
+#money[25.00 EUR]
+
+(money/of :25EUR)
+#money[25.00 EUR]
+
 ;; using money/of macro with unquoted symbolic ID and an amount
 (money/of EUR 25)
 #money[25.00 EUR]
+
+;; using money/of macro with joint unquoted symbolic ID and an amount
+(money/of EUR_25)
+#money[25.00 EUR]
+
+(money/of EUR25)
+#money[25.00 EUR]
+
 
 ;; using money/of macro with namespaced keyword ID and an amount
 (money/of crypto/BTC 10.1)
