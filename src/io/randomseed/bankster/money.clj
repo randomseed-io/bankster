@@ -441,7 +441,8 @@
 
 (defn ^Boolean eq?
   "Return true if the money amounts and their currencies are equal. Note that
-  currencies with different scales are considered different."
+  currencies with different scales are considered different. Use eq-am? to compare
+  amounts regardless of their scales."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money a] true)
   (^Boolean [^Money a ^Money b]
@@ -468,10 +469,10 @@
            sa (int (.scale am-a))
            sb (int (.scale am-b))]
        (if (= sa sb)
-         (.equals ^BigDecimal a ^BigDecimal b)
+         (.equals ^BigDecimal am-a ^BigDecimal am-b)
          (if (< sa sb)
-           (.equals ^BigDecimal (scale/apply a sb) ^BigDecimal b)
-           (.equals ^BigDecimal a ^BigDecimal (scale/apply b sa)))))))
+           (.equals ^BigDecimal (scale/apply am-a sb) ^BigDecimal am-b)
+           (.equals ^BigDecimal am-a ^BigDecimal (scale/apply am-b sa)))))))
   (^Boolean [^Money a ^Money b & more]
    (if (eq-am? a b)
      (if (next more)
