@@ -50,7 +50,7 @@
   amount?
   #{\0 \1 \2 \3 \4 \5 \6 \7 \8 \9 \.})
 
-(defn split-amount
+(defn currency-amount
   "Splits the amount and currency."
   {:private false :tag clojure.lang.PersistentVector :added "1.0.0"}
   [amount]
@@ -60,22 +60,18 @@
                                         (name amount))
                                       (str amount))))
         fdigi? (amount? (first lseq))
-        [a b]  (split-with (if fdigi? amount? (complement amount?)) lseq)]
-    (when (and (seq a) (seq b))
-      (if fdigi?
-        [(apply str b) (apply str a)]
-        [(apply str a) (apply str b)]))))
+        [a b]  (split-with (if fdigi? amount? (complement amount?)) lseq)
+        a      (when (seq a) (apply str a))
+        b      (when (seq b) (apply str b))]
+    (if fdigi? [b a] [a b])))
 
 (defn parse
   "Internal parser."
   {:tag Money :no-doc true :added "1.0.0"}
   (^Money [amount]
    (when (some? amount)
-     (if-some [cur-am (split-amount amount)]
-       (parse (nth cur-am 0) (nth cur-am 1))
-       (throw (ex-info
-               "Do not know how to create money using the given argument."
-               {:amount amount})))))
+     (let [[cur am] (currency-amount amount)]
+       (parse cur (or am 0M)))))
   (^Money [currency amount]
    (when (some? amount)
      (if-some [^Currency c (currency/unit currency)]
@@ -159,8 +155,9 @@
   "Creates new Money object for the given value which will become a major part of the
   amount. If the given number has fractional part it will be truncated. If the
   currency is not given it should try to use the default one, taken from the
-  `*default-currency*` dynamic variable. Optional rounding-mode should be a rounding
-  mode used when the conversion to a scaled monetary amount requires rounding.
+  `io.randomseed.bankster.currency/*default*` dynamic variable. Optional
+  rounding-mode should be a rounding mode used when the conversion to a scaled
+  monetary amount requires rounding.
 
   In its unary form, when the argument is not numeric, it will try to get a currency
   object (identified by a string, a symbol or a keyword) from a default, global
@@ -228,47 +225,64 @@
 
   To create a monetary object using function, call value."
   ([currency]
-   (let [cur# (currency/parse-currency-symbol currency)]
-     `(value ~cur#)))
+   (let [[cur# am#] (currency-amount currency)]
+     (if (nil? am#)
+       `(value ~(currency/parse-currency-symbol cur#))
+       `(value ~(currency/parse-currency-symbol cur#) ~am#))))
   ([a b]
-   (let [[currency amount] (if (number? a) [b a] [a b])
-         cur# (currency/parse-currency-symbol currency)]
-     `(value ~cur# ~amount)))
+   (let [[cur# am#] (currency-amount a)]
+     (if (or (nil? cur#) (nil? am#))
+       (let [[currency amount#] (if (number? a) [b a] [a b])
+             cur# (currency/parse-currency-symbol currency)]
+         `(value ~cur# ~amount#))
+       (let [rms# (scale/parse-rounding b)
+             cur# (currency/parse-currency-symbol cur#)]
+         `(value ~cur# ~am# ~rms#)))))
   ([a b rounding-mode]
-   (let [[currency amount] (if (number? a) [b a] [a b])
+   (let [[currency amount#] (if (number? a) [b a] [a b])
          rms# (scale/parse-rounding rounding-mode)
          cur# (currency/parse-currency-symbol currency)]
-     `(value ~cur# ~amount ~rms#))))
+     `(value ~cur# ~amount# ~rms#))))
 
 (defmacro of-major
   "Like io.randomseed.money/of but expects an amount of major part."
   ([currency]
-   (let [cur# (currency/parse-currency-symbol currency)]
-     `(major-value ~cur#)))
+   (let [[cur# am#] (currency-amount currency)]
+     `(major-value ~(currency/parse-currency-symbol cur#) ~am#)))
   ([a b]
-   (let [[currency amount] (if (number? a) [b a] [a b])
-         cur# (currency/parse-currency-symbol currency)]
-     `(major-value ~cur# ~amount)))
+   (let [[cur# am#] (currency-amount a)]
+     (if (or (nil? cur#) (nil? am#))
+       (let [[currency amount#] (if (number? a) [b a] [a b])
+             cur# (currency/parse-currency-symbol currency)]
+         `(major-value ~cur# ~amount#))
+       (let [rms# (scale/parse-rounding b)
+             cur# (currency/parse-currency-symbol cur#)]
+         `(major-value ~cur# ~am# ~rms#)))))
   ([a b rounding-mode]
-   (let [[currency amount] (if (number? a) [b a] [a b])
+   (let [[currency amount#] (if (number? a) [b a] [a b])
          rms# (scale/parse-rounding rounding-mode)
          cur# (currency/parse-currency-symbol currency)]
-     `(major-value ~cur# ~amount ~rms#))))
+     `(major-value ~cur# ~amount# ~rms#))))
 
 (defmacro of-minor
   "Like io.randomseed.money/of but expects an amount of minor part."
   ([currency]
-   (let [cur# (currency/parse-currency-symbol currency)]
-     `(minor-value ~cur#)))
+   (let [[cur# am#] (currency-amount currency)]
+     `(minor-value ~(currency/parse-currency-symbol cur#) ~am#)))
   ([a b]
-   (let [[currency amount] (if (number? a) [b a] [a b])
-         cur# (currency/parse-currency-symbol currency)]
-     `(minor-value ~cur# ~amount)))
+   (let [[cur# am#] (currency-amount a)]
+     (if (or (nil? cur#) (nil? am#))
+       (let [[currency amount#] (if (number? a) [b a] [a b])
+             cur# (currency/parse-currency-symbol currency)]
+         `(minor-value ~cur# ~amount#))
+       (let [rms# (scale/parse-rounding b)
+             cur# (currency/parse-currency-symbol cur#)]
+         `(minor-value ~cur# ~am# ~rms#)))))
   ([a b rounding-mode]
-   (let [[currency amount] (if (number? a) [b a] [a b])
+   (let [[currency amount#] (if (number? a) [b a] [a b])
          rms# (scale/parse-rounding rounding-mode)
          cur# (currency/parse-currency-symbol currency)]
-     `(minor-value ~cur# ~amount ~rms#))))
+     `(minor-value ~cur# ~amount# ~rms#))))
 
 ;;
 ;; Scaling and rounding.

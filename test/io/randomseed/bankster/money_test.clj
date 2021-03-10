@@ -36,7 +36,21 @@
              (m/of EUR 12.12) => {:amount 12.12M :currency #currency EUR}
              (m/of :EUR 12.12) => {:amount 12.12M :currency #currency EUR}
              (m/of crypto/ETH 1.00001) => {:amount 1.00001M :currency #currency :crypto/ETH}
-             (m/of 1.00001 crypto/ETH) => {:amount 1.00001M :currency #currency :crypto/ETH}))
+             (m/of 1.00001 crypto/ETH) => {:amount 1.00001M :currency #currency :crypto/ETH}
+             (m/of :12PLN) => {:amount 12M :currency #currency PLN}
+             (m/of :PLN12) => {:amount 12M :currency #currency PLN}
+             (m/of :12_PLN) => {:amount 12M :currency #currency PLN}
+             (m/of :PLN_12) => {:amount 12M :currency #currency PLN}
+             (m/of PLN12) => {:amount 12M :currency #currency PLN}
+             (m/of 12 PLN) => {:amount 12M :currency #currency PLN}
+             (m/of "12 PLN") => {:amount 12M :currency #currency PLN}
+             (m/of "PLN 12") => {:amount 12M :currency #currency PLN}
+             (m/of :12.00001PLN DOWN) => {:amount 12M :currency #currency PLN}
+             (m/of :PLN12.111 UP) => {:amount 12.12M :currency #currency PLN}
+             (m/of PLN12.111 UP) => {:amount 12.12M :currency #currency PLN}
+             (m/of PLN_12.111 UP) => {:amount 12.12M :currency #currency PLN}
+             (m/of :PLN 12.111 UP) => {:amount 12.12M :currency #currency PLN}
+             (m/of "12.111 PLN" UP) => {:amount 12.12M :currency #currency PLN}))
 
 (facts "about money tagged literal"
        (fact "when it returns nil for nil or empty map"
