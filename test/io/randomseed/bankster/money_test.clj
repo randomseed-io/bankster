@@ -50,7 +50,11 @@
              (m/of PLN12.111 UP) => {:amount 12.12M :currency #currency PLN}
              (m/of PLN_12.111 UP) => {:amount 12.12M :currency #currency PLN}
              (m/of :PLN 12.111 UP) => {:amount 12.12M :currency #currency PLN}
-             (m/of "12.111 PLN" UP) => {:amount 12.12M :currency #currency PLN}))
+             (m/of "12.111 PLN" UP) => {:amount 12.12M :currency #currency PLN}
+             (m/of PLN) => {:amount 0M :currency #currency PLN}
+             (m/with-currency EUR (m/of 1000)) => {:amount 1000M :currency #currency EUR}
+             )
+       )
 
 (facts "about money tagged literal"
        (fact "when it returns nil for nil or empty map"
