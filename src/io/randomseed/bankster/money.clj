@@ -229,8 +229,8 @@
 
   (value
     (^Money [money]                    money)
-    (^Money [money amount]             (value (currency/unit ^Money money) amount))
-    (^Money [money amount rounding]    (value (currency/unit ^Money money) amount rounding)))
+    (^Money [money amount]             (value (.currency ^Money money) amount))
+    (^Money [money amount rounding]    (value (.currency ^Money money) amount rounding)))
 
   Currency
 
