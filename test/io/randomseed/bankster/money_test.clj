@@ -100,3 +100,48 @@
              (c/same-ids? #money[10 PLN] :PLN) => true
              (c/same-ids? :PLN #money[10 PLN]) => true
              (c/same-ids? #money[10 PLN] #money[10 PLN]) => true))
+
+(facts "about currency properties"
+       (fact "when it's possible to get the numeric value of an ISO currency"
+             (c/nr #money[12.32 EUR]) => 978
+             (c/nr #money[1 crypto/ETH]) => nil
+             (c/nr (m/of 10 #currency{:id :PLN :scale 1})) => nil)
+       (fact "when it's possible to get scale of a monetary amount"
+             (c/sc #money[1 EUR]) => 2
+             (c/sc #money[1 crypto/ETH]) => 18
+             (c/sc #money[1 XXX]) => nil
+             (c/sc (m/of 10 #currency{:id :PLN :scale 1})) => 1)
+       (fact "when it's possible to get the domain of a currency"
+             (c/domain #money[1 EUR]) => :ISO-4217
+             (c/domain #money[1 crypto/ETH]) => :CRYPTO
+             (c/domain (m/of 10 #currency{:id :PLN :scale 1})) => nil)
+       (fact "when it's possible to get the kind of a currency"
+             (c/kind #money[1 EUR]) => :FIAT
+             (c/kind #money[1 crypto/ETH]) => :DECENTRALIZED
+             (c/kind (m/of 10 #currency{:id :PLN :scale 1})) => nil)
+       (fact "when it's possible to get the code of a currency"
+             (c/code #money[1 EUR]) => "EUR"
+             (c/code #money[1 crypto/ETH]) => "crypto/ETH"
+             (c/code (m/of 10 #currency{:id :PLN :scale 1})) => "PLN")
+       (fact "when it's possible to get the short code of a currency"
+             (c/short-code #money[1 EUR]) => "EUR"
+             (c/short-code #money[1 crypto/ETH]) => "ETH"
+             (c/short-code (m/of 10 #currency{:id :PLN :scale 1})) => "PLN")
+       (fact "when it's possible to get the ID of a currency"
+             (c/id #money[1 EUR]) => :EUR
+             (c/id #money[1 crypto/ETH]) => :crypto/ETH
+             (c/id (m/of 10 #currency{:id :PLN :scale 1})) => :PLN)
+       (fact "when it's possible to get countries associated with a currency"
+             (c/countries #money[1 USD]) => #{:TL :IO :PR :BQ :EC :VG :US :GU :AS :PW :TC :MP :VI :FM :MH :UM}
+             (c/countries #money[1 crypto/ETH]) => nil
+             (c/countries (m/of 10 #currency{:id :PLN :scale 1})) => #{:PL})
+       (fact "when it's possible to distinguish money from the currency"
+             (c/currency? #money[1 EUR]) => false)
+       (fact "when it's possible to validate money as a currency representation"
+             (c/possible? #money[1 EUR]) => true)
+       (fact "when it's possible to check if a currency has numeric ID"
+             (c/has-numeric-id? #money[1 EUR]) => true
+             (c/has-numeric-id? #money[1 crypto/ETH]) => false
+             (c/has-numeric-id? (m/of 10 #currency{:id :PLN :scale 1})) => false)
+
+       )
