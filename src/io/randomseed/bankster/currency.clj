@@ -1091,7 +1091,7 @@
   - `th_TH_TH_#u-nu`,
   - `th_TH_TH_#u`,
   - `th_TH_TH`,
-  - 0`th_TH` and `th`.
+  - `th_TH` and `th`.
 
   The third example renders `ABC` because there is an entry of `:symbol` in the
   default properties map under the key `:*`.
