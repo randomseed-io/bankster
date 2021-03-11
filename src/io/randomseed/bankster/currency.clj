@@ -904,7 +904,8 @@
 ;;
 
 (defn ^Boolean currency?
-  "Returns true if the given value is represented by a valid currency object."
+  "Returns true if the given value is represented by a valid currency object. Registry
+  argument is ignored."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (and (instance? Currency c) (keyword? (.id ^Currency c))))
   (^Boolean [c ^Registry registry] (and (instance? Currency c) (keyword? (.id ^Currency c)))))
@@ -915,8 +916,8 @@
   that it is a currency with a keyword identifier or any other data type that can be
   successfully converted into such using the registry provided."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (keyword? (id c (registry/get))))
-  (^Boolean [c, ^Registry registry] (keyword? (id c registry))))
+  (^Boolean [c] (let [r (registry/get)] (or (currency? c r) (defined? c r))))
+  (^Boolean [c ^Registry registry] (let [r (registry/get)] (or (currency? c r) (defined? c r)))))
 
 (defn ^Boolean has-numeric-id?
   "Returns true if the given currency has a numeric ID."
@@ -930,7 +931,7 @@
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c]
    (has-country? c (registry/get)))
-  (^Boolean [c, ^Registry registry]
+  (^Boolean [c ^Registry registry]
    (contains? (registry/currency-id->country-ids registry) (id c))))
 
 (defn ^Boolean in-domain?
