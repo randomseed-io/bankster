@@ -917,7 +917,7 @@
   successfully converted into such using the registry provided."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (let [r (registry/get)] (or (currency? c r) (defined? c r))))
-  (^Boolean [c ^Registry registry] (let [r (registry/get)] (or (currency? c r) (defined? c r)))))
+  (^Boolean [c ^Registry registry] (or (currency? c registry) (defined? c registry))))
 
 (defn ^Boolean has-numeric-id?
   "Returns true if the given currency has a numeric ID."

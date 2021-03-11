@@ -129,3 +129,61 @@
              (c/same-ids? :crypto/USDT #currency crypto/USDT) => true
              (c/same-ids? :USDT #currency crypto/USDT) => false
              (c/same-ids? #currency crypto/USDT :PLN) => false))
+
+
+(facts "about currency properties"
+       (fact "when it's possible to get the numeric value of an ISO currency"
+             (c/nr #currency EUR) => 978
+             (c/nr #currency crypto/ETH) => nil
+             (c/nr #currency{:id :PLN :scale 1}) => nil)
+       (fact "when it's possible to get scale of a monetary amount"
+             (c/sc #currency EUR) => 2
+             (c/sc #currency crypto/ETH) => 18
+             (c/sc #currency XXX) => nil
+             (c/sc #currency{:id :PLN :scale 1}) => 1)
+       (fact "when it's possible to get the domain of a currency"
+             (c/domain #currency EUR) => :ISO-4217
+             (c/domain #currency crypto/ETH) => :CRYPTO
+             (c/domain #currency{:id :PLN :scale 1}) => nil)
+       (fact "when it's possible to get the kind of a currency"
+             (c/kind #currency EUR) => :FIAT
+             (c/kind #currency crypto/ETH) => :DECENTRALIZED
+             (c/kind #currency{:id :PLN :scale 1}) => nil)
+       (fact "when it's possible to get the code of a currency"
+             (c/code #currency EUR) => "EUR"
+             (c/code #currency crypto/ETH) => "crypto/ETH"
+             (c/code #currency{:id :PLN :scale 1}) => "PLN")
+       (fact "when it's possible to get the short code of a currency"
+             (c/short-code #currency EUR) => "EUR"
+             (c/short-code #currency crypto/ETH) => "ETH"
+             (c/short-code #currency{:id :PLN :scale 1}) => "PLN")
+       (fact "when it's possible to get the ID of a currency"
+             (c/id #currency EUR) => :EUR
+             (c/id #currency crypto/ETH) => :crypto/ETH
+             (c/id #currency{:id :PLN :scale 1}) => :PLN)
+       (fact "when it's possible to get countries associated with a currency"
+             (c/countries #currency USD) => #{:TL :IO :PR :BQ :EC :VG :US :GU :AS :PW :TC :MP :VI :FM :MH :UM}
+             (c/countries #currency crypto/ETH) => nil
+             (c/countries #currency{:id :PLN :scale 1}) => #{:PL})
+       (fact "when it's possible to distinguish other type of values from the currency"
+             (c/currency? #currency EUR) => true
+             (c/currency? #currency :EUR) => true
+             (c/currency? #currency{:id :AKAKAK}) => true
+             (c/currency? nil) => false
+             (c/currency? 123123) => false
+             (c/currency? 978) => false
+             (c/currency? :PLN) => false)
+       (fact "when it's possible to validate common currency representations as possible"
+             (c/possible? #currency EUR) => true
+             (c/possible? :EUR) => true
+             (c/possible? :crypto/ETH) => true
+             (c/possible? 978) => true
+             (c/possible? :LALALA) => false
+             (c/possible? 123123) => false
+             (c/possible? nil) => false)
+       (fact "when it's possible to check if a currency has numeric ID"
+             (c/has-numeric-id? #currency EUR) => true
+             (c/has-numeric-id? #currency crypto/ETH) => false
+             (c/has-numeric-id? #currency{:id :PLN :scale 1}) => false)
+
+       )
