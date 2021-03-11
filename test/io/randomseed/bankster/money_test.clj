@@ -46,17 +46,17 @@
              (m/of "12 PLN") => {:amount 12M :currency #currency PLN}
              (m/of "PLN 12") => {:amount 12M :currency #currency PLN}
              (m/of :12.00001PLN DOWN) => {:amount 12M :currency #currency PLN}
-             (m/of :PLN12.111 UP) => {:amount 12.12M :currency #currency PLN}
-             (m/of PLN12.111 UP) => {:amount 12.12M :currency #currency PLN}
-             (m/of PLN_12.111 UP) => {:amount 12.12M :currency #currency PLN}
-             (m/of :PLN 12.111 UP) => {:amount 12.12M :currency #currency PLN}
-             (m/of "12.111 PLN" UP) => {:amount 12.12M :currency #currency PLN}
+             (m/of :PLN12.111 UP)     => {:amount 12.12M :currency #currency PLN}
+             (m/of PLN12.111 UP)      => {:amount 12.12M :currency #currency PLN}
+             (m/of PLN_12.111 UP)     => {:amount 12.12M :currency #currency PLN}
+             (m/of :PLN 12.111 UP)    => {:amount 12.12M :currency #currency PLN}
+             (m/of "12.111 PLN" UP)   => {:amount 12.12M :currency #currency PLN}
              (m/of PLN) => {:amount 0M :currency #currency PLN}
              (m/with-currency EUR (m/of 1000)) => {:amount 1000M :currency #currency EUR}
              (m/of crypto/ETH) => {:amount 0M :currency #currency crypto/ETH}
-             (let [mv #money[10 PLN]] (m/of mv)) => {:amount 10M :currency #currency PLN}
+             (let [mv #money[10 PLN]] (m/of mv))    => {:amount 10M :currency #currency PLN}
              (m/of #currency{:id :KIKI :scale 1} 5) => {:amount 5M :currency #currency{:id KIKI :scale 1}}
-             (m/of #currency{:id :KIKI :scale 1}) => {:amount 0M :currency #currency{:id KIKI :scale 1}}
+             (m/of #currency{:id :KIKI :scale 1})   => {:amount 0M :currency #currency{:id KIKI :scale 1}}
              (let [mv (m/of #currency{:id :KIKI :scale 1} 123)]
                (m/of mv 10) => {:amount 10M  :currency #currency{:id :KIKI :scale 1}}
                (m/of mv)    => {:amount 123M :currency #currency{:id :KIKI :scale 1}})))
@@ -71,15 +71,15 @@
              #money crypto/ETH => {:amount 0M :currency #currency crypto/ETH}
              #money[19 EUR] => (m/of 19 :EUR)
              #money[19 {:id :EUR :domain :ISO-4217}] => {:amount 19M :currency (c/of {:id :EUR :domain :ISO-4217 :kind nil :numeric -1 :scale -1})}
-             #money[19 EUR] => {:amount 19M :currency #currency EUR}
-             #money[19 EUR] => {:amount 19M :currency #currency {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2}}
-             #money :19EUR => {:amount 19M :currency #currency EUR}
-             #money EUR_19.1 => {:amount 19.1M :currency #currency EUR}
+             #money[19 EUR]    => {:amount 19M :currency #currency EUR}
+             #money[19 EUR]    => {:amount 19M :currency #currency {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2}}
+             #money :19EUR     => {:amount 19M :currency #currency EUR}
+             #money EUR_19.1   => {:amount 19.1M :currency #currency EUR}
              #money "19.1 EUR" => {:amount 19.1M :currency #currency EUR}
-             #money/crypto ETH1.00000001 => {:amount 1.00000001M :currency #currency crypto/ETH}
+             #money/crypto ETH1.00000001   => {:amount 1.00000001M :currency #currency crypto/ETH}
              #money/crypto[ETH 1.00000001] => {:amount 1.00000001M :currency #currency crypto/ETH}
              #money/crypto[1.00000001 ETH] => {:amount 1.00000001M :currency #currency crypto/ETH}
-             #money crypto/ETH1.00000001 => {:amount 1.00000001M :currency #currency crypto/ETH}))
+             #money crypto/ETH1.00000001   => {:amount 1.00000001M :currency #currency crypto/ETH}))
 
 (facts "about Monetary protocol"
        (fact "when it can get ID of a currency"
