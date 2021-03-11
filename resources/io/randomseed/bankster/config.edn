@@ -230,7 +230,9 @@
   :crypto/USDT   {:kind :COMBANK       :scale  8}
   :crypto/USDC   {:kind :COMBANK       :scale  8}
   :crypto/ZEC    {:kind :DECENTRALIZED :scale  8}}
- :localized {:crypto/ADA        {:*       {:name "Ada"                   :symbol "₳"}}
+ :localized {:EUR               {:pl      {:name "euro"                  :symbol "€"}}
+             :PLN               {:pl      {:name "złoty polski"          :symbol "zł"}}
+             :crypto/ADA        {:*       {:name "Ada"                   :symbol "₳"}}
              :crypto/BCH        {:*       {:name "Bitcoin Cash"          :symbol "Ƀ"}}
              :crypto/BNB        {:*       {:name "Binance Coin"          :symbol "BNB"}}
              :crypto/BSV        {:*       {:name "Bitcoin SV"            :symbol "Ɓ"}}
