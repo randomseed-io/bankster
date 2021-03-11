@@ -750,9 +750,9 @@
                                 (.scale ^BigDecimal a)))
                  (if (instance? Money b)
                    (let [^BigDecimal ab (.amount ^Money b)]
-                     (do (scale/apply (.multiply ^BigDecimal a ^BigDecimal ab)
-                                      (.scale ^BigDecimal ab))
-                         (vreset! mon ^Money b)))
+                     (do (vreset! mon ^Money b)
+                         (scale/apply (.multiply ^BigDecimal a ^BigDecimal ab)
+                                      (.scale ^BigDecimal ab))))
                    (.multiply ^BigDecimal a ^BigDecimal (scale/apply b)))))
          res (reduce fun fir more)]
      (if-some [m @mon]
