@@ -179,4 +179,34 @@
              (c/iso? (m/of #currency{:id :crypto/PLN :scale 1} 1)) => false
              (c/iso? (m/of 1 #currency{:id :ETH :scale 18 :domain :ISO-4217})) => true
              (c/iso? (m/of 1 #currency{:id :PLN :scale 1 :domain :ISO-4217})) => true)
-       )
+       (fact "when it's possible to get a localized property"
+             (c/localized-property :name #money[1 :crypto/ETH] :pl) => "Ether"
+             (c/name #money[2 PLN] :pl) => "złoty polski"
+             (c/name #money[1 :crypto/ETH] :pl) => "Ether"
+             (c/name #money[0.1 :crypto/ETH] :pl_PL) => "Ether"
+             (c/name #money[1.1 crypto/ETH] :en) => "Ether"
+             (#{"EUR" "€"} (c/symbol #money[2.22 EUR] :en_US)) => truthy
+             (#{"EUR" "€"} (c/symbol #money EUR :en)) => truthy
+             (c/symbol #money PLN :pl) => "zł"))
+
+(facts "about Accountable protocol"
+       (fact "when it can create a monetary value based on a currency and an amount"
+             (m/value :EUR) => #money[0 EUR]
+             (m/value :EUR 12.34) => #money[12.34 EUR]
+             (m/value :EUR 12.345 scale/ROUND_UP) => #money[12.35 EUR]
+             (m/value 'EUR) => #money[0 EUR]
+             (m/value 'EUR 12.34) => #money[12.34 EUR]
+             (m/value 'EUR 12.345 scale/ROUND_UP) => #money[12.35 EUR]
+             (m/value #currency :EUR) => #money[0 EUR]
+             (m/value #currency :EUR 12.34) => #money[12.34 EUR]
+             (m/value 12.34 :EUR) => #money[12.34 EUR]
+             (m/value 12.34 #currency :EUR) => #money[12.34 EUR]
+             (m/value 12.345 #currency :EUR scale/ROUND_UP) => #money[12.35 EUR]
+             (m/with-currency EUR
+               (m/value 12.34) => #money[12.34 EUR]
+               (m/value 12.345 nil scale/ROUND_UP) => #money[12.35 EUR]))
+       (m/value #currency :EUR) => #money[0 EUR]
+       (fact "when it can create a monetary value based on other monetary value"
+             (m/value #money[5 EUR]) => #money[5 EUR]
+             (m/value #money[5 EUR] 12.34) => #money[12.34 EUR]
+             (m/value #money[10 EUR] 12.345 scale/ROUND_UP) => #money[12.35 EUR]))
