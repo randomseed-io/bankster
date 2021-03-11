@@ -65,16 +65,26 @@
         b      (when (seq b) (apply str b))]
     (if fdigi? [b a] [a b])))
 
+(defmacro currency-unit-strict
+  "Int."
+  {:tag Currency :added "1.0.0" :private true}
+  [a]
+  `(let [na# ~a] (when-not (number? na#) (currency/unit na#))))
+
 (defn parse-int
   "Internal parser with amount modifier."
   {:tag Money :private true :added "1.0.0"}
   (^Money [mod-fn amount]
    (when (some? amount)
-     (let [[cur am] (currency+amount amount)]
-       (parse-int mod-fn cur (or am 0M)))))
+     (if (instance? Money amount)
+       (parse-int mod-fn (.currency ^Money amount) (.amount ^Money amount))
+       (if-some [^Currency cur (currency-unit-strict amount)]
+         (parse-int mod-fn cur 0M)
+         (let [[cur am] (currency+amount amount)]
+           (parse-int mod-fn cur (or am 0M)))))))
   (^Money [mod-fn currency amount]
    (when (some? amount)
-     (if-some [^Currency c (currency/unit currency)]
+     (if-some [^Currency c (currency-unit-strict currency)]
        (let [s (int (scale/of ^Currency c))]
          (if (currency/val-auto-scaled? s)
            (Money. ^Currency c ^BigDecimal (scale/apply (mod-fn amount)))
@@ -84,7 +94,7 @@
                {:amount amount :currency currency})))))
   (^Money [mod-fn ^Currency currency amount ^RoundingMode rounding-mode]
    (when (some? amount)
-     (if-some [^Currency c (currency/unit currency)]
+     (if-some [^Currency c (currency-unit-strict currency)]
        (let [s (int (scale/of ^Currency c))]
          (if (currency/val-auto-scaled? s)
            (Money. ^Currency c ^BigDecimal (scale/apply (mod-fn amount)))
@@ -117,12 +127,28 @@
 (defn of-gen
   "Internal parser for of- macros."
   {:no-doc true :added "1.0.0"}
-  ([fun] `(~fun 0))
+  ([fun] `(~fun 0M))
   ([fun a]
    (if (or (ident? a) (string? a) (number? a))
      (let [[cur# am#] (currency+amount a)]
-       (if (nil? am#) `(~fun ~cur#) `(~fun ~cur# ~am#)))
-     `(~fun ~a)))
+       (if (or (nil? cur#) (nil? am#))
+         (let [[c# a#] (if (number? a) [nil a] [a 0M])]
+           (if (nil? c#)
+             `(~fun ~a#)
+             (let [curs# (currency/parse-currency-symbol c#)]
+               (if (keyword? curs#)
+                 `(~fun ~curs# ~a#)
+                 `(let [cc# ~c#]
+                    (if (instance? Money cc#)
+                      (~fun cc#)
+                      (~fun cc# ~a#)))))))
+         (if (nil? am#)
+           `(~fun ~cur#)
+           `(~fun ~cur# ~am#))))
+     `(let [a# ~a]
+        (if (or (number? a#) (instance? Money a#))
+          (~fun a#)
+          (~fun a# 0M)))))
   ([fun a b]
    (if (or (ident? a) (string? a) (number? a))
      (let [[cur# am#] (currency+amount a)]
@@ -203,43 +229,46 @@
 
   (value
     (^Money [money]                    money)
-    (^Money [money amount]             (parse ^Currency (currency/unit ^Money money) amount))
-    (^Money [money amount rounding]    (parse ^Currency (currency/unit ^Money money) amount rounding)))
+    (^Money [money amount]             (value (currency/unit ^Money money) amount))
+    (^Money [money amount rounding]    (value (currency/unit ^Money money) amount rounding)))
 
   Currency
 
   (value
-    (^Money [currency]                    (parse ^Currency currency 0M))
-    (^Money [currency amount]             (parse ^Currency currency amount))
-    (^Money [currency amount rounding]    (parse ^Currency currency amount rounding)))
+    (^Money [currency]
+     (Money. ^Currency currency ^BigDecimal (scale/apply 0M (.scale ^Currency currency))))
+    (^Money [currency amount]
+     (Money. ^Currency currency ^BigDecimal (scale/apply amount (.scale ^Currency currency))))
+    (^Money [currency amount rounding]
+     (Money. ^Currency currency ^BigDecimal (scale/apply amount (.scale ^Currency currency) rounding))))
 
   clojure.lang.Symbol
 
   (value
-    (^Money [currency-id+amount]          (parse currency-id+amount))
-    (^Money [currency-id amount]          (parse currency-id amount))
-    (^Money [currency-id amount rounding] (parse currency-id amount rounding)))
+    (^Money [currency-id]                 (value (currency/unit currency-id)))
+    (^Money [currency-id amount]          (value (currency/unit currency-id) amount))
+    (^Money [currency-id amount rounding] (value (currency/unit currency-id) amount rounding)))
 
   clojure.lang.Keyword
 
   (value
-    (^Money [currency-id+amount]          (parse currency-id+amount))
-    (^Money [currency-id amount]          (parse currency-id amount))
-    (^Money [currency-id amount rounding] (parse currency-id amount rounding)))
+    (^Money [currency-id]                 (value (currency/unit currency-id)))
+    (^Money [currency-id amount]          (value (currency/unit currency-id) amount))
+    (^Money [currency-id amount rounding] (value (currency/unit currency-id) amount rounding)))
 
   String
 
   (value
-    (^Money [currency-id+amount]          (parse currency-id+amount))
-    (^Money [currency-id amount]          (parse currency-id amount))
-    (^Money [currency-id amount rounding] (parse currency-id amount rounding)))
+    (^Money [currency-id]                 (value (currency/unit currency-id)))
+    (^Money [currency-id amount]          (value (currency/unit currency-id) amount))
+    (^Money [currency-id amount rounding] (value (currency/unit currency-id) amount rounding)))
 
   Number
 
   (value
-    (^Money [amount]                      (parse ^Currency currency/*default* amount))
-    (^Money [amount currency]             (parse currency amount))
-    (^Money [amount currency rounding]    (parse currency amount rounding)))
+    (^Money [currency-id]                 (value (currency/unit currency/*default*)))
+    (^Money [currency-id amount]          (value (currency/unit currency/*default*) amount))
+    (^Money [currency-id amount rounding] (value (currency/unit currency/*default*) amount rounding)))
 
   nil
 
@@ -1153,10 +1182,10 @@
      (if (or (nil? c) (and (sequential? c) (nil? (seq c))))
        '(quote nil)
        (if (nil? amount)
-         (value c)
+         (of-gen parse c)
          (if (nil? r)
-           (value c amount)
-           (value c amount (scale/parse-rounding r))))))))
+           (of-gen parse c amount)
+           (of-gen parse c amount r)))))))
 
 (defn defliteral
   "For the given currency identifier or a currency object it creates a tagged literal
