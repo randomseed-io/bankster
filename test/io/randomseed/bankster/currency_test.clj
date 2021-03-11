@@ -228,5 +228,6 @@
              (c/name :crypto/ETH :pl) => "Ether"
              (c/name :crypto/ETH :pl_PL) => "Ether"
              (c/name :crypto/ETH :en) => "Ether"
-             (c/symbol :EUR :en_US) => "€"
-             (c/symbol :EUR :en) => "€"))
+             (#{"EUR" "€"} (c/symbol :EUR :en_US)) => truthy
+             (#{"EUR" "€"} (c/symbol :EUR :en)) => truthy
+             (c/symbol :PLN :pl) => "zł"))
