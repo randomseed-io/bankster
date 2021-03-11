@@ -665,6 +665,15 @@
   (^Money [^Money a ^Money b & more]
    (reduce add (add ^Money a ^Money b) more)))
 
+(def ^{:tag Money :added "1.0.0"
+       :arglists '(^Money []
+                   ^Money [^Money a]
+                   ^Money [^Money a ^Money b]
+                   ^Money [^Money a ^Money b & more])}
+  add-scaled
+  "Alias for add."
+  add)
+
 (defn sub
   "Subtracts two or more amounts of money of the same currency."
   {:tag Money :added "1.0.0"}
@@ -688,6 +697,14 @@
                    {:minuend a :subtrahend b}))))))
   (^Money [^Money a ^Money b & more]
    (reduce sub (sub ^Money a ^Money b) more)))
+
+(def ^{:tag Money :added "1.0.0"
+       :arglists '(^Money [^Money a]
+                   ^Money [^Money a ^Money b]
+                   ^Money [^Money a ^Money b & more])}
+  sub-scaled
+  "Alias for sub."
+  sub)
 
 (defn mul-core
   "Internal multiplier."
