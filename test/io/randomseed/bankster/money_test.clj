@@ -143,5 +143,40 @@
              (c/has-numeric-id? #money[1 EUR]) => true
              (c/has-numeric-id? #money[1 crypto/ETH]) => false
              (c/has-numeric-id? (m/of 10 #currency{:id :PLN :scale 1})) => false)
-
+       (fact "when it's possible to check if a currency has any kind"
+             (c/has-kind? #money[1 EUR]) => true
+             (c/has-kind? #money[1 crypto/ETH]) => true
+             (c/has-kind? (m/of 1 #currency{:id :PLN :scale 1})) => false)
+       (fact "when it's possible to check if a currency has particular kind"
+             (c/kind-of? #money[1 EUR] :FIAT) => true
+             (c/kind-of? #money[1 crypto/ETH] :DECENTRALIZED) => true
+             (c/kind-of? (m/of 1 #currency{:id :PLN :scale 1}) :FIAT) => false)
+       (fact "when it's possible to check if a currency has assigned some country"
+             (c/has-country? #money[1 EUR]) => true
+             (c/has-country? #money[1 crypto/ETH]) => false
+             (c/has-country? (m/of #currency{:id :PLN :scale 1} 1)) => true)
+       (fact "when it's possible to check if a currency has assigned the given domain"
+             (c/in-domain? :ISO-4217 #money[1 EUR]) => true
+             (c/in-domain? nil #money[1 crypto/ETH]) => false
+             (c/in-domain? nil (m/of 1 #currency{:id :PLN :scale 1})) => true)
+       (fact "when it's possible to check if a currency is auto-scaled"
+             (c/big? #money[1 EUR]) => false
+             (c/big? #money/crypto[1 ETH]) => false
+             (c/big? (m/of 1 #currency{:id :PLN :scale 1})) => false
+             (c/big? (m/of 1 #currency{:id :XXX :scale 1})) => false
+             (c/big? (m/of 1 #currency{:id :PLN})) => true
+             (c/big? (m/of 1 #currency{:id :XXX})) => true
+             (c/big? (m/of 1 #currency :XXX)) => true)
+       (fact "when it's possible to check if a currency is cryptocurrency"
+             (c/crypto? #money[1 EUR]) => false
+             (c/crypto? #money/crypto[1 ETH]) => true
+             (c/crypto? (m/of 1 #currency{:id :PLN :scale 1})) => false
+             (c/crypto? (m/of #currency{:id :crypto/PLN :scale 1} 1)) => true)
+       (fact "when it's possible to check if a currency is an ISO currency"
+             (c/iso? #money[1 EUR]) => true
+             (c/iso? #money/crypto[1 ETH]) => false
+             (c/iso? (m/of 1 #currency{:id :PLN :scale 1})) => false
+             (c/iso? (m/of #currency{:id :crypto/PLN :scale 1} 1)) => false
+             (c/iso? (m/of 1 #currency{:id :ETH :scale 18 :domain :ISO-4217})) => true
+             (c/iso? (m/of 1 #currency{:id :PLN :scale 1 :domain :ISO-4217})) => true)
        )

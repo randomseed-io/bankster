@@ -130,7 +130,6 @@
              (c/same-ids? :USDT #currency crypto/USDT) => false
              (c/same-ids? #currency crypto/USDT :PLN) => false))
 
-
 (facts "about currency properties"
        (fact "when it's possible to get the numeric value of an ISO currency"
              (c/nr #currency EUR) => 978
@@ -185,5 +184,49 @@
              (c/has-numeric-id? #currency EUR) => true
              (c/has-numeric-id? #currency crypto/ETH) => false
              (c/has-numeric-id? #currency{:id :PLN :scale 1}) => false)
+       (fact "when it's possible to check if a currency has particular kind"
+             (c/kind-of? #currency EUR :FIAT) => true
+             (c/kind-of? #currency crypto/ETH :DECENTRALIZED) => true
+             (c/kind-of? #currency{:id :PLN :scale 1} :FIAT) => false)
+       (fact "when it's possible to check if a currency has any kind"
+             (c/has-kind? #currency EUR) => true
+             (c/has-kind? #currency crypto/ETH) => true
+             (c/has-kind? #currency{:id :PLN :scale 1}) => false)
+       (fact "when it's possible to check if a currency has assigned some country"
+             (c/has-country? #currency EUR) => true
+             (c/has-country? #currency crypto/ETH) => false
+             (c/has-country? #currency{:id :PLN :scale 1}) => true)
+       (fact "when it's possible to check if a currency has assigned the given domain"
+             (c/in-domain? :ISO-4217 #currency EUR) => true
+             (c/in-domain? nil #currency crypto/ETH) => false
+             (c/in-domain? nil #currency{:id :PLN :scale 1}) => true)
+       (fact "when it's possible to check if a currency is auto-scaled"
+             (c/big? #currency EUR) => false
+             (c/big? #currency crypto/ETH) => false
+             (c/big? #currency{:id :PLN :scale 1}) => false
+             (c/big? #currency{:id :XXX :scale 1}) => false
+             (c/big? #currency{:id :PLN}) => true
+             (c/big? #currency{:id :XXX}) => true
+             (c/big? #currency :XXX) => true)
+       (fact "when it's possible to check if a currency is cryptocurrency"
+             (c/crypto? #currency EUR) => false
+             (c/crypto? #currency crypto/ETH) => true
+             (c/crypto? #currency{:id :PLN :scale 1}) => false
+             (c/crypto? #currency{:id :crypto/PLN :scale 1}) => true)
+       (fact "when it's possible to check if a currency is an ISO currency"
+             (c/iso? #currency EUR) => true
+             (c/iso? #currency crypto/ETH) => false
+             (c/iso? #currency{:id :PLN :scale 1}) => false
+             (c/iso? #currency{:id :crypto/PLN :scale 1}) => false
+             (c/iso? #currency{:id :ETH :scale 18 :domain :ISO-4217}) => true
+             (c/iso? #currency{:id :PLN :scale 1 :domain :ISO-4217}) => true))
 
-       )
+(facts "about currency localized properties"
+       (fact "when it's possible to get a localized property"
+             (c/localized-property :name :crypto/ETH :pl) => "Ether"
+             (c/name :PLN :pl) => "złoty polski"
+             (c/name :crypto/ETH :pl) => "Ether"
+             (c/name :crypto/ETH :pl_PL) => "Ether"
+             (c/name :crypto/ETH :en) => "Ether"
+             (c/symbol :EUR :en_US) => "€"
+             (c/symbol :EUR :en) => "€"))
