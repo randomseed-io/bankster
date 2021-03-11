@@ -217,10 +217,43 @@
              (m/add #money[1.25 PLN]) => #money[1.25 PLN]
              (m/add #money[1.25 PLN] #money[1 PLN]) => #money[2.25 PLN]
              (m/add #money[10 PLN] #money[1.25 PLN] #money[1 PLN]) => #money[12.25 PLN])
-
        (fact "when it's possible to subtract monetary values"
              (m/sub #money[1.25 PLN]) => #money[-1.25 PLN]
-             (m/sub #money[1.25 PLN] #money[1 PLN]) => #money[0.25 PLN])
+             (m/sub #money[1.25 PLN] #money[1 PLN]) => #money[0.25 PLN]
+             (m/sub #money[10 PLN] #money[1.25 PLN] #money[1 PLN]) => #money[7.75 PLN])
+       (fact "when it's possible to divide monetary values"
+             (m/div 2) => 0.5M
+             (m/div #money[1 PLN] #money[4 PLN]) => 0.25M
+             (m/div #money[1 PLN] 4M) => #money[0.25 PLN]
+             (m/div #money[10 PLN] 2 2) => #money[2.50 PLN]
+             (m/div #money[10 PLN] #money[2 PLN] 1) => 5M
+             (m/div-scaled 2) => 0.5M
+             (m/div-scaled #money[1 PLN] #money[4 PLN]) => 0.25M
+             (m/div-scaled #money[1 PLN] 4M) => #money[0.25 PLN]
+             (m/div-scaled #money[10 PLN] 2 2) => #money[2.50 PLN]
+             (m/div-scaled #money[10 PLN] #money[2 PLN] 1) => 5M)
+       (fact "when it's possible to multiply monetary values"
+             (m/mul) => 1M
+             (m/mul 2) => 2M
+             (m/mul #money[2 PLN]) => #money[2 PLN]
+             (m/mul #money[1.10 PLN] 4.1) => #money[4.51 PLN]
+             (m/mul #money[1 PLN] 4.1 2) => #money[8.20 PLN]
+             (m/mul #money[10 PLN] 0.5) => #money[5 PLN]
+             (m/mul 2 #money[10 PLN]) => #money[20 PLN]
+             (m/mul 2 0.5 #money[10 PLN]) => #money[10 PLN]
+             (m/mul 2 0.5 2 #money[10 PLN]) => #money[20 PLN]
+             (m/mul 2 0.5 2 #money[10 PLN] 2.5) => #money[50 PLN]
+             (m/mul-scaled) => 1M
+             (m/mul-scaled 2) => 2M
+             (m/mul-scaled #money[2 PLN]) => #money[2 PLN]
+             (m/mul-scaled #money[1.10 PLN] 4.1) => #money[4.51 PLN]
+             (m/mul-scaled #money[1 PLN] 4.1 2) => #money[8.20 PLN]
+             (m/mul-scaled #money[10 PLN] 0.5) => #money[5 PLN]
+             (m/mul-scaled 2 #money[10 PLN]) => #money[20 PLN]
+             (m/mul-scaled 2 0.5 #money[10 PLN]) => #money[10 PLN]
+             (m/mul-scaled 2 0.5 2 #money[10 PLN]) => #money[20 PLN]
+             (m/mul-scaled 2 0.5 2 #money[10 PLN] 2.5) => #money[50 PLN]))
 
-
-       )
+(fact "about logical operations on monetary values"
+      
+      )
