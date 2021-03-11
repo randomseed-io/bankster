@@ -385,7 +385,7 @@
      (when-not (= n no-numeric-id) n)))
   ([c ^Registry locale registry]
    (let [n (.numeric ^Currency (unit c registry))]
-     (when-not (= n no-numeric-id)) n)))
+     (when-not (= n no-numeric-id) n))))
 
 (def ^{:tag Long
        :arglists '([c]
