@@ -43,7 +43,7 @@
   of-major, of-minor."))
 
 ;;
-;; Main coercer.
+;; Money generation macros.
 ;;
 
 (def ^{:private true :tag clojure.lang.PersistentHashSet :added "1.0.0"}

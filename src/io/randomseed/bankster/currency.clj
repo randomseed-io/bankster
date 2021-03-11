@@ -375,13 +375,19 @@
 
 (defn nr
   "Returns currency numeric ID as a long number. For currencies without the assigned
-  number it will return -1 (or currency/no-numeric-id). Locale argument is ignored."
-  {:tag 'long :added "1.0.0"}
-  (^long [c] (.numeric ^Currency (unit c)))
-  (^long [c ^Registry registry] (.numeric ^Currency (unit c registry)))
-  (^long [c ^Registry locale registry] (.numeric ^Currency (unit c registry))))
+  number it will return nil. Locale argument is ignored."
+  {:tag Long :added "1.0.0"}
+  ([c]
+   (let [n (.numeric ^Currency (unit c))]
+     (when-not (= n no-numeric-id) n)))
+  ([c ^Registry registry]
+   (let [n (.numeric ^Currency (unit c registry))]
+     (when-not (= n no-numeric-id) n)))
+  ([c ^Registry locale registry]
+   (let [n (.numeric ^Currency (unit c registry))]
+     (when-not (= n no-numeric-id)) n)))
 
-(def ^{:tag 'long
+(def ^{:tag Long
        :arglists '([c]
                    [c ^Registry registry]
                    [c locale ^Registry registry])}
@@ -389,7 +395,7 @@
   "Alias for nr."
   nr)
 
-(def ^{:tag 'long
+(def ^{:tag Long
        :arglists '([c]
                    [c ^Registry registry]
                    [c locale ^Registry registry])}
@@ -399,14 +405,20 @@
 
 (defn sc
   "Returns currency scale (decimal places) as an integer number. For currencies without
-  the assigned decimal places it will return -1 (the value of auto-scaled). Locale
+  the assigned decimal places it will return nil (the value of auto-scaled). Locale
   argument is ignored."
-  {:tag clojure.lang.Keyword :added "1.0.0"}
-  ([c] (.scale ^Currency (unit c)))
-  ([c ^Registry registry] (.scale ^Currency (unit c registry)))
-  ([c ^Registry locale registry] (.scale ^Currency (unit c registry))))
+  {:tag Integer :added "1.0.0"}
+  ([c]
+   (let [sc (.scale ^Currency (unit c))]
+     (when-not (= sc auto-scaled) sc)))
+  ([c ^Registry registry]
+   (let [sc (.scale ^Currency (unit c registry))]
+     (when-not (= sc auto-scaled) sc)))
+  ([c ^Registry locale registry]
+   (let [sc (.scale ^Currency (unit c registry))]
+     (when-not (= sc auto-scaled) sc))))
 
-(def ^{:tag 'int
+(def ^{:tag Integer
        :arglists '(^int [c]
                    ^int [c ^Registry registry]
                    [c locale ^Registry registry])}
@@ -571,10 +583,10 @@
 ;; Adding and removing to/from registry.
 ;;
 
-(defn- ^Registry remove-countries-core
+(defn ^Registry remove-countries-core
   "Removes countries from the given registry. Also unlinks constrained currencies in
   proper locations. Returns updated registry."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :private true :added "1.0.0"}
   [^Registry registry, country-ids]
   (if-not (some? (seq country-ids))
     registry
