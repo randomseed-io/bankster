@@ -209,8 +209,7 @@
   (unit
     (^Currency [^clojure.lang.Keyword num]
      (unit num (registry/get)))
-    (^Currency [^clojure.lang.Keyword num
-                ^Registry registry]
+    (^Currency [^clojure.lang.Keyword num ^Registry registry]
      (or (get (registry/currency-nr->currency registry) num)
          (throw (ex-info
                  (str "Currency with the numeric ID of " num " not found in a registry.")
