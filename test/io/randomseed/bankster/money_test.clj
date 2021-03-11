@@ -210,3 +210,17 @@
              (m/value #money[5 EUR]) => #money[5 EUR]
              (m/value #money[5 EUR] 12.34) => #money[12.34 EUR]
              (m/value #money[10 EUR] 12.345 scale/ROUND_UP) => #money[12.35 EUR]))
+
+(facts "about calculations on monetary values"
+       (fact "when it's possible to add monetary values"
+             (m/add) => 0M
+             (m/add #money[1.25 PLN]) => #money[1.25 PLN]
+             (m/add #money[1.25 PLN] #money[1 PLN]) => #money[2.25 PLN]
+             (m/add #money[10 PLN] #money[1.25 PLN] #money[1 PLN]) => #money[12.25 PLN])
+
+       (fact "when it's possible to subtract monetary values"
+             (m/sub #money[1.25 PLN]) => #money[-1.25 PLN]
+             (m/sub #money[1.25 PLN] #money[1 PLN]) => #money[0.25 PLN])
+
+
+       )
