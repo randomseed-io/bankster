@@ -925,11 +925,14 @@
          (loop [x fir, more more]
            (if-some [y (first more)]
              (if (instance? Money y)
-               (if (= (.id ^Currency (.currency ^Money a))
-                      (.id ^Currency (.currency ^Money y)))
-                 (reduce div-core (.divide ^BigDecimal x ^BigDecimal (.amount ^Money y)) (rest more))
-                 (throw (ex-info "Cannot divide by the amount of a different currency."
-                                 {:dividend a :divider b})))
+               (if mb
+                 (throw (ex-info "Cannot divide a regular number by the monetary amount."
+                                 {:dividend x :divider y}))
+                 (if (= (.id ^Currency (.currency ^Money a))
+                        (.id ^Currency (.currency ^Money y)))
+                   (reduce div-core (.divide ^BigDecimal x ^BigDecimal (.amount ^Money y)) (rest more))
+                   (throw (ex-info "Cannot divide by the amount of a different currency."
+                                   {:dividend a :divider b}))))
                (recur (.divide ^BigDecimal x ^BigDecimal (scale/apply y)) (rest more)))
              (if mb x
                  (Money. ^Currency  (.currency ^Money a)
