@@ -25,7 +25,7 @@
 ;;
 
 (defprotocol ^{:added "1.0.0"} Accountable
-  "This protocol is used to express monetary values using various numeric types and
+  "This protocol is used to express (monetary) values using various numeric types and
   currency representations."
 
   (value
@@ -228,19 +228,22 @@
   Money
 
   (value
-    (^Money [money]                    money)
-    (^Money [money amount]             (value (.currency ^Money money) amount))
-    (^Money [money amount rounding]    (value (.currency ^Money money) amount rounding)))
+    (^Money [money]                 money)
+    (^Money [money amount]          (value (.currency ^Money money) amount))
+    (^Money [money amount rounding] (value (.currency ^Money money) amount rounding)))
 
   Currency
 
   (value
     (^Money [currency]
-     (Money. ^Currency currency ^BigDecimal (scale/apply 0M (.scale ^Currency currency))))
+     (Money. ^Currency currency
+             ^BigDecimal (scale/apply 0M (.scale ^Currency currency))))
     (^Money [currency amount]
-     (Money. ^Currency currency ^BigDecimal (scale/apply amount (.scale ^Currency currency))))
+     (Money. ^Currency currency
+             ^BigDecimal (scale/apply amount (.scale ^Currency currency))))
     (^Money [currency amount rounding]
-     (Money. ^Currency currency ^BigDecimal (scale/apply amount (.scale ^Currency currency) rounding))))
+     (Money. ^Currency currency
+             ^BigDecimal (scale/apply amount (.scale ^Currency currency) rounding))))
 
   clojure.lang.Symbol
 
@@ -266,9 +269,9 @@
   Number
 
   (value
-    (^Money [currency-id]                 (value (currency/unit currency/*default*)))
-    (^Money [currency-id amount]          (value (currency/unit currency/*default*) amount))
-    (^Money [currency-id amount rounding] (value (currency/unit currency/*default*) amount rounding)))
+    (^Money [amount]                      (value (currency/unit currency/*default*) amount))
+    (^Money [amount currency-id]          (value (currency/unit currency-id) amount))
+    (^Money [amount currency-id rounding] (value (currency/unit currency-id) amount rounding)))
 
   nil
 
