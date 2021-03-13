@@ -546,6 +546,16 @@
   (^Boolean [^Money a ^Money b & more]
    (not (apply eq? ^Money a ^Money b more))))
 
+(defn ^Boolean ne-am?
+  "Returns true if the money amounts or their currencies are different, regardless of
+  their scales."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [^Money a] false)
+  (^Boolean [^Money a ^Money b]
+   (not (eq-am? ^Money a ^Money b)))
+  (^Boolean [^Money a ^Money b & more]
+   (not (apply eq-am? ^Money a ^Money b more))))
+
 (defn gt?
   "Returns non-nil if monetary amounts are in monotonically decreasing order,
   otherwise false."
