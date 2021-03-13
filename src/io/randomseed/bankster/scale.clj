@@ -292,8 +292,8 @@
              ^RoundingMode r)))
 
   (^BigDecimal amount
-   (^BigDecimal [num] (apply num))
-   (^BigDecimal [num scale] (apply num scale))
+   (^BigDecimal [num]         (apply num))
+   (^BigDecimal [num scale]   (apply num scale))
    (^BigDecimal [num scale r] (apply num scale r)))
 
   Number
