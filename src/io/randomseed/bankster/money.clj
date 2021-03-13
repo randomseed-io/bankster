@@ -463,8 +463,7 @@
   {:added "1.0.0" :tag 'int}
   (^Boolean [^Money a] (int 0))
   (^Boolean [^Money a ^Money b]
-   (when-not (= (.id ^Currency (.currency ^Money a))
-                (.id ^Currency (.currency ^Money b)))
+   (when-not (same-currencies? a b)
      (throw (ex-info "Cannot compare amounts of different currencies."
                      {:money-1 a :money-2 b})))
    (int (.compareTo ^BigDecimal (.amount ^Money a) ^BigDecimal (.amount ^Money b)))))
@@ -525,8 +524,7 @@
   (^Boolean [^Money a] true)
   (^Boolean [^Money a ^Money b]
    (and (.equals (.amount ^Money a) (.amount ^Money b))
-        (currency/same-ids? (.currency ^Money a)
-                            (.currency ^Money b))))
+        (same-currencies? a b)))
   (^Boolean [^Money a ^Money b & more]
    (if (eq? a b)
      (if (next more)
@@ -540,7 +538,7 @@
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money a] true)
   (^Boolean [^Money a ^Money b]
-   (if-not (currency/same-ids? (.currency ^Money a) (.currency ^Money b))
+   (if-not (same-currencies? a b)
      false
      (let [^BigDecimal am-a (.amount ^Money a)
            ^BigDecimal am-b (.amount ^Money b)
@@ -559,8 +557,8 @@
      false)))
 
 (defn ^Boolean ne?
-  "Returns true if the money amounts or their currencies are different. Note that
-  currencies with different scales are considered different."
+  "Returns true if the money amounts or their currencies are different, regardless of
+  their scales. Note that currencies with different scales are considered different."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money a] false)
   (^Boolean [^Money a ^Money b]
@@ -1017,8 +1015,7 @@
   {:tag Money :added "1.0.0"}
   ([^Money a] a)
   ([^Money a ^Money b]
-   (when-not (= (.id ^Currency (.currency ^Money a))
-                (.id ^Currency (.currency ^Money b)))
+   (when-not (same-currencies? a b)
      (throw (ex-info "Cannot compare amounts of different currencies."
                      {:money-1 a :money-2 b})))
    (if (lt? a b) a b))
@@ -1030,8 +1027,7 @@
   {:tag Money :added "1.0.0"}
   ([^Money a] a)
   ([^Money a ^Money b]
-   (when-not (= (.id ^Currency (.currency ^Money a))
-                (.id ^Currency (.currency ^Money b)))
+   (when-not (same-currencies? a b)
      (throw (ex-info "Cannot compare amounts of different currencies."
                      {:money-1 a :money-2 b})))
    (if (gt? a b) a b))
