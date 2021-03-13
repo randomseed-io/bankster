@@ -423,7 +423,14 @@
 
   (^Money apply
    (^Money [m]
-    ^Money m)
+    (let [cur (.currency ^Money m)]
+      (Money. ^Currency   cur
+              ^BigDecimal (if-some [rm scale/*rounding-mode*]
+                            (.setScale ^BigDecimal (.amount ^Money m)
+                                       (int (.scale ^Currency cur))
+                                       ^RoundingMode rm)
+                            (.setScale ^BigDecimal (.amount ^Money m)
+                                       (int (.scale ^Currency cur)))))))
    (^Money [m scale]
     (if (currency/val-auto-scaled? scale)
       (Money. ^Currency   (.currency ^Money m)
