@@ -345,14 +345,14 @@
 
 (defn strip
   "Strips trailing zeros from the amount of money. The internal scale for a currency
-  object is also updated.
+  object is NOT updated.
 
   Use with caution since it can make money object no longer compliant with a scale of
-  the currency."
+  the registered currency."
   {:tag Money :added "1.0.0"}
   [^Money a]
-  (Money. (.currency ^Money a)
-          (.stripTrailingZeros ^BigDecimal (.amount ^Money a))))
+  (Money. ^Currency   (.currency ^Money a)
+          ^BigDecimal (.stripTrailingZeros ^BigDecimal (.amount ^Money a))))
 
 ;;
 ;; Properties.
