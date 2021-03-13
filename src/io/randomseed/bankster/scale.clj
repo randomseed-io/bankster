@@ -122,11 +122,11 @@
 
   (apply
     [num] [num scale] [num scale rounding-mode]
-    "Converts the given value to a scalable with or without changing its scale (if
-  any). For values that already are scalable it changes their scales if called with a
-  second argument. The third argument, rounding-mode, must be present when
-  downscaling. For compound values (like monetary amounts) it will rescale the amount
-  and update scale information of the unit (e.g. currency component).")
+    "Converts the given value to a scalable with or without changing its scale. For
+  values that already are scalable it changes their scales if called with a second
+  argument. The third argument, rounding-mode, must be present when downscaling and
+  rounding is needed. For compound values (like monetary amounts) it will rescale the
+  amount but will NOT update scale information of the unit (e.g. currency component).")
 
   (amount
     [num] [num scale] [num scale rounding-mode]
@@ -267,17 +267,29 @@
 
   (^BigDecimal apply
    (^BigDecimal [num]
-    (/ (apply (.numerator ^clojure.lang.Ratio num))
-       (apply (.denominator ^clojure.lang.Ratio num))))
+    (let [^BigDecimal a (apply (.numerator   ^clojure.lang.Ratio num))
+          ^BigDecimal b (apply (.denominator ^clojure.lang.Ratio num))]
+      (if-some [rm *rounding-mode*]
+        (.divide ^BigDecimal a ^BigDecimal b
+                 ^MathContext (div-math-context ^BigDecimal a
+                                                ^BigDecimal b
+                                                ^RoundingMode rm))
+        (.divide ^BigDecimal a ^BigDecimal b))))
    (^BigDecimal [num scale]
     (if-some [rm *rounding-mode*]
-      (/ (apply (.numerator ^clojure.lang.Ratio num) (int scale) ^RoundingMode rm)
-         (apply (.denominator ^clojure.lang.Ratio num) (int scale) ^RoundingMode rm))
-      (/ (apply (.numerator ^clojure.lang.Ratio num) (int scale))
-         (apply (.denominator ^clojure.lang.Ratio num) (int scale)))))
+      (.divide ^BigDecimal (apply (.numerator   ^clojure.lang.Ratio num))
+               ^BigDecimal (apply (.denominator ^clojure.lang.Ratio num))
+               (int scale)
+               ^RoundingMode rm)
+      (.divide ^BigDecimal (apply (.numerator   ^clojure.lang.Ratio num))
+               ^BigDecimal (apply (.denominator ^clojure.lang.Ratio num))
+               (int scale)
+               ^RoundingMode ROUND_UNNECESSARY)))
    (^BigDecimal [num scale ^RoundingMode r]
-    (/ (apply (.numerator ^clojure.lang.Ratio num) (int scale) ^RoundingMode r)
-       (apply (.denominator ^clojure.lang.Ratio num) (int scale) ^RoundingMode r))))
+    (.divide ^BigDecimal (apply (.numerator   ^clojure.lang.Ratio num))
+             ^BigDecimal (apply (.denominator ^clojure.lang.Ratio num))
+             (int scale)
+             ^RoundingMode r)))
 
   (^BigDecimal amount
    (^BigDecimal [num] (apply num))
