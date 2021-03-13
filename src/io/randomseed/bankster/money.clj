@@ -228,9 +228,14 @@
   Money
 
   (value
-    (^Money [money]                 money)
-    (^Money [money amount]          (value (.currency ^Money money) amount))
-    (^Money [money amount rounding] (value (.currency ^Money money) amount rounding)))
+    (^Money [money]
+     money)
+    (^Money [money amount]
+     (Money. ^Currency   (.currency ^Money money)
+             ^BigDecimal (scale/apply amount (.scale ^BigDecimal (.amount ^Money money)))))
+    (^Money [money amount rounding]
+     (Money. ^Currency   (.currency ^Money money)
+             ^BigDecimal (scale/apply amount (.scale ^BigDecimal (.amount ^Money money)) rounding))))
 
   Currency
 
