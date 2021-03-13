@@ -445,8 +445,10 @@
    (^BigDecimal [num scale r] (.amount ^Money (apply num scale r)))))
 
 ;;
-;; Comparator.
+;; Comparators.
 ;;
+
+(declare same-currencies?)
 
 (defn compare-amounts
   "Compares two monetary amounts of the same currency, regardless of their
@@ -470,6 +472,28 @@
   {:tag Boolean :added "1.0.0"}
   [a]
   (instance? Money a))
+
+(defn rescaled?
+  "Returns true if the given monetary value has different scale than its currency (so
+  it was rescaled)."
+  {:tag Boolean :added "1.0.0"}
+  [a]
+  (not= (.scale ^Currency   (.currency ^Money a))
+        (.scale ^BigDecimal (.amount ^Money a))))
+
+(defn same-currencies?
+  "Returns true if both currencies are the same for the given money objects."
+  {:tag Boolean :added "1.0.0"}
+  [^Money a ^Money b]
+  (= ^Currency (.currency ^Money a)
+     ^Currency (.currency ^Money b)))
+
+(defn same-currency-ids?
+  "Returns true if both currencies have the same IDs for the given money objects."
+  {:tag Boolean :added "1.0.0"}
+  [^Money a ^Money b]
+  (= (.id ^Currency (.currency ^Money a))
+     (.id ^Currency (.currency ^Money b))))
 
 (defn ^Boolean eq?
   "Return true if the money amounts and their currencies are equal. Note that
@@ -639,6 +663,24 @@
                ^BigDecimal (.setScale ^BigDecimal (.amount ^Money money)
                                       (int scale)
                                       ^RoundingMode rounding-mode)))))
+
+(defn rescale
+  "Same as scale but its unary variant will rescale an amount of the given money to
+  conform it to its currency settings instead of returning the scale. It has the same
+  effect as calling `io.randomseed.bankster.scale/apply` on a money object without
+  passing any other arguments."
+  {:tag Money :added "1.0.0"}
+  (^Money [^Money money]
+   (let [cur (.currency ^Money money)]
+     (Money. ^Currency   cur
+             ^BigDecimal (if-some [rm scale/*rounding-mode*]
+                           (.setScale ^BigDecimal (.amount ^Money money)
+                                      (int (.scale ^Currency cur))
+                                      ^RoundingMode rm)
+                           (.setScale ^BigDecimal (.amount ^Money money)
+                                      (int (.scale ^Currency cur)))))))
+  (^Money [^Money money scale] (scale money scale))
+  (^Money [^Money money scale ^RoundingMode rounding-mode] (scale money scale rounding-mode)))
 
 (defn add
   "Adds two or more amounts of money of the same currency. When called without any
