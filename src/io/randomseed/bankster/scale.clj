@@ -86,6 +86,29 @@
   RoundingMode/UNNECESSARY)
 
 ;;
+;; Scale calculations.
+;;
+
+(defn div-max-precision
+  "Returns the maximum possible precision for the operation of dividing two BigDecimal
+  numbers."
+  {:tag 'int :added "1.0.0"}
+  [^BigDecimal a ^BigDecimal b]
+  (int (min (+ (int  (.precision ^BigDecimal a))
+               (long (Math/ceil (/ (* 10.0 (int (.precision ^BigDecimal b))) 3.0))))
+            Integer/MAX_VALUE)))
+
+(defn div-math-context
+  "Returns the MathContext set to handle the possible precision for the operation of
+  dividing two BigDecimal numbers. Optional rounding mode may be provided."
+  ([^BigDecimal a ^BigDecimal b]
+   (MathContext. (int (div-max-precision ^BigDecimal a ^BigDecimal b))
+                 (or ^RoundingMode *rounding-mode* ^RoundingMode RoundingMode/UNNECESSARY)))
+  ([^BigDecimal a ^BigDecimal b ^RoundingMode rounding-mode]
+   (MathContext. (int (div-max-precision ^BigDecimal a ^BigDecimal b))
+                 ^RoundingMode rounding-mode)))
+
+;;
 ;; Scalable protocol.
 ;;
 
