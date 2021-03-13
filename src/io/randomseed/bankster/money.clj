@@ -4,7 +4,7 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [format])
+  (:refer-clojure :exclude [format compare])
 
   (:require [trptr.java-wrapper.locale       :as             l]
             [io.randomseed.bankster          :refer       :all]
@@ -468,6 +468,22 @@
      (throw (ex-info "Cannot compare amounts of different currencies."
                      {:money-1 a :money-2 b})))
    (int (.compareTo ^BigDecimal (.amount ^Money a) ^BigDecimal (.amount ^Money b)))))
+
+(defn compare
+  "Compares two monetary amounts of the same currency and scale. Returns -1 if the
+  second one is less than, 0 if equal to, and 1 if it is greater than the first."
+  {:added "1.0.0" :tag 'int}
+  (^Boolean [^Money a] (int 0))
+  (^Boolean [^Money a ^Money b]
+   (let [^BigDecimal am-a (.amount ^Money a)
+         ^BigDecimal am-b (.amount ^Money b)]
+     (when-not (same-currencies? a b)
+       (throw (ex-info "Cannot compare amounts of different currencies."
+                       {:money-1 a :money-2 b})))
+     (when-not (= (.scale ^BigDecimal am-a) (.scale ^BigDecimal am-b))
+       (throw (ex-info "Cannot compare amounts having different decimal scales."
+                       {:money-1 a :money-2 b})))
+     (int (.compareTo ^BigDecimal am-a ^BigDecimal am-b)))))
 
 ;;
 ;; Predicates.
