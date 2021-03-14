@@ -892,76 +892,128 @@
          res)))))
 
 (defn div-core
-  "Internal divider."
-  {:private true :added "1.0.0"}
-  ([a b]
+  "In its binary variant it performs division without rounding and rescaling.
+
+  In its ternary variant divides with precision calculated to fit the longest possible
+  result (unless there is non-terminating decimal expansion then the result will be
+  rounded).
+
+  In its quartary variant divides with scale and rounding mode."
+  {:tag BigDecimal :added "1.0.0" :private true}
+  (^BigDecimal [^BigDecimal a b scale ^RoundingMode r]
+   (.divide ^BigDecimal a
+            ^BigDecimal (scale/apply b)
+            (int scale)
+            ^RoundingMode r))
+  (^BigDecimal [^BigDecimal a b ^RoundingMode r]
+   (let [^BigDecimal b (scale/apply b)]
+     (.divide ^BigDecimal  a
+              ^BigDecimal  b
+              ^MathContext (scale/div-math-context
+                            ^BigDecimal   a
+                            ^BidDecimal   b
+                            ^RoundingMode r))))
+  (^BigDecimal [^BigDecimal a b]
    (if (instance? Money b)
      (throw (ex-info "Cannot divide a regular number by the monetary amount."
-                     {:dividend a :divider b}))
-     (.divide ^BigDecimal a ^BigDecimal (scale/apply b))))
-  ([a b bm]
-   (if bm
-     (.divide ^BigDecimal a ^BigDecimal bm)
-     (.divide ^BigDecimal a ^BigDecimal (scale/apply b))))
-  ([a b ^BigDecimal ma ^BigDecimal mb]
-   (if ma
-     (if mb
-       (if (= (.id ^Currency (.currency ^Money a))
-              (.id ^Currency (.currency ^Money b)))
-         (.divide ^BigDecimal ma ^BigDecimal mb)
-         (throw (ex-info "Cannot divide by the amount of a different currency."
-                         {:dividend a :divider b})))
-       (.divide ^BigDecimal ma ^BigDecimal (scale/apply b)))
-     (if mb
-       (throw (ex-info "Cannot divide a regular number by the monetary amount."
-                       {:dividend a :divider b}))
-       (.divide ^BigDecimal (scale/apply a) ^BigDecimal (scale/apply b))))))
+                     {:dividend a :divisor b}))
+     (.divide ^BigDecimal a ^BigDecimal (scale/apply b)))))
 
 (declare div)
 
 (defn div-scaled
-  "Divides two or more amounts of money of the same currency or a number. If the two
-  values are a kind of Money, the result will be of BigDecimal number. If the earlier
-  value is a kind of Money and the second is a number, the result will be a Money. If
-  the number is first and the monetary amount is the second argument, an exception
-  will be thrown. The result will always be either a kind of Money or a BigDecimal
-  number.
+  "Divides an amount of money by other amount of money and/or optional numbers, or a
+  number by one or more numbers. Scales and optionally rounds each intermediate
+  result (if there are more divisors).
 
-  For a single value it returns a division of 1 by that number.
+  If the first given argument is a money and one of the divisors is also a kind of
+  Money, the result will be a BigDecimal kind of number. If the earlier value is a
+  kind of Money and the second is a number, the result will be a Money. If the number
+  is first and the monetary amount is the second argument, an exception will be
+  thrown.
+
+  For a single value it returns a division of 1 by that number and only works for
+  numbers.
 
   For more than 2 arguments it repeatedly divides their values as described and
-  re-scales each result to match the scale of a currency. If the previous
-  calculations produce a regular number, all consequent dividers must be regular
-  numbers. Practically, if the division begins with a monetary amount, only one
-  monetary amount is permitted later (which will cause the function to switch to the
-  regular numbers calculation since the units will cancel themselves).
+  re-scales each result to match the scale of the first encountered monetary
+  amount. If there are no monetary amounts involved the scale is calculated
+  dynamically.
 
-  Scaling is applied after each operation but only when the currently accumulated
-  result is a kind of Money. If the scaling requires rounding then enclosing the
-  expression within with-rounding is required."
+  If the scaling requires rounding then enclosing the expression within with-rounding
+  is required."
   {:added "1.0.0"}
   ([a]   (div 1M a))
   ([a b] (div a b))
   ([a b & more]
-   (if-not (instance? Money a)
-     (reduce div-core (div-core (scale/apply a) b) more)
-     (let [ma  (.amount ^Money a)
-           mb  (when (instance? Money b) (.amount ^Money b))
-           fir (scale/apply (div-core ma b mb) (.scale (if mb ^BigDecimal mb ^BigDecimal ma)))]
-       (loop [x fir, more more]
-         (if-some [y (first more)]
-           (if (instance? Money y)
-             (if (= (.id ^Currency (.currency ^Money a))
-                    (.id ^Currency (.currency ^Money y)))
-               (reduce div-core (scale/apply (.divide ^BigDecimal x ^BigDecimal (.amount ^Money y))
-                                             (.scale ^BigDecimal ma)) (rest more))
-               (throw (ex-info "Cannot divide by the amount of a different currency."
-                               {:dividend a :divider b})))
-             (recur (scale/apply (.divide ^BigDecimal x ^BigDecimal (scale/apply y))
-                                 (.scale ^BigDecimal ma)) (rest more)))
-           (if mb x
-               (Money. ^Currency  (.currency ^Money a)
-                       ^BigDecimal (scale/apply ^BigDecimal x (.scale ^BigDecimal ma))))))))))
+   (let [^RoundingMode rm (or scale/*rounding-mode* nil)]
+     (if-not (instance? Money a)
+       (if (instance? Money b)
+         (throw (ex-info "Cannot divide a regular number by the monetary amount."
+                         {:dividend a :divisor b}))
+         ;;
+         ;; decimals only - auto-scaling the results
+         ;;
+         (if rm
+           ;;
+           ;; rounding to max. possible precision
+           ;;
+           (reduce (fn ^BigDecimal [^BigDecimal a b]
+                     (when (instance? Money b)
+                       (throw (ex-info "Cannot divide a regular number by the monetary amount."
+                                       {:dividend a :divisor b})))
+                     (div-core ^BigDecimal a b ^RoundingMode rm))
+                   (div-core ^BigDecimal (scale/apply a) b ^RoundingMode rm)
+                   more)
+           ;;
+           ;; not rounding, not rescaling (since it's a decimal and rounding is not set)
+           ;;
+           (reduce div-core
+                   ^BigDecimal (div-core ^BigDecimal (scale/apply a) b)
+                   more)))
+       ;;
+       ;; first argument is money
+       ;;
+       (let [^RoundingMode rm (or rm scale/ROUND_UNNECESSARY)
+             ^BigDecimal am (.amount ^Money a)
+             am-scale (int (.scale ^BigDecimal am))
+             bm?      (instance? Money b)
+             bm       (if bm? ^BigDecimal (.amount ^Money b) b)]
+         (loop [^BigDecimal x (div-core ^BigDecimal am bm
+                                           (int (.scale ^BigDecimal am))
+                                           ^RoundingMode rm)
+                more more]
+           (if-some [y (first more)]
+             ;; there is next element
+             (if (instance? Money y)
+               ;; next is money
+               (if-not (same-currencies? a y)
+                 (throw (ex-info "Cannot divide by the amount of a different currency."
+                                 {:dividend a :divisor b}))
+                 ;; first 2 are money - treat like a regular decimals
+                 ;; but scale each time to match the scale of first encountered money
+                 ;; stop iteration and reduce since we don't expect money
+                 (reduce
+                  (fn ^BigDecimal [^BigDecimal a b]
+                    (div-core ^BigDecimal a b
+                                 (int am-scale)
+                                 ^RoundingMode rm))
+                  (div-core ^BigDecimal x
+                               ^BigDecimal (.amount ^Money y)
+                               (int am-scale)
+                               ^RoundingMode rm)
+                  (rest more)))
+               ;; second is a regular number, first is already a decimal
+               ;; loop and rescale to money with rounding
+               (recur (div-core ^BigDecimal x y
+                                   (int am-scale)
+                                   ^RoundingMode rm)
+                      (rest more)))
+             ;; no more data to process
+             ;; if we have not reduced monetary value, rescale it to match the initial
+             (if bm? x
+                 (Money. ^Currency   (.currency ^Money a)
+                         ^BigDecimal (scale/apply x am-scale rm))))))))))
 
 (defn div
   "Divides two or more amounts of money of the same currency or a number. If the two
@@ -974,14 +1026,15 @@
   For a single value it returns a division of 1 by that number.
 
   For more than 2 arguments it repeatedly divides their values as described. If the
-  previous calculations produce a regular number, all consequent dividers must be
+  previous calculations produce a regular number, all consequent divisors must be
   regular numbers. Practically, if the division begins with a monetary amount, only
   one monetary amount at some point later is permitted (which will cause the function
   to switch to the regular numbers calculation since the units will cancel themselves).
 
-  Scaling is applied only when the result is a kind of Money, unless the dynamic
-  variable `io.randomseed.bankster.scale/*each*` is set to a truthy value. This can
-  also be achieved by enclosing the expression within
+  Scaling is applied only when the result is a kind of Money and it is based on an
+  amount of encountered money (NOT the currency). The scale can be applied on each
+  calculation if the dynamic variable `io.randomseed.bankster.scale/*each*` is set to
+  a truthy value. This can also be achieved by enclosing the expression within
   `io.randomseed.bankster.scale/with-rescaling` (aliased as
   `io.randomseed.bankster.money/with-rescaling`) macro combining the switch and
   setting the scale. If the scaling requires rounding then enclosing the expression
@@ -989,36 +1042,58 @@
   {:added "1.0.0"}
   ([a] (div 1M a))
   ([a b]
-   (let [am (when (instance? Money a) (.amount ^Money a))
-         bm (when (instance? Money b) (.amount ^Money b))
-         mu (div-core a b am bm)]
-     (if am
-       (if bm mu
-           (Money. (.currency ^Money a) (scale/apply mu (.scale ^BigDecimal am))))
-       mu)))
+   (let [am? (instance? Money a)
+         bm? (instance? Money b)
+         ^RoundingMode rm (or scale/*rounding-mode* scale/ROUND_UNNECESSARY)
+         ^BigDecimal am (if am? (.amount ^Money a) (scale/apply a))
+         bm (if bm? (.amount ^Money b) b)]
+     (if am?
+       (if bm?
+         ^BigDecimal (div-core ^BigDecimal am bm
+                               (int (.scale am))
+                               ^RoundingMode rm)
+         (Money. ^Currency   (.currency ^Money a)
+                 ^BigDecimal (div-core ^BigDecimal am bm
+                                       (int (.scale am))
+                                       ^RoundingMode rm)))
+       (if bm?
+         (throw (ex-info "Cannot divide a regular number by the monetary amount."
+                         {:dividend a :divisor b}))
+         (if rm
+           (div-core ^BigDecimal am bm ^RoundingMode rm)
+           (.divide     ^BigDecimal am ^BigDecimal (scale/apply bm)))))))
   ([a b & more]
    (if scale/*each*
      (apply div-scaled a b more)
-     (if-not (instance? Money a)
-       (reduce div-core (div-core (scale/apply a) b) more)
-       (let [ma  (.amount ^Money a)
-             mb  (when (instance? Money b) (.amount ^Money b))
-             fir (div-core ma b mb)]
-         (loop [x fir, more more]
-           (if-some [y (first more)]
-             (if (instance? Money y)
-               (if mb
-                 (throw (ex-info "Cannot divide a regular number by the monetary amount."
-                                 {:dividend x :divider y}))
-                 (if (= (.id ^Currency (.currency ^Money a))
-                        (.id ^Currency (.currency ^Money y)))
-                   (reduce div-core (.divide ^BigDecimal x ^BigDecimal (.amount ^Money y)) (rest more))
-                   (throw (ex-info "Cannot divide by the amount of a different currency."
-                                   {:dividend a :divider b}))))
-               (recur (.divide ^BigDecimal x ^BigDecimal (scale/apply y)) (rest more)))
-             (if mb x
-                 (Money. ^Currency  (.currency ^Money a)
-                         ^BigDecimal (scale/apply ^BigDecimal x (int (.scale ^BigDecimal ma))))))))))))
+     (let [^RoundingMode rm (or scale/*rounding-mode* nil)]
+       (if-not (instance? Money a)
+         (if rm
+           (reduce (fn ^BigDecimal [^BigDecimal a b] (div-core ^BigDecimal a b ^RoundingMode rm))
+                   (div-core ^BigDecimal (scale/apply a) b ^RoundingMode rm)
+                   more)
+           (reduce div-core (div-core (scale/apply a) b) more))
+         (let [^RoundingMode rm (or rm scale/ROUND_UNNECESSARY)
+               ^BigDecimal   am (.amount ^Money a)
+               bm? (instance? Money b)
+               ^BigDecimal   bm (if bm? (.amount ^Money b) b)]
+           (loop [^BigDecimal x (div-core ^BigDecimal am bm ^RoundingMode rm)
+                  more more]
+             (if-some [y (first more)]
+               (if (instance? Money y)
+                 (if bm?
+                   (throw (ex-info "Cannot divide a regular number by the monetary amount."
+                                   {:dividend x :divisor y}))
+                   (if (same-currencies? a y)
+                     (reduce
+                      (fn ^BigDecimal [^BigDecimal a b] (div-core ^BigDecimal a b ^RoundingMode rm))
+                      (div-core ^BigDecimal x ^BigDecimal (.amount ^Money y) ^RoundingMode rm)
+                      (rest more))
+                     (throw (ex-info "Cannot divide by the amount of a different currency."
+                                     {:dividend a :divisor b}))))
+                 (recur (div-core ^BigDecimal x y ^RoundingMode rm) (rest more)))
+               (if bm? x
+                   (Money. ^Currency  (.currency ^Money a)
+                           ^BigDecimal (scale/apply x (.scale ^BigDecimal am))))))))))))
 
 (defn min-amount
   "Returns the least of the monetary amounts."
