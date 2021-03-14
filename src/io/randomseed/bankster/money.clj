@@ -719,23 +719,27 @@
   (^Money [] 0M)
   (^Money [^Money a] a)
   (^Money [^Money a ^Money b]
-   (if (nil? a) b
-       (if (nil? b) a
-           (let [^Currency cur-a (.currency ^Money a)]
-             (if (= (.id ^Currency cur-a)
-                    (.id ^Currency (.currency ^Money b)))
-               (let [^BigDecimal x (.amount ^Money a)
-                     ^BigDecimal y (.amount ^Money b)
-                     ^BigDecimal r (.add  ^BigDecimal x ^BigDecimal y)]
-                 (if (= ^int (.scale ^BigDecimal x)
-                        ^int (.scale ^BigDecimal y))
-                   (Money. ^Currency cur-a ^BigDecimal r)
-                   (Money. ^Currency (assoc cur-a :scale ^int (.scale ^BigDecimal r)) ^BigDecimal r)))
-               (throw (ex-info
-                       "Cannot add amounts of two different currencies."
-                       {:addend-1 a :addend-2 b})))))))
+   (if (same-currencies? a b)
+     (Money. ^Currency   (.currency ^Money a)
+             ^BigDecimal (.add  ^BigDecimal (.amount ^Money a)
+                                ^BigDecimal (.amount ^Money b)))
+     (throw (ex-info
+             "Cannot add amounts of two different currencies."
+             {:augend a :addend b}))))
   (^Money [^Money a ^Money b & more]
-   (reduce add (add ^Money a ^Money b) more)))
+   (let [^Currency cur-a (.currency ^Money a)
+         fun (fn [^BigDecimal a b]
+               (when-not (instance? Money b)
+                 (throw (ex-info
+                         "Cannot add a regular number to the monetary amount."
+                         {:augend a :addend b})))
+               (when-not (= cur-a (.currency ^Money b))
+                 (throw (ex-info
+                         "Cannot add amounts of two different currencies."
+                         {:augend a :addend b})))
+               (.add ^BigDecimal a ^BigDecimal (.amount ^Money b)))]
+     (Money. ^Currency   (.currency ^Money a)
+             ^BigDecimal (reduce fun (fun (.amount ^Money a) b) more)))))
 
 (def ^{:tag Money :added "1.0.0"
        :arglists '(^Money []
@@ -747,28 +751,34 @@
   add)
 
 (defn sub
-  "Subtracts two or more amounts of money of the same currency."
+  "Subtracts two or more amounts of money of the same currency. When called with a
+  single argument, negates its value."
   {:tag Money :added "1.0.0"}
   (^Money [^Money a]
    (Money. ^Currency   (.currency ^Money a)
-           ^BigDecimal (.subtract 0M ^BigDecimal (.amount ^Money a))))
+           ^BigDecimal (.negate ^BigDecimal (.amount ^Money a))))
   (^Money [^Money a ^Money b]
-   (if (nil? b) a
-       (let [^Currency cur-a (.currency ^Money a)]
-         (if (= (.id ^Currency cur-a)
-                (.id ^Currency (.currency ^Money b)))
-           (let [^BigDecimal x (.amount ^Money a)
-                 ^BigDecimal y (.amount ^Money b)
-                 ^BigDecimal r (.subtract ^BigDecimal x ^BigDecimal y)]
-             (if (= ^int (.scale x)
-                    ^int (.scale y))
-               (Money. ^Currency cur-a ^BigDecimal r)
-               (Money. ^Currency (assoc cur-a :scale ^int (.scale ^BigDecimal r)) ^BigDecimal r)))
-           (throw (ex-info
-                   "Cannot subtract amounts of two different currencies."
-                   {:minuend a :subtrahend b}))))))
+   (if (same-currencies? a b)
+     (Money. ^Currency   (.currency ^Money a)
+             ^BigDecimal (.subtract  ^BigDecimal (.amount ^Money a)
+                                     ^BigDecimal (.amount ^Money b)))
+     (throw (ex-info
+             "Cannot subtract amounts of two different currencies."
+             {:minuend a :subtrahend b}))))
   (^Money [^Money a ^Money b & more]
-   (reduce sub (sub ^Money a ^Money b) more)))
+   (let [^Currency cur-a (.currency ^Money a)
+         fun (fn [^BigDecimal a b]
+               (when-not (instance? Money b)
+                 (throw (ex-info
+                         "Cannot subtract a regular number from the monetary amount."
+                         {:minuend a :subtrahend b})))
+               (when-not (= cur-a (.currency ^Money b))
+                 (throw (ex-info
+                         "Cannot subtract amounts of two different currencies."
+                         {:minuend a :subtrahend b})))
+               (.subtract ^BigDecimal a ^BigDecimal (.amount ^Money b)))]
+     (Money. ^Currency   (.currency ^Money a)
+             ^BigDecimal (reduce fun (fun (.amount ^Money a) b) more)))))
 
 (def ^{:tag Money :added "1.0.0"
        :arglists '(^Money [^Money a]
