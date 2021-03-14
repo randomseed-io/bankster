@@ -189,6 +189,19 @@
              (#{"EUR" "€"} (c/symbol #money EUR :en)) => truthy
              (c/symbol #money PLN :pl) => "zł"))
 
+(facts "about monetary value properties"
+       (fact "when it's possible to get the amount"
+             (m/amount #money[123.4 EUR]) => 123.4M
+             (m/amount #money[123.4 crypto/ETH]) => 123.4M
+             (m/stripped-amount #money[123.4 EUR]) => 123.4M
+             (m/stripped-amount #money[123.4 crypto/ETH]) => 123.4M)
+       (fact "when it's possible to get the currency"
+             (m/currency #money[123.4 EUR]) => #currency EUR
+             (m/currency #money[123.4 crypto/ETH]) => #currency crypto/ETH)
+       (fact "when it's possible to get the scale"
+             (m/scale #money[123.4 EUR]) => 2
+             (m/scale #money[123.4 crypto/ETH]) => 18))
+
 (facts "about Accountable protocol"
        (fact "when it can create a monetary value based on a currency and an amount"
              (m/value :EUR) => #money[0 EUR]
@@ -212,26 +225,65 @@
              (m/value #money[10 EUR] 12.345 scale/ROUND_UP) => #money[12.35 EUR]))
 
 (facts "about calculations on monetary values"
-       (fact "when it's possible to add monetary values"
-             (m/add) => 0M
-             (m/add #money[1.25 PLN]) => #money[1.25 PLN]
-             (m/add #money[1.25 PLN] #money[1 PLN]) => #money[2.25 PLN]
-             (m/add #money[10 PLN] #money[1.25 PLN] #money[1 PLN]) => #money[12.25 PLN])
-       (fact "when it's possible to subtract monetary values"
-             (m/sub #money[1.25 PLN]) => #money[-1.25 PLN]
-             (m/sub #money[1.25 PLN] #money[1 PLN]) => #money[0.25 PLN]
-             (m/sub #money[10 PLN] #money[1.25 PLN] #money[1 PLN]) => #money[7.75 PLN])
        (fact "when it's possible to divide monetary values"
              (m/div 2) => 0.5M
              (m/div #money[1 PLN] #money[4 PLN]) => 0.25M
              (m/div #money[1 PLN] 4M) => #money[0.25 PLN]
              (m/div #money[10 PLN] 2 2) => #money[2.50 PLN]
              (m/div #money[10 PLN] #money[2 PLN] 1) => 5M
+             (m/div #money[1 PLN] 8 0.125) => #money[1 PLN]
+             (m/div #money[1 PLN] 8 0.125 #money[1 PLN]) => 1M
+             (m/div #money[1 EUR] 8 0.125) => #money[1 EUR]
+             (m/div 1 8 0.125)       => 1M
+             (m/div 1 8)             => 0.125M
+             (m/div 1 8 1)           => 0.125M
+             (m/div 1 3 0.333334)    => (throws ArithmeticException)
+             (m/div #money[1 PLN] 8) => (throws ArithmeticException)
+             (m/div 1 3)             => (throws ArithmeticException)
+             (m/div 1 3 1)           => (throws ArithmeticException)
+             (m/div #money[1 PLN] 3) => (throws ArithmeticException)
+             (scale/with-rounding UP
+               (m/div 1 8 0.125)         => 1M
+               (m/div 1 3 0.333334)      => 1.000017999964000071999857M
+               (m/div 1 8)               => 0.125M
+               (m/div 1 3)               => 0.33334M
+               (m/div 1 8 1)             => 0.125M
+               (m/div 1 3 1)             => 0.33334M
+               (m/div #money[1 PLN] 8)   => #money[0.13 PLN]
+               (m/div #money[1 PLN] 3)   => #money[0.34 PLN]
+               (m/div #money[1 PLN] 8 1) => #money[0.13 PLN]
+               (m/div #money[1 PLN] 3 1) => #money[0.34 PLN])
+             (let [m (m/div (m/scale #money[1 EUR] 10) 8)
+                   n (m/div 1M 8)]
+               (m/div #money[1 EUR] n 8M) => #money[1 EUR]
+               (m/div n 0.125) => 1M
+               (m/div n 1 0.125 1) => 1M
+               (m/div #money[1 EUR] m 8M) => 1M
+               (m/div m 0.125) => #money[1 EUR]
+               (m/div m 1 0.125 1) => #money[1 EUR])
              (m/div-scaled 2) => 0.5M
              (m/div-scaled #money[1 PLN] #money[4 PLN]) => 0.25M
              (m/div-scaled #money[1 PLN] 4M) => #money[0.25 PLN]
              (m/div-scaled #money[10 PLN] 2 2) => #money[2.50 PLN]
-             (m/div-scaled #money[10 PLN] #money[2 PLN] 1) => 5M)
+             (m/div-scaled #money[10 PLN] #money[2 PLN] 1) => 5M
+             (m/div-scaled (m/value :EUR 1) 8 0.125) => (throws ArithmeticException)
+             (scale/with-rounding UP
+               (m/div-scaled 1 1 4 2 0.125) => 1M
+               (m/div-scaled #money[1 PLN] 1 1 #money[3 PLN]) => 0.34M
+               (m/div-scaled #money[1 PLN] 1 1 3) => #money[0.34 PLN]
+               (m/div-scaled #money[1 PLN] 1 8 #money[0.125 PLN]) => 1M
+               (m/div-scaled #money[1 PLN] 1 #money[8 PLN] 0.125) => 1.04M
+               (m/div-scaled #money[1 PLN] #money[1 PLN] 8 0.125) => 1.04M
+               (m/div-scaled #money[1 PLN] 1 8 0.125) => #money[1.04 PLN]
+               (m/div-scaled 1 1 8 0.125) => 1M)
+             (let [m (m/div (m/scale #money[1 EUR] 10) 8)
+                   n (m/div 1M 8)]
+               (m/div-scaled #money[1 EUR] n 8M) => #money[1 EUR]
+               (m/div-scaled n 0.125) => 1M
+               (m/div-scaled n 1 0.125 1) => 1M
+               (m/div-scaled #money[1 EUR] m 8M) => 1M
+               (m/div-scaled m 0.125) => #money[1 EUR]
+               (m/div-scaled m 1 0.125 1) => #money[1 EUR]))
        (fact "when it's possible to multiply monetary values"
              (m/mul) => 1M
              (m/mul 2) => 2M
@@ -252,8 +304,170 @@
              (m/mul-scaled 2 #money[10 PLN]) => #money[20 PLN]
              (m/mul-scaled 2 0.5 #money[10 PLN]) => #money[10 PLN]
              (m/mul-scaled 2 0.5 2 #money[10 PLN]) => #money[20 PLN]
-             (m/mul-scaled 2 0.5 2 #money[10 PLN] 2.5) => #money[50 PLN]))
+             (m/mul-scaled 2 0.5 2 #money[10 PLN] 2.5) => #money[50 PLN])
+       (fact "when it's possible to add monetary values"
+             (m/add) => 0M
+             (m/add #money[1.25 PLN]) => #money[1.25 PLN]
+             (m/add #money[1.25 PLN] #money[1 PLN]) => #money[2.25 PLN]
+             (m/add #money[10 PLN] #money[1.25 PLN] #money[1 PLN]) => #money[12.25 PLN]
+             (let [m (m/div (scale/apply #money[1  EUR] 10) 8)
+                   n (m/div (scale/apply #money[-1 EUR] 10) 8)]
+               (m/add #money[10 EUR] m n) => #money[10 EUR]
+               (m/add m n) => #money[0 EUR]))
+       (fact "when it's possible to subtract monetary values"
+             (m/sub #money[1.25 PLN]) => #money[-1.25 PLN]
+             (m/sub #money[1.25 PLN] #money[1 PLN]) => #money[0.25 PLN]
+             (m/sub #money[10 PLN] #money[1.25 PLN] #money[1 PLN]) => #money[7.75 PLN]
+             (let [m (m/div (scale/apply #money[1  EUR] 10) 8)
+                   n (m/div (scale/apply #money[-1 EUR] 10) 8)]
+               (m/sub #money[10 EUR] m n) => #money[10 EUR]
+               (m/sub m n) => #money[0.25 EUR]))
+       (fact "when it's possible to increase and decrease minor and major components"
+             (m/inc-major #money[10.01 PLN]) => #money[11.01 PLN]
+             (m/inc-minor #money[10.01 PLN]) => #money[10.02 PLN]
+             (m/dec-major #money[10.01 PLN]) => #money[9.01 PLN]
+             (m/dec-minor #money[10.01 PLN]) => #money[10.00 PLN])
+       (fact "when it's possible to add and subtract minor and major components"
+             (m/add-major #money[10.01 PLN] 1) => #money[11.01 PLN]
+             (m/add-minor #money[10.01 PLN] 1) => #money[10.02 PLN]
+             (m/sub-major #money[10.01 PLN] 1) => #money[9.01 PLN]
+             (m/sub-minor #money[10.01 PLN] 1) => #money[10.00 PLN])
+       (fact "when it's possible to calculate min and max amounts"
+             (m/min-amount #money[10.01 PLN] #money[10.02 PLN]) => #money[10.01 PLN]
+             (m/min-amount #money[10.01 PLN] #money[10.02 PLN] #money[0 PLN]) => #money[0 PLN]
+             (m/max-amount #money[10.01 PLN] #money[10.02 PLN]) => #money[10.02 PLN]
+             (m/max-amount #money[10.01 PLN] #money[10.02 PLN] #money[0 PLN]) => #money[10.02 PLN])
+       (fact "when it's possible to convert amount of one currency to another"
+             (scale/with-rounding UP (m/convert #money[10.01 EUR] :PLN 4.55) => #money[45.55 PLN])
+             (m/convert #money[10.01 EUR] :PLN 4.55 scale/ROUND_UP) => #money[45.55 PLN]
+             (m/convert #money[10 EUR] :PLN 4.55) => #money[45.50 PLN])
+       (fact "when it's possible to negate the amount of a monetary value"
+             (m/neg #money[10 EUR])  => #money[-10 EUR])
+       (fact "when it's possible to get the absolute monetary value"
+             (m/pos #money[-10 EUR]) => #money[10 EUR]
+             (m/pos #money[10 EUR])  => #money[10 EUR])
+       (fact "when it's possible to round the amount of a monetary value"
+             (m/round #money[10.12 EUR] 1 scale/ROUND_UP)   => #money[10.20 EUR]
+             (m/round #money[10.12 EUR] 1 scale/ROUND_DOWN) => #money[10.10 EUR]
+             (scale/with-rounding DOWN (m/round #money[10.12 EUR] 1) => #money[10.10 EUR]))
+       (fact "when it's possible to get the major part of a monetary value"
+             (m/major #money[10.12 EUR])  => 10M
+             (m/major #money[-10.12 EUR]) => -10M)
+       (fact "when it's possible to get the minor part of a monetary value"
+             (m/minor #money[10.12 EUR])  => 12M
+             (m/minor #money[-10.12 EUR]) => -12M)
+       (fact "when it's possible to get major and minor parts of a monetary value"
+             (m/major-minor #money[10.12 EUR])  => [10M 12M]
+             (m/major-minor #money[-10.12 EUR]) => [-10M -12M])
+       (fact "when it's possible to compare amounts of monetary values"
+             (m/compare-amounts #money[10.12 EUR] #money[10.12 EUR]) => 0
+             (m/compare-amounts #money[10.12 EUR] #money[10.13 EUR]) => -1
+             (m/compare-amounts #money[10.12 EUR] #money[10.11 EUR]) => 1
+             (m/compare-amounts #money[10.12 EUR] (scale/apply #money[10.12 EUR] 10)) => 0
+             (m/compare-amounts #money[10.12 EUR] (scale/apply #money[10.13 EUR] 10)) => -1
+             (m/compare-amounts #money[10.12 EUR] (scale/apply #money[10.11 EUR] 10)) => 1)
+       (fact "when it's possible to compare monetary values"
+             (m/compare #money[10.12 EUR] #money[10.12 EUR]) => 0
+             (m/compare #money[10.12 EUR] #money[10.13 EUR]) => -1
+             (m/compare #money[10.12 EUR] #money[10.11 EUR]) => 1)
+       (fact "when it's possible to read scales and rescale monetary values"
+             (m/scale #money[10 PLN]) => 2
+             (m/scale #money[10 PLN] 4) => #money[10 PLN]
+             (m/scale (m/scale #money[10 PLN] 4)) => 4
+             (m/eq? #money[10 PLN] (m/scale #money[10 PLN] 4)) => false
+             (m/eq-am? #money[10 PLN] (m/scale #money[10 PLN] 4)) => true
+             (m/major-minor (m/add-minor (m/scale #money[10 PLN] 4) 1234)) => [10M 1234M]
+             (m/strip #money/crypto[12.2345 ETH]) => #money/crypto[12.2345 ETH]
+             (scale/of (m/strip #money/crypto[12.2345 ETH])) => 4
+             (scale/of (m/currency (m/strip #money/crypto[12.2345 ETH]))) => 18
+             (scale/of (m/amount (m/strip #money/crypto[12.2345 ETH]))) => 4
+             (m/rescaled? (m/strip #money/crypto[12.2345 ETH])) => true))
 
-(fact "about logical operations on monetary values"
-      
-      )
+(facts "about logical operations on monetary values"
+       (fact "when it's possible to check for Money object"
+             (m/money? #money[10.12 EUR]) => true
+             (m/money? #currency EUR) => false
+             (m/money? :EUR) => false
+             (m/money? :10_EUR) => false
+             (m/money? "10 EUR") => false
+             (m/money? 'EUR) => false
+             (m/money? 'EUR10) => false
+             (m/money? 123) => false
+             (m/money? nil) => false)
+       (fact "when it's possible to check if monetary values are equal"
+             (m/eq? #money[10 EUR]) => true
+             (m/eq? #money[10 EUR] #money[10 EUR]) => true
+             (m/eq? #money[10 EUR] #money[10 EUR] #money[10 EUR]) => true
+             (m/eq? #money[10 EUR] #money[20 EUR]) => false
+             (m/eq? #money[10 EUR] #money[20 EUR] #money[10 EUR]) => false
+             (m/eq? #money[10 EUR] #money[10 PLN] #money[10 EUR]) => false
+             (m/eq? #money[10 EUR] #money[10 EUR] (scale/apply #money[10 EUR] 3)) => false)
+       (fact "when it's possible to check if monetary values are different"
+             (m/ne? #money[10 EUR]) => false
+             (m/ne? #money[10 EUR] #money[10 EUR]) => false
+             (m/ne? #money[10 EUR] #money[10 EUR] #money[10 EUR]) => false
+             (m/ne? #money[10 EUR] #money[20 EUR]) => true
+             (m/ne? #money[10 EUR] #money[20 EUR] #money[10 EUR]) => true
+             (m/ne? #money[10 EUR] #money[10 PLN] #money[10 EUR]) => true
+             (m/ne? #money[10 EUR] #money[10 EUR] (scale/apply #money[10 EUR] 3)) => true)
+       (fact "when it's possible to check if monetary values are equal (regardless of scales)"
+             (m/eq-am? #money[10 EUR]) => true
+             (m/eq-am? #money[10 EUR] #money[10 EUR]) => true
+             (m/eq-am? #money[10 EUR] #money[10 EUR] #money[10 EUR]) => true
+             (m/eq-am? #money[10 EUR] #money[20 EUR]) => false
+             (m/eq-am? #money[10 EUR] #money[20 EUR] #money[10 EUR]) => false
+             (m/eq-am? #money[10 EUR] #money[10 PLN] #money[10 EUR]) => false
+             (m/eq-am? #money[10 EUR] #money[10 EUR] (scale/apply #money[10 EUR] 3)) => true)
+       (fact "when it's possible to check if monetary values are different (regardless of scales)"
+             (m/ne-am? #money[10 EUR]) => false
+             (m/ne-am? #money[10 EUR] #money[10 EUR]) => false
+             (m/ne-am? #money[10 EUR] #money[10 EUR] #money[10 EUR]) => false
+             (m/ne-am? #money[10 EUR] #money[20 EUR]) => true
+             (m/ne-am? #money[10 EUR] #money[20 EUR] #money[10 EUR]) => true
+             (m/ne-am? #money[10 EUR] #money[10 PLN] #money[10 EUR]) => true
+             (m/ne-am? #money[10 EUR] #money[10 EUR] (scale/apply #money[10 EUR] 3)) => false)
+       (fact "when it's possible to check if monetary values are in monotonically decreasing order"
+             (m/gt? #money[10 EUR]) => true
+             (m/gt? #money[10 EUR] #money[10 EUR]) => false
+             (m/gt? #money[10 EUR] #money[10 EUR] #money[10 EUR]) => false
+             (m/gt? #money[20 EUR] #money[10 EUR]) => true
+             (m/gt? #money[20 EUR] #money[10 EUR] #money[8 EUR]) => true)
+       (fact "when it's possible to check if monetary values are in monotonically non-increasing order"
+             (m/ge? #money[10 EUR]) => true
+             (m/ge? #money[10 EUR] #money[10 EUR]) => true
+             (m/ge? #money[10 EUR] #money[10 EUR] #money[10 EUR]) => true
+             (m/ge? #money[20 EUR] #money[10 EUR]) => true
+             (m/ge? #money[20 EUR] #money[10 EUR] #money[8 EUR]) => true
+             (m/ge? #money[20 EUR] #money[10 EUR] #money[11 EUR]) => false)
+       (fact "when it's possible to check if monetary values are in monotonically increasing order"
+             (m/lt? #money[10 EUR]) => true
+             (m/lt? #money[10 EUR] #money[10 EUR]) => false
+             (m/lt? #money[10 EUR] #money[10 EUR] #money[10 EUR]) => false
+             (m/lt? #money[20 EUR] #money[10 EUR]) => false
+             (m/lt? #money[20 EUR] #money[10 EUR] #money[8 EUR]) => false
+             (m/lt? #money[10 EUR] #money[20 EUR] #money[30 EUR]) => true)
+       (fact "when it's possible to check if monetary values are in monotonically non-decreasing order"
+             (m/le? #money[10 EUR]) => true
+             (m/le? #money[10 EUR] #money[10 EUR]) => true
+             (m/le? #money[10 EUR] #money[10 EUR] #money[10 EUR]) => true
+             (m/le? #money[20 EUR] #money[10 EUR]) => false
+             (m/le? #money[20 EUR] #money[10 EUR] #money[8 EUR]) => false
+             (m/le? #money[10 EUR] #money[20 EUR] #money[30 EUR]) => true)
+       (fact "when it's possible to check if a monetary value is negative"
+             (m/is-neg? #money[10 EUR]) => false
+             (m/is-neg? #money[-10 EUR]) => true)
+       (fact "when it's possible to check if a monetary value is positive"
+             (m/is-pos? #money[10 EUR]) => true
+             (m/is-pos? #money[-10 EUR]) => false)
+       (fact "when it's possible to check if a monetary value is zero"
+             (m/is-zero? #money[10 EUR]) => false
+             (m/is-zero? #money[-10 EUR]) => false
+             (m/is-zero? #money[0 PLN]) => true)
+       (fact "when it's possible to check if a monetary value is negative or zero"
+             (m/is-pos-or-zero? #money[10 EUR]) => true
+             (m/is-pos-or-zero? #money[-10 EUR]) => false
+             (m/is-pos-or-zero? #money[0 PLN]) => true)
+       (fact "when it's possible to check if a monetary value is positive or zero"
+             (m/is-neg-or-zero? #money[10 EUR]) => false
+             (m/is-neg-or-zero? #money[-10 EUR]) => true
+             (m/is-neg-or-zero? #money[0 PLN]) => true))
