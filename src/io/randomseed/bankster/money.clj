@@ -709,8 +709,8 @@
                                       ^RoundingMode rm)
                            (.setScale ^BigDecimal (.amount ^Money money)
                                       (int (.scale ^Currency cur)))))))
-  (^Money [^Money money scale] (scale money scale))
-  (^Money [^Money money scale ^RoundingMode rounding-mode] (scale money scale rounding-mode)))
+  (^Money [^Money money new-scale] (scale money new-scale))
+  (^Money [^Money money new-scale ^RoundingMode rounding-mode] (scale money new-scale rounding-mode)))
 
 (defn add
   "Adds two or more amounts of money of the same currency. When called without any
