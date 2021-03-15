@@ -295,6 +295,7 @@
              (m/mul 2 0.5 #money[10 PLN]) => #money[10 PLN]
              (m/mul 2 0.5 2 #money[10 PLN]) => #money[20 PLN]
              (m/mul 2 0.5 2 #money[10 PLN] 2.5) => #money[50 PLN]
+             (m/mul #money[1 PLN] 0.5 0.5 0.5 2) => #money[0.25 PLN]
              (m/mul-scaled) => 1M
              (m/mul-scaled 2) => 2M
              (m/mul-scaled #money[2 PLN]) => #money[2 PLN]
@@ -304,7 +305,10 @@
              (m/mul-scaled 2 #money[10 PLN]) => #money[20 PLN]
              (m/mul-scaled 2 0.5 #money[10 PLN]) => #money[10 PLN]
              (m/mul-scaled 2 0.5 2 #money[10 PLN]) => #money[20 PLN]
-             (m/mul-scaled 2 0.5 2 #money[10 PLN] 2.5) => #money[50 PLN])
+             (m/mul-scaled 2 0.5 2 #money[10 PLN] 2.5) => #money[50 PLN]
+             (m/mul-scaled 1 0.5 0.5 0.5 #money[1 PLN] 2) => (throws ArithmeticException)
+             (m/mul-scaled 1 0.5 0.5 0.5 #money[1 PLN])   => (throws ArithmeticException)
+             (m/mul-scaled #money[1 PLN] 0.5 0.5 0.5 2)   => (throws ArithmeticException))
        (fact "when it's possible to add monetary values"
              (m/add) => 0M
              (m/add #money[1.25 PLN]) => #money[1.25 PLN]
