@@ -496,11 +496,13 @@
 
 (defn rescaled?
   "Returns true if the given monetary value has different scale than its currency (so
-  it was rescaled)."
-  {:tag Boolean :added "1.0.0"}
+  it was rescaled). Returns false if the scale is no different. Returns nil if the
+  currency does not have a fixed scale."
+  {:added "1.0.0"}
   [a]
-  (not= (.scale ^Currency   (.currency ^Money a))
-        (.scale ^BigDecimal (.amount ^Money a))))
+  (let [csc (int (.scale ^Currency (.currency ^Money a)))]
+    (when-not (currency/val-auto-scaled? csc)
+      (not= csc (.scale ^BigDecimal (.amount ^Money a))))))
 
 (defn same-currencies?
   "Returns true if both currencies are the same for the given money objects."
