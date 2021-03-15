@@ -30,9 +30,9 @@
   "Expresses the value of currency's numeric ID that does not exist."
   (long -1))
 
-(def ^{:tag 'int  :const true :added "1.0.0"}
+(def ^{:tag 'int :const true :added "1.0.0"}
   auto-scaled
-  "Expresses the scale of currency that is automatic and not limited to certain
+  "Expresses the scale of a currency that is automatic and not limited to certain
   decimal places."
   (int -1))
 
@@ -377,28 +377,28 @@
   "Returns currency numeric ID as a long number. For currencies without the assigned
   number it will return nil. Locale argument is ignored."
   {:tag Long :added "1.0.0"}
-  ([c]
+  (^Long [c]
    (let [n (.numeric ^Currency (unit c))]
      (when-not (= n no-numeric-id) n)))
-  ([c ^Registry registry]
+  (^Long [c ^Registry registry]
    (let [n (.numeric ^Currency (unit c registry))]
      (when-not (= n no-numeric-id) n)))
-  ([c ^Registry locale registry]
+  (^Long [c ^Registry locale registry]
    (let [n (.numeric ^Currency (unit c registry))]
      (when-not (= n no-numeric-id) n))))
 
 (def ^{:tag Long
-       :arglists '([c]
-                   [c ^Registry registry]
-                   [c locale ^Registry registry])}
+       :arglists '(^Long [c]
+                   ^Long [c ^Registry registry]
+                   ^Long [c locale ^Registry registry])}
   numeric-id
   "Alias for nr."
   nr)
 
 (def ^{:tag Long
-       :arglists '([c]
-                   [c ^Registry registry]
-                   [c locale ^Registry registry])}
+       :arglists '(^Long [c]
+                   ^Long [c ^Registry registry]
+                   ^Long [c locale ^Registry registry])}
   numeric
   "Alias for nr."
   nr)
@@ -408,20 +408,20 @@
   the assigned decimal places it will return nil (the value of auto-scaled). Locale
   argument is ignored."
   {:tag Integer :added "1.0.0"}
-  ([c]
+  (^Integer [c]
    (let [sc (.scale ^Currency (unit c))]
      (when-not (= sc auto-scaled) sc)))
-  ([c ^Registry registry]
+  (^Integer [c ^Registry registry]
    (let [sc (.scale ^Currency (unit c registry))]
      (when-not (= sc auto-scaled) sc)))
-  ([c ^Registry locale registry]
+  (^Integer [c ^Registry locale registry]
    (let [sc (.scale ^Currency (unit c registry))]
      (when-not (= sc auto-scaled) sc))))
 
 (def ^{:tag Integer
-       :arglists '(^int [c]
-                   ^int [c ^Registry registry]
-                   [c locale ^Registry registry])}
+       :arglists '(^Integer [c]
+                   ^Integer [c ^Registry registry]
+                   ^Integer [c locale ^Registry registry])}
   scale
   "Alias for sc."
   sc)
