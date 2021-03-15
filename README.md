@@ -76,14 +76,6 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 ;; global registry lookup using tagged literal with an ISO currency number
 #currency 978
 #currency{:id :EUR, :domain :ISO-4217, :kind :FIAT, :nr 978, :sc 2}
-
-;; global registry lookup using tagged literal without an amount
-#money EUR
-#currency{:id :EUR, :domain :ISO-4217, :kind :FIAT, :nr 978, :sc 2}
-
-;; global registry lookup using namespaced tagged literal
-#money/crypto ETH
-#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 18}
 ```
 
 * It allows to **create a currency** and **register it**:
@@ -143,7 +135,13 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 (money/of crypto/BTC 10.1)
 #money/crypto[10.10000000 BTC]
 
-;; using tagged literal
+;; using tagged literals
+#money EUR
+#money[0.00 EUR]
+
+#money/crypto ETH
+#money/crypto[0.000000000000000000 ETH]
+
 #money[PLN 2.50]
 #money[2.50 PLN]
 
@@ -162,6 +160,22 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 ;; using default currency in a lexical context (alias for the above)
 (money/with-currency EUR (money/of 1000))
 #money[1000.00 EUR]
+
+;; using composed amounts and currencies
+#money EUR100
+#money [100 EUR]
+
+#money :100_EUR
+#money [100 EUR]
+
+#money :100EUR
+#money [100 EUR]
+
+#money "100 EUR"
+#money [100 EUR]
+
+(money/of "100EUR")
+#money [100 EUR]
 ```
 
 It allows to perform **logical operations** on monetary amounts:
@@ -222,6 +236,29 @@ It allows to perform **math operations** on monetary amounts:
 (money/div #money/crypto[5 BTC] #money/crypto[2 BTC])
 2.5M
 
+;; dividing that causes scale to exceed in one of the steps
+(money/div #money[1 PLN] 8 0.5)
+
+;; dividing that causes scale to exceed with rounding
+(scale/with-rounding HALF_UP
+  (money/div-scaled #money[1 PLN] 8 0.5))
+#money[0.26 PLN]
+
+;; handling non-terminating decimal expansion (currency scale)
+(scale/with-rounding HALF_UP
+  (money/div #money[1 PLN] 3))
+#money[0.33 PLN]
+
+;; rounding and unit reduction (currency scale)
+(scale/with-rounding HALF_UP
+  (money/div #money[1 PLN] #money[3 PLN]))
+0.33M
+
+;; rounding and unit reduction (regular numbers, dynamic scale)
+(scale/with-rounding HALF_UP
+  (money/div 1 3))
+0.33333M
+
 ;; multiplying money by numbers
 (money/mul #money/crypto[5 ETH] 1 2 3 4 5)
 #money/crypto[600.000000000000000000 ETH]
@@ -232,17 +269,17 @@ It allows to perform **math operations** on monetary amounts:
 
 ;; adding to minor part
 (money/add-minor #money[1.23 PLN] 77)
-#money[2.00 PLN]
+#Money[2.00 PLN]
 
 ;; converting
 (money/convert #money/crypto[1.5 ETH] :crypto/USDT 1646.75)
 #money/crypto[2470.12500000 USDT]
 
 ;; comparing
-(sort money/compare-amounts [(money/of 10    PLN)
-                             (money/of  0    PLN)
-                             (money/of 30    PLN)
-                             (money/of  1.23 PLN)])
+(sort money/compare [(money/of 10    PLN)
+                     (money/of  0    PLN)
+                     (money/of 30    PLN)
+                     (money/of  1.23 PLN)])
 (#money[0.00 PLN]
  #money[1.23 PLN]
  #money[10.00 PLN]
