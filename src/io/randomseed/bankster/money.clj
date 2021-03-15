@@ -845,7 +845,7 @@
                    ;; number, money
                    (let [^BigDecimal bm (.amount ^Money b)
                          bsc (int (.scale ^BigDecimal bm))]
-                     (vreset! mon ^LastMoney (LastMoney. ^Money b (int bsc)))
+                     (vreset! mon (LastMoney. ^Money b (int bsc)))
                      (mul-core ^BigDecimal a ^BigDecimal bm (int bsc) ^RoundingMode rm))
                    ;; number, number
                    (mul-core ^BigDecimal a ^BigDecimal b))))
@@ -1036,7 +1036,7 @@
            ;; not rounding, not rescaling (since it's a decimal and rounding is not set)
            ;;
            (reduce div-core-fn
-                   ^BigDecimal (div-core ^BigDecimal (scale/apply a) b)
+                   (div-core ^BigDecimal (scale/apply a) b)
                    more)))
        ;;
        ;; first argument is money
@@ -1144,7 +1144,7 @@
            (reduce (fn ^BigDecimal [^BigDecimal a b] (div-core ^BigDecimal a b ^RoundingMode rm))
                    (div-core ^BigDecimal (scale/apply a) b ^RoundingMode rm)
                    more)
-           (reduce div-core-fn ^BigDecimal (div-core ^BigDecimal (scale/apply a) b) more))
+           (reduce div-core-fn (div-core ^BigDecimal (scale/apply a) b) more))
          (let [^RoundingMode rm (or rm scale/ROUND_UNNECESSARY)
                ^BigDecimal   am (.amount ^Money a)
                bm? (instance? Money b)
