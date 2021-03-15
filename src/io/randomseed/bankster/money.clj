@@ -788,16 +788,15 @@
   "Alias for sub."
   sub)
 
-(defn mul-core
+(defmacro mul-core
   "Internal multiplier."
-  {:tag BigDecimal :added "1.0.0" :private true}
-  (^BigDecimal [^BigDecimal a b scale ^RoundingMode r]
-   (.setScale ^BigDecimal (.multiply ^BigDecimal a ^BigDecimal (scale/apply b))
-              (int scale)
-              ^RoundingMode r))
-  (^BigDecimal [^BigDecimal a b]
-   (.multiply ^BigDecimal a
-              ^BigDecimal (scale/apply b))))
+  {:added "1.0.0" :private true}
+  ([a b scale r]
+   `(.setScale ^BigDecimal (.multiply ^BigDecimal ~a ^BigDecimal (scale/apply ~b))
+               (int ~scale)
+               ^RoundingMode ~r))
+  ([a b]
+   `(.multiply ^BigDecimal ~a ^BigDecimal (scale/apply ~b))))
 
 (declare mul)
 (defrecord LastMoney [^Money m ^int sc])
@@ -941,7 +940,16 @@
                                           (int (.scale ^BigDecimal (.amount ^Money m))))))
          ^BigDecimal res)))))
 
-(defn div-core
+(defn div-core-fn
+  "Performs division without rounding and rescaling."
+  {:tag BigDecimal :added "1.0.0" :private true}
+  (^BigDecimal [^BigDecimal a b]
+   (if (instance? Money b)
+     (throw (ex-info "Cannot divide a regular number by the monetary amount."
+                     {:dividend a :divisor b}))
+     (.divide ^BigDecimal a ^BigDecimal (scale/apply b)))))
+
+(defmacro div-core
   "In its binary variant it performs division without rounding and rescaling.
 
   In its ternary variant divides with precision calculated to fit the longest possible
@@ -949,25 +957,27 @@
   rounded).
 
   In its quartary variant divides with scale and rounding mode."
-  {:tag BigDecimal :added "1.0.0" :private true}
-  (^BigDecimal [^BigDecimal a b scale ^RoundingMode r]
-   (.divide ^BigDecimal a
-            ^BigDecimal (scale/apply b)
-            (int scale)
-            ^RoundingMode r))
-  (^BigDecimal [^BigDecimal a b ^RoundingMode r]
-   (let [^BigDecimal b (scale/apply b)]
-     (.divide ^BigDecimal  a
-              ^BigDecimal  b
-              ^MathContext (scale/div-math-context
-                            ^BigDecimal   a
-                            ^BigDecimal   b
-                            ^RoundingMode r))))
+  {:added "1.0.0" :private true}
+  ([a b scale r]
+   `(.divide ^BigDecimal ~a
+             ^BigDecimal (scale/apply ~b)
+             (int ~scale)
+             ^RoundingMode ~r))
+  ([a b r]
+   `(let [^BigDecimal a# ~a
+          ^BigDecimal b# (scale/apply ~b)]
+      (.divide ^BigDecimal  a#
+               ^BigDecimal  b#
+               ^MathContext (scale/div-math-context
+                             ^BigDecimal   a#
+                             ^BigDecimal   b#
+                             ^RoundingMode ~r))))
   (^BigDecimal [^BigDecimal a b]
-   (if (instance? Money b)
-     (throw (ex-info "Cannot divide a regular number by the monetary amount."
-                     {:dividend a :divisor b}))
-     (.divide ^BigDecimal a ^BigDecimal (scale/apply b)))))
+   `(let [b# ~b]
+      (if (instance? Money b#)
+        (throw (ex-info "Cannot divide a regular number by the monetary amount."
+                        {:dividend ~a :divisor b#}))
+        (.divide ^BigDecimal ~a ^BigDecimal (scale/apply b#))))))
 
 (declare div)
 
@@ -1025,7 +1035,7 @@
            ;;
            ;; not rounding, not rescaling (since it's a decimal and rounding is not set)
            ;;
-           (reduce div-core
+           (reduce div-core-fn
                    ^BigDecimal (div-core ^BigDecimal (scale/apply a) b)
                    more)))
        ;;
@@ -1134,7 +1144,7 @@
            (reduce (fn ^BigDecimal [^BigDecimal a b] (div-core ^BigDecimal a b ^RoundingMode rm))
                    (div-core ^BigDecimal (scale/apply a) b ^RoundingMode rm)
                    more)
-           (reduce div-core (div-core (scale/apply a) b) more))
+           (reduce div-core-fn ^BigDecimal (div-core ^BigDecimal (scale/apply a) b) more))
          (let [^RoundingMode rm (or rm scale/ROUND_UNNECESSARY)
                ^BigDecimal   am (.amount ^Money a)
                bm? (instance? Money b)
