@@ -18,7 +18,9 @@ currencies support.
 * Polymorphic interface for currencies and monetary amounts.
 * Useful macros to express currencies and monetary amounts with various forms.
 * Namespaced identifiers for non-ISO currencies (e.g. `crypto/ETH`).
-* Common math operators that can be used interchangeably with other numeric data.
+* Common math operators which can be used interchangeably with other numeric data.
+* Optional rescaling of monetary amounts with keeping track of nominal scales.
+* Auto-rescaling of numeric values in math operations to handle non-terminal decimal expansion.
 * Tagged literals for currencies and monetary amounts.
 * Customizable currency and money formatting with locale support.
 
@@ -379,8 +381,8 @@ Full documentation including usage examples is available at:
 
 ## Deum Ethereum
 
-I write Free Software for fun. If you are finding it useful and you are Ethereum
-fan too, here it is: `0x2Bed4D2d9240F9fB321bC0194222A4888F62dd0d`.
+I write Free Software for fun. If you are finding it useful and you are the Ether fan
+too, here it is: `0x2Bed4D2d9240F9fB321bC0194222A4888F62dd0d`.
 
 Stellar Lumens are cool too:
 `GBMUQ6U6334Y5HWF3XGMCRQZKVMFDCSX4YADEVZO7ZXIBDJDXXX2BSME`.

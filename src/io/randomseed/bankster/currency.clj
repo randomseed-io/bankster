@@ -689,7 +689,7 @@
       (map/dissoc-in registry [:cur-id->localized (.id ^Currency currency)]))))
 
 (defn ^Registry add-localized-properties
-  "Adds localized properties for a currency to the given registry. Overwrites existing
+  "Adds localized properties of a currency to the given registry. Overwrites existing
   properties."
   {:tag Registry :added "1.0.0"}
   [^Registry registry ^Currency currency properties]
