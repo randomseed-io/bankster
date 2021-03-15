@@ -1323,6 +1323,18 @@
   [^Money a]
   [(major->long a) (minor->long a)])
 
+(defn ->double
+  "Converts an amount of the given money to double."
+  {:tag 'double :added "1.0.0"}
+  [^Money a]
+  (.doubleValue ^BigDecimal (.amount ^Money a)))
+
+(defn ->float
+  "Converts an amount of the given money to float."
+  {:tag 'float :added "1.0.0"}
+  [^Money a]
+  (.floatValue ^BigDecimal (.amount ^Money a)))
+
 (defn add-major
   "Increases major amount by the given number. If the number is also expressed as money
   and it has decimal parts, they will be truncated."
