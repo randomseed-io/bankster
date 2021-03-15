@@ -200,7 +200,7 @@
   :XSU {:kind :FIDUCIARY    :numeric 994}
   :XTS {:kind :EXPERIMENTAL :numeric 963}
   :XUA {:kind :COMBANK      :numeric 965}
-  :XXX {:numeric 999}
+  :XXX {:domain :ISO-4217   :numeric 999}
   :YER {:kind :FIAT :numeric 886 :domain :ISO-4217 :scale 2}
   :ZAR {:kind :FIAT :numeric 710 :domain :ISO-4217 :scale 2}
   :ZMW {:kind :FIAT :numeric 967 :domain :ISO-4217 :scale 2}
