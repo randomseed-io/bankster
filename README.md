@@ -320,11 +320,17 @@ currencies:
 (scale/of :GBP)
 2
 
+;; scale of the currency (low-level)
 (scale/of :XXX)
 -1
 
+;; scale of the amount
 (scale/of #money[12.34567 XXX])
-5
+5 ; current scale
+
+;; nominal scale of the currency
+(currency/scale #money[12.34567 XXX])
+nil ; auto-scaled
 
 (currency/auto-scaled? :XXX)
 true
@@ -337,6 +343,15 @@ true
 
 (scale/apply #currency USD 8)  ;; use with caution
 #currency{:id :USD, :domain :ISO-4217, :kind :FIAT, :nr 840, :sc 8}
+
+(money/rescale #money[10 USD] 8)
+#money[10.00000000 USD]
+
+;; unary variant of money/rescale
+;; rescales back to nominal scale
+(money/rescale
+ (money/rescale #money[10 USD] 8))
+#money[10.00 USD]
 
 (scale/amount #money[108.11 CHF])
 108.11M
