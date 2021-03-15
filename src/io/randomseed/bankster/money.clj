@@ -717,8 +717,15 @@
   arguments, returns 0."
   {:tag Money :added "1.0.0"}
   (^Money [] 0M)
-  (^Money [^Money a] a)
+  (^Money [^Money a]
+   (when-not (instance? Money a)
+     (throw (ex-info "Argument must be a kind of Money."
+                     {:augend a})))
+   a)
   (^Money [^Money a ^Money b]
+   (when-not (and (instance? Money a) (instance? Money b))
+     (throw (ex-info "Both arguments must be a kind of Money."
+                     {:augend a :addend b})))
    (if (same-currencies? a b)
      (Money. ^Currency   (.currency ^Money a)
              ^BigDecimal (.add  ^BigDecimal (.amount ^Money a)
@@ -727,6 +734,9 @@
              "Cannot add amounts of two different currencies."
              {:augend a :addend b}))))
   (^Money [^Money a ^Money b & more]
+   (when-not (instance? Money a)
+     (throw (ex-info "Both arguments must be a kind of Money."
+                     {:augend a :addend b})))
    (let [^Currency cur-a (.currency ^Money a)
          fun (fn [^BigDecimal a b]
                (when-not (instance? Money b)
@@ -755,9 +765,15 @@
   single argument, negates its value."
   {:tag Money :added "1.0.0"}
   (^Money [^Money a]
+   (when-not (instance? Money a)
+     (throw (ex-info "Argument must be a kind of Money."
+                     {:augend a})))
    (Money. ^Currency   (.currency ^Money a)
            ^BigDecimal (.negate ^BigDecimal (.amount ^Money a))))
   (^Money [^Money a ^Money b]
+   (when-not (and (instance? Money a) (instance? Money b))
+     (throw (ex-info "Both arguments must be a kind of Money."
+                     {:augend a :addend b})))
    (if (same-currencies? a b)
      (Money. ^Currency   (.currency ^Money a)
              ^BigDecimal (.subtract  ^BigDecimal (.amount ^Money a)
@@ -766,6 +782,9 @@
              "Cannot subtract amounts of two different currencies."
              {:minuend a :subtrahend b}))))
   (^Money [^Money a ^Money b & more]
+   (when-not (instance? Money a)
+     (throw (ex-info "Both arguments must be a kind of Money."
+                     {:augend a :addend b})))
    (let [^Currency cur-a (.currency ^Money a)
          fun (fn [^BigDecimal a b]
                (when-not (instance? Money b)
@@ -1263,7 +1282,7 @@
                             (int sc)))))))
 
 (defn major
-  "Returns the major part of the given amount."
+  "Returns the major part of the given amount of money."
   {:tag BigDecimal :added "1.0.0"}
   ([^Money a]
    (.setScale ^BigDecimal (.amount ^Money a) 0 scale/ROUND_DOWN)))
