@@ -20,7 +20,7 @@ currencies support.
 * Namespaced identifiers for non-ISO currencies (e.g. `crypto/ETH`).
 * Common math operators which can be used interchangeably with other numeric data.
 * Optional rescaling of monetary amounts with keeping track of nominal scales.
-* Auto-rescaling of numeric values in math operations to handle non-terminal decimal expansion.
+* Auto-rescaling of numeric values in math operations to handle non-terminating decimal expansion.
 * Tagged literals for currencies and monetary amounts.
 * Customizable currency and money formatting with locale support.
 
