@@ -79,7 +79,7 @@
   :IEP {:kind :FIAT :numeric 372 :domain :ISO-4217 :scale 2}
   :ILS {:kind :FIAT :numeric 376 :domain :ISO-4217 :scale 2}
   :INR {:kind :FIAT :numeric 356 :domain :ISO-4217 :scale 2}
-  :IQD {:kind :FIAT :numeric 368 :domain :ISO-4217 :scale 3 :weight 1}
+  :IQD {:kind :FIAT :numeric 368 :domain :ISO-4217 :scale 3}
   :IRR {:kind :FIAT :numeric 364 :domain :ISO-4217 :scale 2}
   :ISK {:kind :FIAT :numeric 352 :domain :ISO-4217 :scale 0}
   :ITL {:kind :FIAT :numeric 380 :domain :ISO-4217 :scale 0}
