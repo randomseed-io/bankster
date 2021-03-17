@@ -55,11 +55,11 @@
              (m/with-currency EUR (m/of 1000)) => {:amount 1000M :currency #currency EUR}
              (m/of crypto/ETH) => {:amount 0M :currency #currency crypto/ETH}
              (let [mv #money[10 PLN]] (m/of mv))    => {:amount 10M :currency #currency PLN}
-             (m/of #currency{:id :KIKI :scale 1} 5) => {:amount 5M :currency #currency{:id KIKI :scale 1}}
-             (m/of #currency{:id :KIKI :scale 1})   => {:amount 0M :currency #currency{:id KIKI :scale 1}}
+             (m/of #currency{:id :KIKI :scale 1} 5) => {:amount 5M :currency #currency{:id KIKI :scale 1 :weight 0}}
+             (m/of #currency{:id :KIKI :scale 1})   => {:amount 0M :currency #currency{:id KIKI :scale 1 :weight 0}}
              (let [mv (m/of #currency{:id :KIKI :scale 1} 123)]
-               (m/of mv 10) => {:amount 10M  :currency #currency{:id :KIKI :scale 1}}
-               (m/of mv)    => {:amount 123M :currency #currency{:id :KIKI :scale 1}})))
+               (m/of mv 10) => {:amount 10M  :currency #currency{:id :KIKI :scale 1 :weight 0}}
+               (m/of mv)    => {:amount 123M :currency #currency{:id :KIKI :scale 1 :weight 0}})))
 
 (facts "about money tagged literal"
        (fact "when it returns nil for nil or empty map"
@@ -70,9 +70,9 @@
              #money PLN => {:amount 0M :currency #currency PLN}
              #money crypto/ETH => {:amount 0M :currency #currency crypto/ETH}
              #money[19 EUR] => (m/of 19 :EUR)
-             #money[19 {:id :EUR :domain :ISO-4217}] => {:amount 19M :currency (c/of {:id :EUR :domain :ISO-4217 :kind nil :numeric -1 :scale -1})}
+             #money[19 {:id :EUR :domain :ISO-4217}] => {:amount 19M :currency (c/of {:id :EUR :domain :ISO-4217 :kind nil :numeric -1 :scale -1  :weight 0})}
              #money[19 EUR]    => {:amount 19M :currency #currency EUR}
-             #money[19 EUR]    => {:amount 19M :currency #currency {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2}}
+             #money[19 EUR]    => {:amount 19M :currency #currency {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2  :weight 0}}
              #money :19EUR     => {:amount 19M :currency #currency EUR}
              #money EUR_19.1   => {:amount 19.1M :currency #currency EUR}
              #money "19.1 EUR" => {:amount 19.1M :currency #currency EUR}
@@ -86,7 +86,7 @@
              (c/id #money[12.12 PLN]) => :PLN
              (c/id #money/crypto[12.12 ETH]) => :crypto/ETH)
        (fact "when it gets a currency unit from a registry or returns it when given directly"
-             (c/unit #money[10 EUR]) => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2})
+             (c/unit #money[10 EUR]) => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2  :weight 0})
        (fact "when it checks if a currency is defined"
              (c/defined? #money[5 EUR]) => true
              (c/defined? (m/of #currency{:id :KIKI :scale 1} 5)) => false
@@ -119,14 +119,14 @@
              (c/kind #money[1 EUR]) => :FIAT
              (c/kind #money[1 crypto/ETH]) => :DECENTRALIZED
              (c/kind (m/of 10 #currency{:id :PLN :scale 1})) => nil)
+       (fact "when it's possible to get the namespaced code of a currency"
+             (c/ns-code #money[1 EUR]) => "EUR"
+             (c/ns-code #money[1 crypto/ETH]) => "crypto/ETH"
+             (c/ns-code (m/of 10 #currency{:id :PLN :scale 1})) => "PLN")
        (fact "when it's possible to get the code of a currency"
              (c/code #money[1 EUR]) => "EUR"
-             (c/code #money[1 crypto/ETH]) => "crypto/ETH"
+             (c/code #money[1 crypto/ETH]) => "ETH"
              (c/code (m/of 10 #currency{:id :PLN :scale 1})) => "PLN")
-       (fact "when it's possible to get the short code of a currency"
-             (c/short-code #money[1 EUR]) => "EUR"
-             (c/short-code #money[1 crypto/ETH]) => "ETH"
-             (c/short-code (m/of 10 #currency{:id :PLN :scale 1})) => "PLN")
        (fact "when it's possible to get the ID of a currency"
              (c/id #money[1 EUR]) => :EUR
              (c/id #money[1 crypto/ETH]) => :crypto/ETH

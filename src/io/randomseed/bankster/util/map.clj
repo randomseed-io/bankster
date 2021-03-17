@@ -297,3 +297,10 @@
       (assoc m k (dissoc-in nmap ks))
       m)
     (dissoc m k)))
+
+(defn ^clojure.lang.IPersistentMap remove-keys-ns
+  "Removes namespace component from qualified keys (keywords and
+  symbols). Non-qualified identifiers and other data types are not renamed."
+  {:added "1.0.2" :tag clojure.lang.IPersistentMap}
+  [^clojure.lang.IPersistentMap m]
+  (map-keys m (fn [k] (if (qualified-ident? k) (name k) k))))

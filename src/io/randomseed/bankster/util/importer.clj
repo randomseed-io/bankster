@@ -106,8 +106,9 @@
           scale   (or (try-parse-int scale) currency/auto-scaled)
           scale   (if (< scale 0) currency/auto-scaled scale)
           kind    (get special-kinds id :FIAT)
-          domain  :ISO-4217]
-      (currency/new-currency id (long numeric) (int scale) kind domain))))
+          domain  :ISO-4217
+          weight  0]
+      (currency/new-currency id (long numeric) (int scale) kind domain (int weight)))))
 
 ;;
 ;; Joda Money CSV importer.
@@ -161,11 +162,12 @@
   "Takes a currency and returns a map suitable for putting into a configuration
   file. Extensions fields are ignored."
   {:added "1.0.0"}
-  [{:keys [:numeric :scale :kind]}]
+  [{:keys [:numeric :scale :kind :weight]}]
   (as-> (sorted-map) m
-    (if (and (number? numeric) (pos? numeric)) (assoc m :numeric numeric) m)
-    (if-not (and (some? scale) (neg? scale))   (assoc m :scale   scale)   m)
-    (if (some? kind)                           (assoc m :kind    kind)    m)))
+    (if (and (number? numeric) (pos? numeric))      (assoc m :numeric numeric) m)
+    (if-not (and (some? scale) (neg? scale))        (assoc m :scale   scale)   m)
+    (if (some? kind)                                (assoc m :kind    kind)    m)
+    (if (and (number? weight) (not (zero? weight))) (assoc m :weight  weight)  m)))
 
 (defn localized->map
   "Takes a localized map entry (1st level) and returns a map suitable for putting into

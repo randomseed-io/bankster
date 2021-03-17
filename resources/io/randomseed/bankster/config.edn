@@ -79,7 +79,7 @@
   :IEP {:kind :FIAT :numeric 372 :domain :ISO-4217 :scale 2}
   :ILS {:kind :FIAT :numeric 376 :domain :ISO-4217 :scale 2}
   :INR {:kind :FIAT :numeric 356 :domain :ISO-4217 :scale 2}
-  :IQD {:kind :FIAT :numeric 368 :domain :ISO-4217 :scale 3}
+  :IQD {:kind :FIAT :numeric 368 :domain :ISO-4217 :scale 3 :weight 1}
   :IRR {:kind :FIAT :numeric 364 :domain :ISO-4217 :scale 2}
   :ISK {:kind :FIAT :numeric 352 :domain :ISO-4217 :scale 0}
   :ITL {:kind :FIAT :numeric 380 :domain :ISO-4217 :scale 0}
@@ -205,18 +205,18 @@
   :ZAR {:kind :FIAT :numeric 710 :domain :ISO-4217 :scale 2}
   :ZMW {:kind :FIAT :numeric 967 :domain :ISO-4217 :scale 2}
   :ZWL {:kind :FIAT :numeric 932 :domain :ISO-4217 :scale 2}
-  :crypto/ADA    {:kind :DECENTRALIZED :scale  6}
+  :crypto/ADA    {:kind :DECENTRALIZED :scale  6 :weight 5}
   :crypto/BCH    {:kind :DECENTRALIZED :scale  8}
   :crypto/BNB    {:kind :COMBANK       :scale  8}
   :crypto/BSV    {:kind :DECENTRALIZED :scale  8}
-  :crypto/BTC    {:kind :DECENTRALIZED :scale  8}
-  :crypto/DAI    {:kind :DECENTRALIZED :scale 18}
+  :crypto/BTC    {:kind :DECENTRALIZED :scale  8 :weight 5}
+  :crypto/DAI    {:kind :DECENTRALIZED :scale 18 :weight 4}
   :crypto/DASH   {:kind :DECENTRALIZED :scale  8}
   :crypto/DOGE   {:kind :DECENTRALIZED :scale  8}
   :crypto/DOT    {:kind :DECENTRALIZED :scale 10}
   :crypto/EOS    {:kind :DECENTRALIZED :scale  4}
   :crypto/ETC    {:kind :DECENTRALIZED :scale 18}
-  :crypto/ETH    {:kind :DECENTRALIZED :scale 18}
+  :crypto/ETH    {:kind :DECENTRALIZED :scale 18 :weight 5}
   :crypto/LTC    {:kind :DECENTRALIZED :scale  8}
   :crypto/MKR    {:kind :DECENTRALIZED :scale 18}
   :crypto/NMC    {:kind :DECENTRALIZED :scale  8}
@@ -227,8 +227,8 @@
   :crypto/XMR    {:kind :DECENTRALIZED :scale 12}
   :crypto/XRP    {:kind :COMBANK       :scale  6}
   :crypto/XTZ    {:kind :DECENTRALIZED :scale  6}
-  :crypto/USDT   {:kind :COMBANK       :scale  8}
-  :crypto/USDC   {:kind :COMBANK       :scale  8}
+  :crypto/USDT   {:kind :COMBANK       :scale  8 :weight 4}
+  :crypto/USDC   {:kind :COMBANK       :scale  8 :weight 4}
   :crypto/ZEC    {:kind :DECENTRALIZED :scale  8}}
  :localized {:EUR               {:pl      {:name "euro"                  :symbol "€"}}
              :PLN               {:pl      {:name "złoty polski"          :symbol "zł"}}

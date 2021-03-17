@@ -61,18 +61,22 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 
 ;; global registry lookup using namespaced symbol
 (currency/of crypto/ETH)
-#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 18}
+#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 18, :weight 5}
 
 ;; global registry lookup with a string (incl. namespace a.k.a domain)
 (currency/of "crypto/BTC")
 #currency{:id :crypto/BTC, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 8}
+
+;; global registry lookup with a currency code (weight for cross-domain conflicts)
+(currency/of ETH)
+#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 18, :weight 5}
 
 ;; global registry lookup using ISO currency number
 (currency/of 840)
 #currency{:id :USD, :domain :ISO-4217, :kind :FIAT, :nr 840, :sc 2}
 
 ;; global registry lookup using tagged literal with a namespace
-#currency crypto/XLM
+#currency XLM
 #currency{:id :crypto/XLM, :domain :CRYPTO, :kind :FIDUCIARY, :sc 8}
 
 ;; global registry lookup using tagged literal with an ISO currency number
@@ -83,10 +87,6 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 * It allows to **create a currency** and **register it**:
 
 ```clojure
-;; getting currency from a global registry
-(currency/of :petro/USD)
-#currency{:id :petro/USD, :domain :PETRO, :kind :COMBANK, :nr 999, :sc 2}
-
 ;; ad hoc currency creation using constructor function
 (currency/new :petro/USD 999 2 :COMBANK)
 #currency{:id :petro/USD, :domain :PETRO, :kind :COMBANK, :nr 999, :sc 2}
@@ -97,11 +97,15 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 
 ;; putting new currency into a global, shared registry
 (currency/register! (currency/new :petro/USD 9999 2 :COMBANK) :USA)
-#Registry@11efe93f{:currencies 221, :countries 250, :version "2021022121170359"}
+#Registry[{:currencies 221, :countries 250, :version "2021022121170359"} 0x11efe93f]
+
+;; getting currency from a global registry
+(currency/of :petro/USD)
+#currency{:id :petro/USD, :domain :PETRO, :kind :COMBANK, :nr 999, :sc 2}
 
 ;; registering new currency expressed as a tagged literal
 (currency/register! #currency{:id :crypto/AAA :sc 8})
-#Registry@7eaf7a70{:currencies 221, :countries 249, :version "2021022121170359"}
+#Registry[{:currencies 221, :countries 249, :version "2021022121170359"} 0x7eaf7a70]
 ```
 
 * It allows to create **monetary amounts**:
@@ -137,6 +141,10 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 (money/of crypto/BTC 10.1)
 #money/crypto[10.10000000 BTC]
 
+;; using money/of macro with currency code and an amount
+(money/of BTC 10.1)
+#money/crypto[10.10000000 BTC]
+
 ;; using tagged literals
 #money EUR
 #money[0.00 EUR]
@@ -149,6 +157,10 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 
 ;; using tagged literal with a namespace
 #money/crypto[1.31337 ETH]
+#money/crypto[1.313370000000000000 ETH]
+
+;; using tagged literal with a currency code
+#money[1.31337 ETH]
 #money/crypto[1.313370000000000000 ETH]
 
 ;; using tagged literal with a namespace but the amount goes first

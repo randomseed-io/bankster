@@ -135,7 +135,7 @@
          (let [[c# a#] (if (number? a) [nil a] [a 0M])]
            (if (nil? c#)
              `(~fun ~a#)
-             (let [curs# (currency/parse-currency-symbol c#)]
+             (let [curs# (currency/parse-currency-code c#)]
                (if (keyword? curs#)
                  `(~fun ~curs# ~a#)
                  `(let [cc# ~c#]
@@ -154,12 +154,12 @@
      (let [[cur# am#] (currency+amount a)]
        (if (or (nil? cur#) (nil? am#))
          (let [[c# a#] (if (number? a) [b a] [a b])]
-           `(~fun ~(currency/parse-currency-symbol c#) ~a#))
+           `(~fun ~(currency/parse-currency-code c#) ~a#))
          (if (or (ident? b) (string? b) (number? b))
            (let [rms# (scale/parse-rounding b)]
              `(~fun ~cur# ~am# ~rms#))
            `(~fun ~cur# ~am# ~b))))
-     (let [b (if (number? b) b (currency/parse-currency-symbol b))]
+     (let [b (if (number? b) b (currency/parse-currency-code b))]
        `(let [a# ~a b# ~b]
           (if (number? a#)
             (~fun b# a#)
@@ -169,8 +169,8 @@
    (let [rms# (scale/parse-rounding rounding-mode)]
      (if (or (ident? a) (string? a) (number? a))
        (let [[c# a#] (if (number? a) [b a] [a b])]
-         `(~parse ~(currency/parse-currency-symbol c#) ~a# ~rms#))
-       (let [b (if (number? b) b (currency/parse-currency-symbol b))]
+         `(~parse ~(currency/parse-currency-code c#) ~a# ~rms#))
+       (let [b (if (number? b) b (currency/parse-currency-code b))]
          `(let [a# ~a b# ~b]
             (if (number? a#)
               (~parse b# a# ~rms#)
@@ -1473,7 +1473,7 @@
 
 (defn defliteral
   "For the given currency identifier or a currency object it creates a tagged literal
-  in a form of #m/CURRENCY where the CURRENCY is a short currency code. As a side
+  in a form of #money/CURRENCY where the CURRENCY is a currency code. As a side
   effect it creates a function of name io.randomseed.bankster.money/of-CURRENCY that
   will handle the literal.
 
@@ -1481,7 +1481,7 @@
   {:added "1.0.0"}
   [c]
   (when-some [^Currency c (currency/unit c)]
-    (let [cush (currency/short-code c)
+    (let [cush (currency/code c)
           name (str "of-" cush)
           nsnm "io.randomseed.bankster.money"
           mkfn (fn ^Money [amount] (if (nil? amount) '(quote nil) (of c amount)))
@@ -1583,5 +1583,5 @@
         a (.toPlainString ^BigDecimal (.amount ^Money m))]
     (print-simple
      (str "#money" (when n (str "/" n))
-          "[" a " " (currency/short-code c) "]")
+          "[" a " " (currency/code c) "]")
      w)))
