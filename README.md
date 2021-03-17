@@ -57,31 +57,36 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 ```clojure
 ;; global registry lookup with a keyword
 (currency/of :PLN)
-#currency{:id :PLN, :domain :ISO-4217, :kind :FIAT, :nr 985, :sc 2}
+#currency{:id :PLN, :domain :ISO-4217, :kind :FIAT, :numeric 985, :scale 2}
 
 ;; global registry lookup using namespaced symbol
 (currency/of crypto/ETH)
-#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 18, :weight 5}
+#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :scale 18, :weight 5}
 
 ;; global registry lookup with a string (incl. namespace a.k.a domain)
 (currency/of "crypto/BTC")
-#currency{:id :crypto/BTC, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 8}
+#currency{:id :crypto/BTC, :domain :CRYPTO, :kind :DECENTRALIZED, :scale 8, weight 5}
 
-;; global registry lookup with a currency code (weight for cross-domain conflicts)
+;; global registry lookup with a currency code
+;; (weight solves potential conflicts when two currencies have the same currency code)
 (currency/of ETH)
-#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :sc 18, :weight 5}
+#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :scale 18, :weight 5}
 
 ;; global registry lookup using ISO currency number
 (currency/of 840)
-#currency{:id :USD, :domain :ISO-4217, :kind :FIAT, :nr 840, :sc 2}
+#currency{:id :USD, :domain :ISO-4217, :kind :FIAT, :numeric 840, :scale 2}
 
-;; global registry lookup using tagged literal with a namespace
+;; global registry lookup using tagged literal with a currency code
 #currency XLM
-#currency{:id :crypto/XLM, :domain :CRYPTO, :kind :FIDUCIARY, :sc 8}
+#currency{:id :crypto/XLM, :domain :CRYPTO, :kind :FIDUCIARY, :scale 8}
+
+;; global registry lookup using tagged literal with a namespaced identifier
+#currency crypto/XLM
+#currency{:id :crypto/XLM, :domain :CRYPTO, :kind :FIDUCIARY, :scale 8}
 
 ;; global registry lookup using tagged literal with an ISO currency number
 #currency 978
-#currency{:id :EUR, :domain :ISO-4217, :kind :FIAT, :nr 978, :sc 2}
+#currency{:id :EUR, :domain :ISO-4217, :kind :FIAT, :numeric 978, :scale 2}
 ```
 
 * It allows to **create a currency** and **register it**:
@@ -89,11 +94,11 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 ```clojure
 ;; ad hoc currency creation using constructor function
 (currency/new :petro/USD 999 2 :COMBANK)
-#currency{:id :petro/USD, :domain :PETRO, :kind :COMBANK, :nr 999, :sc 2}
+#currency{:id :petro/USD, :domain :PETRO, :kind :COMBANK, :numeric 999, :scale 2}
 
 ;; ad-hoc currency creation using tagged literal
-#currency{:id :crypto/ETH :sc 18}
-#currency{:id :crypto/ETH, :domain :CRYPTO, :sc 18}
+#currency{:id :crypto/ETH :scale 18}
+#currency{:id :crypto/ETH, :domain :CRYPTO, :scale 18}
 
 ;; putting new currency into a global, shared registry
 (currency/register! (currency/new :petro/USD 9999 2 :COMBANK) :USA)
@@ -101,10 +106,10 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 
 ;; getting currency from a global registry
 (currency/of :petro/USD)
-#currency{:id :petro/USD, :domain :PETRO, :kind :COMBANK, :nr 999, :sc 2}
+#currency{:id :petro/USD, :domain :PETRO, :kind :COMBANK, :numeric 9999, :scale 2}
 
 ;; registering new currency expressed as a tagged literal
-(currency/register! #currency{:id :crypto/AAA :sc 8})
+(currency/register! #currency{:id :crypto/AAA :scale 8})
 #Registry[{:currencies 221, :countries 249, :version "2021022121170359"} 0x7eaf7a70]
 ```
 
@@ -356,7 +361,7 @@ true
 #money[10.00000000 USD]
 
 (scale/apply #currency USD 8)  ;; use with caution
-#currency{:id :USD, :domain :ISO-4217, :kind :FIAT, :nr 840, :sc 8}
+#currency{:id :USD, :domain :ISO-4217, :kind :FIAT, :numeric 840, :scale 8}
 
 (money/rescale #money[10 USD] 8)
 #money[10.00000000 USD]
