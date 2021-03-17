@@ -384,6 +384,10 @@
 
   Money
 
+  (of-id
+    (^Currency [money] (.currency ^Money money))
+    (^Currency [money ^Registry registry] (.currency ^Money money)))
+
   (unit
     (^Currency [money] (.currency ^Money money))
     (^Currency [money ^Registry registry] (.currency ^Money money)))
@@ -401,6 +405,18 @@
     (^Boolean [money ^Registry registry]
      (contains? (registry/currency-id->currency registry)
                 (.id ^Currency (.currency ^Money money)))))
+
+  (present?
+    (^Boolean [money]
+     (let [id (.id ^Currency (.currency ^Money money))]
+       (if (namespace id)
+         (contains? (registry/currency-id->currency) id)
+         (contains? (registry/currency-code->currencies) id))))
+    (^Boolean [money ^Registry registry]
+     (let [id (.id ^Currency (.currency ^Money money))]
+       (if (namespace id)
+         (contains? (registry/currency-id->currency registry) id)
+         (contains? (registry/currency-code->currencies registry) id)))))
 
   (same-ids?
     (^Boolean [a b]
