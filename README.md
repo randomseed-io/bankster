@@ -50,6 +50,96 @@ org.clojure/test.check {:mvn/version "0.10.0-alpha4"}
 
 You can also download JAR from [Clojars](https://clojars.org/io.randomseed/bankster).
 
+## Why?
+
+In one of my personal projects I needed to support both ISO-standardized and custom
+currencies. My first try was Money (by Clojurewerkz), which is quite mature library
+based on Java's Joda Money. However, I needed cryptocurrencies support, and I mean
+all of them, including those having non-standard codes (like `DASH`).
+
+First I tried to modify Money and work-around this limitation by imitating such
+currencies with an additional map translating custom codes into standardized
+ones. Then I looked at Joda Money to see that the important classes are marked as
+final and the support for currencies is limited to the "official" ones.
+
+## Design
+
+There is a global, shared **registry** of currencies, which is thread-safe and
+encapsulated in an Atom. It consists of databases (maps) that help to maintain quick
+access to the important currency properties. Most of the functions will use this
+global registry, unless a registry is explicitly passed as an argument or set as
+a dynamic variable.
+
+Registry is implemented as a record of maps keeping the following associations:
+
+* currency ID to currency object;
+* currency ID to a set of country IDs;
+* currency numeric ID to currency object;
+* country ID to currency object;
+* locale ID to localized properties map;
+* currency code to a sorted set of currency objects.
+
+When the library loads predefined configuration is read from EDN file and populates
+the default, global registry.
+
+Each **currency** is a record having the following fields, reflecting its properties:
+
+* `id` – a keyword **identifying** a currency unit (e.g. `:EUR` or `:crypto/ETH`);
+* `numeric` – a long value being a **numeric identifier** of ISO-standardized currencies;
+* `scale` – an integer of supported **scale** (decimal places);
+* `kind` – a keyword with currency **kind**;
+* `domain` – a keyword with currency **domain**;
+* `weight` – an integer which helps when there is a conflict of currency codes.
+
+**Currency ID** is a unique identifier of a currency within
+a registry. Internally it is a keyword and optionally it can have a namespace. By
+default Bankster identifies standard currencies with IDs reflecting their official
+currency codes and cryptocurrencies with identifiers having `crypto` namespace.
+
+**Currency code** is a name of currency ID without its namespace. It is potentially
+conflicting attribute, therefore the mapping of currency codes to sets of currency
+objects exists in a registry. It allows to get currencies using their codes (and not
+add namespace, especially when interacting with some external API) and still maintain
+uniqueness of identifiers. If custom currency is created with the same code as
+already existing currency, it is possible to give it a **weight** which will decide
+whether its code will have priority during resolution (and getting from a registry).
+
+**Currency domain** is by default the same as a namespace of currency ID (if it is
+namespaced). For non-namespaced identifiers it can be set to anything. The domain of
+`:ISO-4217` informs the library that this is ISO-standardized currency. The purpose
+of domain is to classify currencies into different realms and create a boundary
+preventing naming conflicts when codes are the same.
+
+**Currency kind** is a keyword that should describe a class of currency. It can be
+set to anything, even nil, but the suggested values are:
+
+  - `:FIAT`          – legal tender issued by government or other authority,
+  - `:FIDUCIARY`     - accepted medium of exchange issued by a fiduciary or fiduciaries,
+  - `:DECENTRALIZED` - accepted medium of exchange issued by a distributed ledger,
+  - `:COMBANK`       - commercial bank money,
+  - `:COMMODITY`     - accepted medium of exchange based on commodities,
+  - `:EXPERIMENTAL`  - pseudo-currency used for testing purposes.
+
+**Currency scale** is the nominal scale of a currency. If it is not set, the
+automatic scale will be used on monetary amounts using such a currency.
+
+Registry-related functions are accepting currency representations based on their
+**identifiers**. Other functions and macros will usually accept **currency
+codes**. In case of conflict the currency with higher **currency weight** will be
+picked up.
+
+Having currency we can create **money** objects which are based on records having 2
+fields:
+
+* `currency` – a `Currency` object;
+* `amount` – a `BigDecimal` value.
+
+The initial scale (number of decimal places) of an amount will be set to nominal
+scale of the currency. Math operations will then respect this scale during
+calculations and preserve it. In rare cases it is possible to rescale the amount,
+check whether the monetary object is rescaled and scale it back to a scale of
+the currency.
+
 ## Sneak peeks
 
 * It **shows information** about a currency:

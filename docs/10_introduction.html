@@ -32,6 +32,50 @@
 org.clojure/test.check {:mvn/version "0.10.0-alpha4"}
 </code></pre>
 <p>You can also download JAR from <a href="https://clojars.org/io.randomseed/bankster">Clojars</a>.</p>
+<h2><a href="#why-" name="why-"></a>Why?</h2>
+<p>In one of my personal projects I needed to support both ISO-standardized and custom currencies. My first try was Money (by Clojurewerkz), which is quite mature library based on Java’s Joda Money. However, I needed cryptocurrencies support, and I mean all of them, including those having non-standard codes (like <code>DASH</code>).</p>
+<p>First I tried to modify Money and work-around this limitation by imitating such currencies with an additional map translating custom codes into standardized ones. Then I looked at Joda Money to see that the important classes are marked as final and the support for currencies is limited to the “official” ones.</p>
+<h2><a href="#design" name="design"></a>Design</h2>
+<p>There is a global, shared <strong>registry</strong> of currencies, which is thread-safe and encapsulated in an Atom. It consists of databases (maps) that help to maintain quick access to the important currency properties. Most of the functions will use this global registry, unless a registry is explicitly passed as an argument or set as a dynamic variable.</p>
+<p>Registry is implemented as a record of maps keeping the following associations:</p>
+<ul>
+  <li>currency ID to currency object;</li>
+  <li>currency ID to a set of country IDs;</li>
+  <li>currency numeric ID to currency object;</li>
+  <li>country ID to currency object;</li>
+  <li>locale ID to localized properties map;</li>
+  <li>currency code to a sorted set of currency objects.</li>
+</ul>
+<p>When the library loads predefined configuration is read from EDN file and populates the default, global registry.</p>
+<p>Each <strong>currency</strong> is a record having the following fields, reflecting its properties:</p>
+<ul>
+  <li><code>id</code> – a keyword <strong>identifying</strong> a currency unit (e.g. <code>:EUR</code> or <code>:crypto/ETH</code>);</li>
+  <li><code>numeric</code> – a long value being a <strong>numeric identifier</strong> of ISO-standardized currencies;</li>
+  <li><code>scale</code> – an integer of supported <strong>scale</strong> (decimal places);</li>
+  <li><code>kind</code> – a keyword with currency <strong>kind</strong>;</li>
+  <li><code>domain</code> – a keyword with currency <strong>domain</strong>;</li>
+  <li><code>weight</code> – an integer which helps when there is a conflict of currency codes.</li>
+</ul>
+<p><strong>Currency ID</strong> is a unique identifier of a currency within a registry. Internally it is a keyword and optionally it can have a namespace. By default Bankster identifies standard currencies with IDs reflecting their official currency codes and cryptocurrencies with identifiers having <code>crypto</code> namespace.</p>
+<p><strong>Currency code</strong> is a name of currency ID without its namespace. It is potentially conflicting attribute, therefore the mapping of currency codes to sets of currency objects exists in a registry. It allows to get currencies using their codes (and not add namespace, especially when interacting with some external API) and still maintain uniqueness of identifiers. If custom currency is created with the same code as already existing currency, it is possible to give it a **weight** which will decide whether its code will have priority during resolution (and getting from a registry).</p>
+<p><strong>Currency domain</strong> is by default the same as a namespace of currency ID (if it is namespaced). For non-namespaced identifiers it can be set to anything. The domain of <code>:ISO-4217</code> informs the library that this is ISO-standardized currency. The purpose of domain is to classify currencies into different realms and create a boundary preventing naming conflicts when codes are the same.</p>
+<p><strong>Currency kind</strong> is a keyword that should describe a class of currency. It can be set to anything, even nil, but the suggested values are:</p>
+<ul>
+  <li><code>:FIAT</code> – legal tender issued by government or other authority,</li>
+  <li><code>:FIDUCIARY</code> - accepted medium of exchange issued by a fiduciary or fiduciaries,</li>
+  <li><code>:DECENTRALIZED</code> - accepted medium of exchange issued by a distributed ledger,</li>
+  <li><code>:COMBANK</code> - commercial bank money,</li>
+  <li><code>:COMMODITY</code> - accepted medium of exchange based on commodities,</li>
+  <li><code>:EXPERIMENTAL</code> - pseudo-currency used for testing purposes.</li>
+</ul>
+<p><strong>Currency scale</strong> is the nominal scale of a currency. If it is not set, the automatic scale will be used on monetary amounts using such a currency.</p>
+<p>Registry-related functions are accepting currency representations based on their <strong>identifiers</strong>. Other functions and macros will usually accept <strong>currency codes</strong>. In case of conflict the currency with higher <strong>currency weight</strong> will be picked up.</p>
+<p>Having currency we can create <strong>money</strong> objects which are based on records having 2 fields:</p>
+<ul>
+  <li><code>currency</code> – a <code>Currency</code> object;</li>
+  <li><code>amount</code> – a <code>BigDecimal</code> value.</li>
+</ul>
+<p>The initial scale (number of decimal places) of an amount will be set to nominal scale of the currency. Math operations will then respect this scale during calculations and preserve it. In rare cases it is possible to rescale the amount, check whether the monetary object is rescaled and scale it back to a scale of the currency.</p>
 <h2><a href="#sneak-peeks" name="sneak-peeks"></a>Sneak peeks</h2>
 <ul>
   <li>It <strong>shows information</strong> about a currency:</li>

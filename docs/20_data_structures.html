@@ -8,7 +8,8 @@
   <li><code>numeric</code> – a long value being a numeric identifier of ISO-standardized currencies (e.g. <code>978</code> or <code>-1</code> for none);</li>
   <li><code>scale</code> – an integer of supported scale (decimal places, e.g. <code>2</code> or <code>-1</code> for auto);</li>
   <li><code>kind</code> – a keyword with currency kind (e.g. <code>:FIAT</code> or <code>:DECENTRALIZED</code>);</li>
-  <li><code>domain</code> – a keyword with currency domain (e.g. <code>:ISO-4217</code> or <code>:CRYPTO</code>).</li>
+  <li><code>domain</code> – a keyword with currency domain (e.g. <code>:ISO-4217</code> or <code>:CRYPTO</code>);</li>
+  <li><code>weight</code> – an integer value used when there are conflicting currency codes during lookup (defaults to <code>0</code>).</li>
 </ul>
 <p>Internally <code>numeric</code> can be <code>-1</code>, meaning there is no numeric ID and <code>scale</code> can be <code>-1</code> too, meaning the amount of currency can have any number of decimal places.</p>
 <p>The currency domain is derived from an identifier if the identifier is namespaced. The derived ID is upper-cased. If there is no namespace the domain can be set to any keyword, with <code>:ISO-4217</code> having special meaning in some operations as it marks official currencies.</p>
@@ -20,6 +21,7 @@
   <li><code>ctr-id-&gt;cur</code> – a map of country ID to currency record;</li>
   <li><code>cur-id-&gt;ctr-ids</code> – a map of currency ID to set of country IDs;</li>
   <li><code>cur-id-&gt;localized</code> – a map of locale ID to localized properties;</li>
+  <li><code>cur-code-&gt;currencies</code> – a map of currency codes to sorted sets of currencies;</li>
   <li><code>version</code> – an optional string with registry version.</li>
 </ul>
 <h2><a href="#money" name="money"></a>Money</h2>
