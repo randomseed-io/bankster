@@ -687,7 +687,7 @@
   {:tag clojure.lang.PersistentTreeSet :private true :added "1.0.2"}
   [^clojure.lang.PersistentTreeSet s]
   (or s (sorted-set-by
-         (fn [^Currency a ^Currency b] (compare (:weight a) (:weight b))) )))
+         (fn [^Currency a ^Currency b] (compare (:weight b) (:weight a))))))
 
 ;;
 ;; Adding and removing to/from registry.
