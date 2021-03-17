@@ -1,5 +1,9 @@
 # History of bankster releases
 
+## 1.0.5 (2021-03-18)
+
+- Fixed a bug reversing order of weighted currencies.
+
 ## 1.0.4 (2021-03-18)
 
 - Added missing Monetary implementation functions for Money.
