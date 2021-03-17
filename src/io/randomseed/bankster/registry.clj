@@ -122,14 +122,6 @@
                  cur-id->localized
                  cur-code->curs
                  (default-version)))
-  (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
-              ^clojure.lang.PersistentHashMap ctr-id->cur
-              ^clojure.lang.PersistentHashMap cur-id->localized]
-   (new-registry cur-id->cur
-                 ctr-id->cur
-                 cur-id->localized
-                 (map/remove-keys-ns cur-id->cur)
-                 (default-version)))
   (^Registry [^clojure.lang.PersistentHashMap m]
    (bankster/map->Registry m)))
 
@@ -158,9 +150,6 @@
                               ^clojure.lang.PersistentHashMap ctr-id->cur
                               ^clojure.lang.PersistentHashMap cur-id->localized
                               ^clojure.lang.PersistentHashMap cur-code->curs]
-                   ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
-                              ^clojure.lang.PersistentHashMap ctr-id->cur
-                              ^clojure.lang.PersistentHashMap cur-id->localized]
                    ^Registry [^clojure.lang.PersistentHashMap m])}
   new
   "Alias for new-registry."
