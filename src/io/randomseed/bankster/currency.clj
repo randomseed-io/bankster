@@ -1003,7 +1003,7 @@
      (let [regi (or regi (registry/new-registry))
            curs (prep-currencies          (config/currencies cfg))
            ctrs (prep-cur->ctr            (config/countries  cfg))
-           lpro (prep-all-localized-props (config/localized  cfg))
+           lpro                           (config/localized  cfg)
            vers (str                      (config/version    cfg))
            regi (if (nil? vers) regi (assoc regi :version vers))]
        (reduce (fn ^Registry [^Registry r ^Currency c]
