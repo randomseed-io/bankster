@@ -131,10 +131,15 @@
   (^{:tag clojure.lang.Keyword :added "1.0.0"}
    id
    [id] [id registry]
-   "Returns currency identifier as a keyword. If the registry is not given, it will
-  use the global one, but will first try a dynamic registry bound to the
-  `io.randomseed.bankster.registry/*default*` dynamic variable. If the given argument
-  is already an identifier (a keyword), it will be returned as is.")
+   "Returns currency identifier as a keyword on a basis of currency ID or currency
+  code. If the currency cannot be found in a registry, the argument converted to a
+  keyword will be returned. If the currency is found its ID will be returned (in
+  case it was looked up using currency code).
+
+  If the registry is not given, it will use the global one, but will first try a
+  dynamic registry bound to the `io.randomseed.bankster.registry/*default*` dynamic
+  variable. If the given argument is already an identifier (a keyword), it will be
+  returned as is.")
 
   (^{:tag Currency :added "1.0.0"}
    of-id
@@ -289,8 +294,14 @@
                  {:registry registry})))))
 
   (id
-    (^clojure.lang.Keyword [id] id)
-    (^clojure.lang.Keyword [id ^Registry registry] id))
+    (^clojure.lang.Keyword [c]
+     (if (namespace c) c
+         (if-some [cur (first (get (registry/currency-code->currencies) c))]
+           (.id ^Currency cur) c)))
+    (^clojure.lang.Keyword [c ^Registry registry]
+     (if (namespace c) c
+         (if-some [cur (first (get (registry/currency-code->currencies registry) c))]
+           (.id ^Currency cur) c))))
 
   (defined?
     (^Boolean [id]
@@ -323,8 +334,8 @@
     (^Currency [id ^Registry registry] (unit (keyword id) registry)))
 
   (id
-    (^clojure.lang.Keyword [id] (keyword id))
-    (^clojure.lang.Keyword [id ^Registry registry] (keyword id)))
+    (^clojure.lang.Keyword [c] (id (keyword c)))
+    (^clojure.lang.Keyword [c ^Registry registry] (id (keyword c) registry)))
 
   (defined?
     (^Boolean [id]
@@ -353,8 +364,8 @@
     (^Currency [id ^Registry registry] (unit (keyword id) registry)))
 
   (id
-    (^clojure.lang.Keyword [id] (keyword id))
-    (^clojure.lang.Keyword [id, ^Registry registry] (keyword id)))
+    (^clojure.lang.Keyword [c] (id (keyword c)))
+    (^clojure.lang.Keyword [c ^Registry registry] (id (keyword c) registry)))
 
   (defined?
     (^Boolean [id]
@@ -383,8 +394,8 @@
     (^Currency [m ^Registry registry] (map->new m)))
 
   (id
-    (^clojure.lang.Keyword [m] (keyword (:id m)))
-    (^clojure.lang.Keyword [m, ^Registry registry] (keyword (:id m))))
+    (^clojure.lang.Keyword [m] (id (keyword (:id m))))
+    (^clojure.lang.Keyword [m, ^Registry registry] (id (keyword (:id m)) registry)))
 
   (defined?
     (^Boolean [m]
