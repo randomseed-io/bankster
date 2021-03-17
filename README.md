@@ -101,7 +101,7 @@ conflicting attribute, therefore the mapping of currency codes to sets of curren
 objects exists in a registry. It allows to get currencies using their codes (and not
 add namespace, especially when interacting with some external API) and still maintain
 uniqueness of identifiers. If custom currency is created with the same code as
-already existing currency, it is possible to give it a **weight** which will decide
+already existing currency, it is possible to give it a **weight** which will decide
 whether its code will have priority during resolution (and getting from a registry).
 
 **Currency domain** is by default the same as a namespace of currency ID (if it is
