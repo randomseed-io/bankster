@@ -30,14 +30,14 @@ To use Bankster in your project, add the following to dependencies section of
 `project.clj` or `build.boot`:
 
 ```clojure
-[io.randomseed/bankster "1.0.5"]
+[io.randomseed/bankster "1.0.6"]
 ```
 
 For `deps.edn` add the following as an element of a map under `:deps` or
 `:extra-deps` key:
 
 ```clojure
-io.randomseed/bankster {:mvn/version "1.0.5"}
+io.randomseed/bankster {:mvn/version "1.0.6"}
 ```
 
 Additionally, if you want to utilize specs and generators provided by the Bankster
@@ -49,18 +49,6 @@ org.clojure/test.check {:mvn/version "0.10.0-alpha4"}
 ```
 
 You can also download JAR from [Clojars](https://clojars.org/io.randomseed/bankster).
-
-## Why?
-
-In one of my personal projects I needed to support both ISO-standardized and custom
-currencies. My first try was Money (by Clojurewerkz), which is quite mature library
-based on Java's Joda Money. However, I needed cryptocurrencies support, and I mean
-all of them, including those having non-standard codes (like `DASH`).
-
-First I tried to modify Money and work-around this limitation by imitating such
-currencies with an additional map translating custom codes into standardized
-ones. Then I looked at Joda Money to see that the important classes are marked as
-final and the support for currencies is limited to the "official" ones.
 
 ## Design
 
@@ -79,8 +67,10 @@ Registry is implemented as a record of maps keeping the following associations:
 * locale ID to localized properties map;
 * currency code to a sorted set of currency objects.
 
-When the library loads predefined configuration is read from EDN file and populates
-the default, global registry.
+In most cases you won't have to worry about the internals of a registry.
+
+When the library loads the predefined configuration is read from EDN file and its
+contents populates the default, global registry.
 
 Each **currency** is a record having the following fields, reflecting its properties:
 
@@ -89,7 +79,7 @@ Each **currency** is a record having the following fields, reflecting its prope
 * `scale` – an integer of supported **scale** (decimal places);
 * `kind` – a keyword with currency **kind**;
 * `domain` – a keyword with currency **domain**;
-* `weight` – an integer which helps when there is a conflict of currency codes.
+* `weight` – an integer which helps in case there is a conflict of currency codes.
 
 **Currency ID** is a unique identifier of a currency within
 a registry. Internally it is a keyword and optionally it can have a namespace. By
@@ -480,6 +470,37 @@ true
 
 And more…
 
+### Warning about literal amounts
+
+Clojure changes number literals into objects of various numeric data types.
+Some of them will have fixed precision when there is a decimal separator
+present, yet they will not be big decimals before entering monetary functions of
+Bankster.
+
+Putting a decimal number having more than 16–17 digits will often effect in
+**accidental approximation** and casting it to a double value. This value may
+become the amount of money which probably is not what you want:
+
+```clojure
+1234.5678910111213000001
+; => 1234.5678910111212
+```
+
+To work around that you should:
+
+* Use **big decimal literals** (e.g. `(money/of XXX 1234.56789101112M)` – note the `M`).
+* Use **strings** (e.g. `(money/of "1234.56789101112 XXX")`).
+* Use `money/of` macro or `#money` tagged literal with amount and currency in joint
+  form (or with the above tactics applied), e.g.:
+      * `(money/of XXX123.45678)`,
+      * `#money XXX123.45678`,
+      * `#money "XXX123.45678"`,
+      * `#money "123.456789101112 XXX"`,
+      * `#money[123.45678M XXX]`.
+
+As it may not be a problem in case of regular currencies, it may pop-up when using
+scale-wide cryptocurrencies, like Ether or Ethereum tokens, having 18 decimal places.
+
 ## Documentation
 
 Full documentation including usage examples is available at:
@@ -493,6 +514,18 @@ too, here it is: `0x2Bed4D2d9240F9fB321bC0194222A4888F62dd0d`.
 
 Stellar Lumens are cool too:
 `GBMUQ6U6334Y5HWF3XGMCRQZKVMFDCSX4YADEVZO7ZXIBDJDXXX2BSME`.
+
+## Why?
+
+In one of my personal projects I needed to support both ISO-standardized and custom
+currencies. My first try was Money (by Clojurewerkz), which is quite mature library
+based on Java's Joda Money. However, I needed cryptocurrencies support, and I mean
+all of them, including those having non-standard codes (like `DASH`).
+
+First I tried to modify Money and work-around this limitation by imitating such
+currencies with an additional map translating custom codes into standardized
+ones. Then I looked at Joda Money to see that the important classes are marked as
+final and the support for currencies is limited to the "official" ones.
 
 ## License
 
