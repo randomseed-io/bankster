@@ -6,7 +6,8 @@
 
   (:refer-clojure :exclude [format compare])
 
-  (:require [trptr.java-wrapper.locale       :as             l]
+  (:require [clojure.string]
+            [trptr.java-wrapper.locale       :as             l]
             [io.randomseed.bankster          :refer       :all]
             [io.randomseed.bankster.scale    :as         scale]
             [io.randomseed.bankster.currency :as      currency]
@@ -40,7 +41,10 @@
   global registry of currencies.
 
   For simple money creation the following macros may be convenient way to go: of,
-  of-major, of-minor."))
+  of-major, of-minor.
+
+  Be careful about using number literals for big-scale amounts (16–17 digits). Use
+  either big decimal literals, e.g. 1234.45689101112M, or strings."))
 
 ;;
 ;; Money generation macros.
@@ -50,6 +54,11 @@
   amount?
   #{\0 \1 \2 \3 \4 \5 \6 \7 \8 \9 \. \- \+})
 
+(defn mk-bigdec
+  {:added "1.0.6" :private true}
+  [n]
+  (if (number? n) (bigdec n) n))
+
 (defn currency+amount
   "Splits the amount and currency."
   {:private true :tag clojure.lang.PersistentVector :added "1.0.0"}
@@ -58,7 +67,9 @@
                                       (if-some [n (namespace amount)]
                                         (str n "/" (name amount))
                                         (name amount))
-                                      (str amount))))
+                                      (if (number? amount)
+                                        (.toPlainString (bigdec amount))
+                                        (str amount)))))
         fdigi? (amount? (first lseq))
         [a b]  (split-with (if fdigi? amount? (complement amount?)) lseq)
         a      (when (seq a) (apply str a))
@@ -132,7 +143,7 @@
    (if (or (ident? a) (string? a) (number? a))
      (let [[cur# am#] (currency+amount a)]
        (if (or (nil? cur#) (nil? am#))
-         (let [[c# a#] (if (number? a) [nil a] [a 0M])]
+         (let [[c# a#] (if (number? a) [nil (mk-bigdec a)] [a 0M])]
            (if (nil? c#)
              `(~fun ~a#)
              (let [curs# (currency/parse-currency-code c#)]
@@ -144,8 +155,8 @@
                       (~fun cc# ~a#)))))))
          (if (nil? am#)
            `(~fun ~cur#)
-           `(~fun ~cur# ~am#))))
-     `(let [a# ~a]
+           `(~fun ~cur# ~(mk-bigdec am#)))))
+     `(let [a# ~(mk-bigdec a)]
         (if (or (number? a#) (instance? Money a#))
           (~fun a#)
           (~fun a# 0M)))))
@@ -154,13 +165,13 @@
      (let [[cur# am#] (currency+amount a)]
        (if (or (nil? cur#) (nil? am#))
          (let [[c# a#] (if (number? a) [b a] [a b])]
-           `(~fun ~(currency/parse-currency-code c#) ~a#))
+           `(~fun ~(currency/parse-currency-code c#) ~(mk-bigdec a#)))
          (if (or (ident? b) (string? b) (number? b))
            (let [rms# (scale/parse-rounding b)]
-             `(~fun ~cur# ~am# ~rms#))
-           `(~fun ~cur# ~am# ~b))))
+             `(~fun ~cur# ~(mk-bigdec am#) ~rms#))
+           `(~fun ~cur# ~(mk-bigdec am#) ~b))))
      (let [b (if (number? b) b (currency/parse-currency-code b))]
-       `(let [a# ~a b# ~b]
+       `(let [a# ~(mk-bigdec a) b# ~(mk-bigdec b)]
           (if (number? a#)
             (~fun b# a#)
             (when (number? b#)
@@ -169,9 +180,9 @@
    (let [rms# (scale/parse-rounding rounding-mode)]
      (if (or (ident? a) (string? a) (number? a))
        (let [[c# a#] (if (number? a) [b a] [a b])]
-         `(~parse ~(currency/parse-currency-code c#) ~a# ~rms#))
+         `(~parse ~(currency/parse-currency-code c#) ~(mk-bigdec a#) ~rms#))
        (let [b (if (number? b) b (currency/parse-currency-code b))]
-         `(let [a# ~a b# ~b]
+         `(let [a# ~(mk-bigdec a) b# ~(mk-bigdec b)]
             (if (number? a#)
               (~parse b# a# ~rms#)
               (when (number? b#)
@@ -199,7 +210,10 @@
   UP          – rounds away from zero
   UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary.
 
-  To create a monetary object using function, call `io.randomseed.bankster.money/value`."
+  To create a monetary object using function, call `io.randomseed.bankster.money/value`.
+
+  Be careful about using number literals for big-scale amounts (16–17 digits). Use
+  either big decimal literals, e.g. 1234.45689101112M, or strings."
   ([]    (of-gen parse))
   ([a]   (of-gen parse a))
   ([a b] (of-gen parse a b))
@@ -1592,11 +1606,18 @@
 ;; Printing.
 ;;
 
+(defn to-plain-string
+  "Converts big decimal to a plain string, adding the M suffix when needed."
+  {:private true :added "1.0.6"}
+  [^BigDecimal n]
+  (str (.toPlainString ^BigDecimal n)
+       (when (> (.precision ^BigDecimal n) 16) "M")))
+
 (defmethod print-method Money
   [m w]
   (let [c (.currency ^Money m)
         n (namespace (currency/id c))
-        a (.toPlainString ^BigDecimal (.amount ^Money m))]
+        a (to-plain-string ^BigDecimal (.amount ^Money m))]
     (print-simple
      (str "#money" (when n (str "/" n))
           "[" a " " (currency/code c) "]")
