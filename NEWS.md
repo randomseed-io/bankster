@@ -1,5 +1,10 @@
 # History of bankster releases
 
+## 1.0.6 (2021-03-19)
+
+- Better printing of monetary amounts of big precisions (adding M letter to a number).
+- Better parsing of monetary amounts of big precisions (early conversion to big decimals to avoid scientific notation).
+
 ## 1.0.5 (2021-03-18)
 
 - Fixed a bug reversing order of weighted currencies.
