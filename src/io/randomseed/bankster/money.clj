@@ -47,6 +47,25 @@
   either big decimal literals, e.g. 1234.45689101112M, or strings."))
 
 ;;
+;; Rescaling helper.
+;;
+
+(defn monetary-scale
+  "Rescales the given number n using `io.randomseed.bankster.scale/apply` on the
+  sc unless the scale is set to auto-scaled."
+  {:tag BigDecimal :private true :added "1.0.7"}
+  ([n]
+   (scale/apply n))
+  ([n sc]
+   (if (currency/val-auto-scaled? sc)
+     (scale/apply n)
+     (scale/apply n (int sc))))
+  ([n sc ^RoundingMode rm]
+   (if (currency/val-auto-scaled? sc)
+     (scale/apply n)
+     (scale/apply n (int sc) ^RoundingMode rm))))
+
+;;
 ;; Money generation macros.
 ;;
 
@@ -96,20 +115,17 @@
   (^Money [mod-fn currency amount]
    (when (some? amount)
      (if-some [^Currency c (currency-unit-strict currency)]
-       (let [s (int (scale/of ^Currency c))]
-         (if (currency/val-auto-scaled? s)
-           (Money. ^Currency c ^BigDecimal (scale/apply (mod-fn amount)))
-           (Money. ^Currency c ^BigDecimal (scale/apply (mod-fn amount) (int s)))))
+       (Money. ^Currency c ^BigDecimal (monetary-scale (mod-fn amount)
+                                                       (int (scale/of ^Currency c))))
        (throw (ex-info
                (str "Cannot create money amount without a valid currency and a default currency was not set.")
                {:amount amount :currency currency})))))
   (^Money [mod-fn ^Currency currency amount ^RoundingMode rounding-mode]
    (when (some? amount)
      (if-some [^Currency c (currency-unit-strict currency)]
-       (let [s (int (scale/of ^Currency c))]
-         (if (currency/val-auto-scaled? s)
-           (Money. ^Currency c ^BigDecimal (scale/apply (mod-fn amount)))
-           (Money. ^Currency c ^BigDecimal (scale/apply (mod-fn amount) (int s) ^RoundingMode rounding-mode))))
+       (Money. ^Currency c ^BigDecimal (monetary-scale (mod-fn amount)
+                                                       (int (scale/of ^Currency c))
+                                                       ^RoundingMode rounding-mode))
        (throw (ex-info
                (str "Cannot create money amount without a valid currency and a default currency was not set.")
                {:amount amount :currency currency}))))))
@@ -246,23 +262,23 @@
      money)
     (^Money [money amount]
      (Money. ^Currency   (.currency ^Money money)
-             ^BigDecimal (scale/apply amount (.scale ^BigDecimal (.amount ^Money money)))))
+             ^BigDecimal (scale/apply amount (int (.scale ^BigDecimal (.amount ^Money money))))))
     (^Money [money amount rounding]
      (Money. ^Currency   (.currency ^Money money)
-             ^BigDecimal (scale/apply amount (.scale ^BigDecimal (.amount ^Money money)) rounding))))
+             ^BigDecimal (scale/apply amount (int (.scale ^BigDecimal (.amount ^Money money))) rounding))))
 
   Currency
 
   (value
     (^Money [currency]
      (Money. ^Currency currency
-             ^BigDecimal (scale/apply 0M (.scale ^Currency currency))))
+             ^BigDecimal (monetary-scale 0M (int (.scale ^Currency currency)))))
     (^Money [currency amount]
      (Money. ^Currency currency
-             ^BigDecimal (scale/apply amount (.scale ^Currency currency))))
+             ^BigDecimal (monetary-scale amount (int (.scale ^Currency currency)))))
     (^Money [currency amount rounding]
      (Money. ^Currency currency
-             ^BigDecimal (scale/apply amount (.scale ^Currency currency) rounding))))
+             ^BigDecimal (monetary-scale amount (int (.scale ^Currency currency)) rounding))))
 
   clojure.lang.Symbol
 
@@ -453,14 +469,16 @@
 
   (^Money apply
    (^Money [m]
-    (let [cur (.currency ^Money m)]
-      (Money. ^Currency   cur
-              (if-some [rm scale/*rounding-mode*]
-                ^BigDecimal (.setScale ^BigDecimal (.amount ^Money m)
-                                       (int (.scale ^Currency cur))
-                                       ^RoundingMode rm)
-                ^BigDecimal (.setScale ^BigDecimal (.amount ^Money m)
-                                       (int (.scale ^Currency cur)))))))
+    (let [^Currency cur (.currency ^Money m)
+          sc (int (.scale ^Currency cur))]
+      (if (currency/val-auto-scaled? sc) m
+          (Money. ^Currency cur
+                  (if-some [rm scale/*rounding-mode*]
+                    ^BigDecimal (.setScale ^BigDecimal (.amount ^Money m)
+                                           (int sc)
+                                           ^RoundingMode rm)
+                    ^BigDecimal (.setScale ^BigDecimal (.amount ^Money m)
+                                           (int sc)))))))
    (^Money [m scale]
     (if-some [rm scale/*rounding-mode*]
       (Money. ^Currency   (.currency ^Money m)
@@ -476,9 +494,12 @@
                                    ^RoundingMode rounding-mode))))
 
   (^BigDecimal amount
-   (^BigDecimal [num]         (.amount ^Money num))
-   (^BigDecimal [num scale]   (.amount ^Money (apply num scale)))
-   (^BigDecimal [num scale r] (.amount ^Money (apply num scale r)))))
+   (^BigDecimal [money]
+    (.amount ^Money money))
+   (^BigDecimal [money scale]
+    (scale/apply ^BigDecimal (.amount ^Money money) (int scale)))
+   (^BigDecimal [money scale ^RoundingMode r]
+    (scale/apply ^BigDecimal (.amount ^Money money) (int scale) ^RoundingMode r))))
 
 ;;
 ;; Comparators.
@@ -701,7 +722,9 @@
 (defn scale
   "Re-scales the given money using a scale (number of decimal places) and an optional
   rounding mode (required when downscaling). The internal scale for a currency object
-  is also updated. If no scale is given, returns the current scale.
+  is NOT updated. If no scale is given, returns the current scale of an amount (not
+  the nominal scale of a currency – which is important in rescaled amount or
+  auto-scaled currencies).
 
   Auto-scaled monetary values are returned unchanged.
 
@@ -711,38 +734,22 @@
   ([^Money money]
    (int (.scale ^BigDecimal (.amount ^Money money))))
   (^Money [^Money money scale]
-   (if (currency/val-auto-scaled? scale) money
-       (Money. ^Currency   (.currency ^Money money)
-               (if-some [rm scale/*rounding-mode*]
-                 ^BigDecimal (.setScale ^BigDecimal (.amount ^Money money)
-                                        (int scale)
-                                        ^RoundingMode rm)
-                 ^BigDecimal (.setScale ^BigDecimal (.amount ^Money money)
-                                        (int scale))))))
+   (scale/apply ^Money money (int scale)))
   (^Money [^Money money scale ^RoundingMode rounding-mode]
-   (if (currency/val-auto-scaled? scale) money
-       (Money. ^Currency   (.currency ^Money money)
-               ^BigDecimal (.setScale ^BigDecimal (.amount ^Money money)
-                                      (int scale)
-                                      ^RoundingMode rounding-mode)))))
+   (scale/apply ^Money money (int scale) ^RoundingMode rounding-mode)))
 
 (defn rescale
-  "Same as scale but its unary variant will rescale an amount of the given money to
+  "Same as scale but its unary variant it will rescale an amount of the given money to
   conform it to its currency settings instead of returning the scale. It has the same
   effect as calling `io.randomseed.bankster.scale/apply` on a money object without
   passing any other arguments."
   {:tag Money :added "1.0.0"}
   (^Money [^Money money]
-   (let [cur (.currency ^Money money)]
-     (Money. ^Currency   cur
-             (if-some [rm scale/*rounding-mode*]
-               ^BigDecimal (.setScale ^BigDecimal (.amount ^Money money)
-                                      (int (.scale ^Currency cur))
-                                      ^RoundingMode rm)
-               ^BigDecimal (.setScale ^BigDecimal (.amount ^Money money)
-                                      (int (.scale ^Currency cur)))))))
-  (^Money [^Money money new-scale] (scale money new-scale))
-  (^Money [^Money money new-scale ^RoundingMode rounding-mode] (scale money new-scale rounding-mode)))
+   (scale/apply ^Money money))
+  (^Money [^Money money scale]
+   (scale/apply ^Money money (int scale)))
+  (^Money [^Money money scale ^RoundingMode rounding-mode]
+   (scale/apply ^Money money (int scale) ^RoundingMode rounding-mode)))
 
 (defn add
   "Adds two or more amounts of money of the same currency. When called without any
@@ -982,7 +989,7 @@
                      (mul-core ^BigDecimal a ^BigDecimal b))))
            ^BigDecimal res (reduce fun ^BigDecimal (fun ^BigDecimal am bm) more)]
        (if-some [^Money m @mon]
-         (Money. ^Currency   (.currency ^Money m)
+         (Money. ^Currency (.currency ^Money m)
                  (if-some [^RoundingMode rm scale/*rounding-mode*]
                    ^BigDecimal (.setScale ^BigDecimal res
                                           (int (.scale ^BigDecimal (.amount ^Money m)))
@@ -1606,18 +1613,11 @@
 ;; Printing.
 ;;
 
-(defn to-plain-string
-  "Converts big decimal to a plain string, adding the M suffix when needed."
-  {:private true :added "1.0.6"}
-  [^BigDecimal n]
-  (str (.toPlainString ^BigDecimal n)
-       (when (> (.precision ^BigDecimal n) 16) "M")))
-
 (defmethod print-method Money
   [m w]
   (let [c (.currency ^Money m)
         n (namespace (currency/id c))
-        a (to-plain-string ^BigDecimal (.amount ^Money m))]
+        a (scale/to-plain-string ^BigDecimal (.amount ^Money m))]
     (print-simple
      (str "#money" (when n (str "/" n))
           "[" a " " (currency/code c) "]")
