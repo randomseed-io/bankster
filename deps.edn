@@ -90,7 +90,7 @@
                        :main-opts ["-m" "io.randomseed.bankster.rebel.main"]}
            :pack {
                   :extra-deps {pack/pack.alpha {:git/url "https://github.com/juxt/pack.alpha.git"
-                                                :sha "2769a6224bfb938e777906ea311b3daf7d2220f5"}}}}
+                                                :sha "0e8731e0f24db05b74769e219051b0e92b50624a"}}}}
 
  :codox {:name        "bankster"
          :description "Money Creation Made Easy"
