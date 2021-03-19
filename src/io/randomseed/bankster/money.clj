@@ -405,6 +405,23 @@
   {:tag BigDecimal :added "1.0.0"}
   [^Money money]
   (.stripTrailingZeros ^BigDecimal (.amount ^Money money)))
+(defn unparse
+  "Returns a vector with symbolic representations of amount and currency. Useful for
+  printing to EDN or displaying on a console. The letter M will be added to the
+  amount if its precision exceeds 15."
+  {:tag clojure.lang.IPersistentVector :added "1.0.7"}
+  ([money]
+   (when-some [m (value money)]
+     [(symbol (scale/to-plain-string ^BigDecimal (.amount ^Money m)))
+      (symbol (currency/id ^Currency (.currency ^Money m)))]))
+  ([a b]
+   (when-some [m (value a b)]
+     [(symbol (scale/to-plain-string ^BigDecimal (.amount ^Money m)))
+      (symbol (currency/id ^Currency (.currency ^Money m)))]))
+  ([a b r]
+   (when-some [m (value a b r)]
+     [(symbol (scale/to-plain-string ^BigDecimal (.amount ^Money m)))
+      (symbol (currency/id ^Currency (.currency ^Money m)))])))
 
 ;;
 ;; Monetary implementation.
