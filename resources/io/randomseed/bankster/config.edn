@@ -1,4 +1,4 @@
-{:version "2021030520100217"
+{:version "2021031911500123"
  :currencies
  {:ADP {:kind :FIAT :numeric 20  :domain :ISO-4217 :scale 0}
   :AED {:kind :FIAT :numeric 784 :domain :ISO-4217 :scale 2}
@@ -206,10 +206,15 @@
   :ZMW {:kind :FIAT :numeric 967 :domain :ISO-4217 :scale 2}
   :ZWL {:kind :FIAT :numeric 932 :domain :ISO-4217 :scale 2}
   :crypto/ADA    {:kind :DECENTRALIZED :scale  6 :weight 5}
+  :crypto/AMLT   {:kind :FIDUCIARY     :scale 18}
+  :crypto/BAT    {:kind :FIDUCIARY     :scale 18}
+  :crypto/BCC    {:kind :FIDUCIARY     :scale 18}
   :crypto/BCH    {:kind :DECENTRALIZED :scale  8}
+  :crypto/BCP    {:kind :FIDUCIARY     :scale 18}
   :crypto/BNB    {:kind :COMBANK       :scale  8}
   :crypto/BSV    {:kind :DECENTRALIZED :scale  8}
   :crypto/BTC    {:kind :DECENTRALIZED :scale  8 :weight 5}
+  :crypto/BTG    {:kind :DECENTRALIZED :scale  8}
   :crypto/DAI    {:kind :DECENTRALIZED :scale 18 :weight 4}
   :crypto/DASH   {:kind :DECENTRALIZED :scale  8}
   :crypto/DOGE   {:kind :DECENTRALIZED :scale  8}
@@ -217,26 +222,49 @@
   :crypto/EOS    {:kind :DECENTRALIZED :scale  4}
   :crypto/ETC    {:kind :DECENTRALIZED :scale 18}
   :crypto/ETH    {:kind :DECENTRALIZED :scale 18 :weight 5}
+  :crypto/EXY    {:kind :FIDUCIARY     :scale 18}
+  :crypto/GAME   {:kind :FIDUCIARY     :scale 18}
+  :crypto/GGC    {:kind :FIDUCIARY     :scale 18}
+  :crypto/GNT    {:kind :FIDUCIARY     :scale 18}
+  :crypto/KZC    {:kind :FIDUCIARY     :scale 18}
+  :crypto/LINK   {:kind :FIDUCIARY     :scale 18}
+  :crypto/LML    {:kind :FIDUCIARY     :scale 18}
+  :crypto/LSK    {:kind :DECENTRALIZED :scale  8}
   :crypto/LTC    {:kind :DECENTRALIZED :scale  8}
   :crypto/MKR    {:kind :DECENTRALIZED :scale 18}
+  :crypto/NEU    {:kind :FIDUCIARY     :scale 18}
   :crypto/NMC    {:kind :DECENTRALIZED :scale  8}
+  :crypto/NPXS   {:kind :FIDUCIARY     :scale 18}
+  :crypto/OMG    {:kind :COMBANK       :scale 18}
+  :crypto/PAY    {:kind :COMBANK       :scale 18}
+  :crypto/QARK   {:kind :FIDUCIARY     :scale 18}
   :crypto/REP    {:kind :DECENTRALIZED :scale 18}
+  :crypto/SRN    {:kind :FIDUCIARY     :scale 18}
   :crypto/STEEM  {:kind :FIDUCIARY     :scale 18}
+  :crypto/TRX    {:kind :FIDUCIARY     :scale 18}
+  :crypto/USDC   {:kind :COMBANK       :scale  8 :weight 4}
+  :crypto/USDT   {:kind :COMBANK       :scale  8 :weight 4}
   :crypto/VTC    {:kind :DECENTRALIZED :scale  8}
+  :crypto/XBX    {:kind :FIDUCIARY     :scale 18}
+  :crypto/XIN    {:kind :DECENTRALIZED :scale  8}
   :crypto/XLM    {:kind :FIDUCIARY     :scale  8}
   :crypto/XMR    {:kind :DECENTRALIZED :scale 12}
   :crypto/XRP    {:kind :COMBANK       :scale  6}
   :crypto/XTZ    {:kind :DECENTRALIZED :scale  6}
-  :crypto/USDT   {:kind :COMBANK       :scale  8 :weight 4}
-  :crypto/USDC   {:kind :COMBANK       :scale  8 :weight 4}
-  :crypto/ZEC    {:kind :DECENTRALIZED :scale  8}}
+  :crypto/ZEC    {:kind :DECENTRALIZED :scale  8}
+  :crypto/ZRX    {:kind :FIDUCIARY     :scale 18}}
  :localized {:EUR               {:pl      {:name "euro"                  :symbol "€"}}
              :PLN               {:pl      {:name "złoty polski"          :symbol "zł"}}
              :crypto/ADA        {:*       {:name "Ada"                   :symbol "₳"}}
+             :crypto/AMLT       {:*       {:name "AML Token"             :symbol "⬙"}}
+             :crypto/BAT        {:*       {:name "Basic Attention Token" :symbol "▵"}}
+             :crypto/BCC        {:*       {:name "Basiscoin Cash"        :symbol "⟥"}}
              :crypto/BCH        {:*       {:name "Bitcoin Cash"          :symbol "Ƀ"}}
+             :crypto/BCP        {:*       {:name "Bitcashpay"            :symbol "BCP"}}
              :crypto/BNB        {:*       {:name "Binance Coin"          :symbol "BNB"}}
              :crypto/BSV        {:*       {:name "Bitcoin SV"            :symbol "Ɓ"}}
              :crypto/BTC        {:*       {:name "Bitcoin"               :symbol "₿"}}
+             :crypto/BTG        {:*       {:name "Bitcoin Gold"          :symbol "BTG"}}
              :crypto/DAI        {:*       {:name "Dai"                   :symbol "◈"}}
              :crypto/DASH       {:*       {:name "DASH"                  :symbol "DASH"}}
              :crypto/DOGE       {:*       {:name "Dogecoin"              :symbol "Ð"}}
@@ -244,19 +272,37 @@
              :crypto/EOS        {:*       {:name "EOS"                   :symbol "ε"}}
              :crypto/ETC        {:*       {:name "Ethereum Classic"      :symbol "Ξ"}}
              :crypto/ETH        {:*       {:name "Ether"                 :symbol "Ξ"}}
+             :crypto/EXY        {:*       {:name "Experty"               :symbol "EXY"}}
+             :crypto/GAME       {:*       {:name "GameCredits"           :symbol "G"}}
+             :crypto/GGC        {:*       {:name "Global Game Coin"      :symbol "GG"}}
+             :crypto/GNT        {:*       {:name "Golem"                 :symbol "ꖉ"}}
+             :crypto/KZC        {:*       {:name "KZ Cash"               :symbol "⨴"}}
+             :crypto/LINK       {:*       {:name "Chainlink"             :symbol "⬡"}}
+             :crypto/LML        {:*       {:name "Lisk Machine Learning" :symbol "◇"}}
+             :crypto/LSK        {:*       {:name "Lisk"                  :symbol "⬠"}}
              :crypto/LTC        {:*       {:name "Litecoin"              :symbol "Ł"}}
              :crypto/MKR        {:*       {:name "Maker"                 :symbol "Μ"}}
+             :crypto/NEU        {:*       {:name "Neumark"               :symbol "NEU"}}
              :crypto/NMC        {:*       {:name "NMC"                   :symbol "ℕ"}}
+             :crypto/NPXS       {:*       {:name "Pundi X"               :symbol "⤫"}}
+             :crypto/OMG        {:*       {:name "OMG"                   :symbol "OMG"}}
+             :crypto/PAY        {:*       {:name "TenX PAY"              :symbol "⋈"}}
              :crypto/REP        {:*       {:name "REP"                   :symbol "Ɍ"}}
+             :crypto/SRN        {:*       {:name "Sirin Labs Token"      :symbol "⌓"}}
              :crypto/STEEM      {:*       {:name "Steem"                 :symbol "ȿ"}}
+             :crypto/TRX        {:*       {:name "TRON"                  :symbol "TRX"}}
+             :crypto/USDC       {:*       {:name "USD Coin"              :symbol "USDC"}}
+             :crypto/USDT       {:*       {:name "Tether"                :symbol "₮"}}
+             :crypto/WIS        {:*       {:name "Experty Wisdom Token"  :symbol "∾"}}
              :crypto/VTC        {:*       {:name "Vertcoin"              :symbol "✓"}}
+             :crypto/XBX        {:*       {:name "Bitex Global"          :symbol "XBX"}}
+             :crypto/XIN        {:*       {:name "Infinity Economics"    :symbol "⦷"}}
              :crypto/XLM        {:*       {:name "Stellar Lumen"         :symbol "Ø"}}
              :crypto/XMR        {:*       {:name "Monero"                :symbol "ɱ"}}
              :crypto/XRP        {:*       {:name "Ripple"                :symbol "✕"}}
              :crypto/XTZ        {:*       {:name "Tezos"                 :symbol "ꜩ"}}
-             :crypto/USDT       {:*       {:name "Tether"                :symbol "₮"}}
-             :crypto/USDC       {:*       {:name "USD Coin"              :symbol "USDC"}}
-             :crypto/ZEC        {:*       {:name "Zcach"                 :symbol "ⓩ"}}}
+             :crypto/ZEC        {:*       {:name "Zcach"                 :symbol "ⓩ"}}
+             :crypto/ZRX        {:*       {:name "0x"                    :symbol "ꕕ"}}}
  :countries {:AD :EUR
              :AE :AED
              :AF :AFN
