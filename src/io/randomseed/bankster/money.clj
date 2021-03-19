@@ -391,20 +391,24 @@
 (defn amount
   "Returns the amount of the given money."
   {:tag BigDecimal :added "1.0.0"}
-  [^Money money]
-  (.amount ^Money money))
+  (^BigDecimal [money] (when-some [m (value money)] (.amount ^Money m)))
+  (^BigDecimal [a b]   (when-some [m (value a b)]   (.amount ^Money m)))
+  (^BigDecimal [a b r] (when-some [m (value a b r)] (.amount ^Money m))))
 
 (defn currency
   "Returns the currency of the given money."
-  {:tag Currency, :added "1.0.0"}
-  [^Money money]
-  (.currency ^Money money))
+  {:tag Currency :added "1.0.0"}
+  (^Currency [money] (when-some [m (value money)] (.currency ^Money m)))
+  (^Currency [a b]   (when-some [m (value a b)]   (.currency ^Money m)))
+  (^Currency [a b r] (when-some [m (value a b r)] (.currency ^Money m))))
 
 (defn stripped-amount
   "Returns the amount of the given money with trailing zeros removed."
   {:tag BigDecimal :added "1.0.0"}
-  [^Money money]
-  (.stripTrailingZeros ^BigDecimal (.amount ^Money money)))
+  (^BigDecimal [money] (when-some [m (value money)] (.stripTrailingZeros ^BigDecimal (.amount ^Money m))))
+  (^BigDecimal [a b]   (when-some [m (value a b)]   (.stripTrailingZeros ^BigDecimal (.amount ^Money m))))
+  (^BigDecimal [a b r] (when-some [m (value a b r)] (.stripTrailingZeros ^BigDecimal (.amount ^Money m)))))
+
 (defn unparse
   "Returns a vector with symbolic representations of amount and currency. Useful for
   printing to EDN or displaying on a console. The letter M will be added to the
