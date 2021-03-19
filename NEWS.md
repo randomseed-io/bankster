@@ -1,5 +1,11 @@
 # History of bankster releases
 
+## 1.0.7 (2021-03-19)
+
+- Improved and unified rescaling of Money objects when their currency is auto-scaled.
+- Functions money/amount, money/stripped-amount and money/currency are now polymorphic.
+- Currencies database updated.
+
 ## 1.0.6 (2021-03-19)
 
 - Better printing of monetary amounts of big precisions (adding M letter to a number).

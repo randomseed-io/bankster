@@ -1,5 +1,5 @@
 APPNAME = "bankster"
-VERSION = "1.0.6"
+VERSION = "1.0.7"
 
 .PHONY: 		watch default docs deploy test test-clj sig jar pom clean tag
 
@@ -31,7 +31,7 @@ pom: pom.xml
 			rm -f pom.xml.asc
 
 $(APPNAME).jar: pom.xml
-			clojure -Apack -m mach.pack.alpha.skinny --no-libs --project-path $(APPNAME).jar
+			clojure -Mpack -m mach.pack.alpha.skinny --no-libs --project-path $(APPNAME).jar
 
 jar: $(APPNAME).jar
 
