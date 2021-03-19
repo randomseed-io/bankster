@@ -126,7 +126,10 @@
   values that already are scalable it changes their scales if called with a second
   argument. The third argument, rounding-mode, must be present when downscaling and
   rounding is needed. For compound values (like monetary amounts) it will rescale the
-  amount but will NOT update scale information of the unit (e.g. currency component).")
+  amount but will NOT update scale information of the unit (e.g. currency component).
+
+  When operating on Money objects and called with a single argument, it reapplies
+  the nominal currency scale.")
 
   (amount
     [num] [num scale] [num scale rounding-mode]
