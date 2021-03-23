@@ -2,4 +2,4 @@
 
 echo "[bankster] Building docs, please wait..."
 
-clojure -A:docs
+clojure -M:docs

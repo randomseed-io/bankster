@@ -2,5 +2,5 @@
 
 echo "[bankster] Generating reader handlers..."
 
-clojure -A:readers
+clojure -M:readers
 

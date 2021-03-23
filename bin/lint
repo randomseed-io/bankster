@@ -2,4 +2,4 @@
 
 echo "[bankster] Running Eastwood lint tool..."
 
-clojure -A:eastwood
+clojure -M:eastwood
