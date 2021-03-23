@@ -736,7 +736,7 @@
   Please note that removal of a currency whose identifier and numeric identifier are
   the same as the currencies which are already registered, will not only remove the
   existing currency identified by the ID but also remove numeric ID from within
-  currency objects present."
+  all currency objects present in a registry."
   {:tag Registry :added "1.0.0"}
   [^Registry registry currency]
   (when registry
@@ -883,7 +883,8 @@
 
   If the update mode is enabled then all of the current countries associated with the
   currency are removed and replaced with the provided ones. To simply add new
-  countries, use add-countries."
+  countries, use add-countries. Also note that update mode removed localized
+  properties so new one must be provided."
   {:tag Registry :added "1.0.0"
    :arglists '(^Registry [^Registry registry currency]
                ^Registry [^Registry registry currency country-ids]
@@ -1208,6 +1209,19 @@
    :GBP :en_GB :XPF :fr_PF :XAF :fr_CF :FKP :en_FK
    :NZD :en_NZ :ILS :he_IL :NOK :nb_NO :AUD :en_AU
    :XCD :en_CB :DKK :da    :ANG :nl_NL :XOF :fr_CF})
+
+(defn localized-properties
+  "Returns a map of localized properties for the given currency. Locale objects are
+  translated back to their keyword representations."
+  {:tag clojure.lang.PersistentHashMap :added "1.0.8"}
+  ([c]
+   (map/map-keys
+    (comp keyword str l/locale)
+    (get (registry/currency-id->localized ) (id c))))
+  ([c ^Registry registry]
+   (map/map-keys
+    (comp keyword str l/locale)
+    (get (registry/currency-id->localized registry) (id c registry)))))
 
 (defn get-localized-property
   "Returns localized properties of the currency object for the given locale."
