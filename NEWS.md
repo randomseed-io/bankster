@@ -1,5 +1,10 @@
 # History of bankster releases
 
+## 1.0.8 (2021-03-23)
+
+- Function money/convert now accepts a price and is more polymorphic.
+- Added the function currency/localized-properties.
+
 ## 1.0.7 (2021-03-19)
 
 - Improved and unified rescaling of Money objects when their currency is auto-scaled.
