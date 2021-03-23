@@ -217,14 +217,14 @@
   currency, rounding mode must be given, which may be a symbol, a keyword or a string
   of the following:
 
-  CEILING     - rounds towards positive infinity.
-  DOWN        - rounds towards zero.
-  FLOOR       - rounds towards negative infinity.
-  HALF_DOWN   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
-  HALF_EVEN   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
-  HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
-  UP          – rounds away from zero
-  UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary.
+  * CEILING     - rounds towards positive infinity.
+  * DOWN        - rounds towards zero.
+  * FLOOR       - rounds towards negative infinity.
+  * HALF_DOWN   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
+  * HALF_EVEN   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
+  * HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
+  * UP          – rounds away from zero
+  * UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary.
 
   To create a monetary object using function, call `io.randomseed.bankster.money/value`.
 
@@ -1273,31 +1273,48 @@
 
 (defn convert
   "Converts a monetary amount from one currency to another using the given
-  multiplier (expressing a conversion rate).
+  multiplier (expressing a conversion rate). When two money objects are given, the
+  second one should express a price of 1 unit of the first currency.
 
   When no rounding mode is given and rounding is required during scaling to another
   currency then the value of dynamic variable
   `io.randomseed.bankster.scale/*rounding-mode*` will be used."
-  {:tag Money :added "1.0.0"}
-  (^Money [^Money a currency multiplier]
+  {:tag Money :added "1.0.0"
+   :arglists '([money price]
+               [money price rounding-mode]
+               [money to-currency exchange-rate]
+               [money to-currency exchange-rate rounding-mode])}
+  (^Money [a price]
+   (let [^Money price (value price)]
+     (convert a
+              (.currency ^Money price)
+              (.amount   ^Money price))))
+  (^Money [a currency-or-price rate-or-rounding-mode]
+   (if (instance? Money currency-or-price)
+     (convert a
+              (.currency ^Money currency-or-price)
+              (.amount   ^Money currency-or-price)
+              rate-or-rounding-mode)
+     (let [^Currency currency (currency/unit currency-or-price)
+           ^Money a (value a)
+           sc (int (scale/of ^Currency currency))]
+       (Money. ^Currency   currency
+               ^BigDecimal (if (currency/val-auto-scaled? sc)
+                             (.multiply ^BigDecimal (.amount ^Money a)
+                                        ^BigDecimal (scale/apply rate-or-rounding-mode))
+                             (scale/apply (.multiply ^BigDecimal (.amount ^Money a)
+                                                     ^BigDecimal (scale/apply rate-or-rounding-mode))
+                                          (int sc)))))))
+  (^Money [a currency rate rounding-mode]
    (let [^Currency currency (currency/unit currency)
+         ^Money a (value a)
          sc (int (scale/of ^Currency currency))]
      (Money. ^Currency   currency
              ^BigDecimal (if (currency/val-auto-scaled? sc)
                            (.multiply ^BigDecimal (.amount ^Money a)
-                                      ^BigDecimal (scale/apply multiplier))
+                                      ^BigDecimal (scale/apply rate))
                            (scale/apply (.multiply ^BigDecimal (.amount ^Money a)
-                                                   ^BigDecimal (scale/apply multiplier))
-                                        (int sc))))))
-  ([^Money a currency multiplier rounding-mode]
-   (let [^Currency currency (currency/unit currency)
-         sc (int (scale/of ^Currency currency))]
-     (Money. ^Currency   currency
-             ^BigDecimal (if (currency/val-auto-scaled? sc)
-                           (.multiply ^BigDecimal (.amount ^Money a)
-                                      ^BigDecimal (scale/apply multiplier))
-                           (scale/apply (.multiply ^BigDecimal (.amount ^Money a)
-                                                   ^BigDecimal (scale/apply multiplier))
+                                                   ^BigDecimal (scale/apply rate))
                                         (int sc)
                                         rounding-mode))))))
 
