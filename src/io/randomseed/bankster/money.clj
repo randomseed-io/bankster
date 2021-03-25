@@ -1669,7 +1669,7 @@
   [m w]
   (let [c (.currency ^Money m)
         n (namespace (currency/id c))
-        a (scale/to-plain-string ^BigDecimal (.amount ^Money m))]
+        a (scale/to-clojure-string ^BigDecimal (.amount ^Money m))]
     (print-simple
      (str "#money" (when n (str "/" n))
           "[" a " " (currency/code c) "]")
