@@ -149,7 +149,7 @@
   the `io.randomseed.bankster.registry/*default*` dynamic variable. If the currency
   record is passed, it will be returned as is without consulting the registry.")
 
-  (^{:tag Currency :added "1.0.2"}
+  (^{:added "1.0.2"}
    unit
    [id] [id registry]
    "Returns a currency object for the given ID or currency code and registry. If the
