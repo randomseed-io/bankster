@@ -1495,7 +1495,7 @@
 (def ^{:private true :tag java.util.Currency :added "1.0.0"}
   iso-ref-currency
   "Reference ISO currency used to construct a formatter for non-ISO currencies."
-  (java :XXX))
+  (java.util.Currency/getInstance "XXX"))
 
 (def ^{:no-doc true :tag DecimalFormat :added "1.0.0"}
   formatter-instance
