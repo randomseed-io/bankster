@@ -115,8 +115,8 @@
 (defprotocol ^{:added "1.0.0"} Scalable
   "The Scalable protocol describes values that can be scaled."
 
-  (^{:tag 'int :added "1.0.0"}
-   of
+  (^{:added "1.0.0"}
+   ^int of
    [num]
    "Returns a scale. If the given value is not of type that scales (or is used to
   produce scaled types) it will be converted to such.")
@@ -204,7 +204,7 @@
   (^Boolean scalable? [num] true)
   (^Boolean applied?  [num] false)
 
-  (of [num] (.scale ^BigDecimal (apply num)))
+  (of [num] (int (.scale ^BigDecimal (apply num))))
 
   (^BigDecimal apply
    (^BigDecimal [num]
