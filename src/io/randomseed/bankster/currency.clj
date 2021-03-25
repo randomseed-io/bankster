@@ -141,7 +141,7 @@
   variable. If the given argument is already an identifier (a keyword), it will be
   returned as is.")
 
-  (^{:tag Currency :added "1.0.0"}
+  (^{:added "1.0.0"}
    of-id
    [id] [id registry]
    "Returns a currency object for the given ID and registry. If the registry is not
@@ -283,9 +283,9 @@
                  {:registry registry})))))
 
   (unit
-    ([id]
+    (^Currency [id]
      (unit id (registry/get)))
-    ([id ^Registry registry]
+    (^Currency [id ^Registry registry]
      (or (if (namespace id)
            (get (registry/currency-id->currency registry) id)
            (first (get (registry/currency-code->currencies registry) id)))
