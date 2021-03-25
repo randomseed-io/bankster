@@ -4,7 +4,7 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [format compare])
+  (:refer-clojure :exclude [format compare cast])
 
   (:require [clojure.string]
             [trptr.java-wrapper.locale       :as             l]
@@ -45,7 +45,15 @@
   of-major, of-minor.
 
   Be careful about using number literals for big-scale amounts (16–17 digits). Use
-  either big decimal literals, e.g. 1234.45689101112M, or strings."))
+  either big decimal literals, e.g. 1234.45689101112M, or strings.")
+
+  (^{:tag io.randomseed.bankster.Money :added "1.0.9"}
+   cast
+   [money] [money currency] [money currency rounding-mode]
+   "Casts an existing Money object to another having a different currency, rescaling
+  the amount and optionally rounding it. This is useful when operating on multiple
+  currency registries compatible with different data sources or processing
+  engines."))
 
 ;;
 ;; Rescaling helper.
@@ -264,9 +272,21 @@
     (^Money [money amount]
      (Money. ^Currency   (.currency ^Money money)
              ^BigDecimal (scale/apply amount (int (.scale ^BigDecimal (.amount ^Money money))))))
-    (^Money [money amount rounding]
+    (^Money [money amount ^RoundingMode rounding]
      (Money. ^Currency   (.currency ^Money money)
              ^BigDecimal (scale/apply amount (int (.scale ^BigDecimal (.amount ^Money money))) rounding))))
+
+  (cast
+    (^Money [money]
+     money)
+    (^Money [money currency]
+     (let [^Currency cur (currency/unit currency)]
+       (Money. ^Currency cur
+               ^BigDecimal (monetary-scale (.amount ^Money money) (int (.scale ^Currency cur))))))
+    (^Money [money currency ^RoundingMode rounding]
+     (let [^Currency cur (currency/unit currency)]
+       (Money. ^Currency cur
+               ^BigDecimal (monetary-scale (.amount ^Money money) (int (.scale ^Currency cur)) rounding)))))
 
   Currency
 
@@ -277,9 +297,21 @@
     (^Money [currency amount]
      (Money. ^Currency currency
              ^BigDecimal (monetary-scale amount (int (.scale ^Currency currency)))))
-    (^Money [currency amount rounding]
+    (^Money [currency amount ^RoundingMode rounding]
      (Money. ^Currency currency
              ^BigDecimal (monetary-scale amount (int (.scale ^Currency currency)) rounding))))
+
+  (cast
+    (^Money [currency]
+     (value currency))
+    (^Money [currency ^Money money]
+     (let [^Currency cur (currency/unit currency)]
+       (Money. ^Currency   cur
+               ^BigDecimal (monetary-scale (.amount ^Money money) (int (.scale ^Currency cur))))))
+    (^Money [currency ^Money money ^RoundingMode rounding]
+     (let [^Currency cur (currency/unit currency)]
+       (Money. ^Currency   cur
+               ^BigDecimal (monetary-scale (.amount ^Money money) (int (.scale ^Currency cur)) rounding)))))
 
   clojure.lang.Symbol
 
@@ -288,12 +320,22 @@
     (^Money [currency-id amount]          (value (currency/unit currency-id) amount))
     (^Money [currency-id amount rounding] (value (currency/unit currency-id) amount rounding)))
 
+  (cast
+    (^Money [currency-id]                 (value (currency/unit currency-id)))
+    (^Money [currency-id money]           (cast  (currency/unit currency-id) money))
+    (^Money [currency-id money rounding]  (cast  (currency/unit currency-id) money rounding)))
+
   clojure.lang.Keyword
 
   (value
     (^Money [currency-id]                 (value (currency/unit currency-id)))
     (^Money [currency-id amount]          (value (currency/unit currency-id) amount))
     (^Money [currency-id amount rounding] (value (currency/unit currency-id) amount rounding)))
+
+  (cast
+    (^Money [currency-id]                 (value (currency/unit currency-id)))
+    (^Money [currency-id money]           (cast (currency/unit currency-id) money))
+    (^Money [currency-id money rounding]  (cast (currency/unit currency-id) money rounding)))
 
   String
 
@@ -302,12 +344,22 @@
     (^Money [currency-id amount]          (value (currency/unit currency-id) amount))
     (^Money [currency-id amount rounding] (value (currency/unit currency-id) amount rounding)))
 
+  (cast
+    (^Money [currency-id]                 (value (currency/unit currency-id)))
+    (^Money [currency-id money]           (cast  (currency/unit currency-id) money))
+    (^Money [currency-id money rounding]  (cast  (currency/unit currency-id) money rounding)))
+
   Number
 
   (value
     (^Money [amount]                      (value (currency/unit currency/*default*) amount))
     (^Money [amount currency-id]          (value (currency/unit currency-id) amount))
     (^Money [amount currency-id rounding] (value (currency/unit currency-id) amount rounding)))
+
+  (cast
+    (^Money [amount]                      (value (currency/unit currency/*default*) amount))
+    (^Money [currency-id money]           (cast  (currency/unit currency-id) money))
+    (^Money [currency-id money rounding]  (cast  (currency/unit currency-id) money rounding)))
 
   nil
 
@@ -316,19 +368,34 @@
     ([a b]   (parse b))
     ([a c r] (parse c nil r)))
 
+  (cast
+    ([c]     nil)
+    ([a b]   nil)
+    ([a c r] nil))
+
   clojure.lang.Sequential
 
   (value
-    (^Money [v]     (apply parse ^Currency (first v) (rest v)))
+    (^Money [v]     (apply parse (first v) (rest v)))
     (^Money [v r]   (value (first v) (second v) r))
     (^Money [v b r] (value (first v) b r)))
+
+  (cast
+    (^Money [v]     (apply cast (first v) (rest v)))
+    (^Money [v r]   (cast (first v) (second v) r))
+    (^Money [v b r] (cast (first v) b r)))
 
   Object
 
   (value
     (^Money [a]     (parse a))
     (^Money [a c]   (parse a c))
-    (^Money [a c r] (parse a c r))))
+    (^Money [a c r] (parse a c r)))
+
+  (cast
+    (^Money [a]     (cast (parse a)))
+    (^Money [a c]   (cast (parse a) c))
+    (^Money [a c r] (cast (parse a) c r))))
 
 (defn major-value
   "Creates new Money object for the given value which will become a major part of the
