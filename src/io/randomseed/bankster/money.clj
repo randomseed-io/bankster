@@ -1420,6 +1420,19 @@
   [^Money a]
   [(major->long a) (minor->long a)])
 
+(defn ->symbol
+  "Converts an amount of the given money to a symbol."
+  {:tag clojure.lang.Symbol :added "1.0.9"}
+  [^Money a]
+  (scale/to-symbol ^BigDecimal (.amount ^Money a)))
+
+(defn ->clojure-symbol
+  "Converts an amount of the given money to a clojure symbol (with added M when
+  needed)."
+  {:tag clojure.lang.Symbol :added "1.0.9"}
+  [^Money a]
+  (scale/to-clojure-symbol ^BigDecimal (.amount ^Money a)))
+
 (defn ->double
   "Converts an amount of the given money to double."
   {:tag 'double :added "1.0.0"}

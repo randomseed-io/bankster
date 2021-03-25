@@ -459,6 +459,18 @@
   (str ^String (.toPlainString ^BigDecimal n)
        (when (>= (.precision ^BigDecimal n) 16) "M")))
 
+(defn to-clojure-symbol
+  "Converts big decimal to a symbol, adding the M suffix when needed."
+  {:tag clojure.lang.Symbol :added "1.0.9"}
+  [^BigDecimal n]
+  (symbol (to-clojure-string n)))
+
+(defn to-symbol
+  "Converts big decimal to a symbol."
+  {:tag clojure.lang.Symbol :added "1.0.9"}
+  [^BigDecimal n]
+  (symbol (to-plain-string n)))
+
 ;;
 ;; Rounding mode handling.
 ;;
