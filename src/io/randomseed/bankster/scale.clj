@@ -449,12 +449,18 @@
   (^io.randomseed.bankster.scale.Scalable [num scale rounding-mode] (apply num scale rounding-mode)))
 
 ;;
-;; Printing.
+;; Conversions to printable.
 ;;
 
 (defn to-plain-string
-  "Converts big decimal to a plain string, adding the M suffix when needed."
+  "Converts big decimal to a plain string."
   {:tag String :added "1.0.7"}
+  [^BigDecimal n]
+  (.toPlainString ^BigDecimal n))
+
+(defn to-clojure-string
+  "Converts big decimal to a plain string, adding the M suffix when needed."
+  {:tag String :added "1.0.9"}
   [^BigDecimal n]
   (str ^String (.toPlainString ^BigDecimal n)
        (when (>= (.precision ^BigDecimal n) 16) "M")))
