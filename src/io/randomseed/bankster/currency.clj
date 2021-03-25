@@ -283,9 +283,9 @@
                  {:registry registry})))))
 
   (unit
-    (^Currency [id]
+    (^io.randomseed.bankster.Currency [id]
      (unit id (registry/get)))
-    (^Currency [id ^Registry registry]
+    (^io.randomseed.bankster.Currency [id ^Registry registry]
      (or (if (namespace id)
            (get (registry/currency-id->currency registry) id)
            (first (get (registry/currency-code->currencies registry) id)))
