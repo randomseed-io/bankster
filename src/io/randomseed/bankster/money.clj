@@ -590,7 +590,7 @@
   (= (.id ^Currency (.currency ^Money a))
      (.id ^Currency (.currency ^Money b))))
 
-(defn ^Boolean eq?
+(defn eq?
   "Return true if the money amounts and their currencies are equal. Note that
   currencies with different scales are considered different. Use eq-am? to compare
   amounts regardless of their scales."
@@ -606,7 +606,7 @@
        (eq? b (first more)))
      false)))
 
-(defn ^Boolean eq-am?
+(defn eq-am?
   "Return true if the money amounts and their currencies are equal, regardless of their
   scales."
   {:tag Boolean :added "1.0.0"}
@@ -630,7 +630,7 @@
        (eq-am? b (first more)))
      false)))
 
-(defn ^Boolean ne?
+(defn ne?
   "Returns true if the money amounts or their currencies are different, regardless of
   their scales. Note that currencies with different scales are considered different."
   {:tag Boolean :added "1.0.0"}
@@ -640,7 +640,7 @@
   (^Boolean [^Money a ^Money b & more]
    (not (apply eq? ^Money a ^Money b more))))
 
-(defn ^Boolean ne-am?
+(defn ne-am?
   "Returns true if the money amounts or their currencies are different, regardless of
   their scales."
   {:tag Boolean :added "1.0.0"}
@@ -1559,7 +1559,7 @@
     (let [cush (currency/code c)
           name (str "of-" cush)
           nsnm "io.randomseed.bankster.money"
-          mkfn (fn ^Money [amount] (if (nil? amount) '(quote nil) (of c amount)))
+          mkfn (fn [amount] (if (nil? amount) '(quote nil) (of c amount)))
           varn (intern (symbol nsnm) (symbol name) mkfn)
           snam (symbol "m" cush)]
       (alter-var-root #'clojure.core/*data-readers*

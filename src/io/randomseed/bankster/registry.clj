@@ -20,7 +20,8 @@
 ;; Registry version generator.
 ;;
 
-(defn ^String default-version
+(defn default-version
+  {:tag String :added "1.0.0"}
   []
   (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "YYYYMMddHHmmssSS")))
 
@@ -70,7 +71,7 @@
 ;; Registry constructor.
 ;;
 
-(defn ^Registry new-registry
+(defn new-registry
   "Creates a new registry."
   {:tag Registry :added "1.0.0"}
   (^Registry []

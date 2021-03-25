@@ -437,9 +437,9 @@
 ;; Aliases.
 ;;
 
-(defn ^io.randomseed.bankster.scale.Scalable with
+(defn with
   "Alias for scale/apply."
-  {:added "1.0.0"}
+  {:tag io.randomseed.bankster.scale.Scalable :added "1.0.0"}
   (^io.randomseed.bankster.scale.Scalable [num] (apply num))
   (^io.randomseed.bankster.scale.Scalable [num scale] (apply num scale))
   (^io.randomseed.bankster.scale.Scalable [num scale rounding-mode] (apply num scale rounding-mode)))

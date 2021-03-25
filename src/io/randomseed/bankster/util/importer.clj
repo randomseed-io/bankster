@@ -114,7 +114,7 @@
 ;; Joda Money CSV importer.
 ;;
 
-(defn ^clojure.lang.PersistentHashMap countries-load
+(defn countries-load
   "Reads CSV file in a format compliant with Joda Money and returns a map with currency
   to countries associations where countries are as sets. The pathname should be
   relative to resources directory."
@@ -128,7 +128,7 @@
           (into {})
           (map/invert-in-sets)))))
 
-(defn ^clojure.lang.PersistentHashMap currencies-load
+(defn currencies-load
   "Reads CSV file compliant with Joda Money and returns a map with currency
   ID (keyword) as a key and currency data as its value (vector). The pathname should
   be relative to resources directory."

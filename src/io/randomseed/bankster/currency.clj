@@ -600,7 +600,7 @@
   (^clojure.lang.PersistentHashSet [c locale ^Registry registry]
    (get (registry/currency-id->country-ids registry) (id c))))
 
-(defn ^Currency of-country
+(defn of-country
   "Returns a currency for the given country identified by a country ID (which should be
   a keyword). If there is no currency or country of the given ID does not exist,
   returns nil. Locale argument is ignored."
@@ -693,7 +693,7 @@
 ;; Adding and removing to/from registry.
 ;;
 
-(defn ^Registry remove-countries-core
+(defn remove-countries-core
   "Removes countries from the given registry. Also unlinks constrained currencies in
   proper locations. Returns updated registry."
   {:tag Registry :private true :added "1.0.0"}
@@ -728,7 +728,7 @@
             (assoc  m cur-code ncurs)
             (dissoc m cur-code))))
 
-(defn ^Registry unregister
+(defn unregister
   "Removes a currency from the given registry. Also removes country and numeric ID
   constrains when necessary and all localized properties associated with a
   currency. Returns updated registry.
@@ -773,7 +773,7 @@
           (map/dissoc-in regi [:cur-id->ctr-ids registered-id])
           (apply update regi :ctr-id->cur dissoc country-ids))))))
 
-(defn ^Registry remove-countries
+(defn remove-countries
   "Removes countries from the given registry. Also unlinks constrained currencies in
   proper locations. Returns updated registry."
   {:tag Registry :added "1.0.0"}
@@ -783,7 +783,7 @@
       registry
       (remove-countries-core registry (prep-country-ids country-ids)))))
 
-(defn ^Registry add-countries
+(defn add-countries
   "Associates the given country or countries with a currency. If the currency does not
   exist, exception is thrown. If the currency exists but differs in any detail from
   the existing currency from the registry, exception is thrown. If the currency
@@ -812,7 +812,7 @@
             (apply update-in regi [:cur-id->ctr-ids cid] (fnil conj #{}) (set cids))
             (update regi :ctr-id->cur (partial apply assoc) (interleave cids (repeat c))))))))
 
-(defn ^Registry remove-localized-properties
+(defn remove-localized-properties
   "Removes localized properties assigned to a currency. Returns updated registry."
   {:tag Registry :added "1.0.0"}
   [^Registry registry ^Currency currency]
@@ -821,7 +821,7 @@
       registry
       (map/dissoc-in registry [:cur-id->localized (.id ^Currency currency)]))))
 
-(defn ^Registry add-localized-properties
+(defn add-localized-properties
   "Adds localized properties of a currency to the given registry. Overwrites existing
   properties."
   {:tag Registry :added "1.0.0"}
@@ -843,7 +843,7 @@
         (assoc-in registry [:cur-id->localized cid] (prep-localized-props properties))
         registry))))
 
-(defn ^Registry add-weighted-currency
+(defn add-weighted-currency
   "Adds currency code to the given registry using .weight field of a currency. Currency
   must exist in a cur-id->cur database of the registry as it will be the source
   object when adding to cur-code->curs database. The registry will not be updated if
@@ -869,7 +869,7 @@
                         {:existing-currency same-code :currency c :registry registry})))
       (update-in registry [:cur-code->curs kw-code] #(conj (weighted-currencies %) p)))))
 
-(defn ^Registry register
+(defn register
   "Adds a currency and optional, associated country mappings and/or localized
   properties to the given registry. Returns updated registry.
 
@@ -930,7 +930,7 @@
              (add-countries            currency country-ids)
              (add-localized-properties currency localized-properties)))))))
 
-(defn ^Registry register!
+(defn register!
   "Adds currency and (optional) country to the global registry. Returns updated
   registry. When the currency is nil, returns current state of the global, shared
   registry (but not a dynamic registry, even if it is set)."
@@ -942,7 +942,7 @@
   (^Registry [^Currency currency ^clojure.lang.Keyword country-id localized-properties ^Boolean update?]
    (if (nil? currency) @registry/R (swap! registry/R register currency country-id localized-properties update?))))
 
-(defn ^Registry unregister!
+(defn unregister!
   "Removes currency from the global registry. Automatically removes country constrains
   when necessary and localized properties associated with a currency. Returns updated
   registry.
@@ -953,7 +953,7 @@
   [^Currency currency]
   (if (nil? currency) @registry/R (swap! registry/R unregister currency)))
 
-(defn ^Registry add-countries!
+(defn add-countries!
   "Associates the given country (a keyword) or countries (seqable collection of
   keywords) with a currency in the global registry. If the currency does not exist,
   exception is thrown. If the currency exists but differs in any detail from the
@@ -968,7 +968,7 @@
   [^Currency currency country-ids]
   (when (nil? currency) @registry/R (swap! registry/R add-countries currency country-ids)))
 
-(defn ^Registry remove-countries!
+(defn remove-countries!
   "Removes country (a keyword) or countries (seqable collection of keywords) from the
   global registry. Automatically removes currency constrains when necessary. Returns
   updated registry.
@@ -979,7 +979,7 @@
   [country-ids]
   (if (nil? country-ids) @registry/R (swap! registry/R remove-countries country-ids)))
 
-(defn ^Registry add-localized-props!
+(defn add-localized-props!
   "Associates the given currency with a map of localized properties.
 
   If the currency is nil, returns current state of a global registry (but not a
@@ -988,7 +988,7 @@
   [^Currency currency properties]
   (when (nil? currency) @registry/R (swap! registry/R add-localized-properties currency properties)))
 
-(defn ^Registry remove-localized-props!
+(defn remove-localized-props!
   "Removes localized properties of the given currency from the global registry.
 
   If the currency is nil, returns current state of a global registry (but not a
@@ -1001,7 +1001,7 @@
 ;; Currencies loading.
 ;;
 
-(defn ^Registry config->registry
+(defn config->registry
   "Loads currencies and countries from an EDN file. First argument should be a string
   with path to the EDN resource file containing registry data, second should be a
   registry. Returns a registry initialized using values from the EDN file."
@@ -1028,7 +1028,7 @@
 ;; Setting default registry.
 ;;
 
-(defn ^Registry set-default-registry!
+(defn set-default-registry!
   "Sets default, global registry using a global configuration file and optional user's
   configuration file. The highlighted version of a registry will be sourced from the
   last configuration used."
@@ -1078,13 +1078,13 @@
   (^Boolean [c] (let [r (registry/get)] (or (currency? c r) (defined? c r))))
   (^Boolean [c ^Registry registry] (or (currency? c registry) (defined? c registry))))
 
-(defn ^Boolean has-numeric-id?
+(defn has-numeric-id?
   "Returns true if the given currency has a numeric ID."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (not= no-numeric-id (.numeric ^Currency (unit c))))
   (^Boolean [c ^Registry registry] (not= no-numeric-id (.numeric ^Currency (unit c registry)))))
 
-(defn ^Boolean has-country?
+(defn has-country?
   "Returns true if the given currency has at least one country for which it is an
   official currency."
   {:tag Boolean :added "1.0.0"}
@@ -1093,14 +1093,14 @@
   (^Boolean [c ^Registry registry]
    (contains? (registry/currency-id->country-ids registry) (id c))))
 
-(defn ^Boolean in-domain?
+(defn in-domain?
   "Returns true if the given currency has a domain set to the first given
   argument."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [ns c] (= ns (.domain ^Currency (unit c))))
   (^Boolean [ns c ^Registry registry] (= ns (.domain ^Currency (unit c registry)))))
 
-(defn ^{:tag Boolean} big?
+(defn big?
   "Returns true if the given currency has an automatic scale (decimal places)."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (val-auto-scaled? (.scale ^Currency (unit c))))
@@ -1112,14 +1112,14 @@
   "Alias for big?."
   big?)
 
-(defn ^Boolean crypto?
+(defn crypto?
   "Returns true if the given currency is a cryptocurrency. It is just a helper that
   check if the domain of a currency equals to :CRYPTO."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (= :CRYPTO (.domain ^Currency (unit c))))
   (^Boolean [c ^Registry registry] (= :CRYPTO (.domain ^Currency (unit c registry)))))
 
-(defn ^Boolean iso?
+(defn iso?
   "Returns true if the given currency is an official currency and its identifier is
   compliant with ISO standard. It is just a helper that check if the :domain field of
   a currency equals :ISO-4217."
@@ -1139,43 +1139,43 @@
   "Alias for iso?"
   iso?)
 
-(defn ^Boolean has-kind?
+(defn has-kind?
   "Returns true if the given currency has its kind defined."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (some? (.kind ^Currency (unit c))))
   (^Boolean [c ^Registry registry] (some? (.kind ^Currency (unit c)))))
 
-(defn ^Boolean kind-of?
+(defn kind-of?
   "Returns a kind of the given currency equals to the one given as a second argument."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c ^clojure.lang.Keyword kind] (= kind (.kind ^Currency (unit c))))
   (^Boolean [c ^clojure.lang.Keyword kind ^Registry registry] (= kind (.kind ^Currency (unit c)))))
 
-(defn ^Boolean fiat?
+(defn fiat?
   "Returns true if the given currency is a kind of :FIAT."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (= :FIAT (.kind ^Currency (unit c))))
   (^Boolean [c ^Registry registry] (= :FIAT (.kind ^Currency (unit c)))))
 
-(defn ^Boolean fiduciary?
+(defn fiduciary?
   "Returns true if the given currency is a kind of :FIDUCIARY."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (= :FIDUCIARY (.kind ^Currency (unit c))))
   (^Boolean [c ^Registry registry] (= :FIDUCIARY (.kind ^Currency (unit c)))))
 
-(defn ^Boolean combank?
+(defn combank?
   "Returns true if the given currency is a kind of :COMBANK."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (= :COMBANK (.kind ^Currency (unit c))))
   (^Boolean [c ^Registry registry] (= :COMBANK (.kind ^Currency (unit c)))))
 
-(defn ^Boolean commodity?
+(defn commodity?
   "Returns true if the given currency is a kind of :COMMODITY."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (= :COMMODITY (.kind ^Currency (unit c))))
   (^Boolean [c ^Registry registry] (= :COMMODITY (.kind ^Currency (unit c)))))
 
-(defn ^Boolean decentralized?
+(defn decentralized?
   "Returns true if the given currency is a kind of :DECENTRALIZED."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (= :DECENTRALIZED (.kind ^Currency (unit c))))
@@ -1187,7 +1187,7 @@
   "Alias for decentralized?"
   decentralized?)
 
-(defn ^Boolean experimental?
+(defn experimental?
   "Returns true if the given currency is a kind of :EXPERIMENTAL."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (= :EXPERIMENTAL (.kind ^Currency (unit c))))
