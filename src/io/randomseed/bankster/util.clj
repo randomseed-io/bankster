@@ -137,35 +137,35 @@
 
 (defn get-rand-int
   "Like rand-int but optionally uses random number generator."
-  {:added "1.0.0"}                      ; was: :tag 'int
+  {:tag "int" :added "1.0.0"}
   ([^long n]
    (when (some? n)
-     (rand-int n)))
+     (int (rand-int n))))
   ([^long n
     ^java.util.Random rng]
    (when (some? n)
      (if (nil? rng)
-       (get-rand-int n)
-       (if (zero? n) (int n) (.nextInt rng n))))))
+       (int (get-rand-int n))
+       (if (zero? n) (int n) (int (.nextInt ^java.util.Random rng n)))))))
 
 (defn random-digits-len
   "For 0 or 1 it returns its argument. For other positive numbers it returns a random
   natural number from 1 to this number (inclusive) in 50% cases. In other 50% cases
   it returns its argument."
-  {:added "1.0.0"} ; was: :tag 'long
-  ([^long x
-    ^long iteration
-    ^Boolean shrink-now]
+  {:added "1.0.0" :tag "long"}
+  (^long [^long x
+          ^long iteration
+          ^Boolean shrink-now]
    (when (some? x)
      (if (zero? x) x
          (if-not shrink-now x
                  (if (zero? iteration) 1
                      (if (or (< iteration 6) (zero? (rand-int 2)))
                        (unchecked-inc (rand-int x)) x))))))
-  ([^long x
-    ^long iteration
-    ^Boolean shrink-now
-    ^java.util.Random rng]
+  (^long [^long x
+          ^long iteration
+          ^Boolean shrink-now
+          ^java.util.Random rng]
    (when (some? x)
      (if (nil? rng)
        (random-digits-len x iteration shrink-now)

@@ -15,7 +15,7 @@
   (:import  [io.randomseed.bankster Currency Registry Money]
             [java.math MathContext RoundingMode]))
 
-(def ^{:tag Money :added "1.0.0"
+(def ^{:tag io.randomseed.bankster.Money :added "1.0.0"
        :arglists '(^Money []
                    ^Money [^Money a]
                    ^Money [^Money a ^Money b]
@@ -24,7 +24,7 @@
   "Alias for io.randomseed.bankster.money/add."
   money/add)
 
-(def ^{:tag Money :added "1.0.0"
+(def ^{:tag io.randomseed.bankster.Money :added "1.0.0"
        :arglists '(^Money [^Money a]
                    ^Money [^Money a ^Money b]
                    ^Money [^Money a ^Money b & more])}
@@ -32,7 +32,7 @@
   "Alias for io.randomseed.bankster.money/subtract."
   money/sub)
 
-(def ^{:tag Money :added "1.0.0"
+(def ^{:tag io.randomseed.bankster.Money :added "1.0.0"
        :arglists '(^Money []
                    ^Money [^Money a]
                    ^Money [a b]
@@ -41,7 +41,7 @@
   "Alias for io.randomseed.bankster.money/multiply."
   money/mul)
 
-(def ^{:tag Money :added "1.0.0"
+(def ^{:tag io.randomseed.bankster.Money :added "1.0.0"
        :arglists '(^Money [^Money a]
                    ^Money [^Money a ^Money b]
                    ^Money [^Money a ^Money b & more])}
