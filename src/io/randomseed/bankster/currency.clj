@@ -4,7 +4,8 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [ns new symbol name])
+  (:refer-clojure :rename {ns core-ns new core-new symbol core-symbol
+                           name core-name update core-update})
 
   (:require [trptr.java-wrapper.locale       :as            l]
             [smangler.api                    :as           sm]
@@ -83,7 +84,7 @@
                           (keyword
                            (str/upper-case
                             (if (ident? domain)
-                              (clojure.core/name domain)
+                              (core-name domain)
                               (let [d (str domain)] (when (seq d) d))))))]
        (when (and (some? ns-domain) (not= domain ns-domain))
          (throw (ex-info
@@ -279,7 +280,7 @@
     (^Currency [id ^Registry registry]
      (or (get (registry/currency-id->currency registry) id)
          (throw (ex-info
-                 (str "Currency " (clojure.core/symbol id) " not found in a registry.")
+                 (str "Currency " (core-symbol id) " not found in a registry.")
                  {:registry registry})))))
 
   (unit
@@ -290,7 +291,7 @@
            (get (registry/currency-id->currency registry) id)
            (first (get (registry/currency-code->currencies registry) id)))
          (throw (ex-info
-                 (str "Currency " (clojure.core/symbol id) " not found in a registry.")
+                 (str "Currency " (core-symbol id) " not found in a registry.")
                  {:registry registry})))))
 
   (id
@@ -443,14 +444,14 @@
   "Internal helper which transforms currency IDs into keywords."
   {:no-doc true :added "1.0.0"}
   [c]
-  (if (and (clojure.core/symbol? c) (defined? c))
+  (if (and (symbol? c) (defined? c))
     (keyword c) c))
 
 (defn parse-currency-code
   "Internal helper which transforms currency codes into keywords."
   {:no-doc true :added "1.0.2"}
   [c]
-  (if (and (clojure.core/symbol? c) (present? c))
+  (if (and (symbol? c) (present? c))
     (keyword c) c))
 
 (defmacro of
@@ -572,9 +573,9 @@
   identifier is namespaced only the base code (without a namespace) will be
   returned. Locale argument is ignored."
   {:tag String :added "1.0.0"}
-  (^String [c] (clojure.core/name (id c)))
-  (^String [c ^Registry registry] (clojure.core/name (id c registry)))
-  (^String [c locale ^Registry registry] (clojure.core/name (id c registry))))
+  (^String [c] (core-name (id c)))
+  (^String [c ^Registry registry] (core-name (id c registry)))
+  (^String [c locale ^Registry registry] (core-name (id c registry))))
 
 (defn weight
   "Returns weight of the given currency (used to resolve conflicts when getting
@@ -703,7 +704,7 @@
     (let [ctr-to-cur   (registry/country-id->currency registry)
           cid-to-ctrs  (registry/currency-id->country-ids registry)
           currency-ids (map #(.id ^Currency %) (distinct (filter identity (map ctr-to-cur country-ids))))
-          new-cid-ctr  (reduce #(apply update %1 %2 disj country-ids) cid-to-ctrs currency-ids)]
+          new-cid-ctr  (reduce #(apply core-update %1 %2 disj country-ids) cid-to-ctrs currency-ids)]
       (-> registry
           (assoc :cur-id->ctr-ids (map/remove-empty-values new-cid-ctr currency-ids))
           (assoc :ctr-id->cur     (apply dissoc ctr-to-cur country-ids))))))
@@ -742,7 +743,7 @@
   (when registry
     (let [^Currency cur       (of-id currency registry)
           id                  (.id ^Currency cur)
-          cur-code          (if (namespace id) (keyword (clojure.core/name id)) id)
+          cur-code          (if (namespace id) (keyword (core-name id)) id)
           proposed-nr         (.numeric ^Currency cur)
           proposed-nr         (when (not= proposed-nr no-numeric-id) proposed-nr)
           registered-id       id
@@ -766,12 +767,12 @@
                                   (map/dissoc-in [:cur-id->cur registered-id])
                                   (map/dissoc-in [:cur-nr->cur registered-nr])
                                   (map/dissoc-in [:cur-id->localized registered-id])
-                                  (update :cur-code->curs remove-weighted-currency cur-code registered-cur))]
+                                  (core-update :cur-code->curs remove-weighted-currency cur-code registered-cur))]
       (if-not (contains? (registry/currency-id->country-ids registry) registered-id)
         registry
         (as-> registry regi
           (map/dissoc-in regi [:cur-id->ctr-ids registered-id])
-          (apply update regi :ctr-id->cur dissoc country-ids))))))
+          (apply core-update regi :ctr-id->cur dissoc country-ids))))))
 
 (defn remove-countries
   "Removes countries from the given registry. Also unlinks constrained currencies in
@@ -810,7 +811,7 @@
           (as-> registry regi
             (remove-countries-core regi cids)
             (apply update-in regi [:cur-id->ctr-ids cid] (fnil conj #{}) (set cids))
-            (update regi :ctr-id->cur (partial apply assoc) (interleave cids (repeat c))))))))
+            (core-update regi :ctr-id->cur (partial apply assoc) (interleave cids (repeat c))))))))
 
 (defn remove-localized-properties
   "Removes localized properties assigned to a currency. Returns updated registry."
@@ -861,7 +862,7 @@
           cid         (.id ^Currency c)
           ^Currency p (of-id cid registry)
           p-weight    (int (.weight ^Currency p))
-          kw-code     (if (simple-keyword? cid) cid (keyword (clojure.core/name cid)))
+          kw-code     (if (simple-keyword? cid) cid (keyword (core-name cid)))
           currencies  (get (registry/currency-code->currencies registry) kw-code)
           same-code   (first (drop-while #(not= p-weight (.weight ^Currency %)) currencies))]
       (when same-code
