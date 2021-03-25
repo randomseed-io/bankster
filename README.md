@@ -124,7 +124,7 @@ picked up.
 Currencies can also have **additional**, external properties, like relations to
 countries, internationalized (i18n) settings etc. They are stored in registries too.
 
-Having currency we can create **money** objects which are based on records having 2
+Having a currency we can create **money** objects which are based on records having 2
 fields:
 
 * `currency` – a `Currency` object;
