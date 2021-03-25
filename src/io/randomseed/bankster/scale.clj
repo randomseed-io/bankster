@@ -423,19 +423,92 @@
 ;; Conversions to int and long.
 ;;
 
+(def ^{:tag 'int :added "1.0.9" :private true} float-precision   6)
+(def ^{:tag 'int :added "1.0.9" :private true} double-precision 15)
+
 (defn ->int
-  "Converts to int."
+  "Converts to an int with optional rounding."
   {:tag 'int :added "1.0.0"}
-  ([n]                     (.intValueExact ^BigDecimal (apply n)))
-  ([n scale]               (.intValueExact ^BigDecimal (apply n scale)))
-  ([n scale rounding-mode] (.intValueExact ^BigDecimal (apply n scale rounding-mode))))
+  ([n]                             (.intValueExact ^BigDecimal (apply n 0)))
+  ([n ^RoundingMode rounding-mode] (.intValueExact ^BigDecimal (apply n 0 rounding-mode))))
 
 (defn ->long
-  "Converts to long."
+  "Converts to a long with optional rounding."
   {:tag 'long :added "1.0.0"}
-  (^long [n]                     (.longValueExact ^BigDecimal (apply n)))
-  (^long [n scale]               (.longValueExact ^BigDecimal (apply n scale)))
-  (^long [n scale rounding-mode] (.longValueExact ^BigDecimal (apply n scale rounding-mode))))
+  (^long [n]                             (.longValueExact ^BigDecimal (apply n 0)))
+  (^long [n ^RoundingMode rounding-mode] (.longValueExact ^BigDecimal (apply n 0 rounding-mode))))
+
+(defn ->float
+  "Converts to a float with optional rescaling and rounding. If the precision of
+  float is to small to express the value, rounding must be provided (either
+  explicitly or using *rounding-mode*), otherwise an exception will be thrown."
+  {:tag 'float :added "1.0.9"
+   :arglists '([n]
+               [n scale]
+               [n rounding-mode]
+               [n scale rounding-mode])}
+  ([n]
+   (.floatValue
+    ^BigDecimal (.round ^BigDecimal (apply n)
+                        (MathContext.
+                         float-precision
+                         (or ^RoundingMode *rounding-mode*
+                             ^RoundingMode ROUND_UNNECESSARY)))))
+  ([n scale-or-rounding]
+   (if (instance? RoundingMode scale-or-rounding)
+     (.floatValue
+      ^BigDecimal (.round ^BigDecimal (apply n)
+                          (MathContext.
+                           float-precision
+                           ^RoundingMode scale-or-rounding)))
+     (let [^RoundingMode rm (or *rounding-mode* ROUND_UNNECESSARY)]
+       (.floatValue
+        ^BigDecimal (.round ^BigDecimal (apply n scale-or-rounding rm)
+                            (MathContext.
+                             float-precision
+                             ^RoundingMode rm))))))
+  ([n scale ^RoundingMode rounding-mode]
+   (.floatValue
+    ^BigDecimal (.round ^BigDecimal (apply n scale rounding-mode)
+                        (MathContext.
+                         float-precision
+                         ^RoundingMode rounding-mode)))))
+
+(defn ->double
+  "Converts to a double with optional rescaling and rounding. If the precision of
+  double is to small to express the value, rounding must be provided (either
+  explicitly or using *rounding-mode*), otherwise an exception will be thrown."
+  {:tag 'double :added "1.0.9"
+   :arglists '(^double [n]
+               ^double [n scale]
+               ^double [n rounding-mode]
+               ^double [n scale rounding-mode])}
+  (^double [n]
+   (.doubleValue
+    ^BigDecimal (.round ^BigDecimal (apply n)
+                        (MathContext.
+                         double-precision
+                         (or ^RoundingMode *rounding-mode*
+                             ^RoundingMode ROUND_UNNECESSARY)))))
+  (^double [n scale-or-rounding]
+   (if (instance? RoundingMode scale-or-rounding)
+     (.doubleValue
+      ^BigDecimal (.round ^BigDecimal (apply n)
+                          (MathContext.
+                           double-precision
+                           ^RoundingMode scale-or-rounding)))
+     (let [^RoundingMode rm (or *rounding-mode* ROUND_UNNECESSARY)]
+       (.doubleValue
+        ^BigDecimal (.round ^BigDecimal (apply n scale-or-rounding rm)
+                            (MathContext.
+                             double-precision
+                             ^RoundingMode rm))))))
+  (^double [n scale ^RoundingMode rounding-mode]
+   (.doubleValue
+    ^BigDecimal (.round ^BigDecimal (apply n scale rounding-mode)
+                        (MathContext.
+                         double-precision
+                         ^RoundingMode rounding-mode)))))
 
 ;;
 ;; Aliases.

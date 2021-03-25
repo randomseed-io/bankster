@@ -417,15 +417,15 @@
   {:tag clojure.lang.IPersistentVector :added "1.0.7"}
   ([money]
    (when-some [m (value money)]
-     [(symbol (scale/to-plain-string ^BigDecimal (.amount ^Money m)))
+     [(scale/to-clojure-symbol ^BigDecimal (.amount ^Money m))
       (symbol (currency/id ^Currency (.currency ^Money m)))]))
   ([a b]
    (when-some [m (value a b)]
-     [(symbol (scale/to-plain-string ^BigDecimal (.amount ^Money m)))
+     [(scale/to-clojure-symbol ^BigDecimal (.amount ^Money m))
       (symbol (currency/id ^Currency (.currency ^Money m)))]))
   ([a b r]
    (when-some [m (value a b r)]
-     [(symbol (scale/to-plain-string ^BigDecimal (.amount ^Money m)))
+     [(scale/to-clojure-symbol ^BigDecimal (.amount ^Money m))
       (symbol (currency/id ^Currency (.currency ^Money m)))])))
 
 ;;
@@ -1369,13 +1369,13 @@
   "Returns the major part of the given amount as a long number."
   {:tag 'long :added "1.0.0"}
   [^Money a]
-  (.longValueExact ^BigDecimal (.amount ^Money a)))
+  (scale/->long ^BigDecimal (.amount ^Money a) scale/ROUND_DOWN))
 
 (defn major->int
-  "Returns the major part of the given amount as an integer number."
+  "Returns the major part of the given amount as a int number."
   {:tag 'int :added "1.0.0"}
-  [^Money a]
-  (.intValueExact ^BigDecimal (.amount ^Money a)))
+  ([^Money a]
+   (scale/->int ^BigDecimal (.amount ^Money a) scale/ROUND_DOWN)))
 
 (defn minor
   "Returns the minor part of the given amount."
@@ -1392,13 +1392,13 @@
   "Returns the minor part of the given amount as a long number."
   {:tag 'long :added "1.0.0"}
   [^Money a]
-  (.longValueExact (minor ^Money a)))
+  (.longValueExact ^BigDecimal (minor ^Money a)))
 
 (defn minor->int
   "Returns the minor part of the given amount as an integer number."
   {:tag 'int :added "1.0.0"}
   [^Money a]
-  (.intValueExact (minor ^Money a)))
+  (.intValueExact ^BigDecimal (minor ^Money a)))
 
 (defn major-minor
   "Returns a vector with major and minor parts of the given monetary amount."
@@ -1436,14 +1436,22 @@
 (defn ->double
   "Converts an amount of the given money to double."
   {:tag 'double :added "1.0.0"}
-  [^Money a]
-  (.doubleValue ^BigDecimal (.amount ^Money a)))
+  ([^Money a]
+   (scale/->double ^BigDecimal (.amount ^Money a)))
+  ([^Money a scale]
+   (scale/->double ^BigDecimal (.amount ^Money a) scale))
+  ([^Money a scale rounding-mode]
+   (scale/->double ^BigDecimal (.amount ^Money a) scale rounding-mode)))
 
 (defn ->float
   "Converts an amount of the given money to float."
   {:tag 'float :added "1.0.0"}
-  [^Money a]
-  (.floatValue ^BigDecimal (.amount ^Money a)))
+  ([^Money a]
+   (scale/->float ^BigDecimal (.amount ^Money a)))
+  ([^Money a scale]
+   (scale/->float ^BigDecimal (.amount ^Money a) scale))
+  ([^Money a scale rounding-mode]
+   (scale/->float ^BigDecimal (.amount ^Money a) scale rounding-mode)))
 
 (defn add-major
   "Increases major amount by the given number. If the number is also expressed as money
