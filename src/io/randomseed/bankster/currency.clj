@@ -931,6 +931,38 @@
              (add-countries            currency country-ids)
              (add-localized-properties currency localized-properties)))))))
 
+(declare localized-properties)
+
+(defn update
+  "Replaces a currency in the given registry by a new one, preserving localized
+  properties, relation to countries and code if not explicitly given. Returns updated
+  registry. If the currency does not exist in a registry yet, it will be registered."
+  {:tag Registry :added "1.1.0"}
+  ([^Registry registry currency]
+   (update registry currency nil nil))
+  ([^Registry registry currency country-ids]
+   (update registry currency country-ids nil))
+  ([^Registry registry currency country-ids localized-properties-map]
+   (let [^Currency present (unit currency registry)]
+     (register registry
+               present
+               (or country-ids (countries present))
+               (or localized-properties-map (localized-properties present))
+               true))))
+
+(defn update!
+  "Replaces a currency in the global, shared registry by a new one, preserving
+  localized properties, relation to countries and code if not explicitly
+  given. Returns updated registry. If the currency does not exist in a registry yet,
+  it will be registered."
+  {:tag Registry :added "1.1.0"}
+  ([currency]
+   (swap! registry/R update currency nil nil))
+  ([currency country-ids]
+   (swap! registry/R update currency country-ids nil))
+  ([currency country-ids localized-properties-map]
+   (swap! registry/R update currency country-ids localized-properties-map)))
+
 (defn register!
   "Adds currency and (optional) country to the global registry. Returns updated
   registry. When the currency is nil, returns current state of the global, shared
