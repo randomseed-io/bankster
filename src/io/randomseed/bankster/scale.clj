@@ -423,8 +423,8 @@
 ;; Conversions to int and long.
 ;;
 
-(def ^{:tag 'int :added "1.0.9" :private true} float-precision   6)
-(def ^{:tag 'int :added "1.0.9" :private true} double-precision 15)
+(def ^{:tag 'int :added "1.1.0" :private true} float-precision   6)
+(def ^{:tag 'int :added "1.1.0" :private true} double-precision 15)
 
 (defn ->int
   "Converts to an int with optional rounding."
@@ -442,7 +442,7 @@
   "Converts to a float with optional rescaling and rounding. If the precision of
   float is to small to express the value, rounding must be provided (either
   explicitly or using *rounding-mode*), otherwise an exception will be thrown."
-  {:tag 'float :added "1.0.9"
+  {:tag 'float :added "1.1.0"
    :arglists '([n]
                [n scale]
                [n rounding-mode]
@@ -478,7 +478,7 @@
   "Converts to a double with optional rescaling and rounding. If the precision of
   double is to small to express the value, rounding must be provided (either
   explicitly or using *rounding-mode*), otherwise an exception will be thrown."
-  {:tag 'double :added "1.0.9"
+  {:tag 'double :added "1.1.0"
    :arglists '(^double [n]
                ^double [n scale]
                ^double [n rounding-mode]
@@ -533,20 +533,20 @@
 
 (defn to-clojure-string
   "Converts big decimal to a plain string, adding the M suffix when needed."
-  {:tag String :added "1.0.9"}
+  {:tag String :added "1.1.0"}
   [^BigDecimal n]
   (str ^String (.toPlainString ^BigDecimal n)
        (when (>= (.precision ^BigDecimal n) 16) "M")))
 
 (defn to-clojure-symbol
   "Converts big decimal to a symbol, adding the M suffix when needed."
-  {:tag clojure.lang.Symbol :added "1.0.9"}
+  {:tag clojure.lang.Symbol :added "1.1.0"}
   [^BigDecimal n]
   (symbol (to-clojure-string n)))
 
 (defn to-symbol
   "Converts big decimal to a symbol."
-  {:tag clojure.lang.Symbol :added "1.0.9"}
+  {:tag clojure.lang.Symbol :added "1.1.0"}
   [^BigDecimal n]
   (symbol (to-plain-string n)))
 

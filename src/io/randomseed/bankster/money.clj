@@ -47,7 +47,7 @@
   Be careful about using number literals for big-scale amounts (16–17 digits). Use
   either big decimal literals, e.g. 1234.45689101112M, or strings.")
 
-  (^{:tag io.randomseed.bankster.Money :added "1.0.9"}
+  (^{:tag io.randomseed.bankster.Money :added "1.1.0"}
    cast
    [money] [money currency] [money currency rounding-mode]
    "Casts an existing Money object to another having a different currency, rescaling
@@ -1489,14 +1489,14 @@
 
 (defn ->symbol
   "Converts an amount of the given money to a symbol."
-  {:tag clojure.lang.Symbol :added "1.0.9"}
+  {:tag clojure.lang.Symbol :added "1.1.0"}
   [^Money a]
   (scale/to-symbol ^BigDecimal (.amount ^Money a)))
 
 (defn ->clojure-symbol
   "Converts an amount of the given money to a clojure symbol (with added M when
   needed)."
-  {:tag clojure.lang.Symbol :added "1.0.9"}
+  {:tag clojure.lang.Symbol :added "1.1.0"}
   [^Money a]
   (scale/to-clojure-symbol ^BigDecimal (.amount ^Money a)))
 

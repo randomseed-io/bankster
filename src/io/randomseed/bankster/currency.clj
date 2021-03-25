@@ -27,12 +27,12 @@
 
 (def ^{:tag 'long :const true :added "1.0.0"}
   no-numeric-id
-  "Expresses the value of currency's numeric ID that does not exist."
+  "Expresses the value of currency's numeric ID which does not exist."
   (long -1))
 
 (def ^{:tag 'int :const true :added "1.0.0"}
   auto-scaled
-  "Expresses the scale of a currency that is automatic and not limited to certain
+  "Expresses the scale of a currency which is automatic and not limited to certain
   decimal places."
   (int -1))
 
@@ -440,14 +440,14 @@
     (^Boolean [a b ^Registry registry] false)))
 
 (defn parse-currency-id
-  "Internal helper that transforms currency IDs into keywords."
+  "Internal helper which transforms currency IDs into keywords."
   {:no-doc true :added "1.0.0"}
   [c]
   (if (and (clojure.core/symbol? c) (defined? c))
     (keyword c) c))
 
 (defn parse-currency-code
-  "Internal helper that transforms currency codes into keywords."
+  "Internal helper which transforms currency codes into keywords."
   {:no-doc true :added "1.0.2"}
   [c]
   (if (and (clojure.core/symbol? c) (present? c))
@@ -541,7 +541,7 @@
   domain)
 
 (defn kind
-  "Returns currency kind. It is a keyword that describes origin of its value. Currently
+  "Returns currency kind. It is a keyword which describes origin of its value. Currently
   known kinds are:
 
   - :FIAT          – legal tender issued by government or other authority
@@ -875,7 +875,7 @@
 
   The optional country-ids argument should be a sequence of keywords (however, if a
   single keyword is given it will be converted to a single-element sequence) with
-  country codes that should be associated with the given currency.
+  country codes which should be associated with the given currency.
 
   The optional localized-properties argument should be a map of localized properties
   of the given currency. See the Data Structures documentation section for more
@@ -1072,7 +1072,7 @@
 (defn possible?
   "Returns true if the given value is a possible currency representation. If the
   registry is not given, the global one is used. By possible representation we mean
-  that it is a currency with a keyword identifier or any other data type that can be
+  that it is a currency with a keyword identifier or any other data type which can be
   successfully converted into such using the registry provided."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (let [r (registry/get)] (or (currency? c r) (defined? c r))))
@@ -1121,7 +1121,7 @@
 
 (defn iso?
   "Returns true if the given currency is an official currency and its identifier is
-  compliant with ISO standard. It is just a helper that check if the :domain field of
+  compliant with ISO standard. It is just a helper which checks if the :domain field of
   a currency equals :ISO-4217."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (= :ISO-4217 (.domain ^Currency (unit c))))
@@ -1232,11 +1232,11 @@
   "Gets the localized property of a currency from the given registry and locale. If the
   registry is not given, the global one will be used. If the locale is not given, the
   default locale for the environment will be used. Locale can be expressed as a
-  Locale object or any object that can be used to identify the locale (e.g. a keyword
+  Locale object or any object which can be used to identify the locale (e.g. a keyword
   or a string).
 
   Localized properties are maps keyed by currency identifiers, containing another
-  maps keyed by locale objects. There is a special key :* that contains default
+  maps keyed by locale objects. There is a special key :* which identifies default
   properties used when there are no properties in locale-keyed maps.
 
   Let's take a hypothetical entry of a registry database `.cur-id->localized`:
@@ -1316,7 +1316,7 @@
   methods will be tried to obtain it.
 
   A locale can be expressed as java.util.Locale object or any other object (like a
-  string or a keyword) that can be used to look up the locale."
+  string or a keyword) which can be used to look up the locale."
   (memoize
    (fn symbol
      (^String [c]        (symbol c (Locale/getDefault) (registry/get)))
@@ -1370,7 +1370,7 @@
   - If the above method failed a currency code will be returned.
 
   A locale can be expressed as java.util.Locale object or any other object (like a
-  string or a keyword) that can be used to look up the locale."
+  string or a keyword) which can be used to look up the locale."
   (memoize
    (fn display-name
      (^String [c]        (display-name c (Locale/getDefault) (registry/get)))
