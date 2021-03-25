@@ -141,7 +141,7 @@
   variable. If the given argument is already an identifier (a keyword), it will be
   returned as is.")
 
-  (^{:added "1.0.0"}
+  (^{:tag io.randomseed.bankster.Currency :added "1.0.0"}
    of-id
    [id] [id registry]
    "Returns a currency object for the given ID and registry. If the registry is not

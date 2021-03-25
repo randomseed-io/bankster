@@ -115,9 +115,10 @@
 (defprotocol ^{:added "1.0.0"} Scalable
   "The Scalable protocol describes values that can be scaled."
 
-  (of
-    [num]
-    "Returns a scale. If the given value is not of type that scales (or is used to
+  (^{:tag 'int :added "1.0.0"}
+   of
+   [num]
+   "Returns a scale. If the given value is not of type that scales (or is used to
   produce scaled types) it will be converted to such.")
 
   (apply
@@ -131,19 +132,22 @@
   When operating on Money objects and called with a single argument, it reapplies
   the nominal currency scale.")
 
-  (amount
-    [num] [num scale] [num scale rounding-mode]
-    "Returns the amount of a scalable as a BigDecimal number. Some scalables may not
+  (^{:tag BigDecimal :added "1.0.0"}
+   amount
+   [num] [num scale] [num scale rounding-mode]
+   "Returns the amount of a scalable as a BigDecimal number. Some scalables may not
     be purely numeric so this function is to get the actual, calculable value out of
     them.")
 
-  (applied?
-    [num]
-    "Returns true if the value is of type which contains scaling information.")
+  (^{:tag Boolean :added "1.0.0"}
+   applied?
+   [num]
+   "Returns true if the value is of type which contains scaling information.")
 
-  (scalable?
-    [num]
-    "Returns true if the value can be converted to a scalable."))
+  (^{:tag Boolean :added "1.0.0"}
+   scalable?
+   [num]
+   "Returns true if the value can be converted to a scalable."))
 
 (extend-protocol Scalable
 
@@ -152,7 +156,7 @@
   (^Boolean scalable? [num] true)
   (^Boolean applied?  [num] true)
 
-  (of [num] (.scale ^BigDecimal num))
+  (of [num] (int (.scale ^BigDecimal num)))
 
   (^BigDecimal apply
    (^BigDecimal [num]
@@ -178,7 +182,7 @@
   (^Boolean scalable? [num] true)
   (^Boolean applied?  [num] false)
 
-  (of [num] (.scale ^BigDecimal (apply num)))
+  (of [num] (int (.scale ^BigDecimal (apply num))))
 
   (^BigDecimal apply
    (^BigDecimal [num]
@@ -222,7 +226,7 @@
   (^Boolean scalable? [num] true)
   (^Boolean applied?  [num] false)
 
-  (of [num] (.scale ^BigDecimal (apply num)))
+  (of [num] (int (.scale ^BigDecimal (apply num))))
 
   (^BigDecimal apply
    (^BigDecimal [num]
@@ -244,7 +248,7 @@
   (^Boolean scalable? [num] true)
   (^Boolean applied?  [num] false)
 
-  (of [num] (.scale ^BigDecimal (apply num)))
+  (of [num] (int (.scale ^BigDecimal (apply num))))
 
   (^BigDecimal apply
    (^BigDecimal [num]
@@ -266,33 +270,33 @@
   (^Boolean scalable? [num] true)
   (^Boolean applied?  [num] false)
 
-  (of [num] (.scale ^BigDecimal (apply num)))
+  (of [num] (int (.scale ^BigDecimal (apply num))))
 
-  (^BigDecimal apply
-   (^BigDecimal [num]
-    (let [^BigDecimal a (apply (.numerator   ^clojure.lang.Ratio num))
-          ^BigDecimal b (apply (.denominator ^clojure.lang.Ratio num))]
-      (if-some [rm *rounding-mode*]
-        (.divide ^BigDecimal a ^BigDecimal b
-                 ^MathContext (div-math-context ^BigDecimal a
-                                                ^BigDecimal b
-                                                ^RoundingMode rm))
-        (.divide ^BigDecimal a ^BigDecimal b))))
-   (^BigDecimal [num scale]
-    (if-some [rm *rounding-mode*]
-      (.divide ^BigDecimal (apply (.numerator   ^clojure.lang.Ratio num))
-               ^BigDecimal (apply (.denominator ^clojure.lang.Ratio num))
-               (int scale)
-               ^RoundingMode rm)
-      (.divide ^BigDecimal (apply (.numerator   ^clojure.lang.Ratio num))
-               ^BigDecimal (apply (.denominator ^clojure.lang.Ratio num))
-               (int scale)
-               ^RoundingMode ROUND_UNNECESSARY)))
-   (^BigDecimal [num scale ^RoundingMode r]
-    (.divide ^BigDecimal (apply (.numerator   ^clojure.lang.Ratio num))
-             ^BigDecimal (apply (.denominator ^clojure.lang.Ratio num))
-             (int scale)
-             ^RoundingMode r)))
+  (apply
+    (^BigDecimal [num]
+     (let [^BigDecimal a (apply (.numerator   ^clojure.lang.Ratio num))
+           ^BigDecimal b (apply (.denominator ^clojure.lang.Ratio num))]
+       (if-some [rm *rounding-mode*]
+         (.divide ^BigDecimal a ^BigDecimal b
+                  ^MathContext (div-math-context ^BigDecimal a
+                                                 ^BigDecimal b
+                                                 ^RoundingMode rm))
+         (.divide ^BigDecimal a ^BigDecimal b))))
+    (^BigDecimal [num scale]
+     (if-some [rm *rounding-mode*]
+       (.divide ^BigDecimal (apply (.numerator   ^clojure.lang.Ratio num))
+                ^BigDecimal (apply (.denominator ^clojure.lang.Ratio num))
+                (int scale)
+                ^RoundingMode rm)
+       (.divide ^BigDecimal (apply (.numerator   ^clojure.lang.Ratio num))
+                ^BigDecimal (apply (.denominator ^clojure.lang.Ratio num))
+                (int scale)
+                ^RoundingMode ROUND_UNNECESSARY)))
+    (^BigDecimal [num scale ^RoundingMode r]
+     (.divide ^BigDecimal (apply (.numerator   ^clojure.lang.Ratio num))
+              ^BigDecimal (apply (.denominator ^clojure.lang.Ratio num))
+              (int scale)
+              ^RoundingMode r)))
 
   (^BigDecimal amount
    (^BigDecimal [num]         (apply num))
@@ -304,7 +308,7 @@
   (^Boolean scalable? [num] true)
   (^Boolean applied?  [num] false)
 
-  (of [num] (.scale ^BigDecimal (apply num)))
+  (of [num] (int (.scale ^BigDecimal (apply num))))
 
   (^BigDecimal apply
    (^BigDecimal [num] (BigDecimal/valueOf (long num)))
@@ -325,7 +329,7 @@
   (^Boolean scalable? [num] true)
   (^Boolean applied?  [num] false)
 
-  (of [num] (.scale (BigDecimal. ^String num ^MathContext unscaled-context)))
+  (of [num] (int (.scale (BigDecimal. ^String num ^MathContext unscaled-context))))
 
   (^BigDecimal apply
    (^BigDecimal [num]
@@ -361,10 +365,10 @@
 
   Object
 
-  (^Boolean    scalable? [num] nil)
-  (^Boolean    applied?  [num] nil)
+  (scalable? [num] nil)
+  (applied?  [num] nil)
 
-  (of [num] (.scale ^BigDecimal (apply num)))
+  (of [num] (int (.scale ^BigDecimal (apply num))))
 
   (^BigDecimal apply
    (^BigDecimal [n]

@@ -29,9 +29,10 @@
   "This protocol is used to express (monetary) values using various numeric types and
   currency representations."
 
-  (value
-    [num] [currency num] [currency num rounding-mode]
-    "Creates new Money object for the given value which will become an amount. If the
+  (^{:tag io.randomseed.bankster.Money :added "1.0.0"}
+   value
+   [num] [currency num] [currency num rounding-mode]
+   "Creates new Money object for the given value which will become an amount. If the
   currency is not given it will try to use the default one, taken from the
   `*default-currency*` dynamic variable. Optional rounding-mode should be a rounding
   mode used when the conversion to a scaled monetary amount requires rounding.
