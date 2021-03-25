@@ -16,6 +16,7 @@ currencies support.
 * Ability to create *ad hoc* currencies (with optional registering).
 * Ability to switch between dynamic, global and local currency registries.
 * Polymorphic interface for currencies and monetary amounts.
+* Ability to cast and convert monetary amounts.
 * Useful macros to express currencies and monetary amounts with various forms.
 * Namespaced identifiers for non-ISO currencies (e.g. `crypto/ETH`).
 * Common math operators which can be used interchangeably with other numeric data.
@@ -30,14 +31,14 @@ To use Bankster in your project, add the following to dependencies section of
 `project.clj` or `build.boot`:
 
 ```clojure
-[io.randomseed/bankster "1.0.7"]
+[io.randomseed/bankster "1.1.0"]
 ```
 
 For `deps.edn` add the following as an element of a map under `:deps` or
 `:extra-deps` key:
 
 ```clojure
-io.randomseed/bankster {:mvn/version "1.0.7"}
+io.randomseed/bankster {:mvn/version "1.1.0"}
 ```
 
 Additionally, if you want to utilize specs and generators provided by the Bankster
@@ -53,10 +54,9 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 ## Design
 
 There is a global, shared **registry** of currencies, which is thread-safe and
-encapsulated in an Atom. It consists of databases (maps) that help to maintain quick
-access to the important currency properties. Most of the functions will use this
-global registry, unless a registry is explicitly passed as an argument or set as
-a dynamic variable.
+encapsulated in an Atom. It consists of databases (maps) for quickly accessing
+important currency properties. Most of the functions will use this global registry,
+unless a registry is explicitly passed as an argument or set as a dynamic variable.
 
 Registry is implemented as a record of maps keeping the following associations:
 
@@ -67,10 +67,13 @@ Registry is implemented as a record of maps keeping the following associations:
 * locale ID to localized properties map;
 * currency code to a sorted set of currency objects.
 
-In most cases you won't have to worry about the internals of a registry.
+In most cases you won't have to worry about the internals of a registry. However,
+when working with multiple data sources or data processing engines (like currency
+exchange platforms), you may find it useful to have different registries (with the
+same currencies but of different scales).
 
-When the library loads the predefined configuration is read from EDN file and its
-contents populates the default, global registry.
+When the library loads the predefined configuration is read from the default EDN file
+and its contents populates the default, global registry.
 
 Each **currency** is a record having the following fields, reflecting its properties:
 
@@ -117,6 +120,9 @@ Registry-related functions are accepting currency representations based on their
 **identifiers**. Other functions and macros will usually accept **currency
 codes**. In case of conflict the currency with higher **currency weight** will be
 picked up.
+
+Currencies can also have **additional**, external properties, like relations to
+countries, internationalized (i18n) settings etc. They are stored in registries too.
 
 Having currency we can create **money** objects which are based on records having 2
 fields:

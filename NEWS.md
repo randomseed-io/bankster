@@ -1,5 +1,25 @@
 # History of bankster releases
 
+## 1.1.0 (2021-03-25)
+
+- Added currency/update for updating currencies with additional data preservation
+  (localized properties, countries, etc.).
+- Added money/cast for casting monetary amounts across currencies
+  (different or slightly different, e.g. sourced in another registries).
+- Added scale/to-clojure-string, scale/to-symbol, scale/to-clojure-symbol.
+- Added money/->symbol, money/->clojure-symbol, money/->double, money/->float.
+- Improved money/value to be more polymorphic (currency argument).
+- Improved conversion functions: scale/->int, scale/->long, scale/->float, scale/->double.
+- Type hinting improved in multiple functions and protocol methods.
+
+**BREAKING CHANGES**:
+
+- Conversion functions now have different arities:
+  scale/->int, scale/->long, scale/->float, scale/->double.
+- Function scale/to-plain-string is now converting decimals to plain strings
+  without adding M suffix when there is too many digits. This functionality
+  was moved to scale/to-clojure-string.
+
 ## 1.0.8 (2021-03-23)
 
 - Function money/convert now accepts a price and is more polymorphic.
