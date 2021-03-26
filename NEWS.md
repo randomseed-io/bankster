@@ -1,5 +1,9 @@
 # History of bankster releases
 
+## 1.1.1 (2021-03-26)
+
+- Rounding mode parsing improved.
+
 ## 1.1.0 (2021-03-25)
 
 - Added currency/update for updating currencies with additional data preservation
