@@ -6,8 +6,7 @@
 
   (:refer-clojure :exclude [apply])
 
-  (:require [clojure.string  :as str]
-            [clojure.reflect :as  cr])
+  (:require [clojure.string  :as str])
 
   (:import  [java.math MathContext RoundingMode BigDecimal]))
 
@@ -556,26 +555,23 @@
 
 (defn parse-rounding
   "Helper for parsing rounding modes in macros. Accepted input:
-  ROUND_mode, :ROUND_mode, BigDecimal/ROUND_mode, money/ROUND_mode, :mode, mode."
+  ROUND_mode, :ROUND_mode, mode, :mode or any expression which evaluates to
+  java.math.RoundingMode/mode."
   {:tag RoundingMode :added "1.0.0" :no-doc true}
   [n]
-  (if (ident? n)
-    (let [sname (name n)
-          ns-ok (if-some [ns (namespace n)]
-                  (contains?
-                   #{"BigDecimal"
-                     "scale"
-                     (cr/typename BigDecimal)} ns) true)]
-      (if-not ns-ok n
-              (if (str/starts-with? sname "ROUND_")
-                (symbol "java.math.RoundingMode" (subs sname 6))
-                (symbol "java.math.RoundingMode" sname))))
-    n))
+  (let [rn (if (simple-ident? n) (name n) n)
+        rn (if (and (string? rn) (str/starts-with? rn "ROUND_")) (subs rn 6) rn)]
+    (or (when (string? rn)
+          (try (when (some? (RoundingMode/valueOf ^String rn))
+                 (symbol "java.math.RoundingMode" rn))
+               (catch IllegalArgumentException e nil)))
+        n)))
 
 (defmacro with-rounding
   "Sets the rounding mode for operations on scaled values.
 
-  The first argument should be one of the following:
+  The first argument should be a valid rounding (from `io.randomseed.bankster.scale`
+  or `java.math.RoundingMode`) or one of the following:
 
   CEILING     - rounds towards positive infinity.
   DOWN        - rounds towards zero.
@@ -596,7 +592,8 @@
   rounding mode for operations on scaled values. Internally sets `*each*` to true and
   `*rounding-mode*` to the given value.
 
-  The first argument should be one of the following:
+  The first argument should be a valid rounding (from `io.randomseed.bankster.scale`
+  or `java.math.RoundingMode`) or one of the following:
 
   CEILING     - rounds towards positive infinity.
   DOWN        - rounds towards zero.

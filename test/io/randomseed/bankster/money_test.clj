@@ -46,6 +46,7 @@
              (m/of "12 PLN") => {:amount 12M :currency #currency PLN}
              (m/of "PLN 12") => {:amount 12M :currency #currency PLN}
              (m/of :12.00001PLN DOWN) => {:amount 12M :currency #currency PLN}
+             (m/of :12.00001PLN ROUND_DOWN) => {:amount 12M :currency #currency PLN}
              (m/of :PLN12.111 UP)     => {:amount 12.12M :currency #currency PLN}
              (m/of PLN12.111 UP)      => {:amount 12.12M :currency #currency PLN}
              (m/of PLN_12.111 UP)     => {:amount 12.12M :currency #currency PLN}
