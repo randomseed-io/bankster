@@ -417,8 +417,8 @@
   For simple money creation the following macros may be convenient way to go: of,
   of-major, of-minor."
   (^Money [a]     (when-some [v (value a)] (major-value (.currency ^Money v) (.amount ^Money v))))
-  (^Money [c b]   (value c (scale/integer b)))
-  (^Money [c b r] (value c (scale/integer b) r)))
+  (^Money [currency amount]   (value currency (scale/integer amount)))
+  (^Money [currency amount rounding-mode] (value currency (scale/integer amount) rounding-mode)))
 
 (defn minor-value
   "Creates new Money object for the given value which will become a minor part of the
@@ -431,8 +431,9 @@
   For simple money creation the following macros may be convenient way to go: of,
   of-major, of-minor."
   (^Money [a]     (when-some [v (value a)] (minor-value (.currency ^Money v) (.amount ^Money v))))
-  (^Money [c b]   (value c (scale/fractional b)))
-  (^Money [c b r] (value c (scale/fractional b) r)))
+  (^Money [currency amount]   (value currency (scale/fractional amount)))
+  (^Money [currency amount rounding-mode] (value currency (scale/fractional amount) rounding-mode)))
+
 
 ;;
 ;; Scaling and rounding.
