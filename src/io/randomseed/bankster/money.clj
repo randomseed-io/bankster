@@ -1010,7 +1010,7 @@
    `(.multiply ^BigDecimal ~a ^BigDecimal (scale/apply ~b))))
 
 (declare mul)
-(defrecord LastMoney [^Money m ^int sc])
+(defrecord LastMoney [^Money m ^int scale])
 
 (defn mul-scaled
   "Multiplies two or more values where one may be a Money object. If one of the values
