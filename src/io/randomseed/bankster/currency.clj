@@ -129,35 +129,56 @@
 ;;
 
 (defprotocol ^{:added "1.0.0"} Monetary
+  "The Monetary protocol describes basic operations on currencies. It uses single
+  dispatch to allow currencies to be expressed with different kinds of
+  data (keywords, symbols, strings, native Currency objects etc.)."
   (^{:tag clojure.lang.Keyword :added "1.0.0"}
    id
    [id] [id registry]
-   "Returns currency identifier as a keyword on a basis of currency ID or currency
-  code. If the currency cannot be found in a registry, the argument converted to a
-  keyword will be returned. If the currency is found its ID will be returned (in
-  case it was looked up using currency code).
+   "Returns a unique identifier of the given currency as a keyword. The currency can
+  be expressed as a Currency object, a keyword, a string or any other type which is
+  recognized by the `unit` protocol method.
 
-  If the registry is not given, it will use the global one, but will first try a
-  dynamic registry bound to the `io.randomseed.bankster.registry/*default*` dynamic
-  variable. If the given argument is already an identifier (a keyword), it will be
-  returned as is.")
+  The default registry role is advisory here. If the registry argument is not
+  given (or it is nil) and the dynamic variable
+  `io.randomseed.bankster.registry/*default*` does not refer to a truthy value then
+  the ID will be returned regardless of whether the currency exists in a registry, by
+  simply converting it to a keyword or getting a field from a Currency object. Still,
+  the default registry will be consulted to resolve possible currency code. For
+  instance: if `BTC` is a currency code of a registered currency identified as
+  `:crypto/BTC` then the resulting value for `:BTC` will be `:crypto/BTC`; but for
+  `:BLABLA` (which does not exist in a registry) the resulting value will be
+  `:BLABLA`.
+
+  If a registry is given (or a dynamic registry is set) then trying to use a
+  non-existing currency will cause an exception to be thrown.")
 
   (^{:tag io.randomseed.bankster.Currency :added "1.0.0"}
    of-id
    [id] [id registry]
-   "Returns a currency object for the given ID and registry. If the registry is not
-  given, it will use the global one, but will first try a dynamic registry bound to
-  the `io.randomseed.bankster.registry/*default*` dynamic variable. If the currency
-  record is passed, it will be returned as is without consulting the registry.")
+   "Returns a currency object for the given ID and a registry. If the registry is not
+  given, it will use the global one, but will first try a registry bound to the
+  `io.randomseed.bankster.registry/*default*` dynamic variable.")
 
   (^{:tag io.randomseed.bankster.Currency :added "1.0.2"}
    unit
    [id] [id registry]
-   "Returns a currency object for the given ID or currency code and registry. If the
-  registry is not given, it will use the global one, but will first try a dynamic
-  registry bound to the `io.randomseed.bankster.registry/*default*` dynamic
-  variable. If the currency record is passed, it will be returned as is without
-  consulting the registry.")
+   "Returns a currency object for the given ID or currency code. If the registry is
+  not given, it will try a registry bound to the
+  `io.randomseed.bankster.registry/*default*` dynamic variable and if it is not
+  set (or is falsy) it will use the global registry.
+
+  If a Currency object is passed, it will be returned as is without consulting the
+  registry, unless the registry is given (and not nil) or the dynamic registry is
+  set. In such case the currency will be obtained from the registry on a basis of the
+  ID extracted from the given currency object.
+
+  If the registry is given (or dynamic registry is set) and the currency does not
+  exist in a registry an exception will be thrown, regardless of whether a currency
+  object was passed.
+
+  Explicitly passing nil as a second argument when a Currency object is given can
+  speed things up a bit by bypassing dynamic variable check.")
 
   (^{:tag Boolean :added "1.0.0"}
    defined?
@@ -176,10 +197,8 @@
   (^{:tag Boolean :added "1.0.0"}
    same-ids?
    [a b] [a b registry]
-   "Returns true if two currencies have the same ID. That does not mean the objects
-  are of the same contents (e.g. numerical IDs or scales may differ) but it's more
-  performant in 99% cases. If the registry is not given, it will use the global one,
-  but will first try a dynamic registry bound to the
+   "Returns true if two currencies have the same ID. If the registry is not given,
+  it will use the global one, but will first try a dynamic registry bound to the
   `io.randomseed.bankster.registry/*default*` dynamic variable."))
 
 ;;
@@ -191,12 +210,18 @@
   Currency
 
   (of-id
-    (^Currency [currency] currency)
-    (^Currency [currency ^Registry registry] currency))
+    (^Currency [currency]
+     (if-let [r registry/*default*] (of-id currency r) currency))
+    (^Currency [currency ^Registry registry]
+     (if (nil? registry) currency
+         (unit (.id ^Currency currency) registry))))
 
   (unit
-    (^Currency [currency] currency)
-    (^Currency [currency ^Registry registry] currency))
+    (^Currency [currency]
+     (if-let [r registry/*default*] (unit currency r) currency))
+    (^Currency [currency ^Registry registry]
+     (if (nil? registry) currency
+         (of-id (.id ^Currency currency) ^Registry registry))))
 
   (id
     (^clojure.lang.Keyword [currency] (.id ^Currency currency))
@@ -233,6 +258,8 @@
     (^Currency [num]
      (of-id num (registry/get)))
     (^Currency [num ^Registry registry]
+     (of-id num registry))
+    (^Currency [num ^Registry registry _]
      (of-id num registry)))
 
   (id
@@ -260,13 +287,13 @@
   (same-ids?
     (^Boolean [a b]
      (let [r (registry/get)]
-       (if-some [c (get (registry/currency-nr->currency r) a)]
-         (= (.id ^Currency c) (id b r))
+       (if-some [^Currency c (get (registry/currency-nr->currency r) a)]
+         (= (.id ^Currency c) (id b))
          (throw (ex-info
                  (str "Currency with the numeric ID of " num " not found in a registry.")
                  {:registry r})))))
     (^Boolean [a b ^Registry registry]
-     (if-some [c (get (registry/currency-nr->currency registry) a)]
+     (if-some [^Currency c (get (registry/currency-nr->currency registry) a)]
        (= (.id ^Currency c) (id b registry))
        (throw (ex-info
                (str "Currency with the numeric ID of " num " not found in a registry.")
@@ -296,13 +323,14 @@
 
   (id
     (^clojure.lang.Keyword [c]
-     (if (namespace c) c
-         (if-some [cur (first (get (registry/currency-code->currencies) c))]
-           (.id ^Currency cur) c)))
+     (if-let [r registry/*default*]
+       (.id ^Currency (unit ^clojure.lang.Keyword c ^Registry r))
+       (if (namespace c) c
+           (if-some [cur (first (get (registry/currency-code->currencies) c))]
+             (.id ^Currency cur) c))))
     (^clojure.lang.Keyword [c ^Registry registry]
-     (if (namespace c) c
-         (if-some [cur (first (get (registry/currency-code->currencies registry) c))]
-           (.id ^Currency cur) c))))
+     (if (nil? registry) c
+         (.id ^Currency (unit ^clojure.lang.Keyword c ^Registry registry)))))
 
   (defined?
     (^Boolean [id]
@@ -321,8 +349,12 @@
        (contains? (registry/currency-code->currencies registry) id))))
 
   (same-ids?
-    (^Boolean [a b] (= a (id b (registry/get))))
-    (^Boolean [a b ^Registry registry] (= a (id b registry))))
+    (^Boolean [a b]
+     (if-let [r registry/*default*]
+       (= (id a r) (id b r))
+       (= (id a nil) (id b nil))))
+    (^Boolean [a b ^Registry registry]
+     (= (id a registry) (id b registry))))
 
   String
 
@@ -741,7 +773,7 @@
   {:tag Registry :added "1.0.0"}
   [^Registry registry currency]
   (when registry
-    (let [^Currency cur       (of-id currency registry)
+    (let [^Currency cur       (if (instance? Currency currency) currency (of-id currency registry))
           id                  (.id ^Currency cur)
           cur-code          (if (namespace id) (keyword (core-name id)) id)
           proposed-nr         (.numeric ^Currency cur)
@@ -799,7 +831,7 @@
        (ex-info (str "Currency "
                      (if (instance? Currency currency) (.id ^Currency currency) currency)
                      " does not exist in a registry.") {:currency currency})))
-    (let [^Currency c (of-id currency registry)
+    (let [^Currency c (if (instance? Currency currency) currency (of-id currency registry))
           cid         (.id ^Currency c)
           ^Currency p (get (registry/currency-id->currency registry) cid)
           cids        (prep-country-ids country-ids)]
@@ -833,7 +865,7 @@
        (ex-info (str "Currency "
                      (if (instance? Currency currency) (.id ^Currency currency) currency)
                      " does not exist in a registry.") {:currency currency})))
-    (let [^Currency c (of-id currency registry)
+    (let [^Currency c (if (instance? Currency currency) currency (of-id currency registry))
           cid         (.id ^Currency c)
           ^Currency p (get (registry/currency-id->currency registry) cid)]
       (when-not (= c p)
@@ -858,7 +890,7 @@
        (ex-info (str "Currency "
                      (if (instance? Currency currency) (.id ^Currency currency) currency)
                      " does not exist in a registry.") {:currency currency})))
-    (let [^Currency c (of-id currency registry)
+    (let [^Currency c (if (instance? Currency currency) currency (of-id currency registry))
           cid         (.id ^Currency c)
           ^Currency p (of-id cid registry)
           p-weight    (int (.weight ^Currency p))
@@ -905,7 +937,7 @@
      (register registry currency country-ids localized-or-update false)))
   (^Registry [^Registry registry currency country-ids localized-properties ^Boolean update?]
    (when (some? registry)
-     (let [^Currency c (of-id currency registry)
+     (let [^Currency c (if (instance? Currency currency) currency (of-id currency registry))
            cid         (.id ^Currency c)
            cnr         (.numeric ^Currency c)
            cid-to-cur  (registry/currency-id->currency registry)
@@ -943,7 +975,7 @@
   ([^Registry registry currency country-ids]
    (update registry currency country-ids nil))
   ([^Registry registry currency country-ids localized-properties-map]
-   (let [^Currency present (unit currency registry)]
+   (let [present (if (instance? Currency currency) currency (unit currency registry))]
      (register registry
                present
                (or country-ids (countries present))
@@ -1544,9 +1576,9 @@
      (^DecimalFormat [currency]
       (formatter-instance currency ^Locale (Locale/getDefault)))
      (^DecimalFormat [currency locale]
-      (formatter-instance currency locale (registry/get)))
+      (formatter-instance currency locale nil))
      (^DecimalFormat [currency locale registry]
-      (let [cur (unit currency registry)
+      (let [cur (if (nil? registry) (unit currency) (unit currency registry))
             ^Locale locale-native (l/locale locale)
             f     (NumberFormat/getCurrencyInstance ^Locale locale-native)
             iso   (iso? cur registry)

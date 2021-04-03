@@ -504,12 +504,16 @@
   Money
 
   (of-id
-    (^Currency [money] (.currency ^Money money))
-    (^Currency [money ^Registry registry] (.currency ^Money money)))
+    (^Currency [money]
+     (currency/of-id ^Currency (.currency ^Money money)))
+    (^Currency [money ^Registry registry]
+     (currency/of-id ^Currency (.currency ^Money money) ^Registry registry)))
 
   (unit
-    (^Currency [money] (.currency ^Money money))
-    (^Currency [money ^Registry registry] (.currency ^Money money)))
+    (^Currency [money]
+     (currency/unit ^Currency (.currency ^Money money)))
+    (^Currency [money ^Registry registry]
+     (currency/unit ^Currency (.currency ^Money money) ^Registry registry)))
 
   (id
     (^clojure.lang.Keyword [money]
