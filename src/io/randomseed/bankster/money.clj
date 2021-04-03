@@ -53,7 +53,8 @@
    "Casts an existing Money object to another having a different currency, rescaling
   the amount and optionally rounding it. This is useful when operating on multiple
   currency registries compatible with different data sources or processing
-  engines."))
+  engines. For simply ensuring that a currency is sourced in the right registry, use
+  `of-registry`."))
 
 ;;
 ;; Rescaling helper.
