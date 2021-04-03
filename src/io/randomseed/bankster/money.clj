@@ -78,7 +78,7 @@
 (defn auto-scaled?
   "Returns true if the given Money object is based on a currency which is auto-scaled."
   {:tag Boolean :added "1.1.2"}
-  [^Money m] (currency/val-auto-scaled? (int (.scale ^Currency (.currency ^Money m)))))
+  [^Money m] (== ^int currency/auto-scaled ^int (.scale ^Currency (.currency ^Money m))))
 
 ;;
 ;; Money generation macros.
