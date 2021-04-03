@@ -38,7 +38,7 @@
   mode used when the conversion to a scaled monetary amount requires rounding.
 
   In its unary form, when the argument is not numeric, it will try to get the
-  currency object (identified by a string, a symbol or a keyword) from a default,
+  currency object (identified by a string, a symbol or a keyword) from the default,
   global registry of currencies.
 
   For simple money creation the following macros may be convenient way to go: of,
