@@ -1220,7 +1220,7 @@
   `with-rounding` (also present in `io.randomseed.bankster.scale` namespace) is
   required."
   {:added "1.0.0"}
-  ([a]   (div 1M a))
+  ([a]   (div a))
   ([a b] (div a b))
   ([a b & more]
    (let [^RoundingMode rm (or scale/*rounding-mode* nil)]
@@ -1323,7 +1323,14 @@
   `io.randomseed.bankster.scale/with-rescaling` (aliased in this namespace under the
   same name) macro combining the switch and setting the scale."
   {:added "1.0.0"}
-  ([a] (div 1M a))
+  ([a]
+   (if (instance? Money a)
+     (let [^RoundingMode rm (or scale/*rounding-mode* scale/ROUND_UNNECESSARY)
+           ^BigDecimal   am (.amount ^Money a)]
+       (Money. ^Currency (.currency ^Money a)
+               ^BigDecimal (.divide 1M ^BigDecimal am
+                                    (int (.scale ^BigDecimal am)) rm)))
+     (div 1M a)))
   ([a b]
    (let [am? (instance? Money a)
          bm? (instance? Money b)
