@@ -434,6 +434,55 @@
   (^Money [currency amount]   (value currency (scale/fractional amount)))
   (^Money [currency amount rounding-mode] (value currency (scale/fractional amount) rounding-mode)))
 
+;;
+;; Ensuring the right registry is used.
+;;
+
+(defn of-registry
+  "Ensures that a currency of the given money originates from the given registry. If
+  the registry is not given and a dynamic registry is not set, the default one is
+  used. Optional rounding-mode can be supplied to be used when downscaling is
+  needed (nominal currency from a registry has lower number of decimal places than
+  the amount of money).
+
+  Money can be expressed as a Money object or any other object that will create Money
+  when passed to the `value` function. Returns money."
+  {:tag Money :added "1.1.2"}
+  (^Money [money]
+   (of-registry ^Registry (registry/get) money))
+  (^Money [^Registry registry money]
+   (let [^Money    money (value money)
+         ^Currency cur   (.currency ^Money money)]
+     (Money. ^Currency   (currency/unit (.id ^Currency cur) ^Registry registry)
+             ^BigDecimal (monetary-scale (.amount ^Money money) (int (.scale ^Currency cur))))))
+  (^Money [^Registry registry money ^RoundingMode rounding-mode]
+   (let [^Money    money (value money)
+         ^Currency cur   (.currency ^Money money)]
+     (Money. ^Currency   (currency/unit (.id ^Currency cur) ^Registry registry)
+             ^BigDecimal (monetary-scale (.amount ^Money money) (int (.scale ^Currency cur)) rounding-mode)))))
+
+;;
+;; Operating on an amount.
+;;
+
+(defn on-amount
+  "Performs an operation expressed with a function f on an amount of the given
+  money. Additional arguments will be passed to the f. Returns the money with the
+  amount updated. The function f must return a number. Short-circuits on nil as an
+  argument."
+  {:tag Money :added "1.1.2"}
+  (^Money [money f]
+   (when-some [money (value money)]
+     (value ^Currency (.currency ^Money money) (f (.amount ^Money money)))))
+  (^Money [money f a]
+   (when-some [money (value money)]
+     (value ^Currency (.currency ^Money money) (f (.amount ^Money money) a))))
+  (^Money [money f a b]
+   (when-some [money (value money)]
+     (value ^Currency (.currency ^Money money) (f (.amount ^Money money) a b))))
+  (^Money [money f a b & more]
+   (when-some [money (value money)]
+     (value ^Currency (.currency ^Money money) (apply f (.amount ^Money money) a b more)))))
 
 ;;
 ;; Scaling and rounding.
