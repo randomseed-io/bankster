@@ -275,11 +275,13 @@
     (^Money [money]
      money)
     (^Money [money amount]
-     (Money. ^Currency   (.currency ^Money money)
-             ^BigDecimal (scale/apply amount (int (.scale ^BigDecimal (.amount ^Money money))))))
+     (when (some? amount)
+       (Money. ^Currency   (.currency ^Money money)
+               ^BigDecimal (scale/apply amount (int (.scale ^BigDecimal (.amount ^Money money)))))))
     (^Money [money amount ^RoundingMode rounding]
-     (Money. ^Currency   (.currency ^Money money)
-             ^BigDecimal (scale/apply amount (int (.scale ^BigDecimal (.amount ^Money money))) rounding))))
+     (when (some? amount)
+       (Money. ^Currency   (.currency ^Money money)
+               ^BigDecimal (scale/apply amount (int (.scale ^BigDecimal (.amount ^Money money))) rounding)))))
 
   (cast
     (^Money [money]
@@ -300,11 +302,13 @@
      (Money. ^Currency currency
              ^BigDecimal (monetary-scale 0M (int (.scale ^Currency currency)))))
     (^Money [currency amount]
-     (Money. ^Currency currency
-             ^BigDecimal (monetary-scale amount (int (.scale ^Currency currency)))))
+     (when (some? amount)
+       (Money. ^Currency currency
+               ^BigDecimal (monetary-scale amount (int (.scale ^Currency currency))))))
     (^Money [currency amount ^RoundingMode rounding]
-     (Money. ^Currency currency
-             ^BigDecimal (monetary-scale amount (int (.scale ^Currency currency)) rounding))))
+     (when (some? amount)
+       (Money. ^Currency currency
+               ^BigDecimal (monetary-scale amount (int (.scale ^Currency currency)) rounding)))))
 
   (cast
     (^Money [currency]
@@ -370,8 +374,8 @@
 
   (value
     ([c]     nil)
-    ([a b]   (parse b))
-    ([a c r] (parse c nil r)))
+    ([a b]   (when (some? b) (parse b)))
+    ([a c r] (when (some? c) (parse c nil r))))
 
   (cast
     ([c]     nil)
@@ -394,8 +398,8 @@
 
   (value
     (^Money [a]     (parse a))
-    (^Money [a c]   (parse a c))
-    (^Money [a c r] (parse a c r)))
+    (^Money [a c]   (when (some? c) (parse a c)))
+    (^Money [a c r] (when (some? c) (parse a c r))))
 
   (cast
     (^Money [a]     (cast (parse a)))
