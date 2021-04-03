@@ -1051,7 +1051,7 @@
                    (throw (ex-info "Only one multiplied value can be a kind of Money."
                                    {:multiplicant a :multiplier b}))
                    ;; money, number
-                   (mul-core ^BigDecimal a b (int (.sc ^LastMoney m)) ^RoundingMode rm))
+                   (mul-core ^BigDecimal a b (int (.scale ^LastMoney m)) ^RoundingMode rm))
                  (if (instance? Money b)
                    ;; number, money
                    (let [^BigDecimal bm (.amount ^Money b)
