@@ -1,8 +1,30 @@
 # History of bankster releases
 
+## 1.1.2 (2021-04-05)
+
+- Monetary protocol methods are now more strict about the origin of currency
+  if a registry is given (by-ID resolving and getting from a registry happens
+  even for Currency objects).
+
+- Unary variants of money/div and money/div-scaled are now able to take money as an
+  argument (common operation when recalculating exchange rates).
+
+- Protocol method implementations of money/value short-circuit on nil given as an
+  amount.
+
+- Added functions: money/auto-scaled?, money/of-registry and money/on-amount.
+
+- Fixed a bug causing division and multiplication of auto-scaled currencies to
+  rescale results to latest scales of the amounts instead of performing scale-free
+  calculations.
+
+- Added stripping of trailing zeros before performing scale-free divisions – causes
+  non-terminal decimal expansion to end after more optimal (lesser) number of decimal
+  digits.
+
 ## 1.1.1 (2021-03-26)
 
-- Rounding mode parsing improved.
+- Improved parsing of rounding modes.
 
 ## 1.1.0 (2021-03-25)
 

@@ -1,5 +1,5 @@
 APPNAME = "bankster"
-VERSION = "1.1.1"
+VERSION = "1.1.2"
 
 .PHONY: 		watch default docs deploy test test-clj sig jar pom clean tag
 
