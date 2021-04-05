@@ -1229,8 +1229,8 @@
   first argument is a number and the second argument is a monetary amount, an
   exception will be thrown.
 
-  For a single value it returns a division of 1 by that number and only works for
-  numbers.
+  For a single value it returns a division of 1 by the given number or monetary
+  value.
 
   For more than 2 arguments it repeatedly divides their values as described and
   re-scales each result to match the scale of the first encountered monetary
@@ -1241,8 +1241,10 @@
   designed that way is to handle cases when monetary amount was intentionally
   rescaled earlier.
 
-  For regular numbers dynamic rescaling is performed only to handle corner cases
-  where there would be a non-terminating decimal expansion.
+  For regular numbers and for monetary values of auto-scaled currencies the dynamic
+  rescaling is performed to handle corner cases where there would be a
+  non-terminating decimal expansion. Trailing zeros are stripped before any
+  calculation.
 
   If the scaling requires rounding then enclosing the expression within
   `with-rounding` (also present in `io.randomseed.bankster.scale` namespace) is
@@ -1352,7 +1354,8 @@
   amount, an exception will be thrown. The result will always be either a kind of
   Money or a BigDecimal number.
 
-  For a single value it returns a division of 1 by that number.
+  For a single value it returns a division of 1 by the given number or monetary
+  value.
 
   For more than 2 arguments it repeatedly divides their values as described. If the
   previous calculations produce a regular number, all consequent divisors must be
@@ -1364,8 +1367,10 @@
   designed that way is to handle cases when monetary amount was intentionally
   rescaled earlier.
 
-  For regular numbers dynamic rescaling is performed only to handle corner cases
-  where there would be a non-terminating decimal expansion.
+  For regular numbers and for monetary values of auto-scaled currencies the dynamic
+  rescaling is performed to handle corner cases where there would be a
+  non-terminating decimal expansion. Trailing zeros are stripped before any
+  calculation.
 
   Rescaling is performed after all calculations are done. However, the scale can be
   applied on each calculation if the dynamic variable

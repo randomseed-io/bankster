@@ -31,14 +31,14 @@ To use Bankster in your project, add the following to dependencies section of
 `project.clj` or `build.boot`:
 
 ```clojure
-[io.randomseed/bankster "1.1.1"]
+[io.randomseed/bankster "1.1.2"]
 ```
 
 For `deps.edn` add the following as an element of a map under `:deps` or
 `:extra-deps` key:
 
 ```clojure
-io.randomseed/bankster {:mvn/version "1.1.1"}
+io.randomseed/bankster {:mvn/version "1.1.2"}
 ```
 
 Additionally, if you want to utilize specs and generators provided by the Bankster
@@ -122,7 +122,7 @@ codes**. In case of conflict the currency with higher **currency weight** will b
 picked up.
 
 Currencies can also have **additional**, external properties, like relations to
-countries, internationalized (i18n) settings etc. They are stored in registries too.
+countries, localized (l10n) settings etc. They are stored in registries too.
 
 Having a currency we can create **money** objects which are based on records having 2
 fields:
