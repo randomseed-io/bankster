@@ -1,5 +1,9 @@
 # History of bankster releases
 
+## 1.1.3 (2021-04-12)
+
+- Dependencies updated.
+
 ## 1.1.2 (2021-04-05)
 
 - Monetary protocol methods are now more strict about the origin of currency
