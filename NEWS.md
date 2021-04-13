@@ -7,9 +7,6 @@
 
 - Added function money/abs.
 
-- Functions money/major-minor->int and money/major-minor->long are now accepting
-  explicit rounding-mode argument.
-
 - Added aliases: money/+, money/-, money/*, money//, money/min, money/max.
 
 - Added aliases: money/>, money/>=, money/<, money/<=, money/=, money/==.
