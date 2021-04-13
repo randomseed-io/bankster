@@ -349,8 +349,8 @@
        (fact "when it's possible to negate the amount of a monetary value"
              (m/neg #money[10 EUR])  => #money[-10 EUR])
        (fact "when it's possible to get the absolute monetary value"
-             (m/pos #money[-10 EUR]) => #money[10 EUR]
-             (m/pos #money[10 EUR])  => #money[10 EUR])
+             (m/abs #money[-10 EUR]) => #money[10 EUR]
+             (m/abs #money[10 EUR])  => #money[10 EUR])
        (fact "when it's possible to round the amount of a monetary value"
              (m/round #money[10.12 EUR] 1 scale/ROUND_UP)   => #money[10.20 EUR]
              (m/round #money[10.12 EUR] 1 scale/ROUND_DOWN) => #money[10.10 EUR]
