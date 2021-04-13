@@ -1737,22 +1737,30 @@
   (scale/to-clojure-symbol ^BigDecimal (.amount ^Money a)))
 
 (defn ->double
-  "Converts an amount of the given money to double."
-  {:tag 'double :added "1.0.0"}
-  ([^Money a]
+  "Converts an amount of the given money to a double with optional rescaling."
+  {:tag 'double :added "1.0.0"
+   :arglists '(^double [a]
+               ^double [a scale]
+               ^double [a rounding-mode]
+               ^double [a scale rounding-mode])}
+  (^double [^Money a]
    (scale/->double ^BigDecimal (.amount ^Money a)))
-  ([^Money a scale]
-   (scale/->double ^BigDecimal (.amount ^Money a) scale))
-  ([^Money a scale rounding-mode]
+  (^double [^Money a scale-or-rounding]
+   (scale/->double ^BigDecimal (.amount ^Money a) scale-or-rounding))
+  (^double [^Money a scale rounding-mode]
    (scale/->double ^BigDecimal (.amount ^Money a) scale rounding-mode)))
 
 (defn ->float
-  "Converts an amount of the given money to float."
-  {:tag 'float :added "1.0.0"}
+  "Converts an amount of the given money to a float with optional rescaling."
+  {:tag 'float :added "1.0.0"
+   :arglists '([a]
+               [a scale]
+               [a rounding-mode]
+               [a scale rounding-mode])}
   ([^Money a]
    (scale/->float ^BigDecimal (.amount ^Money a)))
-  ([^Money a scale]
-   (scale/->float ^BigDecimal (.amount ^Money a) scale))
+  ([^Money a scale-or-rounding]
+   (scale/->float ^BigDecimal (.amount ^Money a) scale-or-rounding))
   ([^Money a scale rounding-mode]
    (scale/->float ^BigDecimal (.amount ^Money a) scale rounding-mode)))
 
