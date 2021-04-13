@@ -4,7 +4,7 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [format compare cast])
+  (:refer-clojure :exclude [format compare cast rem])
 
   (:require [clojure.string]
             [trptr.java-wrapper.locale       :as             l]
@@ -1535,12 +1535,88 @@
                                         (int sc)
                                         rounding-mode))))))
 
-(defn div-rem
-  "Returns the remainder of dividing an mount of money by the given number."
-  {:tag BigDecimal :added "1.0.0"}
-  [^Money a b]
-  (Money. ^Currency   (.currency ^Money a)
-          ^BigDecimal (.remainder ^BigDecimal (.amount ^Money a) (scale/apply b))))
+(defmacro rem-core
+  "In its binary variant it performs remainder calculation without rounding and rescaling.
+
+  In its ternary variant gets the remainder with precision calculated to fit the
+  longest possible result (unless there is non-terminating decimal expansion then the
+  result will be rounded).
+
+  In its quartary variant calculates the remainder with scale and rounding mode."
+  {:added "1.2.0" :private true}
+  ([a b scale r]
+   `(let [^BigDecimal   a# ~a
+          ^BigDecimal   b# (scale/apply ~b)
+          ^RoundingMode r# ~r]
+      ^BigDecimal (scale/apply ^BigDecimal (.remainder ^BigDecimal  a#
+                                                       ^BigDecimal  b#
+                                                       ^MathContext (scale/div-math-context
+                                                                     ^BigDecimal   a#
+                                                                     ^BigDecimal   b#
+                                                                     ^RoundingMode r#))
+                               (int ~scale)
+                               ^RoundingMode r#)))
+  ([a b r]
+   `(let [^BigDecimal a# ~a
+          ^BigDecimal b# (scale/apply ~b)]
+      ^BigDecimal (.remainder ^BigDecimal  a#
+                              ^BigDecimal  b#
+                              ^MathContext (scale/div-math-context
+                                            ^BigDecimal   a#
+                                            ^BigDecimal   b#
+                                            ^RoundingMode ~r))))
+  ([^BigDecimal a b]
+   `(let [b# ~b]
+      (if (instance? Money b#)
+        (throw (ex-info "Cannot divide a regular number by the monetary amount."
+                        {:dividend ~a :divisor b#}))
+        ^BigDecimal (.remainder ^BigDecimal ~a
+                                ^BigDecimal (scale/apply b#))))))
+
+(defn rem
+  "Returns the remainder of dividing an mount of money by the given number. For two
+  money objects the result is BigDecimal. When only the first one is a kind of Money
+  the result will also be a Money. In the last case the result will be rescaled to
+  the scale of the monetary amount. When rounding mode is not give
+  `io.randomseed.bankster.scale/*rounding-mode*` will be used when set."
+  {:added "1.2.0"}
+  ([a b]
+   (rem a b (or scale/*rounding-mode* scale/ROUND_UNNECESSARY)))
+  ([a b ^RoundingMode rounding-mode]
+   (let [am? (instance? Money a)
+         bm? (instance? Money b)
+         ^BigDecimal am (if am? (.amount ^Money a) (scale/apply a))
+         bm (if bm? (.amount ^Money b) b)]
+     (if am?
+       (let [^Currency c (.currency ^Money a)]
+         (if bm?
+           ;; money, money
+           (if-not (= ^Currency c ^Currency (.currency ^Money b))
+             (throw (ex-info "Cannot divide by the amount of a different currency."
+                             {:dividend a :divisor b}))
+             (rem-core ^BigDecimal am ^BigDecimal bm ^RoundingMode rounding-mode))
+           ;; money, number
+           (if (currency-auto-scaled? ^Currency c)
+             (Money. ^Currency c
+                     (rem-core ^BigDecimal am ^BigDecimal bm ^RoundingMode rounding-mode))
+             (Money. ^Currency c
+                     (scale/apply (rem-core ^BigDecimal am bm
+                                            (.scale ^BigDecimal am)
+                                            ^RoundingMode rounding-mode))))))
+       (if bm?
+         ;; number, money
+         (throw (ex-info "Cannot divide a regular number by the monetary amount."
+                         {:dividend a :divisor b}))
+         ;; number, number
+         (if rounding-mode
+           (rem-core   ^BigDecimal am bm ^RoundingMode rounding-mode)
+           (.remainder ^BigDecimal am ^BigDecimal (scale/apply bm))))))))
+
+(def ^{:tag Money :added "1.1.0"
+       :arglists '([^Money a b])}
+  div-rem
+  "Alias for rem."
+  rem)
 
 (defn neg
   "Returns the negated amount of the given money. For negative amount it will reverse
