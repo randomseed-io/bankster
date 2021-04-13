@@ -428,14 +428,14 @@
 (defn ->int
   "Converts to an int with optional rounding."
   {:tag 'int :added "1.0.0"}
-  ([n]                             (.intValueExact ^BigDecimal (apply n 0)))
-  ([n ^RoundingMode rounding-mode] (.intValueExact ^BigDecimal (apply n 0 rounding-mode))))
+  ([n]                             (.intValueExact ^BigDecimal (amount n 0)))
+  ([n ^RoundingMode rounding-mode] (.intValueExact ^BigDecimal (amount n 0 rounding-mode))))
 
 (defn ->long
   "Converts to a long with optional rounding."
   {:tag 'long :added "1.0.0"}
-  (^long [n]                             (.longValueExact ^BigDecimal (apply n 0)))
-  (^long [n ^RoundingMode rounding-mode] (.longValueExact ^BigDecimal (apply n 0 rounding-mode))))
+  (^long [n]                             (.longValueExact ^BigDecimal (amount n 0)))
+  (^long [n ^RoundingMode rounding-mode] (.longValueExact ^BigDecimal (amount n 0 rounding-mode))))
 
 (defn ->float
   "Converts to a float with optional rescaling and rounding. If the precision of
@@ -448,7 +448,7 @@
                [n scale rounding-mode])}
   ([n]
    (.floatValue
-    ^BigDecimal (.round ^BigDecimal (apply n)
+    ^BigDecimal (.round ^BigDecimal (amount n)
                         (MathContext.
                          float-precision
                          (or ^RoundingMode *rounding-mode*
@@ -456,19 +456,19 @@
   ([n scale-or-rounding]
    (if (instance? RoundingMode scale-or-rounding)
      (.floatValue
-      ^BigDecimal (.round ^BigDecimal (apply n)
+      ^BigDecimal (.round ^BigDecimal (amount n)
                           (MathContext.
                            float-precision
                            ^RoundingMode scale-or-rounding)))
      (let [^RoundingMode rm (or *rounding-mode* ROUND_UNNECESSARY)]
        (.floatValue
-        ^BigDecimal (.round ^BigDecimal (apply n scale-or-rounding rm)
+        ^BigDecimal (.round ^BigDecimal (amount n scale-or-rounding rm)
                             (MathContext.
                              float-precision
                              ^RoundingMode rm))))))
   ([n scale ^RoundingMode rounding-mode]
    (.floatValue
-    ^BigDecimal (.round ^BigDecimal (apply n scale rounding-mode)
+    ^BigDecimal (.round ^BigDecimal (amount n scale rounding-mode)
                         (MathContext.
                          float-precision
                          ^RoundingMode rounding-mode)))))
@@ -484,7 +484,7 @@
                ^double [n scale rounding-mode])}
   (^double [n]
    (.doubleValue
-    ^BigDecimal (.round ^BigDecimal (apply n)
+    ^BigDecimal (.round ^BigDecimal (amount n)
                         (MathContext.
                          double-precision
                          (or ^RoundingMode *rounding-mode*
@@ -492,19 +492,19 @@
   (^double [n scale-or-rounding]
    (if (instance? RoundingMode scale-or-rounding)
      (.doubleValue
-      ^BigDecimal (.round ^BigDecimal (apply n)
+      ^BigDecimal (.round ^BigDecimal (amount n)
                           (MathContext.
                            double-precision
                            ^RoundingMode scale-or-rounding)))
      (let [^RoundingMode rm (or *rounding-mode* ROUND_UNNECESSARY)]
        (.doubleValue
-        ^BigDecimal (.round ^BigDecimal (apply n scale-or-rounding rm)
+        ^BigDecimal (.round ^BigDecimal (amount n scale-or-rounding rm)
                             (MathContext.
                              double-precision
                              ^RoundingMode rm))))))
   (^double [n scale ^RoundingMode rounding-mode]
    (.doubleValue
-    ^BigDecimal (.round ^BigDecimal (apply n scale rounding-mode)
+    ^BigDecimal (.round ^BigDecimal (amount n scale rounding-mode)
                         (MathContext.
                          double-precision
                          ^RoundingMode rounding-mode)))))
@@ -525,29 +525,30 @@
 ;;
 
 (defn to-plain-string
-  "Converts big decimal to a plain string."
+  "Converts the amount to a plain string."
   {:tag String :added "1.0.7"}
-  [^BigDecimal n]
-  (.toPlainString ^BigDecimal n))
+  [n]
+  (.toPlainString ^BigDecimal (amount n)))
 
 (defn to-clojure-string
-  "Converts big decimal to a plain string, adding the M suffix when needed."
+  "Converts the amount to a plain string, adding the M suffix when needed."
   {:tag String :added "1.1.0"}
-  [^BigDecimal n]
-  (str ^String (.toPlainString ^BigDecimal n)
-       (when (>= (.precision ^BigDecimal n) 16) "M")))
+  [n]
+  (let [n (amount n)]
+    (str ^String (.toPlainString ^BigDecimal n)
+         (when (>= (.precision ^BigDecimal n) 16) "M"))))
 
 (defn to-clojure-symbol
-  "Converts big decimal to a symbol, adding the M suffix when needed."
+  "Converts the amount to a symbol, adding the M suffix when needed."
   {:tag clojure.lang.Symbol :added "1.1.0"}
-  [^BigDecimal n]
-  (symbol (to-clojure-string n)))
+  [n]
+  (symbol (to-clojure-string (amount n))))
 
 (defn to-symbol
-  "Converts big decimal to a symbol."
+  "Converts the amount to a symbol."
   {:tag clojure.lang.Symbol :added "1.1.0"}
-  [^BigDecimal n]
-  (symbol (to-plain-string n)))
+  [n]
+  (symbol (to-plain-string (amount n))))
 
 ;;
 ;; Rounding mode handling.
