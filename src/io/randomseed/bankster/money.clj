@@ -4,7 +4,10 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [format compare cast rem])
+  (:refer-clojure :exclude [format compare cast rem
+                            = == not= not== < > >= <=
+                            + - * / min max
+                            pos? neg? zero?])
 
   (:require [clojure.string]
             [trptr.java-wrapper.locale       :as             l]
@@ -78,7 +81,7 @@
 (defmacro currency-auto-scaled?
   "Returns true if the given Currency object is auto-scaled."
   {:private true :added "1.1.2"}
-  [c] `(== currency/auto-scaled (.scale ~c)))
+  [c] `(clojure.core/== currency/auto-scaled (.scale ~c)))
 
 (defn auto-scaled?
   "Returns true if the given Money object is based on a currency which is auto-scaled."
@@ -608,9 +611,9 @@
 
   (same-ids?
     (^Boolean [a b]
-     (= (.id ^Currency (.currency ^Money a)) (currency/id b)))
+     (clojure.core/= (.id ^Currency (.currency ^Money a)) (currency/id b)))
     (^Boolean [a b ^Registry registry]
-     (= (.id ^Currency (.currency ^Money a)) (currency/id b registry)))))
+     (clojure.core/= (.id ^Currency (.currency ^Money a)) (currency/id b registry)))))
 
 ;;
 ;; Scalable implementation.
@@ -688,7 +691,7 @@
      (when-not (same-currencies? a b)
        (throw (ex-info "Cannot compare amounts of different currencies."
                        {:money-1 a :money-2 b})))
-     (when-not (= (.scale ^BigDecimal am-a) (.scale ^BigDecimal am-b))
+     (when-not (clojure.core/= (.scale ^BigDecimal am-a) (.scale ^BigDecimal am-b))
        (throw (ex-info "Cannot compare amounts having different decimal scales."
                        {:money-1 a :money-2 b})))
      (int (.compareTo ^BigDecimal am-a ^BigDecimal am-b)))))
@@ -711,26 +714,26 @@
   [a]
   (let [csc (int (.scale ^Currency (.currency ^Money a)))]
     (when-not (currency/val-auto-scaled? csc)
-      (not= csc (.scale ^BigDecimal (.amount ^Money a))))))
+      (clojure.core/not= csc (.scale ^BigDecimal (.amount ^Money a))))))
 
 (defn same-currencies?
   "Returns true if both currencies are the same for the given money objects."
   {:tag Boolean :added "1.0.0"}
   [^Money a ^Money b]
-  (= ^Currency (.currency ^Money a)
-     ^Currency (.currency ^Money b)))
+  (clojure.core/= ^Currency (.currency ^Money a)
+                  ^Currency (.currency ^Money b)))
 
 (defn same-currency-ids?
   "Returns true if both currencies have the same IDs for the given money objects."
   {:tag Boolean :added "1.0.0"}
   [^Money a ^Money b]
-  (= (.id ^Currency (.currency ^Money a))
-     (.id ^Currency (.currency ^Money b))))
+  (clojure.core/= (.id ^Currency (.currency ^Money a))
+                  (.id ^Currency (.currency ^Money b))))
 
 (defn eq?
   "Return true if the money amounts and their currencies are equal. Note that
-  currencies with different scales are considered different. Use eq-am? to compare
-  amounts regardless of their scales."
+  currencies with different scales or other properties are considered different. Use
+  eq-am? (aliased as ==) to compare amounts regardless of their scales."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money a] true)
   (^Boolean [^Money a ^Money b]
@@ -743,9 +746,17 @@
        (eq? b (first more)))
      false)))
 
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Boolean [^Money a]
+                   ^Boolean [^Money a ^Money b]
+                   ^Boolean [^Money a ^Money b & more])}
+  =
+  "Alias for eq?."
+  eq?)
+
 (defn eq-am?
-  "Return true if the money amounts and their currencies are equal, regardless of their
-  scales."
+  "Return true if the monetary amounts and their currencies are equal, regardless of
+  their scales."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money a] true)
   (^Boolean [^Money a ^Money b]
@@ -755,9 +766,9 @@
            ^BigDecimal am-b (.amount ^Money b)
            sa (int (.scale am-a))
            sb (int (.scale am-b))]
-       (if (= sa sb)
+       (if (clojure.core/= sa sb)
          (.equals ^BigDecimal am-a ^BigDecimal am-b)
-         (if (< sa sb)
+         (if (clojure.core/< sa sb)
            (.equals ^BigDecimal (scale/apply am-a sb) ^BigDecimal am-b)
            (.equals ^BigDecimal am-a ^BigDecimal (scale/apply am-b sa)))))))
   (^Boolean [^Money a ^Money b & more]
@@ -766,6 +777,14 @@
        (recur b (first more) (next more))
        (eq-am? b (first more)))
      false)))
+
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Boolean [^Money a]
+                   ^Boolean [^Money a ^Money b]
+                   ^Boolean [^Money a ^Money b & more])}
+  ==
+  "Alias for eq-am?."
+  eq-am?)
 
 (defn ne?
   "Returns true if the money amounts or their currencies are different, regardless of
@@ -777,6 +796,14 @@
   (^Boolean [^Money a ^Money b & more]
    (not (apply eq? ^Money a ^Money b more))))
 
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Boolean [^Money a]
+                   ^Boolean [^Money a ^Money b]
+                   ^Boolean [^Money a ^Money b & more])}
+  not=
+  "Alias for ne?."
+  ne?)
+
 (defn ne-am?
   "Returns true if the money amounts or their currencies are different, regardless of
   their scales."
@@ -786,6 +813,14 @@
    (not (eq-am? ^Money a ^Money b)))
   (^Boolean [^Money a ^Money b & more]
    (not (apply eq-am? ^Money a ^Money b more))))
+
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Boolean [^Money a]
+                   ^Boolean [^Money a ^Money b]
+                   ^Boolean [^Money a ^Money b & more])}
+  not==
+  "Alias for ne-am?."
+  ne-am?)
 
 (defn gt?
   "Returns non-nil if monetary amounts are in monotonically decreasing order,
@@ -801,19 +836,35 @@
        (gt? b (first more)))
      false)))
 
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Boolean [^Money a]
+                   ^Boolean [^Money a ^Money b]
+                   ^Boolean [^Money a ^Money b & more])}
+  >
+  "Alias for gt?."
+  gt?)
+
 (defn ge?
   "Returns non-nil if monetary amounts are in monotonically non-increasing order,
   otherwise false."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money a] true)
   (^Boolean [^Money a ^Money b]
-   (>= (compare-amounts a b) 0))
+   (clojure.core/>= (compare-amounts a b) 0))
   (^Boolean [^Money a ^Money b & more]
    (if (ge? a b)
      (if (next more)
        (recur b (first more) (next more))
        (ge? b (first more)))
      false)))
+
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Boolean [^Money a]
+                   ^Boolean [^Money a ^Money b]
+                   ^Boolean [^Money a ^Money b & more])}
+  >=
+  "Alias for ge?."
+  ge?)
 
 (defn lt?
   "Returns non-nil if monetary amounts are in monotonically increasing order,
@@ -829,13 +880,21 @@
        (lt? b (first more)))
      false)))
 
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Boolean [^Money a]
+                   ^Boolean [^Money a ^Money b]
+                   ^Boolean [^Money a ^Money b & more])}
+  <
+  "Alias for lt?."
+  lt?)
+
 (defn le?
   "Returns non-nil if monetary amounts are in monotonically non-decreasing order,
   otherwise false."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money a] true)
   (^Boolean [^Money a ^Money b]
-   (<= (compare-amounts a b) 0))
+   (clojure.core/<= (compare-amounts a b) 0))
   (^Boolean [^Money a ^Money b & more]
    (if (le? a b)
      (if (next more)
@@ -843,11 +902,25 @@
        (le? b (first more)))
      false)))
 
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Boolean [^Money a]
+                   ^Boolean [^Money a ^Money b]
+                   ^Boolean [^Money a ^Money b & more])}
+  <=
+  "Alias for le?."
+  le?)
+
 (defn is-zero?
   "Returns true if the given monetary amount is a positive number."
   {:tag Boolean :added "1.0.0"}
   [^Money a]
-  (zero? (.compareTo 0M ^BigDecimal (.amount ^Money a))))
+  (clojure.core/zero? (.compareTo 0M ^BigDecimal (.amount ^Money a))))
+
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Boolean [^Money a])}
+  zero?
+  "Alias for is-zero?."
+  is-zero?)
 
 (defn is-neg?
   "Returns true if the given monetary amount is a negative number."
@@ -855,23 +928,48 @@
   [^Money a]
   (pos-int? (.compareTo 0M ^BigDecimal (.amount ^Money a))))
 
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Boolean [^Money a])}
+  neg?
+  "Alias for is-neg?."
+  is-neg?)
+
 (defn is-pos?
   "Returns true if the given monetary amount is a positive number."
   {:tag Boolean :added "1.0.0"}
   [^Money a]
   (neg-int? (.compareTo 0M ^BigDecimal (.amount ^Money a))))
 
+
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Boolean [^Money a])}
+  pos?
+  "Alias for is-pos?."
+  is-pos?)
+
 (defn is-neg-or-zero?
   "Returns true if the given monetary amount is a negative number or zero."
   {:tag Boolean :added "1.0.0"}
   [^Money a]
-  (>= (.compareTo 0M ^BigDecimal (.amount ^Money a)) 0))
+  (clojure.core/>= (.compareTo 0M ^BigDecimal (.amount ^Money a)) 0))
+
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Boolean [^Money a])}
+  neg-or-zero?
+  "Alias for is-neg-or-zero?."
+  is-neg-or-zero?)
 
 (defn is-pos-or-zero?
   "Returns true if the given monetary amount is a positive number or zero."
   {:tag Boolean :added "1.0.0"}
   [^Money a]
-  (<= (.compareTo 0M ^BigDecimal (.amount ^Money a)) 0))
+  (clojure.core/<= (.compareTo 0M ^BigDecimal (.amount ^Money a)) 0))
+
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Boolean [^Money a])}
+  pos-or-zero?
+  "Alias for is-pos-or-zero?."
+  is-pos-or-zero?)
 
 ;;
 ;; Operations.
@@ -940,7 +1038,7 @@
                  (throw (ex-info
                          "Cannot add a regular number to the monetary amount."
                          {:augend a :addend b})))
-               (when-not (= cur-a (.currency ^Money b))
+               (when-not (clojure.core/= cur-a (.currency ^Money b))
                  (throw (ex-info
                          "Cannot add amounts of two different currencies."
                          {:augend a :addend b})))
@@ -954,6 +1052,15 @@
                    ^Money [^Money a ^Money b]
                    ^Money [^Money a ^Money b & more])}
   add-scaled
+  "Alias for add."
+  add)
+
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Money []
+                   ^Money [^Money a]
+                   ^Money [^Money a ^Money b]
+                   ^Money [^Money a ^Money b & more])}
+  +
   "Alias for add."
   add)
 
@@ -988,7 +1095,7 @@
                  (throw (ex-info
                          "Cannot subtract a regular number from the monetary amount."
                          {:minuend a :subtrahend b})))
-               (when-not (= cur-a (.currency ^Money b))
+               (when-not (clojure.core/= cur-a (.currency ^Money b))
                  (throw (ex-info
                          "Cannot subtract amounts of two different currencies."
                          {:minuend a :subtrahend b})))
@@ -1001,6 +1108,14 @@
                    ^Money [^Money a ^Money b]
                    ^Money [^Money a ^Money b & more])}
   sub-scaled
+  "Alias for sub."
+  sub)
+
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Money [^Money a]
+                   ^Money [^Money a ^Money b]
+                   ^Money [^Money a ^Money b & more])}
+  -
   "Alias for sub."
   sub)
 
@@ -1176,6 +1291,15 @@
                        ^BigDecimal (.setScale ^BigDecimal res
                                               (int (.scale ^BigDecimal (.amount ^Money m))))))))
          ^BigDecimal res)))))
+
+(def ^{:tag Money :added "1.2.0"
+       :arglists '([]
+                   [a]
+                   [a b]
+                   [a b & more])}
+  *
+  "Alias for mul."
+  mul)
 
 (defn div-core-fn
   "Performs division without rounding and rescaling."
@@ -1402,7 +1526,7 @@
        (let [^Currency c (.currency ^Money a)]
          (if bm?
            ;; money, money
-           (if-not (= ^Currency c ^Currency (.currency ^Money b))
+           (if-not (clojure.core/= ^Currency c ^Currency (.currency ^Money b))
              (throw (ex-info "Cannot divide by the amount of a different currency."
                              {:dividend a :divisor b}))
              (div-core ^BigDecimal am ^BigDecimal bm ^RoundingMode rm))
@@ -1448,7 +1572,7 @@
                    (throw (ex-info "Cannot divide a regular number by the monetary amount."
                                    {:dividend x :divisor y}))
                    ;; money, money
-                   (if (= ^Currency c ^Currency (.currency ^Money y))
+                   (if (clojure.core/= ^Currency c ^Currency (.currency ^Money y))
                      (reduce
                       (fn ^BigDecimal [^BigDecimal a b]
                         (div-core ^BigDecimal a b ^RoundingMode rm))
@@ -1464,29 +1588,53 @@
                              ^BigDecimal x
                              ^BigDecimal (scale/apply x (.scale ^BigDecimal am)))))))))))))
 
+(def ^{:tag Money :added "1.2.0"
+       :arglists '([a]
+                   [a b]
+                   [a b & more])}
+  /
+  "Alias for div."
+  div)
+
 (defn min-amount
   "Returns the least of the monetary amounts."
   {:tag Money :added "1.0.0"}
-  ([^Money a] a)
-  ([^Money a ^Money b]
+  (^Money [^Money a] a)
+  (^Money [^Money a ^Money b]
    (when-not (same-currencies? a b)
      (throw (ex-info "Cannot compare amounts of different currencies."
                      {:money-1 a :money-2 b})))
    (if (lt? a b) a b))
-  ([^Money a ^Money b & more]
+  (^Money  [^Money a ^Money b & more]
    (reduce min-amount (min-amount ^Money a ^Money b) more)))
+
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Money [^Money a]
+                   ^Money [^Money a ^Money b]
+                   ^Money [^Money a ^Money b & more])}
+  min
+  "Alias for min-amount."
+  min-amount)
 
 (defn max-amount
   "Returns the greatest of the monetary amounts."
   {:tag Money :added "1.0.0"}
-  ([^Money a] a)
-  ([^Money a ^Money b]
+  (^Money [^Money a] a)
+  (^Money [^Money a ^Money b]
    (when-not (same-currencies? a b)
      (throw (ex-info "Cannot compare amounts of different currencies."
                      {:money-1 a :money-2 b})))
    (if (gt? a b) a b))
-  ([^Money a ^Money b & more]
+  (^Money [^Money a ^Money b & more]
    (reduce max-amount (max-amount a b) more)))
+
+(def ^{:tag Money :added "1.2.0"
+       :arglists '(^Money [^Money a]
+                   ^Money [^Money a ^Money b]
+                   ^Money [^Money a ^Money b & more])}
+  max
+  "Alias for max-amount."
+  max-amount)
 
 (defn convert
   "Converts a monetary amount from one currency to another using the given
@@ -1591,7 +1739,7 @@
        (let [^Currency c (.currency ^Money a)]
          (if bm?
            ;; money, money
-           (if-not (= ^Currency c ^Currency (.currency ^Money b))
+           (if-not (clojure.core/= ^Currency c ^Currency (.currency ^Money b))
              (throw (ex-info "Cannot divide by the amount of a different currency."
                              {:dividend a :divisor b}))
              (rem-core ^BigDecimal am ^BigDecimal bm ^RoundingMode rounding-mode))
@@ -1649,7 +1797,7 @@
   (^Money [^Money money scale ^RoundingMode rounding-mode]
    (let [^BigDecimal am (.amount ^Money money)
          sc (int (.scale am))]
-     (if (>= scale sc)
+     (if (clojure.core/>= scale sc)
        money
        (Money. ^Currency   (.currency ^Money money)
                ^BigDecimal (.setScale
@@ -1947,19 +2095,20 @@
    (format money (Locale/getDefault)))
   ([^Money money locale]
    (if-some [rm scale/*rounding-mode*]
-     (if (not= rm scale/ROUND_UNNECESSARY)
+     (if (clojure.core/not= rm scale/ROUND_UNNECESSARY)
        (let [f (currency/formatter-instance (.currency ^Money money) locale)]
          (.format ^DecimalFormat f
                   ^BigDecimal (scale/apply (.amount ^Money money)
-                                           (max (.getMaximumFractionDigits ^DecimalFormat f)
-                                                (.getMinimumFractionDigits ^DecimalFormat f)) rm)))
+                                           (clojure.core/max
+                                            (.getMaximumFractionDigits ^DecimalFormat f)
+                                            (.getMinimumFractionDigits ^DecimalFormat f)) rm)))
        (.format ^DecimalFormat (currency/formatter-instance (.currency ^Money money) locale)
                 ^BigDecimal    (.amount ^Money money)))
      (.format ^DecimalFormat (currency/formatter-instance (.currency ^Money money) locale)
               ^BigDecimal    (.amount ^Money money))))
   ([^Money money locale opts]
    (if-some [rmode (or (:rounding-mode opts) scale/*rounding-mode*)]
-     (if (not= rmode scale/ROUND_UNNECESSARY)
+     (if (clojure.core/not= rmode scale/ROUND_UNNECESSARY)
        (.format ^DecimalFormat (currency/formatter-extended (.currency ^Money money) locale
                                                             (assoc opts :rounding-mode rmode))
                 ^BigDecimal    (.amount ^Money money))
