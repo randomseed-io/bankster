@@ -1702,15 +1702,19 @@
   "Returns a vector with major and minor parts of the given monetary amount represented
   as integer numbers."
   {:tag clojure.lang.IPersistentVector :added "1.0.0"}
-  [^Money a]
-  [(major->int a) (minor->int a)])
+  ([^Money a]
+   [(major->int a) (minor->int a)])
+  ([^Money a ^RoundingMode r]
+   [(major->int a r) (minor->int a r)]))
 
 (defn major-minor->long
   "Returns a vector with major and minor parts of the given monetary amount represented
   as long numbers."
   {:tag clojure.lang.IPersistentVector :added "1.0.0"}
-  [^Money a]
-  [(major->long a) (minor->long a)])
+  ([^Money a]
+   [(major->long a) (minor->long a)])
+  ([^Money a ^RoundingMode r]
+   [(major->long a r) (minor->long a r)]))
 
 (defn ->symbol
   "Converts an amount of the given money to a symbol."
