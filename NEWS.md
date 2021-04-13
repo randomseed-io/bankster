@@ -1,4 +1,30 @@
-# History of bankster releases
+# History of Bankster releases
+
+##  1.2.0 (2021-04-13)
+
+- Function money/div-rem renamed to money/rem and improved to behave like div in
+  terms of accepted argument types, rounding and rescaling.
+
+- Added function money/abs.
+
+- Functions money/major-minor->int and money/major-minor->long are now accepting
+  explicit rounding-mode argument.
+
+- Added aliases: money/+, money/-, money/*, money//, money/min, money/max.
+
+- Added aliases: money/>, money/>=, money/<, money/<=, money/=, money/==.
+
+- Added aliases: money/pos?, money/neg?, money/zero?.
+
+- Conversion functions scale/->int, scale/->long, scale/->double, scale/->float,
+  scale/to-plain-string, scale/to-clojure-string, scale/to-symbol,
+  scale/to-clojure-symbol are now using scale/amount to get the actual amount of the
+  given scalable instead of expecting BigDecimal values.
+
+**BREAKING CHANGES**:
+
+- Function money/pos now returns its argument. Use money/abs to get the absolute
+  value.
 
 ## 1.1.3 (2021-04-12)
 
