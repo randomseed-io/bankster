@@ -1626,11 +1626,11 @@
   (sub a))
 
 (defn pos
-  "Returns the positive (absolute) amount of the given money."
-  {:tag BigDecimal :added "1.0.0"}
+  "Returns the given money object."
+  {:tag Money :added "1.0.0"}
   [^Money a]
-  (Money. ^Currency   (.currency ^Money a)
-          ^BigDecimal (.abs ^BigDecimal (.amount ^Money a))))
+  a)
+
 (defn abs
   "Returns the absolute amount of the given money."
   {:tag BigDecimal :added "1.2.0"}
