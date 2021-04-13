@@ -1631,6 +1631,13 @@
   [^Money a]
   (Money. ^Currency   (.currency ^Money a)
           ^BigDecimal (.abs ^BigDecimal (.amount ^Money a))))
+(defn abs
+  "Returns the absolute amount of the given money."
+  {:tag BigDecimal :added "1.2.0"}
+  [^Money a]
+  (if (is-pos-or-zero? a) a
+      (Money. ^Currency   (.currency ^Money a)
+              ^BigDecimal (.abs ^BigDecimal (.amount ^Money a)))))
 
 (defn round
   "Rounds the amount of money using the given scale and rounding mode. Returns money
