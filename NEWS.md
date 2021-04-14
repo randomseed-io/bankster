@@ -1,5 +1,9 @@
 # History of Bankster releases
 
+## 1.2.1 (2021-04-15)
+
+- Fixed a bug causing money/of-registry to not rescale amounts.
+
 ##  1.2.0 (2021-04-13)
 
 - Function money/div-rem renamed to money/rem and improved to behave like div in
