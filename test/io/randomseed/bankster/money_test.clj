@@ -16,6 +16,7 @@
             [io.randomseed.bankster.spec     :as            spec]
             [expound.alpha                   :as         expound]
             [io.randomseed.bankster.currency :as               c]
+            [io.randomseed.bankster.registry :as        registry]
             [io.randomseed.bankster.money    :as               m]
             [io.randomseed.bankster.scale    :as           scale])
 
@@ -100,7 +101,18 @@
              (c/same-ids? #currency crypto/USDT #money/crypto[20 USDT]) => true
              (c/same-ids? #money[10 PLN] :PLN) => true
              (c/same-ids? :PLN #money[10 PLN]) => true
-             (c/same-ids? #money[10 PLN] #money[10 PLN]) => true))
+             (c/same-ids? #money[10 PLN] #money[10 PLN]) => true)
+       (fact "when the of-registry function rescales amount and sets the scale of a currency"
+             (let [r (registry/get)
+                   r (c/update r #currency{:id :crypto/USDT, :domain :CRYPTO, :kind :COMBANK, :scale 6, :weight 4})
+                   orig-money #money[15.22 USDT]
+                   new-money  (m/of-registry r orig-money)]
+               (c/scale orig-money) => 8
+               (m/scale orig-money) => 8
+               (c/scale new-money)  => 6
+               (m/scale new-money)  => 6
+               (scale/of (m/amount orig-money)) => 8
+               (scale/of (m/amount new-money))  => 6)))
 
 (facts "about currency properties"
        (fact "when it's possible to get the numeric value of an ISO currency"

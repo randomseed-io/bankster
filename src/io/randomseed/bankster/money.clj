@@ -450,9 +450,10 @@
 (defn of-registry
   "Ensures that a currency of the given money originates from the given registry. If
   the registry is not given and a dynamic registry is not set, the default one is
-  used. Optional rounding-mode can be supplied to be used when downscaling is
-  needed (nominal currency from a registry has lower number of decimal places than
-  the amount of money).
+  used. Rescales the amount if needed to match the nominal scale. Optional
+  rounding-mode can be supplied to be used when downscaling is needed (nominal
+  currency from a registry has lower number of decimal places than the amount of
+  money).
 
   Money can be expressed as a Money object or any other object that will create Money
   when passed to the `value` function. Returns money."
@@ -461,14 +462,19 @@
    (of-registry (registry/get) money))
   (^Money [^Registry registry money]
    (let [^Money    money (value money)
-         ^Currency cur   (.currency ^Money money)]
-     (Money. ^Currency   (currency/unit (.id ^Currency cur) ^Registry registry)
-             ^BigDecimal (monetary-scale (.amount ^Money money) (int (.scale ^Currency cur))))))
+         ^Currency cur   (currency/unit ^Currency (.id ^Currency (.currency ^Money money))
+                                        ^Registry registry)]
+     (Money. ^Currency   cur
+             ^BigDecimal (monetary-scale (.amount ^Money money)
+                                         (int (.scale ^Currency cur))))))
   (^Money [^Registry registry money ^RoundingMode rounding-mode]
    (let [^Money    money (value money)
-         ^Currency cur   (.currency ^Money money)]
-     (Money. ^Currency   (currency/unit (.id ^Currency cur) ^Registry registry)
-             ^BigDecimal (monetary-scale (.amount ^Money money) (int (.scale ^Currency cur)) rounding-mode)))))
+         ^Currency cur   (currency/unit ^Currency (.id ^Currency (.currency ^Money money))
+                                        ^Registry registry)]
+     (Money. ^Currency   cur
+             ^BigDecimal (monetary-scale (.amount ^Money money)
+                                         (int (.scale ^Currency cur))
+                                         rounding-mode)))))
 
 ;;
 ;; Operating on an amount.
@@ -995,10 +1001,9 @@
    (scale/apply ^Money money (int scale) ^RoundingMode rounding-mode)))
 
 (defn rescale
-  "Same as scale but its unary variant it will rescale an amount of the given money to
+  "Same as scale but its unary variant will rescale an amount of the given money to
   conform it to its currency settings instead of returning the scale. It has the same
-  effect as calling `io.randomseed.bankster.scale/apply` on a money object without
-  passing any other arguments."
+  effect as calling `io.randomseed.bankster.scale/apply` on a Money object."
   {:tag Money :added "1.0.0"}
   (^Money [^Money money]
    (scale/apply ^Money money))
