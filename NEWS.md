@@ -1,5 +1,9 @@
 # History of Bankster releases
 
+## 1.2.3 (2021-04-16)
+
+- Fixed issue with data-readers file visibility by adding a copy to resources directory.
+
 ## 1.2.2 (2021-04-16)
 
 - Added io.randomseed.bankster/data-readers map to expose tagged literal handlers.

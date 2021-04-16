@@ -55,7 +55,7 @@
 ;; Data readers map.
 ;;
 
-(def ^{:tag clojure.lang.IPersistentMap :added "1.2.2"}
+(def ^{:tag clojure.lang.IPersistentMap :added "1.2.3"}
   data-readers
   "Data readers map for currency and money."
   (when-some [r (fs/paths->resource "io/randomseed/bankster/bankster_data_readers.clj")]
