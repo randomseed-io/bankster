@@ -4,7 +4,9 @@
       :author "Paweł Wilk"
       :added  "1.0.0"}
 
-    io.randomseed.bankster)
+    io.randomseed.bankster
+
+  (:require [clojure.edn]))
 
 ;;
 ;; Currency record.
@@ -47,3 +49,12 @@
   Object
   (toString [^Money m]
     (str (.toPlainString ^BigDecimal (.amount ^Money m)) " " (.currency ^Money m))))
+
+;;
+;; Data readers map.
+;;
+
+(def ^{:tag clojure.lang.IPersistentMap :added "1.2.2"}
+  data-readers
+  "Data readers map for currency and money."
+  (clojure.edn/read-string (slurp "src/data_readers.clj")))
