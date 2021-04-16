@@ -49,6 +49,11 @@
   "Default data reader filenames."
   ["data_readers.clj" "data_readers.cljc"])
 
+(def ^{:const true :tag String :added "1.2.3"}
+  default-reader-filename-res
+  "Data reader filename in resources subdirectory."
+  "bankster_data_readers.clj")
+
 (def ^{:const true :tag String :added "1.0.0"}
   default-handlers-pathname
   "Default pathname of a reader handlers file."
@@ -285,19 +290,28 @@
   ([]
    (readers-export (registry/state)
                    default-reader-filenames
+                   default-reader-filename-res
                    default-handlers-pathname
                    default-handlers-namespace))
   ([^Registry registry]
    (readers-export registry
                    default-reader-filenames
+                   default-reader-filename-res
                    default-handlers-pathname
                    default-handlers-namespace))
   ([^Registry registry filenames]
    (readers-export registry
                    filenames
+                   default-reader-filename-res
                    default-handlers-pathname
                    default-handlers-namespace))
-  ([^Registry registry filenames handlers-pathname handlers-namespace]
+  ([^Registry registry filenames res-filename]
+   (readers-export registry
+                   filenames
+                   res-filename
+                   default-handlers-pathname
+                   default-handlers-namespace))
+  ([^Registry registry filenames res-filename handlers-pathname handlers-namespace]
    (when-some [nsses (->> (.cur-id->cur ^Registry registry)
                           (map (comp namespace first))
                           (filter identity)
@@ -316,6 +330,11 @@
              (println)
              (doseq [f filenames]
                (let [fname (io/file pdir f)]
+                 (println "Exporting to:" (str fname))
+                 (spit fname (puget/pprint-str m))))
+             (when-some [rdir (fs/resource-pathname default-resource-name
+                                                    default-resource-must-exist-file)]
+               (let [fname (io/file (.getParent ^java.io.File (io/file rdir)) res-filename)]
                  (println "Exporting to:" (str fname))
                  (spit fname (puget/pprint-str m))))
              (println "Generating handlers code to:" (str hfile))

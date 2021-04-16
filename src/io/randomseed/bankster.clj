@@ -6,7 +6,8 @@
 
     io.randomseed.bankster
 
-  (:require [clojure.edn]))
+  (:require [clojure.edn]
+            [io.randomseed.bankster.util.fs :as fs]))
 
 ;;
 ;; Currency record.
@@ -57,4 +58,6 @@
 (def ^{:tag clojure.lang.IPersistentMap :added "1.2.2"}
   data-readers
   "Data readers map for currency and money."
-  (clojure.edn/read-string (slurp "src/data_readers.clj")))
+  (when-some [r (fs/paths->resource "io/randomseed/bankster/bankster_data_readers.clj")]
+    (when-some [d (clojure.edn/read-string (slurp r))]
+      (when (map? d) d))))
