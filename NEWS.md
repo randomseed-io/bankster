@@ -1,5 +1,9 @@
 # History of Bankster releases
 
+## 1.2.2 (2021-04-16)
+
+- Added io.randomseed.bankster/data-readers map to expose tagged literal handlers.
+
 ## 1.2.1 (2021-04-15)
 
 - Fixed a bug causing money/of-registry to not rescale amounts.
