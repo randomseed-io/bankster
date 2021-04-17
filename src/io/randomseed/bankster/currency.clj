@@ -1539,7 +1539,7 @@
   the same effect as registry/with."
   {:added "1.0.0"}
   [^Registry registry & body]
-  `(binding [registry/*default* ^Registry registry]
+  `(binding [registry/*default* ^Registry ~registry]
      ~@body))
 
 ;;

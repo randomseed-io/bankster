@@ -240,7 +240,7 @@
   in functions which require the registry and it was not passed as an argument."
   {:added "1.0.0"}
   [^Registry registry & body]
-  `(binding [*default* ^Registry registry]
+  `(binding [*default* ^Registry ~registry]
      ~@body))
 
 ;;
