@@ -56,7 +56,8 @@
              (m/of PLN) => {:amount 0M :currency #currency PLN}
              (m/with-currency EUR (m/of 1000)) => {:amount 1000M :currency #currency EUR}
              (m/of crypto/ETH) => {:amount 0M :currency #currency crypto/ETH}
-             (let [mv #money[10 PLN]] (m/of mv))    => {:amount 10M :currency #currency PLN}
+             (let [mv #money[10 PLN]]
+               (m/of mv))    => {:amount 10M :currency #currency PLN}
              (m/of #currency{:id :KIKI :scale 1} 5) => {:amount 5M :currency #currency{:id KIKI :scale 1 :weight 0}}
              (m/of #currency{:id :KIKI :scale 1})   => {:amount 0M :currency #currency{:id KIKI :scale 1 :weight 0}}
              (let [mv (m/of #currency{:id :KIKI :scale 1} 123)]
@@ -64,10 +65,6 @@
                (m/of mv)    => {:amount 123M :currency #currency{:id :KIKI :scale 1 :weight 0}})))
 
 (facts "about money tagged literal"
-       (fact "when it returns nil for nil or empty map"
-             #money nil => nil
-             #money[nil nil] => nil
-             #money[nil] => nil)
        (fact "when it returns a money object"
              #money PLN => {:amount 0M :currency #currency PLN}
              #money crypto/ETH => {:amount 0M :currency #currency crypto/ETH}
