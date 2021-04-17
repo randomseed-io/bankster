@@ -82,6 +82,16 @@
                       (apply io/file) str
                       io/resource)))
 
+(defn ^java.net.URL get-resource
+  "For the given pathname, returns the resource URL if the path exists. If the path
+  does not exist, returns nil."
+  {:added "1.2.4"}
+  [pname]
+  (.getResource
+   (.. Thread currentThread getContextClassLoader)
+   pname))
+
+
 (defn ^Boolean integer-string?
   "Returns true if string contains valid integer number."
   [^String s]
