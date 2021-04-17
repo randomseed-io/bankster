@@ -472,13 +472,6 @@
     (^Boolean [a b] false)
     (^Boolean [a b ^Registry registry] false)))
 
-(defn parse-currency-id
-  "Internal helper which transforms currency IDs into keywords."
-  {:no-doc true :added "1.0.0"}
-  [c]
-  (if (and (symbol? c) (defined? c))
-    (keyword c) c))
-
 (defn parse-currency-code
   "Internal helper which transforms currency codes into keywords."
   {:no-doc true :added "1.0.2"}
