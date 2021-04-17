@@ -10,6 +10,7 @@
                             pos? neg? zero?])
 
   (:require [clojure.string]
+            [clojure.edn]
             [trptr.java-wrapper.locale       :as             l]
             [io.randomseed.bankster          :refer       :all]
             [io.randomseed.bankster.scale    :as         scale]
@@ -2015,18 +2016,49 @@
 ;; Tagged literals.
 ;;
 
-(defn lit
-  "Tagged literal handler."
-  {:added "1.0.0" :no-doc true}
-  ([arg]
-   (let [[c amount r] (if (sequential? arg) arg [arg nil nil])]
-     (if (or (nil? c) (and (sequential? c) (nil? (seq c))))
-       '(quote nil)
-       (if (nil? amount)
-         (of-gen parse c)
-         (if (nil? r)
-           (of-gen parse c amount)
-           (of-gen parse c amount r)))))))
+(defn lit-parse
+  "Internal pre-parser for tagged literals. Takes a parsing function and arguments
+  in decomposed form."
+  {:added "1.2.4" :private true}
+  ([a]
+   (of-gen parse a))
+  ([a b]
+   (if (nil? b)
+     (of-gen parse a)
+     (of-gen parse a b)))
+  ([a b r]
+   (if (nil? r)
+     (if (nil? b)
+       (lit-parse a)
+       (lit-parse a b))
+     (of-gen parse a b r))))
+
+(defn code-literal
+  "Tagged literal handler for Money objects expressed as tagged literals in Clojure
+  code. Returns compound forms (parsing function invocations that can be influenced
+  by the runtime environment, e.g. dynamic variables like scale/*rounding-mode*)."
+  {:added "1.2.4"}
+  [arg]
+  (if (nil? arg)
+    (lit-parse nil)
+    (if (sequential? arg)
+      (apply lit-parse (take 3 arg))
+      (if (map? arg)
+        (lit-parse (:currency arg)
+                   (:amount   arg)
+                   (or (:rounding-mode arg)
+                       (:rounding arg)))
+        (lit-parse arg)))))
+
+(defn data-literal
+  "Data reader for Money objects expressed as tagged literals in EDN data
+  files."
+  {:added "1.2.4" :tag io.randomseed.bankster.Money}
+  [arg]
+  (let [r (code-literal arg)]
+    (if (seq? r)
+      (apply (first r) (rest r))
+      r)))
 
 (defn defliteral
   "For the given currency identifier or a currency object it creates a tagged literal
@@ -2050,15 +2082,49 @@
                         (set! clojure.core/*data-readers*
                               (assoc clojure.core/*data-readers* snam varn)))))))
 
-(defn ns-lit
+(defn ns-data-literal
   {:private true :added "1.0.0"}
   [kw arg]
   (let [[a b r] (if (sequential? arg) arg [arg nil nil])
         [c am]  (if (and (some? b) (number? a)) [b a] [a b])
         c       (if (number? c) c (keyword kw (str (symbol c))))]
-    (lit [c am r])))
+    (data-literal [c am r])))
+
+(defn ns-code-literal
+  {:private true :added "1.0.0"}
+  [kw arg]
+  (let [[a b r] (if (sequential? arg) arg [arg nil nil])
+        [c am]  (if (and (some? b) (number? a)) [b a] [a b])
+        c       (if (number? c) c (keyword kw (str (symbol c))))]
+    (code-literal [c am r])))
 
 (load "money/reader_handlers")
+
+;;
+;; Data readers maps.
+;;
+
+(def ^{:tag clojure.lang.IPersistentMap :added "1.2.4"}
+  data-readers
+  "Data readers map for currency and money (intended to be used when reading EDN data
+  files containing tagged literals: #currency and #money). Handlers assigned to
+  literals are always emitting constant forms. Please note that tagged literal
+  handlers for Clojure code are using different readers (defined as code-readers)."
+  (when-some [r (fs/get-resource "data_readers_edn.clj")]
+    (when-some [d (clojure.edn/read-string (slurp r))]
+      (when (map? d)
+        (into {} (for [[k v] d] [k (resolve v)]))))))
+
+(def ^{:tag clojure.lang.IPersistentMap :added "1.2.4"}
+  code-readers
+  "Data readers map for currency and money (intended to be used when evaluating Clojure
+  code with tagged literals: #currency and #money). Handlers assigned to literals may
+  emit compound forms, like function call forms (as Clojure code). To operate on EDN
+  data files, see data-readers."
+  (when-some [r (fs/get-resource "data_readers.clj")]
+    (when-some [d (clojure.edn/read-string (slurp r))]
+      (when (map? d)
+        (into {} (for [[k v] d] [k (resolve v)]))))))
 
 ;;
 ;; Formatting.

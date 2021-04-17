@@ -77,7 +77,10 @@
              #currency {:id :EUR :numeric 1000 :scale 2 :kind :FIAT} => {:id :EUR :domain nil :kind :FIAT :numeric 1000 :scale 2 :weight 0}
              #currency {:id :EUR :kind :FIAT} => {:id :EUR :domain nil :kind :FIAT :numeric -1 :scale -1 :weight 0}
              #currency {:id :EUR :numeric 1000 :kind :FIAT} => {:id :EUR :domain nil :kind :FIAT :numeric 1000 :scale -1 :weight 0}
-             #currency {:id :EUR :scale 2 :kind :FIAT :domain :ISO-4217} => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric -1 :scale 2 :weight 0}))
+             #currency {:id :EUR :scale 2 :kind :FIAT :domain :ISO-4217} => {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric -1 :scale 2 :weight 0})
+       (fact "when it can use different registries"
+             (let [r (c/update (registry/get) #currency{:id PLN :scale 10})]
+               (c/with-registry r #currency PLN)) => {:id :PLN :scale 10 :numeric -1 :weight 0 :kind nil :domain nil}))
 
 (facts "about currency registering"
        (fact "when it returns nil for nil or empty map"

@@ -1,3 +1,5 @@
 (in-ns 'io.randomseed.bankster.money)
 
-(defn lit-crypto {:no-doc true} [arg] (ns-lit "crypto" arg))
+(defn code-literal-crypto {:no-doc true} [arg] (ns-code-literal "crypto" arg))
+
+(defn data-literal-crypto {:no-doc true} [arg] (ns-data-literal "crypto" arg))

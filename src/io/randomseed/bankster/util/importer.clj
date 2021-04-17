@@ -46,13 +46,13 @@
 
 (def ^{:const true :tag String :added "1.0.0"}
   default-reader-filenames
-  "Default data reader filenames."
+  "Default data reader filenames (Clojure code)."
   ["data_readers.clj" "data_readers.cljc"])
 
-(def ^{:const true :tag String :added "1.2.3"}
-  default-reader-filename-res
-  "Data reader filename in resources subdirectory."
-  "bankster_data_readers.clj")
+(def ^{:const true :tag String :added "1.2.4"}
+  default-data-reader-filename
+  "Default data reader filename (pure data)."
+  "data_readers_edn.clj")
 
 (def ^{:const true :tag String :added "1.0.0"}
   default-handlers-pathname
@@ -248,15 +248,22 @@
    (let [nsp (symbol (str "'" handlers-namespace))]
      (list 'in-ns nsp))))
 
-(defn handler-gen
-  "Generates handler functions for tagged literals for each namespaced currency."
-  {:no-doc true :added "1.0.0"}
-  [names]
+(defn handler-gen-for-prefix
+  {:private true :added "1.0.0"}
+  [prefix names]
   (map
-   (fn [n] (list 'defn (symbol (str "lit-" n))
-                 '{:no-doc true}
-                 '[arg] (list 'ns-lit (str n) 'arg)))
+   (fn [n]
+     (list 'defn (symbol (str prefix "-" n))
+           '{:no-doc true}
+           '[arg] (list (symbol (str "ns-" prefix)) (str n) 'arg)))
    names))
+
+(defn handler-gen
+  "Generates handler functions for tagged literals for each namespaced currency. Each
+  function will have a prefixed name."
+  [names]
+  (concat (handler-gen-for-prefix "code-literal" names)
+          (handler-gen-for-prefix "data-literal" names)))
 
 (defn readers-export
   "Creates clojure source code files with reader functions for tagged literals handling
@@ -290,56 +297,64 @@
   ([]
    (readers-export (registry/state)
                    default-reader-filenames
-                   default-reader-filename-res
+                   default-data-reader-filename
                    default-handlers-pathname
                    default-handlers-namespace))
   ([^Registry registry]
    (readers-export registry
                    default-reader-filenames
-                   default-reader-filename-res
+                   default-data-reader-filename
                    default-handlers-pathname
                    default-handlers-namespace))
   ([^Registry registry filenames]
    (readers-export registry
                    filenames
-                   default-reader-filename-res
+                   default-data-reader-filename
                    default-handlers-pathname
                    default-handlers-namespace))
-  ([^Registry registry filenames res-filename]
+  ([^Registry registry filenames data-filename]
    (readers-export registry
                    filenames
-                   res-filename
+                   data-filename
                    default-handlers-pathname
                    default-handlers-namespace))
-  ([^Registry registry filenames res-filename handlers-pathname handlers-namespace]
+  ([^Registry registry filenames data-filename handlers-pathname handlers-namespace]
    (when-some [nsses (->> (.cur-id->cur ^Registry registry)
                           (map (comp namespace first))
                           (filter identity)
                           set seq)]
-     (let [m (->> nsses
-                  (map #(vector (symbol "money" %) (symbol handlers-namespace (str "lit-" %))))
-                  (into {'money    'io.randomseed.bankster.money/lit
-                         'currency 'io.randomseed.bankster.currency/lit}))]
+     (let [m  (->> nsses
+                   (map #(vector (symbol "money" %) (symbol handlers-namespace (str "code-literal-" %))))
+                   (into {'money    'io.randomseed.bankster.money/code-literal
+                          'currency 'io.randomseed.bankster.currency/code-literal}))
+           dm (->> nsses
+                   (map #(vector (symbol "money" %) (symbol handlers-namespace (str "data-literal-" %))))
+                   (into {'money    'io.randomseed.bankster.money/data-literal
+                          'currency 'io.randomseed.bankster.currency/data-literal}))]
        (when-some [fdir (io/resource (first filenames))]
          (when-some [pdir (.getParent (io/file fdir))]
            (when-some [hfile (io/file pdir handlers-pathname)]
              (println)
-             (println "------------------- readers map:")
+             (println "------------- data readers map (for handling Clojure code):")
              (println)
              (puget/cprint m)
+             (println)
+             (println "------------- data readers map (for handling EDN data):")
+             (println)
+             (puget/cprint dm)
              (println)
              (doseq [f filenames]
                (let [fname (io/file pdir f)]
                  (println "Exporting to:" (str fname))
                  (spit fname (puget/pprint-str m))))
-             (when-some [rdir (fs/resource-pathname default-resource-name
-                                                    default-resource-must-exist-file)]
-               (let [fname (io/file (.getParent ^java.io.File (io/file rdir)) res-filename)]
+             (when (some? (seq data-filename))
+               (when-some [fname (io/file pdir data-filename)]
                  (println "Exporting to:" (str fname))
-                 (spit fname (puget/pprint-str m))))
+                 (spit fname (puget/pprint-str dm))))
+             (println)
              (println "Generating handlers code to:" (str hfile))
              (some->> nsses
-                      handler-gen
+                      (handler-gen)
                       (cons (handler-preamble handlers-namespace))
                       (map puget/pprint-str)
                       (str/join (str \newline \newline))

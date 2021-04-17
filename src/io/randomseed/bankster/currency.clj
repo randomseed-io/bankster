@@ -493,10 +493,10 @@
   registry/with or with-registry)."
   {:added "1.0.0"}
   ([currency]
-   (let [cur# (parse-currency-code currency)]
+   (let [cur# (parse-currency-code currency &env)]
      `(unit ~cur#)))
   ([currency registry]
-   (let [cur# (parse-currency-code currency)]
+   (let [cur# (parse-currency-code currency &env)]
      `(unit ~cur# ~registry))))
 
 ;;
@@ -1544,15 +1544,25 @@
      ~@body))
 
 ;;
-;; Tagged literal handler.
+;; Tagged literals.
 ;;
 
-(defn lit
-  "Tagged literal handler."
-  {:added "1.0.0"}
+(defn code-literal
+  "Tagged literal handler for Clojure code. Emits compound forms that are going to be
+  evaluated."
+  {:added "1.2.4"}
   [arg]
   (if (or (nil? arg) (and (map? arg) (< (count arg) 1)))
-    '(quote nil) (unit arg)))
+    '(quote nil)
+    `(of ~arg)))
+
+(defn data-literal
+  "Tagged literal handler for EDN data files. Emits Currency objects or nil values."
+  {:added "1.2.4"}
+  [arg]
+  (if (or (nil? arg) (and (map? arg) (< (count arg) 1)))
+    '(quote nil)
+    (of arg)))
 
 ;;
 ;; Formatting.
