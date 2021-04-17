@@ -109,12 +109,16 @@
 
 (defn read-preferences
   "Reads the given preference file. If the path is relative it will be relative to
-  user's home directory."
-  [^String filename]
-  (when (some? filename)
-    (when-some [abs-filename (if (relative-path? filename) (home-dir-pathname filename) filename)]
-      (with-open [r (io/reader abs-filename)]
-        (edn/read (java.io.PushbackReader. r))))))
+  user's home directory. Optional options map will be passed to EDN reader."
+  ([^String filename]
+   (read-preferences filename nil))
+  ([^String filename opts]
+   (when (some? filename)
+     (when-some [abs-filename (if (relative-path? filename) (home-dir-pathname filename) filename)]
+       (with-open [r (io/reader abs-filename)]
+         (if (nil? opts)
+           (edn/read (java.io.PushbackReader. r))
+           (edn/read opts (java.io.PushbackReader. r))))))))
 
 (defn rtrim-comments
   [^String s]
