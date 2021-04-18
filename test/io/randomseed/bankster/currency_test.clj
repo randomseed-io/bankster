@@ -15,6 +15,7 @@
             [io.randomseed.bankster          :as        bankster]
             [io.randomseed.bankster.spec     :as            spec]
             [expound.alpha                   :as         expound]
+            [io.randomseed.bankster.registry :as        registry]
             [io.randomseed.bankster.currency :as               c]))
 
 (s/check-asserts true)
