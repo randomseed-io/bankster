@@ -1,5 +1,33 @@
 # History of Bankster releases
 
+## 1.2.4 (2021-04-18)
+
+- Added money/data-readers and money/code-readers constants.
+
+- Added data_readers_edn.clj (with generator in importer/readers-export) containing
+  data readers for parsing EDN files.
+
+- Fixed a bug causing registry to not be properly set in currency/with-registry and
+  registry/with.
+
+- Added fs/get-resource utility function.
+
+**BREAKING CHANGES**:
+
+- Data readers for tagged literals are split into code and data related handlers:
+
+  - Functions currency/code-literal and money/code-literal are now emitting Clojure
+    forms that are to be evaluated to produce Currency and Money objects.
+
+  - Functions currency/data-literal and money/data-literal are now returning Currency
+    and Money objects.
+
+  - Tagged literal handlers (for both Clojure code and data) can now be controlled by
+    the environment (e.g. dynamic variables for setting alternate registry or
+    rounding mode during parsing).
+
+  - Constant bankster/tagged-literals moved to money/tagged-literals.
+
 ## 1.2.3 (2021-04-16)
 
 - Fixed issue with data-readers file visibility by adding a copy to resources directory.
