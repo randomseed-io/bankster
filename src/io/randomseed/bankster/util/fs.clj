@@ -74,18 +74,19 @@
                       io/file
                       str)))
 
-(defn ^java.net.URL paths->resource
+(defn paths->resource
   "For the given pathnames creates a resource object that resides within one of the
   Java resource directories. The resource must exist for the URI to be returned."
+  {:tag java.net.URL :added "1.0.0"}
   ([] (when-some [r (io/resource "")] r))
   ([& paths] (some->> paths (remove nil?) seq
                       (apply io/file) str
                       io/resource)))
 
-(defn ^java.net.URL get-resource
+(defn get-resource
   "For the given pathname, returns the resource URL if the path exists. If the path
   does not exist, returns nil."
-  {:added "1.2.4"}
+  {:tag java.net.URL :added "1.2.4"}
   [pname]
   (.getResource
    (.. Thread currentThread getContextClassLoader)
