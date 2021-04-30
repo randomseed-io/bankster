@@ -10,20 +10,22 @@ currencies support.
 
 ## Features
 
-* Pure Clojure implementation based on Java's BigDecimal.
-* Uses records to organize data: `Registry`, `Currency`, `Money`.
-* Built-in standard currencies database, extendable using EDN file.
+* Pure Clojure implementation based on Java's **BigDecimal**.
+* Uses **records** to organize data: `Registry`, `Currency`, `Money`.
+* Built-in standard **currencies database**, extendable with EDN file.
 * Ability to create *ad hoc* currencies (with optional registering).
-* Ability to switch between dynamic, global and local currency registries.
-* Polymorphic interface for currencies and monetary amounts.
-* Ability to cast and convert monetary amounts.
-* Useful macros to express currencies and monetary amounts with various forms.
-* Namespaced identifiers for non-ISO currencies (e.g. `crypto/ETH`).
-* Common math operators which can be used interchangeably with other numeric data.
-* Optional rescaling of monetary amounts with keeping track of nominal scales.
-* Auto-rescaling of numeric values in math operations to handle non-terminating decimal expansion.
-* Tagged literals for currencies and monetary amounts.
-* Customizable currency and money formatting with locale support.
+* Different sources of **currency registries** (dynamic, global or local).
+* **Polymorphic** interfaces (`Scalable`, `Monetary`, `Accountable` protocols)
+* Ability to **cast** and **convert** monetary amounts.
+* Useful **macros** to express currencies and monetary amounts with various forms.
+* **Namespaced identifiers** for non-ISO currencies (e.g. `crypto/ETH`).
+* Common **math operators**.
+* **Auto-rescaling** in math operations to handle non-terminating decimal expansion.
+* Variants of **variadic math functions** with rescaling after each consecutive operation.
+* Optional **rescaling** of monetary amounts with keeping track of nominal scales.
+* **Tagged literals** for currencies and monetary amounts.
+* **Data readers** for currencies and monetary amounts expressed with EDN.
+* Customizable currency and money **formatting** with **locale support**.
 
 ## Installation
 
@@ -72,8 +74,8 @@ when working with multiple data sources or data processing engines (like currenc
 exchange platforms), you may find it useful to have different registries (with the
 same currencies but of different scales).
 
-When the library loads the predefined configuration is read from the default EDN file
-and its contents populates the default, global registry.
+When the library loads, the predefined configuration is read from the default EDN
+file and its contents populates the default, global registry.
 
 Each **currency** is a record having the following fields, reflecting its properties:
 

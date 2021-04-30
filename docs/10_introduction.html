@@ -6,20 +6,22 @@
 <p>Clojure library to operate on monetary units with cryptocurrencies and custom currencies support.</p>
 <h2><a href="#features" name="features"></a>Features</h2>
 <ul>
-  <li>Pure Clojure implementation based on Java’s BigDecimal.</li>
-  <li>Uses records to organize data: <code>Registry</code>, <code>Currency</code>, <code>Money</code>.</li>
-  <li>Built-in standard currencies database, extendable using EDN file.</li>
+  <li>Pure Clojure implementation based on Java’s <strong>BigDecimal</strong>.</li>
+  <li>Uses <strong>records</strong> to organize data: <code>Registry</code>, <code>Currency</code>, <code>Money</code>.</li>
+  <li>Built-in standard <strong>currencies database</strong>, extendable with EDN file.</li>
   <li>Ability to create <em>ad hoc</em> currencies (with optional registering).</li>
-  <li>Ability to switch between dynamic, global and local currency registries.</li>
-  <li>Polymorphic interface for currencies and monetary amounts.</li>
-  <li>Ability to cast and convert monetary amounts.</li>
-  <li>Useful macros to express currencies and monetary amounts with various forms.</li>
-  <li>Namespaced identifiers for non-ISO currencies (e.g. <code>crypto/ETH</code>).</li>
-  <li>Common math operators which can be used interchangeably with other numeric data.</li>
-  <li>Optional rescaling of monetary amounts with keeping track of nominal scales.</li>
-  <li>Auto-rescaling of numeric values in math operations to handle non-terminating decimal expansion.</li>
-  <li>Tagged literals for currencies and monetary amounts.</li>
-  <li>Customizable currency and money formatting with locale support.</li>
+  <li>Different sources of <strong>currency registries</strong> (dynamic, global or local).</li>
+  <li><strong>Polymorphic</strong> interfaces (<code>Scalable</code>, <code>Monetary</code>, <code>Accountable</code> protocols)</li>
+  <li>Ability to <strong>cast</strong> and <strong>convert</strong> monetary amounts.</li>
+  <li>Useful <strong>macros</strong> to express currencies and monetary amounts with various forms.</li>
+  <li><strong>Namespaced identifiers</strong> for non-ISO currencies (e.g. <code>crypto/ETH</code>).</li>
+  <li>Common <strong>math operators</strong>.</li>
+  <li><strong>Auto-rescaling</strong> in math operations to handle non-terminating decimal expansion.</li>
+  <li>Variants of <strong>variadic math functions</strong> with rescaling after each consecutive operation.</li>
+  <li>Optional <strong>rescaling</strong> of monetary amounts with keeping track of nominal scales.</li>
+  <li><strong>Tagged literals</strong> for currencies and monetary amounts.</li>
+  <li><strong>Data readers</strong> for currencies and monetary amounts expressed with EDN.</li>
+  <li>Customizable currency and money <strong>formatting</strong> with <strong>locale support</strong>.</li>
 </ul>
 <h2><a href="#installation" name="installation"></a>Installation</h2>
 <p>To use Bankster in your project, add the following to dependencies section of <code>project.clj</code> or <code>build.boot</code>:</p>
@@ -45,7 +47,7 @@ org.clojure/test.check {:mvn/version "0.10.0-alpha4"}
   <li>currency code to a sorted set of currency objects.</li>
 </ul>
 <p>In most cases you won’t have to worry about the internals of a registry. However, when working with multiple data sources or data processing engines (like currency exchange platforms), you may find it useful to have different registries (with the same currencies but of different scales).</p>
-<p>When the library loads the predefined configuration is read from the default EDN file and its contents populates the default, global registry.</p>
+<p>When the library loads, the predefined configuration is read from the default EDN file and its contents populates the default, global registry.</p>
 <p>Each <strong>currency</strong> is a record having the following fields, reflecting its properties:</p>
 <ul>
   <li><code>id</code> – a keyword <strong>identifying</strong> a currency unit (e.g. <code>:EUR</code> or <code>:crypto/ETH</code>);</li>
