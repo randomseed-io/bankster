@@ -55,10 +55,13 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 
 ## Design
 
-There is a global, shared **registry** of currencies, which is thread-safe and
-encapsulated in an Atom. It consists of databases (maps) for quickly accessing
-important currency properties. Most of the functions will use this global registry,
-unless a registry is explicitly passed as an argument or set as a dynamic variable.
+### Registry of currencies
+
+There is a global, shared **registry** (`Registry`) of currencies, which is
+thread-safe and encapsulated in an Atom. It consists of databases (maps) for quickly
+accessing important currency properties. Most of the functions will use this global
+registry, unless a registry is explicitly passed as an argument or set as a dynamic
+variable.
 
 Registry is implemented as a record of maps keeping the following associations:
 
@@ -71,13 +74,21 @@ Registry is implemented as a record of maps keeping the following associations:
 
 In most cases you won't have to worry about the internals of a registry. However,
 when working with multiple data sources or data processing engines (like currency
-exchange platforms), you may find it useful to have different registries (with the
-same currencies but of different scales).
+exchange platforms), you may find it useful to have **different registries** (with
+the same currencies but of different scales). Most of the functions operating on
+monetary units and currencies will accept a registry object as their additional
+argument. The exceptions are math operations (especially variadic) for which the only
+way to use different registry is to set a dynamic variable
+`io.randomseed.bankster.registry/*default*`.
 
 When the library loads, the predefined configuration is read from the default EDN
-file and its contents populates the default, global registry.
+file and its contents populates the default, global registry. This registry can be
+modified too.
 
-Each **currency** is a record having the following fields, reflecting its properties:
+### Currency
+
+Each **currency** (`Currency`) is a record having the following fields, reflecting
+its properties:
 
 * `id` – a keyword **identifying** a currency unit (e.g. `:EUR` or `:crypto/ETH`);
 * `numeric` – a long value being a **numeric identifier** of ISO-standardized currencies;
@@ -126,8 +137,10 @@ picked up.
 Currencies can also have **additional**, external properties, like relations to
 countries, localized (l10n) settings etc. They are stored in registries too.
 
-Having a currency we can create **money** objects which are based on records having 2
-fields:
+### Money
+
+Having a currency defined we can create **money** objects (`Money`) which are based
+on records having 2 fields:
 
 * `currency` – a `Currency` object;
 * `amount` – a `BigDecimal` value.
@@ -270,19 +283,19 @@ the currency.
 
 ;; using composed amounts and currencies
 #money EUR100
-#money [100 EUR]
+#money[100 EUR]
 
 #money :100_EUR
-#money [100 EUR]
+#money[100 EUR]
 
 #money :100EUR
-#money [100 EUR]
+#money[100 EUR]
 
 #money "100 EUR"
-#money [100 EUR]
+#money[100 EUR]
 
 (money/of "100EUR")
-#money [100 EUR]
+#money[100 EUR]
 ```
 
 It allows to perform **logical operations** on monetary amounts:
@@ -343,20 +356,27 @@ It allows to perform **math operations** on monetary amounts:
 (money/div #money/crypto[5 BTC] #money/crypto[2 BTC])
 2.5M
 
-;; dividing that causes scale to exceed in one of the steps
+;; dividing causing scale to exceed in one of the steps
+;; but no rounding is necessary due to later operation
 (money/div #money[1 PLN] 8 0.5)
+#money[0.25 PLN]
 
-;; dividing that causes scale to exceed with rounding
+;; dividing, scaled and rounded with each operation
 (scale/with-rounding HALF_UP
   (money/div-scaled #money[1 PLN] 8 0.5))
 #money[0.26 PLN]
 
-;; handling non-terminating decimal expansion (currency scale)
+;; same as the above but shorter
+(scale/with-rescaling HALF_UP
+  (money/div #money[1 PLN] 8 0.5))
+#money[0.26 PLN]
+
+;; handling non-terminating decimal expansion
 (scale/with-rounding HALF_UP
   (money/div #money[1 PLN] 3))
 #money[0.33 PLN]
 
-;; rounding and unit reduction (currency scale)
+;; rounding with unit reduction
 (scale/with-rounding HALF_UP
   (money/div #money[1 PLN] #money[3 PLN]))
 0.33M
@@ -500,11 +520,11 @@ To work around that you should:
 * Use **strings** (e.g. `(money/of "1234.56789101112 XXX")`).
 * Use `money/of` macro or `#money` tagged literal with amount and currency in joint
   form (or with the above tactics applied), e.g.:
-      * `(money/of XXX123.45678)`,
-      * `#money XXX123.45678`,
-      * `#money "XXX123.45678"`,
-      * `#money "123.456789101112 XXX"`,
-      * `#money[123.45678M XXX]`.
+  * `(money/of XXX123.45678)`,
+  * `#money XXX123.45678`,
+  * `#money "XXX123.45678"`,
+  * `#money "123.456789101112 XXX"`,
+  * `#money[123.45678M XXX]`.
 
 As it may not be a problem in case of regular currencies, it may pop-up when using
 scale-wide cryptocurrencies, like Ether or Ethereum tokens, having 18 decimal places.

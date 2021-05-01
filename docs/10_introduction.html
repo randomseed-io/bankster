@@ -36,7 +36,8 @@ org.clojure/test.check {:mvn/version "0.10.0-alpha4"}
 </code></pre>
 <p>You can also download JAR from <a href="https://clojars.org/io.randomseed/bankster">Clojars</a>.</p>
 <h2><a href="#design" name="design"></a>Design</h2>
-<p>There is a global, shared <strong>registry</strong> of currencies, which is thread-safe and encapsulated in an Atom. It consists of databases (maps) for quickly accessing important currency properties. Most of the functions will use this global registry, unless a registry is explicitly passed as an argument or set as a dynamic variable.</p>
+<h3><a href="#registry-of-currencies" name="registry-of-currencies"></a>Registry of currencies</h3>
+<p>There is a global, shared <strong>registry</strong> (<code>Registry</code>) of currencies, which is thread-safe and encapsulated in an Atom. It consists of databases (maps) for quickly accessing important currency properties. Most of the functions will use this global registry, unless a registry is explicitly passed as an argument or set as a dynamic variable.</p>
 <p>Registry is implemented as a record of maps keeping the following associations:</p>
 <ul>
   <li>currency ID to currency object;</li>
@@ -46,9 +47,10 @@ org.clojure/test.check {:mvn/version "0.10.0-alpha4"}
   <li>locale ID to localized properties map;</li>
   <li>currency code to a sorted set of currency objects.</li>
 </ul>
-<p>In most cases you won’t have to worry about the internals of a registry. However, when working with multiple data sources or data processing engines (like currency exchange platforms), you may find it useful to have different registries (with the same currencies but of different scales).</p>
-<p>When the library loads, the predefined configuration is read from the default EDN file and its contents populates the default, global registry.</p>
-<p>Each <strong>currency</strong> is a record having the following fields, reflecting its properties:</p>
+<p>In most cases you won’t have to worry about the internals of a registry. However, when working with multiple data sources or data processing engines (like currency exchange platforms), you may find it useful to have <strong>different registries</strong> (with the same currencies but of different scales). Most of the functions operating on monetary units and currencies will accept a registry object as their additional argument. The exceptions are math operations (especially variadic) for which the only way to use different registry is to set a dynamic variable <code>io.randomseed.bankster.registry/*default*</code>.</p>
+<p>When the library loads, the predefined configuration is read from the default EDN file and its contents populates the default, global registry. This registry can be modified too.</p>
+<h3><a href="#currency" name="currency"></a>Currency</h3>
+<p>Each <strong>currency</strong> (<code>Currency</code>) is a record having the following fields, reflecting its properties:</p>
 <ul>
   <li><code>id</code> – a keyword <strong>identifying</strong> a currency unit (e.g. <code>:EUR</code> or <code>:crypto/ETH</code>);</li>
   <li><code>numeric</code> – a long value being a <strong>numeric identifier</strong> of ISO-standardized currencies;</li>
@@ -72,7 +74,8 @@ org.clojure/test.check {:mvn/version "0.10.0-alpha4"}
 <p><strong>Currency scale</strong> is the nominal scale of a currency. If it is not set, the automatic scale will be used on monetary amounts using such a currency.</p>
 <p>Registry-related functions are accepting currency representations based on their <strong>identifiers</strong>. Other functions and macros will usually accept <strong>currency codes</strong>. In case of conflict the currency with higher <strong>currency weight</strong> will be picked up.</p>
 <p>Currencies can also have <strong>additional</strong>, external properties, like relations to countries, localized (l10n) settings etc. They are stored in registries too.</p>
-<p>Having a currency we can create <strong>money</strong> objects which are based on records having 2 fields:</p>
+<h3><a href="#money" name="money"></a>Money</h3>
+<p>Having a currency defined we can create <strong>money</strong> objects (<code>Money</code>) which are based on records having 2 fields:</p>
 <ul>
   <li><code>currency</code> – a <code>Currency</code> object;</li>
   <li><code>amount</code> – a <code>BigDecimal</code> value.</li>
@@ -207,19 +210,19 @@ org.clojure/test.check {:mvn/version "0.10.0-alpha4"}
 
 ;; using composed amounts and currencies
 #money EUR100
-#money [100 EUR]
+#money[100 EUR]
 
 #money :100_EUR
-#money [100 EUR]
+#money[100 EUR]
 
 #money :100EUR
-#money [100 EUR]
+#money[100 EUR]
 
 #money "100 EUR"
-#money [100 EUR]
+#money[100 EUR]
 
 (money/of "100EUR")
-#money [100 EUR]
+#money[100 EUR]
 </code></pre>
 <p>It allows to perform <strong>logical operations</strong> on monetary amounts:</p>
 <pre><code class="clojure">(money/eq? #money[5 GBP] #money[GBP 5])
@@ -274,20 +277,27 @@ true
 (money/div #money/crypto[5 BTC] #money/crypto[2 BTC])
 2.5M
 
-;; dividing that causes scale to exceed in one of the steps
+;; dividing causing scale to exceed in one of the steps
+;; but no rounding is necessary due to later operation
 (money/div #money[1 PLN] 8 0.5)
+#money[0.25 PLN]
 
-;; dividing that causes scale to exceed with rounding
+;; dividing, scaled and rounded with each operation
 (scale/with-rounding HALF_UP
   (money/div-scaled #money[1 PLN] 8 0.5))
 #money[0.26 PLN]
 
-;; handling non-terminating decimal expansion (currency scale)
+;; same as the above but shorter
+(scale/with-rescaling HALF_UP
+  (money/div #money[1 PLN] 8 0.5))
+#money[0.26 PLN]
+
+;; handling non-terminating decimal expansion
 (scale/with-rounding HALF_UP
   (money/div #money[1 PLN] 3))
 #money[0.33 PLN]
 
-;; rounding and unit reduction (currency scale)
+;; rounding with unit reduction
 (scale/with-rounding HALF_UP
   (money/div #money[1 PLN] #money[3 PLN]))
 0.33M
@@ -413,15 +423,12 @@ true
 <ul>
   <li>Use <strong>big decimal literals</strong> (e.g. <code>(money/of XXX 1234.56789101112M)</code> – note the <code>M</code>).</li>
   <li>Use <strong>strings</strong> (e.g. <code>(money/of "1234.56789101112 XXX")</code>).</li>
-  <li>Use <code>money/of</code> macro or <code>#money</code> tagged literal with amount and currency in joint  form (or with the above tactics applied), e.g.:
-    <ul>
-      <li><code>(money/of XXX123.45678)</code>,</li>
-      <li><code>#money XXX123.45678</code>,</li>
-      <li><code>#money "XXX123.45678"</code>,</li>
-      <li><code>#money "123.456789101112 XXX"</code>,</li>
-      <li><code>#money[123.45678M XXX]</code>.</li>
-    </ul>
-  </li>
+  <li>Use <code>money/of</code> macro or <code>#money</code> tagged literal with amount and currency in joint  form (or with the above tactics applied), e.g.:</li>
+  <li><code>(money/of XXX123.45678)</code>,</li>
+  <li><code>#money XXX123.45678</code>,</li>
+  <li><code>#money "XXX123.45678"</code>,</li>
+  <li><code>#money "123.456789101112 XXX"</code>,</li>
+  <li><code>#money[123.45678M XXX]</code>.</li>
 </ul>
 <p>As it may not be a problem in case of regular currencies, it may pop-up when using scale-wide cryptocurrencies, like Ether or Ethereum tokens, having 18 decimal places.</p>
 <h2><a href="#documentation" name="documentation"></a>Documentation</h2>
