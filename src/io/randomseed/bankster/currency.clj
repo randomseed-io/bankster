@@ -776,7 +776,7 @@
   (when registry
     (let [^Currency cur       (if (instance? Currency currency) currency (of-id currency registry))
           id                  (.id ^Currency cur)
-          cur-code          (if (namespace id) (keyword (core-name id)) id)
+          cur-code            (if (namespace id) (keyword (core-name id)) id)
           proposed-nr         (.numeric ^Currency cur)
           proposed-nr         (when (not= proposed-nr no-numeric-id) proposed-nr)
           registered-id       id
