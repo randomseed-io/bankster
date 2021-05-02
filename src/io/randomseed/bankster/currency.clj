@@ -877,7 +877,6 @@
         (assoc-in registry [:cur-id->localized cid] (prep-localized-props properties))
         registry))))
 
-(defn add-weighted-currency
   "Adds currency code to the given registry using .weight field of a currency. Currency
   must exist in a cur-id->cur database of the registry as it will be the source
   object when adding to cur-code->curs database. The registry will not be updated if
@@ -885,6 +884,7 @@
   thrown."
   {:tag Registry :added "1.0.2"}
   [^Registry registry ^Currency currency]
+(defn add-weighted-code
   (when (some? registry)
     (when-not (defined? currency registry)
       (throw
