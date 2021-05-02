@@ -842,7 +842,7 @@
        (ex-info (str "Currency "
                      (if (instance? Currency currency-id) (.id ^Currency currency-id) currency-id)
                      " does not exist in a registry.") {:currency-id currency-id})))
-    (let [^Currency c (unit currency-id registry)
+    (let [^Currency c (of-id currency-id registry)
           cid         (.id ^Currency c)
           cids        (prep-country-ids country-ids)]
       (if (nil? (seq cids)) registry
@@ -853,13 +853,13 @@
 
 (defn remove-localized-properties
   "Removes localized properties assigned to a currency in a registry. Returns updated
-  registry."
+  registry. Expects currency ID (or equivalent) to be passed as a second argument."
   {:tag Registry :added "1.0.0"}
   [^Registry registry currency-id]
   (when registry
     (if (nil? currency-id)
       registry
-      (map/dissoc-in registry [:cur-id->localized (.id ^Currency (unit currency-id registry))]))))
+      (map/dissoc-in registry [:cur-id->localized (.id ^Currency (of-id currency-id registry))]))))
 
 (defn add-localized-properties
   "Adds localized properties of a currency to the given registry. Overwrites existing
@@ -872,19 +872,19 @@
        (ex-info (str "Currency "
                      (if (instance? Currency currency-id) (.id ^Currency currency-id) currency-id)
                      " does not exist in a registry.") {:currency-id currency-id})))
-    (let [^Currency c (unit currency-id registry)
+    (let [^Currency c (of-id currency-id registry)
           cid         (.id ^Currency c)]
       (if (and (map? properties) (pos? (count properties)))
         (assoc-in registry [:cur-id->localized cid] (prep-localized-props properties))
         registry))))
 
 (defn add-weighted-code
-  "Associates the existing currency code with its object in the given registry using
-  the value of its .weight field. The given currency-id may be expressed with any
-  object that can be used to get the currency from a registry (internally the unit
-  function is used). Therefore, passing the currency object having a different weight
-  will not cause the weight to be updated since it will be used for identification
-  only.
+  "Associates the existing currency code with the currency object in the given registry
+  using the value of the .weight field. The given currency-id may be expressed with
+  any object that can be used to get the currency from a registry (internally the
+  unit function is used). Therefore, passing the currency object having a different
+  weight will not cause the weight to be updated since it will be used for
+  identification only.
 
   Currency must exist in the cur-id->cur database of the registry. This function will
   add an association to the cur-code->curs database. If both, the weight and code are
@@ -901,7 +901,7 @@
        (ex-info (str "Currency "
                      (if (instance? Currency currency-id) (.id ^Currency currency-id) currency-id)
                      " does not exist in a registry.") {:currency-id currency-id})))
-    (let [^Currency c (unit currency-id registry)
+    (let [^Currency c (of-id currency-id registry)
           cid         (.id ^Currency c)
           c-weight    (int (.weight ^Currency c))
           kw-code     (if (simple-keyword? cid) cid (keyword (core-name cid)))
@@ -986,7 +986,7 @@
   ([^Registry registry currency country-ids]
    (update registry currency country-ids nil))
   ([^Registry registry currency country-ids localized-properties-map]
-   (let [present (if (instance? Currency currency) currency (unit currency registry))]
+   (let [present (if (instance? Currency currency) currency (of-id currency registry))]
      (register registry
                present
                (or country-ids (countries present))
