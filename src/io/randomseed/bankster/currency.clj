@@ -139,7 +139,7 @@
   be expressed as a Currency object, a keyword, a string or any other type which is
   recognized by the `unit` protocol method.
 
-  The default registry role is advisory here. If the registry argument is not
+  The role of the default registry is advisory. If the registry argument is not
   given (or it is nil) and the dynamic variable
   `io.randomseed.bankster.registry/*default*` does not refer to a truthy value then
   the ID will be returned regardless of whether the currency exists in a registry, by
@@ -158,7 +158,12 @@
    [id] [id registry]
    "Returns a currency object for the given ID and a registry. If the registry is not
   given, it will use the global one, but will first try a registry bound to the
-  `io.randomseed.bankster.registry/*default*` dynamic variable.")
+  `io.randomseed.bankster.registry/*default*` dynamic variable (if it's set).
+
+  The currency is always taken from a registry (on a basis of its ID) even if a
+  Currency object was given, with one exception: if a currency is passed and the
+  second argument is explicitly set to nil then the object will be returned as is,
+  without consulting the registry.")
 
   (^{:tag io.randomseed.bankster.Currency :added "1.0.2"}
    unit
@@ -166,19 +171,19 @@
    "Returns a currency object for the given ID or currency code. If the registry is
   not given, it will try a registry bound to the
   `io.randomseed.bankster.registry/*default*` dynamic variable and if it is not
-  set (or is falsy) it will use the global registry.
+  set (or is falsy value) it will use the global registry.
 
   If a Currency object is passed, it will be returned as is without consulting the
   registry, unless the registry is given (and not nil) or the dynamic registry is
-  set. In such case the currency will be obtained from the registry on a basis of the
-  ID extracted from the given currency object.
+  set. In this case the currency will be obtained from a registry on a basis of its
+  ID extracted from the given object.
 
   If the registry is given (or dynamic registry is set) and the currency does not
-  exist in a registry an exception will be thrown, regardless of whether a currency
-  object was passed.
+  exist in a registry an exception will be thrown, regardless of whether a Currency
+  object was passed or not.
 
   Explicitly passing nil as a second argument when a Currency object is given can
-  speed things up a bit by bypassing dynamic variable check.")
+  speed things up a bit in certain scenarios by bypassing dynamic variable check.")
 
   (^{:tag Boolean :added "1.0.0"}
    defined?
