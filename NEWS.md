@@ -1,5 +1,31 @@
 # History of Bankster releases
 
+## 1.2.5 (2021-05-02)
+
+- Monetary implementation for maps is more restrictive when registry is passed as an
+  argument. Previously maps were causing some functions to create *ad hoc*
+  currencies, now the `:id` key is used to get the existing currency from a registry.
+  This is in line with the protocol's guidelines. Affected functions: currency/unit,
+  currency/of-id.
+
+- Monetary implementation for Currency objects is now fulfilling protocol
+  specification, making ID-only look-ups. Affected functions: currency/unit,
+  currency/of-id.
+
+- Monetary implementation for keywords now falls back to currency code look-up even
+  if the given identifier is not namespace-qualified. Affected functions:
+  currency/unit, currency/present? It fixes *the chicken or the egg* problem during
+  registry building.
+
+- Functions currency/add-countries, currency/remove-localized-properties,
+  currency/add-localized-properties, currency/add-weighted-code and currency/update
+  are now more strict and require currency ID to be given (not currency code).
+
+**BREAKING CHANGES**:
+
+- Low-level function currency/add-weighted-currency renamed to
+  currency/add-weighted-code.
+
 ## 1.2.4 (2021-04-18)
 
 - Added money/data-readers and money/code-readers constants.
