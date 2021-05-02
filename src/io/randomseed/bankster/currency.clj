@@ -419,12 +419,12 @@
   clojure.lang.IPersistentMap
 
   (of-id
-    (^Currency [m] (map->new m))
-    (^Currency [m ^Registry registry] (map->new m)))
+    (^Currency [m] (of-id (get m :id)))
+    (^Currency [m ^Registry registry] (of-id (get m :id) registry)))
 
   (unit
     (^Currency [m] (map->new m))
-    (^Currency [m ^Registry registry] (map->new m)))
+    (^Currency [m ^Registry registry] (unit (map->new m) registry)))
 
   (id
     (^clojure.lang.Keyword [m] (id (keyword (:id m))))
