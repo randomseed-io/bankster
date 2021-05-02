@@ -365,7 +365,7 @@
 
   (of-id
     (^Currency [id] (of-id (keyword id)))
-    (^Currency [id, ^Registry registry] (of-id (keyword id) registry)))
+    (^Currency [id ^Registry registry] (of-id (keyword id) registry)))
 
   (unit
     (^Currency [id] (unit (keyword id)))
@@ -395,7 +395,7 @@
 
   (of-id
     (^Currency [id] (of-id (keyword id)))
-    (^Currency [id, ^Registry registry] (of-id (keyword id) registry)))
+    (^Currency [id ^Registry registry] (of-id (keyword id) registry)))
 
   (unit
     (^Currency [id] (unit (keyword id)))
@@ -408,7 +408,7 @@
   (defined?
     (^Boolean [id]
      (contains? (registry/currency-id->currency) (keyword id)))
-    (^Boolean [id, ^Registry registry]
+    (^Boolean [id ^Registry registry]
      (contains? (registry/currency-id->currency registry) (keyword id))))
 
   (present?
@@ -433,7 +433,7 @@
 
   (id
     (^clojure.lang.Keyword [m] (id (keyword (:id m))))
-    (^clojure.lang.Keyword [m, ^Registry registry] (id (keyword (:id m)) registry)))
+    (^clojure.lang.Keyword [m ^Registry registry] (id (keyword (:id m)) registry)))
 
   (defined?
     (^Boolean [m]
@@ -772,10 +772,10 @@
   constrains when necessary and all localized properties associated with a
   currency. Returns updated registry.
 
-  Please note that removal of a currency whose identifier and numeric identifier are
-  the same as the currencies which are already registered, will not only remove the
-  existing currency identified by the ID but also remove numeric ID from within
-  all currency objects present in a registry."
+  Please note that removal of a currency which identifier and numeric identifier are
+  the same as already registered currencies, will not only remove the existing
+  currency identified by the ID but will also remove numeric ID from within all
+  currency objects present in a registry."
   {:tag Registry :added "1.0.0"}
   [^Registry registry currency]
   (when registry
