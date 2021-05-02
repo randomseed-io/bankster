@@ -216,10 +216,11 @@
 
   (of-id
     (^Currency [currency]
-     (if-let [r registry/*default*] (of-id currency r) currency))
+     (of-id (.id ^Currency currency) (registry/get)))
     (^Currency [currency ^Registry registry]
-     (if (nil? registry) currency
-         (unit (.id ^Currency currency) registry))))
+     (if (nil? registry)
+       currency
+       (of-id (.id ^Currency currency) registry))))
 
   (unit
     (^Currency [currency]
