@@ -825,21 +825,16 @@
   from other countries to the currency are not removed unless the country is already
   linked with some other currency; in this case it will be unlinked first."
   {:tag Registry :added "1.0.0"}
-  [^Registry registry ^Currency currency country-ids]
+  [^Registry registry currency-id country-ids]
   (when (some? registry)
-    (when-not (defined? currency registry)
+    (when-not (defined? currency-id registry)
       (throw
        (ex-info (str "Currency "
-                     (if (instance? Currency currency) (.id ^Currency currency) currency)
-                     " does not exist in a registry.") {:currency currency})))
-    (let [^Currency c (if (instance? Currency currency) currency (of-id currency registry))
+                     (if (instance? Currency currency-id) (.id ^Currency currency-id) currency-id)
+                     " does not exist in a registry.") {:currency-id currency-id})))
+    (let [^Currency c (unit currency-id registry)
           cid         (.id ^Currency c)
-          ^Currency p (get (registry/currency-id->currency registry) cid)
           cids        (prep-country-ids country-ids)]
-      (when-not (= c p)
-        (throw
-         (ex-info (str "Currency " cid " differs from the currency existing in a registry.")
-                  {:currency c, :existing-currency p})))
       (if (nil? (seq cids)) registry
           (as-> registry regi
             (remove-countries-core regi cids)
@@ -847,61 +842,66 @@
             (core-update regi :ctr-id->cur (partial apply assoc) (interleave cids (repeat c))))))))
 
 (defn remove-localized-properties
-  "Removes localized properties assigned to a currency. Returns updated registry."
+  "Removes localized properties assigned to a currency in a registry. Returns updated
+  registry."
   {:tag Registry :added "1.0.0"}
-  [^Registry registry ^Currency currency]
+  [^Registry registry currency-id]
   (when registry
-    (if (nil? currency)
+    (if (nil? currency-id)
       registry
-      (map/dissoc-in registry [:cur-id->localized (.id ^Currency currency)]))))
+      (map/dissoc-in registry [:cur-id->localized (.id ^Currency (unit currency-id registry))]))))
 
 (defn add-localized-properties
   "Adds localized properties of a currency to the given registry. Overwrites existing
   properties."
   {:tag Registry :added "1.0.0"}
-  [^Registry registry ^Currency currency properties]
+  [^Registry registry ^Currency currency-id properties]
   (when (some? registry)
-    (when-not (defined? currency registry)
+    (when-not (defined? currency-id registry)
       (throw
        (ex-info (str "Currency "
-                     (if (instance? Currency currency) (.id ^Currency currency) currency)
-                     " does not exist in a registry.") {:currency currency})))
-    (let [^Currency c (if (instance? Currency currency) currency (of-id currency registry))
-          cid         (.id ^Currency c)
-          ^Currency p (get (registry/currency-id->currency registry) cid)]
-      (when-not (= c p)
-        (throw
-         (ex-info (str "Currency " cid " differs from the currency existing in a registry.")
-                  {:currency c, :existing-currency p})))
+                     (if (instance? Currency currency-id) (.id ^Currency currency-id) currency-id)
+                     " does not exist in a registry.") {:currency-id currency-id})))
+    (let [^Currency c (unit currency-id registry)
+          cid         (.id ^Currency c)]
       (if (and (map? properties) (pos? (count properties)))
         (assoc-in registry [:cur-id->localized cid] (prep-localized-props properties))
         registry))))
 
-  "Adds currency code to the given registry using .weight field of a currency. Currency
-  must exist in a cur-id->cur database of the registry as it will be the source
-  object when adding to cur-code->curs database. The registry will not be updated if
-  the given weight is lower than the existing. If it is the same, exception will be
-  thrown."
-  {:tag Registry :added "1.0.2"}
-  [^Registry registry ^Currency currency]
 (defn add-weighted-code
+  "Associates the existing currency code with its object in the given registry using
+  the value of its .weight field. The given currency-id may be expressed with any
+  object that can be used to get the currency from a registry (internally the unit
+  function is used). Therefore, passing the currency object having a different weight
+  will not cause the weight to be updated since it will be used for identification
+  only.
+
+  Currency must exist in the cur-id->cur database of the registry. This function will
+  add an association to the cur-code->curs database. If both, the weight and code are
+  the same, registry is returned as is.
+
+  This is a low-level function used to ensure that a code-to-currency mapping is
+  created within a registry. To simply update currency's weight, use the update
+  or update! function."
+  {:tag Registry :added "1.2.5"}
+  [^Registry registry currency-id]
   (when (some? registry)
-    (when-not (defined? currency registry)
+    (when-not (defined? currency-id registry)
       (throw
        (ex-info (str "Currency "
-                     (if (instance? Currency currency) (.id ^Currency currency) currency)
-                     " does not exist in a registry.") {:currency currency})))
-    (let [^Currency c (if (instance? Currency currency) currency (of-id currency registry))
+                     (if (instance? Currency currency-id) (.id ^Currency currency-id) currency-id)
+                     " does not exist in a registry.") {:currency-id currency-id})))
+    (let [^Currency c (unit currency-id registry)
           cid         (.id ^Currency c)
-          ^Currency p (of-id cid registry)
-          p-weight    (int (.weight ^Currency p))
+          c-weight    (int (.weight ^Currency c))
           kw-code     (if (simple-keyword? cid) cid (keyword (core-name cid)))
           currencies  (get (registry/currency-code->currencies registry) kw-code)
-          same-code   (first (drop-while #(not= p-weight (.weight ^Currency %)) currencies))]
-      (when same-code
-        (throw (ex-info "Currency code with the same weight already exists."
-                        {:existing-currency same-code :currency c :registry registry})))
-      (update-in registry [:cur-code->curs kw-code] #(conj (weighted-currencies %) p)))))
+          same-code   (first (drop-while #(not= c-weight (.weight ^Currency %)) currencies))]
+      (if same-code
+        ;; no need to change anything
+        registry
+        ;; currency already exists but the association is missing
+        (update-in registry [:cur-code->curs kw-code] #(conj (weighted-currencies %) c))))))
 
 (defn register
   "Adds a currency and optional, associated country mappings and/or localized
@@ -939,7 +939,7 @@
   (^Registry [^Registry registry currency country-ids localized-properties ^Boolean update?]
    (when (some? registry)
      (let [^Currency c (if (instance? Currency currency) currency (of-id currency registry))
-           cid         (.id ^Currency c)
+           cid         (.id      ^Currency c)
            cnr         (.numeric ^Currency c)
            cid-to-cur  (registry/currency-id->currency registry)
            cnr-to-cur  (registry/currency-nr->currency registry)]
@@ -960,7 +960,7 @@
              registry    (if (or (nil? numeric-id) (= numeric-id no-numeric-id) (<= numeric-id 0)) registry
                              (assoc registry :cur-nr->cur (assoc cnr-to-cur (long numeric-id) c)))]
          (-> registry
-             (add-weighted-currency    currency)
+             (add-weighted-code        currency)
              (add-countries            currency country-ids)
              (add-localized-properties currency localized-properties)))))))
 
