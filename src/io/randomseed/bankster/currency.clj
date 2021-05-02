@@ -322,7 +322,8 @@
     (^Currency [id ^Registry registry]
      (or (if (namespace id)
            (get (registry/currency-id->currency registry) id)
-           (first (get (registry/currency-code->currencies registry) id)))
+           (or (first (get (registry/currency-code->currencies registry) id))
+               (get (registry/currency-id->currency registry) id)))
          (throw (ex-info
                  (str "Currency " (core-symbol id) " not found in a registry.")
                  {:registry registry})))))
@@ -348,11 +349,13 @@
     (^Boolean [id]
      (if (namespace id)
        (contains? (registry/currency-id->currency) id)
-       (contains? (registry/currency-code->currencies) id)))
+       (or (contains? (registry/currency-code->currencies) id)
+           (contains? (registry/currency-id->currency) id))))
     (^Boolean [id ^Registry registry]
      (if (namespace id)
        (contains? (registry/currency-id->currency registry) id)
-       (contains? (registry/currency-code->currencies registry) id))))
+       (or (contains? (registry/currency-code->currencies registry) id)
+           (contains? (registry/currency-id->currency registry) id)))))
 
   (same-ids?
     (^Boolean [a b]
