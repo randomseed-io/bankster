@@ -223,10 +223,11 @@
 
   (unit
     (^Currency [currency]
-     (if-let [r registry/*default*] (unit currency r) currency))
+     (if-let [r registry/*default*]
+       (of-id (.id ^Currency currency) r)
+       currency))
     (^Currency [currency ^Registry registry]
-     (if (nil? registry) currency
-         (of-id (.id ^Currency currency) ^Registry registry))))
+     (of-id (.id ^Currency currency) registry)))
 
   (id
     (^clojure.lang.Keyword [currency] (.id ^Currency currency))
