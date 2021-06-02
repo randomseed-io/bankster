@@ -228,7 +228,9 @@
        (of-id (.id ^Currency currency) r)
        currency))
     (^Currency [currency ^Registry registry]
-     (of-id (.id ^Currency currency) registry)))
+     (if (nil? registry)
+       currency
+       (of-id (.id ^Currency currency) registry))))
 
   (id
     (^clojure.lang.Keyword [currency] (.id ^Currency currency))
