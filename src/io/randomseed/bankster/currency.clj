@@ -525,7 +525,7 @@
   (^Long [c ^Registry registry]
    (let [n (.numeric ^Currency (unit c registry))]
      (when-not (= n no-numeric-id) n)))
-  (^Long [c ^Registry locale registry]
+  (^Long [c locale ^Registry registry]
    (let [n (.numeric ^Currency (unit c registry))]
      (when-not (= n no-numeric-id) n))))
 
@@ -556,7 +556,7 @@
   (^Integer [c ^Registry registry]
    (let [sc (.scale ^Currency (unit c registry))]
      (when-not (= sc auto-scaled) sc)))
-  (^Integer [c ^Registry locale registry]
+  (^Integer [c locale ^Registry registry]
    (let [sc (.scale ^Currency (unit c registry))]
      (when-not (= sc auto-scaled) sc))))
 
@@ -580,8 +580,8 @@
 
 (def ^{:tag clojure.lang.Keyword
        :arglists '(^clojure.lang.Keyword [c]
-                   ^clojure.lang.Keyword [c, ^Registry registry]
-                   ^clojure.lang.Keyword [c, locale ^Registry registry])}
+                   ^clojure.lang.Keyword [c ^Registry registry]
+                   ^clojure.lang.Keyword [c locale ^Registry registry])}
   ns
   "Alias for domain."
   domain)
