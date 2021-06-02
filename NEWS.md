@@ -1,5 +1,12 @@
 # History of Bankster releases
 
+## 1.2.6 (2021-06-02)
+
+- Monetary implementation for Currency objects fixed for nil registry argument.
+  Affected function: currency/unit.
+
+- Fixed type hinting in currency/sc and currency/nr.
+
 ## 1.2.5 (2021-05-02)
 
 - Monetary implementation for maps is more restrictive when registry is passed as an

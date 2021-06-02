@@ -96,7 +96,7 @@
          :description "Money Creation Made Easy"
          :license     "GNU Lesser General Public License 3.0"
          :package     io.randomseed/bankster
-         :version     "1.2.5"
+         :version     "1.2.6"
          :output-path "docs"
          :source-uri  "https://github.com/randomseed-io/bankster/blob/{version}/{filepath}#L{line}"
          :metadata    {:doc/format :markdown}
