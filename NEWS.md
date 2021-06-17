@@ -1,5 +1,14 @@
 # History of Bankster releases
 
+## 1.2.7 (2021-06-17)
+
+- Improved money/on-amount (now it rescales results to the scale of a money,
+  not the nominal scale of a currency).
+
+- Added alias money/apply that points to money/on-amount.
+
+- Added money/set-amount.
+
 ## 1.2.6 (2021-06-02)
 
 - Monetary implementation for Currency objects fixed for nil registry argument.
