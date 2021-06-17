@@ -4,7 +4,7 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :exclude [format compare cast rem
+  (:refer-clojure :exclude [apply format compare cast rem
                             = == not= not== < > >= <=
                             + - * / min max
                             pos? neg? zero?])
@@ -115,8 +115,8 @@
                                         (str amount)))))
         fdigi? (amount? (first lseq))
         [a b]  (split-with (if fdigi? amount? (complement amount?)) lseq)
-        a      (when (seq a) (apply str a))
-        b      (when (seq b) (apply str b))]
+        a      (when (seq a) (clojure.core/apply str a))
+        b      (when (seq b) (clojure.core/apply str b))]
     (if fdigi? [b a] [a b])))
 
 (defmacro currency-unit-strict
@@ -395,12 +395,12 @@
   clojure.lang.Sequential
 
   (value
-    (^Money [v]     (apply parse (first v) (rest v)))
+    (^Money [v]     (clojure.core/apply parse (first v) (rest v)))
     (^Money [v r]   (value (first v) (second v) r))
     (^Money [v b r] (value (first v) b r)))
 
   (cast
-    (^Money [v]     (apply cast (first v) (rest v)))
+    (^Money [v]     (clojure.core/apply cast (first v) (rest v)))
     (^Money [v r]   (cast (first v) (second v) r))
     (^Money [v b r] (cast (first v) b r)))
 
@@ -485,20 +485,60 @@
   "Performs an operation expressed with a function f on an amount of the given
   money. Additional arguments will be passed to the f. Returns the money with the
   amount updated. The function f must return a number. Short-circuits on nil as an
-  argument."
+  argument. Rescales the result to the existing scale of an amount, not the nominal
+  scale of a currency."
   {:tag Money :added "1.1.2"}
   (^Money [money f]
    (when-some [money (value money)]
-     (value ^Currency (.currency ^Money money) (f (.amount ^Money money)))))
+     (let [^BigDecimal am (.amount ^Money money)]
+       (Money. ^Currency   (.currency ^Money money)
+               ^BigDecimal (monetary-scale (f am)
+                                           (int (.scale ^BigDecimal am)))))))
   (^Money [money f a]
    (when-some [money (value money)]
-     (value ^Currency (.currency ^Money money) (f (.amount ^Money money) a))))
+     (let [^BigDecimal am (.amount ^Money money)]
+       (Money. ^Currency   (.currency ^Money money)
+               ^BigDecimal (monetary-scale (f am a)
+                                           (int (.scale ^BigDecimal am)))))))
   (^Money [money f a b]
    (when-some [money (value money)]
-     (value ^Currency (.currency ^Money money) (f (.amount ^Money money) a b))))
+     (let [^BigDecimal am (.amount ^Money money)]
+       (Money. ^Currency   (.currency ^Money money)
+               ^BigDecimal (monetary-scale (f am a b)
+                                           (int (.scale ^BigDecimal am)))))))
   (^Money [money f a b & more]
    (when-some [money (value money)]
-     (value ^Currency (.currency ^Money money) (apply f (.amount ^Money money) a b more)))))
+     (let [^BigDecimal am (.amount ^Money money)]
+       (Money. ^Currency   (.currency ^Money money)
+               ^BigDecimal (monetary-scale (clojure.core/apply f am a b more)
+                                           (int (.scale ^BigDecimal am))))))))
+
+(def ^{:tag Money :added "1.2.7"
+       :arglists '([money f]
+                   [money f a]
+                   [money f a b]
+                   [money f a b & more])}
+  apply
+  "Alias for on-amount."
+  on-amount)
+
+(defn set-amount
+  "Sets the amount of the given monetary object. Rescales value to a scale of the given
+  monetary object, not the nominal scale of its currency."
+  {:tag Money :added "1.2.7"}
+  (^Money [money v]
+   (when-some [money (value money)]
+     (let [^BigDecimal v (scale/apply v)]
+       (Money. ^Currency   (.currency ^Money money)
+               ^BigDecimal (monetary-scale ^BigDecimal v
+                                           (int (.scale ^BigDecimal (.amount ^Money money))))))))
+  (^Money [money v ^RoundingMode rounding-mode]
+   (when-some [money (value money)]
+     (let [^BigDecimal v (scale/apply v)]
+       (Money. ^Currency   (.currency ^Money money)
+               ^BigDecimal (monetary-scale ^BigDecimal v
+                                           (int (.scale ^BigDecimal (.amount ^Money money)))
+                                           ^RoundingMode rounding-mode))))))
 
 ;;
 ;; Scaling and rounding.
@@ -532,21 +572,25 @@
 ;;
 
 (defn amount
-  "Returns the amount of the given money."
+  "Returns the amount of the given money. For more than one argument the money is
+  created ad-hoc using a and b objects passed to the function named value."
   {:tag BigDecimal :added "1.0.0"}
   (^BigDecimal [money] (when-some [m (value money)] (.amount ^Money m)))
   (^BigDecimal [a b]   (when-some [m (value a b)]   (.amount ^Money m)))
   (^BigDecimal [a b r] (when-some [m (value a b r)] (.amount ^Money m))))
 
 (defn currency
-  "Returns the currency of the given money."
+  "Returns the currency of the given money. For more than one argument the money is
+  created ad-hoc using a and b objects passed to the function named value."
   {:tag Currency :added "1.0.0"}
   (^Currency [money] (when-some [m (value money)] (.currency ^Money m)))
   (^Currency [a b]   (when-some [m (value a b)]   (.currency ^Money m)))
   (^Currency [a b r] (when-some [m (value a b r)] (.currency ^Money m))))
 
 (defn stripped-amount
-  "Returns the amount of the given money with trailing zeros removed."
+  "Returns the amount of the given money with trailing zeros removed. For more than one
+  argument the money is created ad-hoc using a and b objects passed to the function
+  named value."
   {:tag BigDecimal :added "1.0.0"}
   (^BigDecimal [money] (when-some [m (value money)] (.stripTrailingZeros ^BigDecimal (.amount ^Money m))))
   (^BigDecimal [a b]   (when-some [m (value a b)]   (.stripTrailingZeros ^BigDecimal (.amount ^Money m))))
@@ -555,7 +599,8 @@
 (defn unparse
   "Returns a vector with symbolic representations of amount and currency. Useful for
   printing to EDN or displaying on a console. The letter M will be added to the
-  amount if its precision exceeds 15."
+  amount if its precision exceeds 15. For more than one argument the money is created
+  ad-hoc using a and b objects passed to the function named value."
   {:tag clojure.lang.IPersistentVector :added "1.0.7"}
   ([money]
    (when-some [m (value money)]
@@ -801,7 +846,7 @@
   (^Boolean [^Money a ^Money b]
    (not (eq? ^Money a ^Money b)))
   (^Boolean [^Money a ^Money b & more]
-   (not (apply eq? ^Money a ^Money b more))))
+   (not (clojure.core/apply eq? ^Money a ^Money b more))))
 
 (def ^{:tag Money :added "1.2.0"
        :arglists '(^Boolean [^Money a]
@@ -819,7 +864,7 @@
   (^Boolean [^Money a ^Money b]
    (not (eq-am? ^Money a ^Money b)))
   (^Boolean [^Money a ^Money b & more]
-   (not (apply eq-am? ^Money a ^Money b more))))
+   (not (clojure.core/apply eq-am? ^Money a ^Money b more))))
 
 (def ^{:tag Money :added "1.2.0"
        :arglists '(^Boolean [^Money a]
@@ -1554,7 +1599,7 @@
            (.divide  ^BigDecimal am ^BigDecimal (scale/apply bm)))))))
   ([a b & more]
    (if scale/*each*
-     (apply div-scaled a b more)
+     (clojure.core/apply div-scaled a b more)
      (let [^RoundingMode rm (or scale/*rounding-mode* nil)]
        (if-not (instance? Money a)
          ;; number, number
@@ -2042,7 +2087,7 @@
   (if (nil? arg)
     (lit-parse nil)
     (if (sequential? arg)
-      (apply lit-parse (take 3 arg))
+      (clojure.core/apply lit-parse (take 3 arg))
       (if (map? arg)
         (lit-parse (:currency arg)
                    (:amount   arg)
@@ -2057,7 +2102,7 @@
   [arg]
   (let [r (code-literal arg)]
     (if (seq? r)
-      (apply (first r) (rest r))
+      (clojure.core/apply (first r) (rest r))
       r)))
 
 (defn defliteral
