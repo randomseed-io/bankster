@@ -1,5 +1,9 @@
 # History of Bankster releases
 
+## 1.2.8 (2021-06-28)
+
+- Rewritten fs/absolute-path? and fs/relative-path?
+
 ## 1.2.7 (2021-06-17)
 
 - Improved money/on-amount (now it rescales results to the scale of a money,
