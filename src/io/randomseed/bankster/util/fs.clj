@@ -13,7 +13,7 @@
 
   (:import [org.apache.commons.io.input BOMInputStream]
            [org.apache.commons.io        ByteOrderMark]
-           [java.nio.file                        Paths]))
+           [java.nio.file                   Path Paths]))
 
 (def ^String ^private ^const default-encoding
   "Default encoding for input files."
@@ -25,8 +25,8 @@
 
 (defn ^Boolean absolute-path?
   [pathname]
-  (.isAbsolute ^Paths (Paths/get ^String (str pathname)
-                                 ^"[Ljava.lang.String;" empty-str-ary)))
+  (.isAbsolute ^Path (Paths/get ^String (str pathname)
+                                ^"[Ljava.lang.String;" empty-str-ary)))
 
 (def ^Boolean relative-path?
   (complement absolute-path?))
