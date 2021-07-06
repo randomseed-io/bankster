@@ -1,5 +1,13 @@
 # History of Bankster releases
 
+## 1.2.9 (2021-07-06)
+
+- Fixed type hinting in fs/absoute-path?.
+
+- Money comparators (money/compare and money/compare-amounts) now accept nil values.
+
+- Added money/round-to for interval-based rounding.
+
 ## 1.2.8 (2021-06-28)
 
 - Rewritten fs/absolute-path? and fs/relative-path?
