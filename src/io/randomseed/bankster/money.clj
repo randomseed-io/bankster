@@ -723,30 +723,54 @@
 (defn compare-amounts
   "Compares two monetary amounts of the same currency, regardless of their
   scales. Returns -1 if the second one is less than, 0 if equal to, and 1 if it is
-  greater than the first."
+  greater than the first. Nil values are always considered lower when comparing."
   {:added "1.0.0" :tag 'int}
   (^Boolean [^Money a] (int 0))
   (^Boolean [^Money a ^Money b]
-   (when-not (same-currencies? a b)
-     (throw (ex-info "Cannot compare amounts of different currencies."
-                     {:money-1 a :money-2 b})))
-   (int (.compareTo ^BigDecimal (.amount ^Money a) ^BigDecimal (.amount ^Money b)))))
+   (let [nila (nil? a)
+         nilb (nil? b)]
+     (assert (or (and nila (instance? Money b))
+                 (and nilb (instance? Money a))
+                 (and nila nilb)
+                 (same-currencies? a b))
+             (str "Can only compare amounts of the same currency and/or nil values: "
+                  a ", " b))
+     (if nila
+       (if nilb
+         (int 0)
+         (int -1))
+       (if nilb
+         (int 1)
+         (int (.compareTo ^BigDecimal (.amount ^Money a) ^BigDecimal (.amount ^Money b))))))))
 
 (defn compare
   "Compares two monetary amounts of the same currency and scale. Returns -1 if the
-  second one is less than, 0 if equal to, and 1 if it is greater than the first."
+  second one is less than, 0 if equal to, and 1 if it is greater than the first. Nil
+  values are always considered lower when comparing."
   {:added "1.0.0" :tag 'int}
   (^Boolean [^Money a] (int 0))
   (^Boolean [^Money a ^Money b]
-   (let [^BigDecimal am-a (.amount ^Money a)
-         ^BigDecimal am-b (.amount ^Money b)]
-     (when-not (same-currencies? a b)
-       (throw (ex-info "Cannot compare amounts of different currencies."
-                       {:money-1 a :money-2 b})))
-     (when-not (clojure.core/= (.scale ^BigDecimal am-a) (.scale ^BigDecimal am-b))
-       (throw (ex-info "Cannot compare amounts having different decimal scales."
-                       {:money-1 a :money-2 b})))
-     (int (.compareTo ^BigDecimal am-a ^BigDecimal am-b)))))
+   (let [nila (nil? a)
+         nilb (nil? b)]
+     (assert (or (and nila (instance? Money b))
+                 (and nilb (instance? Money a))
+                 (and nila nilb)
+                 (same-currencies? a b))
+             (str "Can only compare amounts of the same currency and/or nil values: "
+                  a ", " b "."))
+     (if nila
+       (if nilb
+         (int 0)
+         (int -1))
+       (if nilb
+         (int 1)
+         (let [^BigDecimal am-a (.amount ^Money a)
+               ^BigDecimal am-b (.amount ^Money b)]
+           (assert (clojure.core/= (.scale ^BigDecimal am-a) (.scale ^BigDecimal am-b))
+                   (str "Cannot compare monetary amounts having different decimal scales: "
+                        a " (" (.scale ^BigDecimal am-a) "), "
+                        b " (" (.scale ^BigDecimal am-b) ")."))
+           (int (.compareTo ^BigDecimal am-a ^BigDecimal am-b))))))))
 
 ;;
 ;; Predicates.
