@@ -1881,6 +1881,30 @@
                                                    ^RoundingMode rounding-mode)
                             (int sc)))))))
 
+(defn round-to
+  "Rounds a Money to an interval i (which should also be Money or a number). If
+  rounding mode is not provided (via the last argument or scale/*rounding-mode*) then
+  it defaults to HALF_EVEN. Retains original scale of the amount (but not the nominal
+  scale of a currency, if money was given). For nil intervals or intervals which
+  amounts are negative or zero, returns unaltered monetary object."
+  {:tag Money :added "1.2.9"}
+  (^Money [^Money money] money)
+  (^Money [^Money money ^Money i] (round-to money i nil))
+  (^Money [^Money money ^Money i ^RoundingMode rounding-mode]
+   (assert (or (nil? i) (scale/scalable? i)) (str "Interval must be scalable or nil: " i))
+   (let [^BigDecimal am-s (scale/amount i)]
+     (if (or (nil? am-s) (clojure.core/not= 1 (.compareTo ^BigDecimal am-s BigDecimal/ZERO)))
+       money
+       (do  (assert (or (not (instance? Money i)) (same-currencies? money i))
+                    (str "Money and interval should be of the same currency: " money ", " i "."))
+            (let [an (scale/apply money)
+                  sn (scale/of   money)
+                  rm (or rounding-mode scale/*rounding-mode* scale/ROUND_HALF_EVEN)]
+              (scale/with-rounding rm
+                (scale/apply
+                 (mul am-s (scale/apply (scale/apply (div an am-s) 0 rm) sn rm))
+                 sn))))))))
+
 (defn major
   "Returns the major part of the given amount of money."
   {:tag BigDecimal :added "1.0.0"}
