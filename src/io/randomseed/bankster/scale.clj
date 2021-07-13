@@ -560,13 +560,14 @@
   java.math.RoundingMode/mode."
   {:tag RoundingMode :added "1.0.0" :no-doc true}
   [n]
-  (let [rn (if (simple-ident? n) (name n) n)
-        rn (if (and (string? rn) (str/starts-with? rn "ROUND_")) (subs rn 6) rn)]
-    (or (when (string? rn)
-          (try (when (some? (RoundingMode/valueOf ^String rn))
-                 (symbol "java.math.RoundingMode" rn))
-               (catch IllegalArgumentException e nil)))
-        n)))
+  (if (instance? RoundingMode n) n
+      (let [rn (if (simple-ident? n) (name n) n)
+            rn (if (and (string? rn) (str/starts-with? rn "ROUND_")) (subs rn 6) rn)]
+        (or (when (string? rn)
+              (try (when (some? (RoundingMode/valueOf ^String rn))
+                     (symbol "java.math.RoundingMode" rn))
+                   (catch IllegalArgumentException e nil)))
+            n))))
 
 (defmacro with-rounding
   "Sets the rounding mode for operations on scaled values.
@@ -585,7 +586,7 @@
   {:added "1.0.0"}
   [rounding-mode & body]
   (let [rms# (parse-rounding rounding-mode)]
-    `(binding [*rounding-mode* ~rms#]
+    `(binding [*rounding-mode* (parse-rounding ~rms#)]
        ~@body)))
 
 (defmacro with-rescaling
@@ -608,7 +609,7 @@
   ([rounding-mode & body]
    (let [rms# (parse-rounding rounding-mode)]
      `(binding [*each* true
-                *rounding-mode* ~rms#]
+                *rounding-mode* (parse-rounding ~rms#)]
         ~@body))))
 
 (defmacro each
