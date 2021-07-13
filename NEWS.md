@@ -1,5 +1,10 @@
 # History of Bankster releases
 
+## 1.2.10 (2021-07-13)
+
+- Fixed a bug which caused rounding mode parsing to not make use of evaluated results
+  of the given expression.
+
 ## 1.2.9 (2021-07-06)
 
 - Fixed type hinting in fs/absoute-path?.
