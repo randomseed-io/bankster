@@ -9,8 +9,8 @@
                             + - * / min max
                             pos? neg? zero?])
 
-  (:require [clojure.string]
-            [clojure.edn]
+  (:require [clojure.edn]
+            [clojure.string                  :as           str]
             [trptr.java-wrapper.locale       :as             l]
             [io.randomseed.bankster          :refer       :all]
             [io.randomseed.bankster.scale    :as         scale]
@@ -208,7 +208,7 @@
            `(~fun ~(currency/parse-currency-code c#) ~(mk-bigdec a#)))
          (if (or (ident? b) (string? b) (number? b))
            (let [rms# (scale/parse-rounding b)]
-             `(~fun ~cur# ~(mk-bigdec am#) ~rms#))
+             `(~fun ~cur# ~(mk-bigdec am#) (scale/post-parse-rounding ~rms#)))
            `(~fun ~cur# ~(mk-bigdec am#) ~b))))
      (let [b (if (number? b) b (currency/parse-currency-code b))]
        `(let [a# ~(mk-bigdec a) b# ~(mk-bigdec b)]
@@ -220,13 +220,13 @@
    (let [rms# (scale/parse-rounding rounding-mode)]
      (if (or (ident? a) (string? a) (number? a))
        (let [[c# a#] (if (number? a) [b a] [a b])]
-         `(~parse ~(currency/parse-currency-code c#) ~(mk-bigdec a#) ~rms#))
+         `(~parse ~(currency/parse-currency-code c#) ~(mk-bigdec a#) (scale/post-parse-rounding ~rms#)))
        (let [b (if (number? b) b (currency/parse-currency-code b))]
          `(let [a# ~(mk-bigdec a) b# ~(mk-bigdec b)]
             (if (number? a#)
-              (~parse b# a# ~rms#)
+              (~parse b# a# (scale/post-parse-rounding ~rms#))
               (when (number? b#)
-                (~parse a# b# ~rms#)))))))))
+                (~parse a# b# (scale/post-parse-rounding ~rms#))))))))))
 
 (defmacro of
   "Returns the amount of money as a Money object consisting of a currency and a
