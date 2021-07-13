@@ -1,9 +1,11 @@
 # History of Bankster releases
 
-## 1.2.10 (2021-07-13)
+## 1.2.10, 1.2.11 (2021-07-13)
 
 - Fixed a bug which caused rounding mode parsing to not make use of evaluated results
   of the given expression.
+
+- Improved rounding mode parsing macros.
 
 ## 1.2.9 (2021-07-06)
 
