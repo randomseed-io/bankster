@@ -47,8 +47,8 @@ org.clojure/test.check {:mvn/version "0.10.0-alpha4"}
   <li>locale ID to localized properties map;</li>
   <li>currency code to a sorted set of currency objects.</li>
 </ul>
-<p>In most cases you won’t have to worry about the internals of a registry. However, when working with multiple data sources or data processing engines (like currency exchange platforms), you may find it useful to have <strong>different registries</strong> (with the same currencies but of different scales). Most of the functions operating on monetary units and currencies will accept a registry object as their additional argument. The exceptions are math operations (especially variadic) for which the only way to use different registry is to set a dynamic variable <code>io.randomseed.bankster.registry/*default*</code>.</p>
-<p>When the library loads, the predefined configuration is read from the default EDN file and its contents populates the default, global registry. This registry can be modified too.</p>
+<p>In most cases you won’t have to worry about the internals of a registry. However, when working with multiple data sources or data processing engines (like currency exchange platforms), you may find it useful to have <strong>different registries</strong> (with the same currencies but of different scales). Most of the functions operating on monetary units and currencies will accept a registry object as their additional argument. The exceptions are math operations (especially variadic) for which the only way to use different registry is to set a dynamic variable <code>io.randomseed.bankster.registry/*default*</code> (which can be done using the macro <code>io.randomseed.bankster.currency/with-registry</code>).</p>
+<p>When the library loads, its predefined configuration is read from a default EDN file and its contents populates the default, global registry. This registry can be modified too.</p>
 <h3><a href="#currency" name="currency"></a>Currency</h3>
 <p>Each <strong>currency</strong> (<code>Currency</code>) is a record having the following fields, reflecting its properties:</p>
 <ul>
@@ -246,14 +246,14 @@ false
 (money/le? #money[1 JPY] #money[0 JPY])
 false
 
-(money/is-zero? #money[0 USD])
+(money/zero? #money[0 USD])
 true
 
-(money/is-neg? #money[-2 XXX])
+(money/neg? #money[-2 XXX])
 true
 
-(money/is-pos? #money[-2 XXX])
-true
+(money/pos? #money[-2 XXX])
+false
 </code></pre>
 <p>It allows to perform <strong>math operations</strong> on monetary amounts:</p>
 <pre><code class="clojure">;; adding money expressed with tagged literals and with a macro call
@@ -332,6 +332,11 @@ true
  #money[1.23 PLN]
  #money[10.00 PLN]
  #money[30.00 PLN])
+
+;; rounding to the given interval
+
+(money/round-to #money[31.33 USD] 0.5)
+#money[31.50 USD]
 
 ;;
 ;; using inter-ops
