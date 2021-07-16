@@ -79,10 +79,11 @@ the same currencies but of different scales). Most of the functions operating on
 monetary units and currencies will accept a registry object as their additional
 argument. The exceptions are math operations (especially variadic) for which the only
 way to use different registry is to set a dynamic variable
-`io.randomseed.bankster.registry/*default*`.
+`io.randomseed.bankster.registry/*default*` (which can be done using
+the macro `io.randomseed.bankster.currency/with-registry`).
 
-When the library loads, the predefined configuration is read from the default EDN
-file and its contents populates the default, global registry. This registry can be
+When the library loads, its predefined configuration is read from a default EDN file
+and its contents populates the default, global registry. This registry can be
 modified too.
 
 ### Currency
@@ -322,14 +323,14 @@ false
 (money/le? #money[1 JPY] #money[0 JPY])
 false
 
-(money/is-zero? #money[0 USD])
+(money/zero? #money[0 USD])
 true
 
-(money/is-neg? #money[-2 XXX])
+(money/neg? #money[-2 XXX])
 true
 
-(money/is-pos? #money[-2 XXX])
-true
+(money/pos? #money[-2 XXX])
+false
 ```
 
 It allows to perform **math operations** on monetary amounts:
@@ -411,6 +412,11 @@ It allows to perform **math operations** on monetary amounts:
  #money[1.23 PLN]
  #money[10.00 PLN]
  #money[30.00 PLN])
+
+;; rounding to the given interval
+
+(money/round-to #money[31.33 USD] 0.5)
+#money[31.50 USD]
 
 ;;
 ;; using inter-ops
