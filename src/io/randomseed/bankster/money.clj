@@ -724,15 +724,12 @@
   "Compares two monetary amounts of the same currency, regardless of their
   scales. Returns -1 if the second one is less than, 0 if equal to, and 1 if it is
   greater than the first. Nil values are always considered lower when comparing."
-  {:added "1.0.0" :tag 'int}
-  (^Boolean [^Money a] (int 0))
-  (^Boolean [^Money a ^Money b]
+  {:added "1.0.0"}
+  ([^Money a] (int 0))
+  ([^Money a ^Money b]
    (let [nila (nil? a)
          nilb (nil? b)]
-     (assert (or (and nila (instance? Money b))
-                 (and nilb (instance? Money a))
-                 (and nila nilb)
-                 (same-currencies? a b))
+     (assert (or nila nilb (same-currencies? ^Money a ^Money b))
              (str "Can only compare amounts of the same currency and/or nil values: "
                   a ", " b))
      (if nila
@@ -747,17 +744,14 @@
   "Compares two monetary amounts of the same currency and scale. Returns -1 if the
   second one is less than, 0 if equal to, and 1 if it is greater than the first. Nil
   values are always considered lower when comparing."
-  {:added "1.0.0" :tag 'int}
-  (^Boolean [^Money a] (int 0))
-  (^Boolean [^Money a ^Money b]
+  {:added "1.0.0"}
+  ([^Money a] (int 0))
+  ([^Money a ^Money b]
    (let [nila (nil? a)
          nilb (nil? b)]
-     (assert (or (and nila (instance? Money b))
-                 (and nilb (instance? Money a))
-                 (and nila nilb)
-                 (same-currencies? a b))
+     (assert (or nila nilb (same-currencies? ^Money a ^Money b))
              (str "Can only compare amounts of the same currency and/or nil values: "
-                  a ", " b "."))
+                  a ", " b))
      (if nila
        (if nilb
          (int 0)
