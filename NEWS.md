@@ -1,5 +1,9 @@
 # History of Bankster releases
 
+## 1.2.12 (2021-07-18)
+
+- Type hinting and assertion tests improved in money/compare and money/compare-amount.
+
 ## 1.2.10, 1.2.11 (2021-07-13)
 
 - Fixed a bug which caused rounding mode parsing to not make use of evaluated results

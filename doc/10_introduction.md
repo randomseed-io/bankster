@@ -35,14 +35,14 @@ To use Bankster in your project, add the following to dependencies section of
 `project.clj` or `build.boot`:
 
 ```clojure
-[io.randomseed/bankster "1.2.11"]
+[io.randomseed/bankster "1.2.12"]
 ```
 
 For `deps.edn` add the following as an element of a map under `:deps` or
 `:extra-deps` key:
 
 ```clojure
-io.randomseed/bankster {:mvn/version "1.2.11"}
+io.randomseed/bankster {:mvn/version "1.2.12"}
 ```
 
 Additionally, if you want to utilize specs and generators provided by the Bankster
@@ -553,7 +553,7 @@ Stellar Lumens are cool too:
 
 ## Why?
 
-In one of my personal projects I needed to support both ISO-standardized and custom
+In one of my personal projects I needed support for both, ISO-standardized and custom
 currencies. My first try was Money (by Clojurewerkz), which is quite mature library
 based on Java's Joda Money. However, I needed cryptocurrencies support, and I mean
 all of them, including those having non-standard codes (like `DASH`).
