@@ -3,6 +3,7 @@
 **Money Creation Made Easy!**
 
 [![Bankster on Clojars](https://img.shields.io/clojars/v/io.randomseed/bankster.svg)](https://clojars.org/io.randomseed/bankster)
+[![Bankster on cljdoc](https://cljdoc.org/badge/io.randomseed/bankster)](https://cljdoc.org/d/io.randomseed/bankster/CURRENT)
 [![CircleCI](https://circleci.com/gh/randomseed-io/bankster.svg?style=svg)](https://circleci.com/gh/randomseed-io/bankster)
 
 Clojure library to operate on monetary units with cryptocurrencies and custom
@@ -23,6 +24,7 @@ currencies support.
 * **Auto-rescaling** in math operations to handle non-terminating decimal expansion.
 * Variants of **variadic math functions** with rescaling after each consecutive operation.
 * Optional **rescaling** of monetary amounts with keeping track of nominal scales.
+* Functions for **rounding** to a scale or to the given **interval**.
 * **Tagged literals** for currencies and monetary amounts.
 * **Data readers** for currencies and monetary amounts expressed with EDN.
 * Customizable currency and money **formatting** with **locale support**.
