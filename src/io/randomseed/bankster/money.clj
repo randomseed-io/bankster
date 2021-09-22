@@ -314,11 +314,11 @@
     (^Money [currency amount]
      (when (some? amount)
        (Money. ^Currency currency
-               ^BigDecimal (monetary-scale amount (int (.scale ^Currency currency))))))
+               ^BigDecimal (monetary-scale (scale/amount amount) (int (.scale ^Currency currency))))))
     (^Money [currency amount ^RoundingMode rounding]
      (when (some? amount)
        (Money. ^Currency currency
-               ^BigDecimal (monetary-scale amount (int (.scale ^Currency currency)) rounding)))))
+               ^BigDecimal (monetary-scale (scale/amount amount) (int (.scale ^Currency currency)) rounding)))))
 
   (cast
     (^Money [currency]
