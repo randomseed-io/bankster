@@ -1,5 +1,10 @@
 # History of Bankster releases
 
+## 1.2.13 (2021-09-23)
+
+- Fixed a bug that caused an amount to be a kind of Money instead of BigDecimal
+  when money/value was called on currency and money.
+
 ## 1.2.12 (2021-07-18)
 
 - Type hinting and assertion tests improved in money/compare and money/compare-amount.
