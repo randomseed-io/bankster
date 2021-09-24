@@ -1,5 +1,10 @@
 # History of Bankster releases
 
+## 1.2.14 (2021-09-24)
+
+- Nil punning added to: currency/ns-code, cuurrency/code, currency/weight,
+  currency/domain, currency/kind, currency/sc, currency/nr
+
 ## 1.2.13 (2021-09-23)
 
 - Fixed a bug that caused an amount to be a kind of Money instead of BigDecimal
