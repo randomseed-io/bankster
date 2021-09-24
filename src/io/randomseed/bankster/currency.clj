@@ -520,14 +520,17 @@
   number it will return nil. Locale argument is ignored."
   {:tag Long :added "1.0.0"}
   (^Long [c]
-   (let [n (.numeric ^Currency (unit c))]
-     (when-not (= n no-numeric-id) n)))
+   (when-some [c (unit c)]
+     (let [n (.numeric ^Currency c)]
+       (when-not (= n no-numeric-id) n))))
   (^Long [c ^Registry registry]
-   (let [n (.numeric ^Currency (unit c registry))]
-     (when-not (= n no-numeric-id) n)))
+   (when-some [c (unit c registry)]
+     (let [n (.numeric ^Currency c)]
+       (when-not (= n no-numeric-id) n))))
   (^Long [c locale ^Registry registry]
-   (let [n (.numeric ^Currency (unit c registry))]
-     (when-not (= n no-numeric-id) n))))
+   (when-some [c (unit c registry)]
+     (let [n (.numeric ^Currency c)]
+       (when-not (= n no-numeric-id) n)))))
 
 (def ^{:tag Long
        :arglists '(^Long [c]
@@ -551,14 +554,17 @@
   argument is ignored."
   {:tag Integer :added "1.0.0"}
   (^Integer [c]
-   (let [sc (.scale ^Currency (unit c))]
-     (when-not (= sc auto-scaled) sc)))
+   (when-some [c (unit c)]
+     (let [sc (.scale ^Currency c)]
+       (when-not (= sc auto-scaled) sc))))
   (^Integer [c ^Registry registry]
-   (let [sc (.scale ^Currency (unit c registry))]
-     (when-not (= sc auto-scaled) sc)))
+   (when-some [c (unit c registry)]
+     (let [sc (.scale ^Currency c)]
+       (when-not (= sc auto-scaled) sc))))
   (^Integer [c locale ^Registry registry]
-   (let [sc (.scale ^Currency (unit c registry))]
-     (when-not (= sc auto-scaled) sc))))
+   (when-some [c (unit c registry)]
+     (let [sc (.scale ^Currency c)]
+       (when-not (= sc auto-scaled) sc)))))
 
 (def ^{:tag Integer
        :arglists '(^Integer [c]
@@ -574,9 +580,12 @@
   upper-cased namespace name (e.g. :CRYPTO) set during creation a currency
   object. Locale argument is ignored."
   {:tag clojure.lang.Keyword :added "1.0.0"}
-  (^clojure.lang.Keyword [c] (.domain ^Currency (unit c)))
-  (^clojure.lang.Keyword [c ^Registry registry] (.domain ^Currency (unit c registry)))
-  (^clojure.lang.Keyword [c locale ^Registry registry] (.domain ^Currency (unit c registry))))
+  (^clojure.lang.Keyword [c]
+   (when-some [c (unit c)] (.domain ^Currency c)))
+  (^clojure.lang.Keyword [c ^Registry registry]
+   (when-some [c (unit c registry)] (.domain ^Currency c)))
+  (^clojure.lang.Keyword [c locale ^Registry registry]
+   (when-some [c (unit c registry)] (.domain ^Currency c))))
 
 (def ^{:tag clojure.lang.Keyword
        :arglists '(^clojure.lang.Keyword [c]
@@ -600,35 +609,41 @@
   The function may return nil if the currency is a no-currency. Locale argument is
   ignored."
   {:tag clojure.lang.Keyword :added "1.0.0"}
-  (^clojure.lang.Keyword [c] (.kind ^Currency (unit c)))
-  (^clojure.lang.Keyword [c ^Registry registry] (.kind ^Currency (unit c registry)))
-  (^clojure.lang.Keyword [c locale ^Registry registry] (.kind ^Currency (unit c registry))))
+  (^clojure.lang.Keyword [c]
+   (when-some [c (unit c)] (.kind ^Currency c)))
+  (^clojure.lang.Keyword [c ^Registry registry]
+   (when-some [c (unit c registry)] (.kind ^Currency c)))
+  (^clojure.lang.Keyword [c locale ^Registry registry]
+   (when-some [c (unit c registry)] (.kind ^Currency c))))
 
 (defn ns-code
   "Returns a currency code as a string for the given currency object. If the currency
   identifier is namespaced the namespace will be used as a prefix and slash character
   as a separator. Locale argument is ignored."
   {:tag String :added "1.0.0"}
-  (^String [c] (subs (str (id c)) 1))
-  (^String [c ^Registry registry] (subs (str (id c registry)) 1))
-  (^String [c locale ^Registry registry] (subs (str (id c registry)) 1)))
+  (^String [c]
+   (when-some [cids (not-empty (str (id c)))] (subs cids 1)))
+  (^String [c ^Registry registry]
+   (when-some [cids (not-empty (str (id c registry)))] (subs cids 1)))
+  (^String [c locale ^Registry registry]
+   (when-some [cids (not-empty (str (id c registry)))] (subs cids 1))))
 
 (defn code
   "Returns a currency code as a string for the given currency object. If the currency
   identifier is namespaced only the base code (without a namespace) will be
   returned. Locale argument is ignored."
   {:tag String :added "1.0.0"}
-  (^String [c] (core-name (id c)))
-  (^String [c ^Registry registry] (core-name (id c registry)))
-  (^String [c locale ^Registry registry] (core-name (id c registry))))
+  (^String [c] (when-some [cid (id c)] (core-name cid)))
+  (^String [c ^Registry registry] (when-some [cid (id c registry)] (core-name cid)))
+  (^String [c locale ^Registry registry] (when-some [cid (id c registry)] (core-name cid))))
 
 (defn weight
   "Returns weight of the given currency (used to resolve conflicts when getting
   currencies having conflicting currency codes)."
   {:tag 'int :added "1.0.2"}
-  ([c] (int (.weight ^Currency (unit c))))
-  ([c ^Registry registry] (int (.weight ^Currency (unit c registry))))
-  ([c locale ^Registry registry] (int (.weight ^Currency (unit c registry)))))
+  ([c] (when-some [c (unit c)] (int (.weight ^Currency c))))
+  ([c ^Registry registry] (when-some [c (unit c registry)] (int (.weight ^Currency c))))
+  ([c locale ^Registry registry] (when-some [c (unit c registry)] (int (.weight ^Currency c)))))
 
 ;;
 ;; Currency - country relations.
