@@ -67,7 +67,7 @@
                                org.clojure/test.check               {:mvn/version "1.1.0"}
                                orchestra/orchestra                  {:mvn/version "2021.01.01-1"}
                                expound/expound                      {:mvn/version "0.8.7"}
-                               codox/codox                          {:mvn/version "0.10.7"}}
+                               codox/codox                          {:mvn/version "0.10.8"}}
                   :main-opts ["-m" "io.randomseed.bankster.codox.main"]}
 
            :dev-nrepl {
@@ -96,7 +96,7 @@
          :description "Money Creation Made Easy"
          :license     "GNU Lesser General Public License 3.0"
          :package     io.randomseed/bankster
-         :version     "1.2.14"
+         :version     "1.2.15"
          :output-path "docs"
          :source-uri  "https://github.com/randomseed-io/bankster/blob/{version}/{filepath}#L{line}"
          :metadata    {:doc/format :markdown}
