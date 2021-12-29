@@ -1,5 +1,9 @@
 # History of Bankster releases
 
+## 1.2.15 (2021-12-29)
+
+- Deps updated (codox).
+
 ## 1.2.14 (2021-09-24)
 
 - Nil punning added to: currency/ns-code, cuurrency/code, currency/weight,

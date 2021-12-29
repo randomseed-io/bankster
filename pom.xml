@@ -4,7 +4,7 @@
   <groupId>io.randomseed</groupId>
   <artifactId>bankster</artifactId>
   <packaging>jar</packaging>
-  <version>1.2.14</version>
+  <version>1.2.15</version>
   <name>bankster</name>
   <description>Currencies and money processing in Clojure</description>
   <url>https://randomseed.io/software/bankster/</url>
@@ -17,14 +17,14 @@
   <scm>
     <connection>scm:git:git://github.com/randomseed-io/bankster.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/randomseed-io/bankster.git</developerConnection>
-    <tag>1.2.14</tag>
+    <tag>1.2.15</tag>
     <url>https://github.com/randomseed-io/bankster/</url>
   </scm>
   <dependencies>
     <dependency>
       <groupId>org.clojure</groupId>
       <artifactId>clojure</artifactId>
-      <version>1.10.2</version>
+      <version>1.10.3</version>
     </dependency>
     <dependency>
       <groupId>mvxcvi</groupId>
