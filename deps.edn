@@ -1,5 +1,4 @@
-{
- :paths ["src" "resources"]
+{:paths ["src" "resources"]
 
  :deps {trptr/java-wrapper         {:mvn/version "0.2.3"}
         io.randomseed/smangler     {:mvn/version "1.0.4"}
@@ -90,7 +89,7 @@
          :description "Money Creation Made Easy"
          :license     "GNU Lesser General Public License 3.0"
          :package     io.randomseed/bankster
-         :version     "1.2.15"
+         :version     "1.2.16"
          :output-path "docs"
          :source-uri  "https://github.com/randomseed-io/bankster/blob/{version}/{filepath}#L{line}"
          :metadata    {:doc/format :markdown}
