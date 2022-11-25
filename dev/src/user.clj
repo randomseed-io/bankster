@@ -6,6 +6,8 @@
    [clojure.spec.test.alpha                :as              cst]
    [clojure.spec.gen.alpha                 :as              gen]
    [clojure.repl                           :refer          :all]
+   [clojure.test                           :refer [run-tests
+                                                   run-all-tests]]
    [clojure.tools.namespace.repl           :refer [refresh
                                                    refresh-all]]
    [expound.alpha                          :as          expound]
@@ -23,7 +25,6 @@
    [io.randomseed.bankster.spec            :as             spec]
 
    [puget.printer                          :refer      [cprint]]
-   [midje.repl                             :refer          :all]
    [kaocha.repl                            :refer          :all]
    [infra])
 
@@ -46,7 +47,7 @@
 (defn test-all []
   (refresh)
   (cst/with-instrument-disabled
-    (load-facts :print-facts)))
+    (run-all-tests)))
 
 (alter-var-root #'*warn-on-reflection*
                 (constantly true)
