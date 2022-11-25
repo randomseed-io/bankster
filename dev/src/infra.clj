@@ -14,4 +14,4 @@
     (spit ".nrepl-port" (:port server))
     server))
 
-(defonce nrepl (start-nrepl))
+;;(defonce nrepl (start-nrepl))
