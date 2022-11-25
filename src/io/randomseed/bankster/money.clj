@@ -6,7 +6,7 @@
 
   (:refer-clojure :exclude [apply format compare cast rem
                             = == not= not== < > >= <=
-                            + - * / min max
+                            + - * / abs min max
                             pos? neg? zero?])
 
   (:require [clojure.edn]
