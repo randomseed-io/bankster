@@ -15,7 +15,7 @@
            [org.apache.commons.io        ByteOrderMark]
            [java.nio.file                   Path Paths]))
 
-(def ^String ^private ^const default-encoding
+(def ^String ^:const default-encoding
   "Default encoding for input files."
   "UTF-8")
 
@@ -90,7 +90,6 @@
   (.getResource
    (.. Thread currentThread getContextClassLoader)
    pname))
-
 
 (defn ^Boolean integer-string?
   "Returns true if string contains valid integer number."
