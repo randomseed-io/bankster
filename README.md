@@ -35,14 +35,14 @@ To use Bankster in your project, add the following to dependencies section of
 `project.clj` or `build.boot`:
 
 ```clojure
-[io.randomseed/bankster "1.2.15"]
+[io.randomseed/bankster "1.2.16"]
 ```
 
 For `deps.edn` add the following as an element of a map under `:deps` or
 `:extra-deps` key:
 
 ```clojure
-io.randomseed/bankster {:mvn/version "1.2.15"}
+io.randomseed/bankster {:mvn/version "1.2.16"}
 ```
 
 Additionally, if you want to utilize specs and generators provided by the Bankster
@@ -565,7 +565,7 @@ final and the support for currencies is limited to the "official" ones.
 
 ## License
 
-Copyright © 2021 Paweł Wilk
+Copyright © 2021,2022 Paweł Wilk
 
 Bankster is copyrighted software owned by Paweł Wilk (pw@gnu.org). You may
 redistribute and/or modify this software as long as you comply with the terms of
