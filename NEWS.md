@@ -1,5 +1,11 @@
 # History of Bankster releases
 
+## 1.2.17 (2025-01-19)
+
+- Building and deployment workflow changed.
+- Lazy map support is now realized (sic!) by `io.randomseed/lazy-map`.
+- Documentation updated.
+
 ## 1.2.16 (2022-11-25)
 
 - `io.randomseed.bankster.util.fs/default-encoding` is no longer private.
