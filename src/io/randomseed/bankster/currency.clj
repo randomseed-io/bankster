@@ -249,8 +249,8 @@
      (present? (.id ^Currency currency) registry)))
 
   (same-ids?
-    (^Boolean [a b] (= (.id ^Currency a) (id b)))
-    (^Boolean [a b ^Registry registry] (= (.id ^Currency a) (id b registry))))
+    (^Boolean [a b] (identical? (.id ^Currency a) (id b)))
+    (^Boolean [a b ^Registry registry] (identical? (.id ^Currency a) (id b registry))))
 
   Number
 
@@ -297,13 +297,13 @@
     (^Boolean [a b]
      (let [r (registry/get)]
        (if-some [^Currency c (get (registry/currency-nr->currency r) a)]
-         (= (.id ^Currency c) (id b))
+         (identical? (.id ^Currency c) (id b))
          (throw (ex-info
                  (str "Currency with the numeric ID of " num " not found in a registry.")
                  {:registry r})))))
     (^Boolean [a b ^Registry registry]
      (if-some [^Currency c (get (registry/currency-nr->currency registry) a)]
-       (= (.id ^Currency c) (id b registry))
+       (identical? (.id ^Currency c) (id b registry))
        (throw (ex-info
                (str "Currency with the numeric ID of " num " not found in a registry.")
                {:registry registry})))))
@@ -363,10 +363,10 @@
   (same-ids?
     (^Boolean [a b]
      (if-let [r registry/*default*]
-       (= (id a r) (id b r))
-       (= (id a nil) (id b nil))))
+       (identical? (id a r) (id b r))
+       (identical? (id a nil) (id b nil))))
     (^Boolean [a b ^Registry registry]
-     (= (id a registry) (id b registry))))
+     (identical? (id a registry) (id b registry))))
 
   String
 
@@ -395,8 +395,8 @@
      (present? (keyword id) registry)))
 
   (same-ids?
-    (^Boolean [a b] (= (keyword a) (id b)))
-    (^Boolean [a b ^Registry registry] (= (keyword a) (id b registry))))
+    (^Boolean [a b] (identical? (keyword a) (id b)))
+    (^Boolean [a b ^Registry registry] (identical? (keyword a) (id b registry))))
 
   clojure.lang.Symbol
 
@@ -425,8 +425,8 @@
      (present? (keyword id) registry)))
 
   (same-ids?
-    (^Boolean [a b] (= (keyword a) (id b)))
-    (^Boolean [a b ^Registry registry] (= (keyword a) (id b registry))))
+    (^Boolean [a b] (identical? (keyword a) (id b)))
+    (^Boolean [a b ^Registry registry] (identical? (keyword a) (id b registry))))
 
   clojure.lang.IPersistentMap
 
@@ -455,8 +455,8 @@
      (present? (keyword (:id m)) registry)))
 
   (same-ids?
-    (^Boolean [m b] (= (keyword (:id m)) (id b)))
-    (^Boolean [m b ^Registry registry] (= (keyword (:id m)) (id b registry))))
+    (^Boolean [m b] (identical? (keyword (:id m)) (id b)))
+    (^Boolean [m b ^Registry registry] (identical? (keyword (:id m)) (id b registry))))
 
   nil
 
@@ -733,7 +733,7 @@
   {:tag clojure.lang.IPersistentMap :added "1.0.0" :private true}
   [^clojure.lang.IPersistentMap p]
   (map/map-keys-and-vals
-   #(vector (let [k (keyword %1)] (if (= :* k) k (l/locale k)))
+   #(vector (let [k (keyword %1)] (if (identical? :* k) k (l/locale k)))
             (map/map-vals str %2)) p))
 
 (defn prep-all-localized-props
@@ -1190,8 +1190,8 @@
   "Returns true if the given currency has a domain set to the first given
   argument."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [ns c] (= ns (.domain ^Currency (unit c))))
-  (^Boolean [ns c ^Registry registry] (= ns (.domain ^Currency (unit c registry)))))
+  (^Boolean [ns c] (identical? ns (.domain ^Currency (unit c))))
+  (^Boolean [ns c ^Registry registry] (identical? ns (.domain ^Currency (unit c registry)))))
 
 (defn big?
   "Returns true if the given currency has an automatic scale (decimal places)."
@@ -1209,16 +1209,16 @@
   "Returns true if the given currency is a cryptocurrency. It is just a helper that
   check if the domain of a currency equals to :CRYPTO."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (= :CRYPTO (.domain ^Currency (unit c))))
-  (^Boolean [c ^Registry registry] (= :CRYPTO (.domain ^Currency (unit c registry)))))
+  (^Boolean [c] (identical? :CRYPTO (.domain ^Currency (unit c))))
+  (^Boolean [c ^Registry registry] (identical? :CRYPTO (.domain ^Currency (unit c registry)))))
 
 (defn iso?
   "Returns true if the given currency is an official currency and its identifier is
   compliant with ISO standard. It is just a helper which checks if the :domain field of
   a currency equals :ISO-4217."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (= :ISO-4217 (.domain ^Currency (unit c))))
-  (^Boolean [c ^Registry registry] (= :ISO-4217 (.domain ^Currency (unit c registry)))))
+  (^Boolean [c] (identical? :ISO-4217 (.domain ^Currency (unit c))))
+  (^Boolean [c ^Registry registry] (identical? :ISO-4217 (.domain ^Currency (unit c registry)))))
 
 (def ^{:tag Boolean
        :arglists '(^Boolean [c] ^Boolean [c ^Registry registry])}
@@ -1241,38 +1241,38 @@
 (defn kind-of?
   "Returns a kind of the given currency equals to the one given as a second argument."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c ^clojure.lang.Keyword kind] (= kind (.kind ^Currency (unit c))))
-  (^Boolean [c ^clojure.lang.Keyword kind ^Registry registry] (= kind (.kind ^Currency (unit c)))))
+  (^Boolean [c ^clojure.lang.Keyword kind] (identical? kind (.kind ^Currency (unit c))))
+  (^Boolean [c ^clojure.lang.Keyword kind ^Registry registry] (identical? kind (.kind ^Currency (unit c)))))
 
 (defn fiat?
   "Returns true if the given currency is a kind of :FIAT."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (= :FIAT (.kind ^Currency (unit c))))
-  (^Boolean [c ^Registry registry] (= :FIAT (.kind ^Currency (unit c)))))
+  (^Boolean [c] (identical? :FIAT (.kind ^Currency (unit c))))
+  (^Boolean [c ^Registry registry] (identical? :FIAT (.kind ^Currency (unit c)))))
 
 (defn fiduciary?
   "Returns true if the given currency is a kind of :FIDUCIARY."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (= :FIDUCIARY (.kind ^Currency (unit c))))
-  (^Boolean [c ^Registry registry] (= :FIDUCIARY (.kind ^Currency (unit c)))))
+  (^Boolean [c] (identical? :FIDUCIARY (.kind ^Currency (unit c))))
+  (^Boolean [c ^Registry registry] (identical? :FIDUCIARY (.kind ^Currency (unit c)))))
 
 (defn combank?
   "Returns true if the given currency is a kind of :COMBANK."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (= :COMBANK (.kind ^Currency (unit c))))
-  (^Boolean [c ^Registry registry] (= :COMBANK (.kind ^Currency (unit c)))))
+  (^Boolean [c] (identical? :COMBANK (.kind ^Currency (unit c))))
+  (^Boolean [c ^Registry registry] (identical? :COMBANK (.kind ^Currency (unit c)))))
 
 (defn commodity?
   "Returns true if the given currency is a kind of :COMMODITY."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (= :COMMODITY (.kind ^Currency (unit c))))
-  (^Boolean [c ^Registry registry] (= :COMMODITY (.kind ^Currency (unit c)))))
+  (^Boolean [c] (identical? :COMMODITY (.kind ^Currency (unit c))))
+  (^Boolean [c ^Registry registry] (identical? :COMMODITY (.kind ^Currency (unit c)))))
 
 (defn decentralized?
   "Returns true if the given currency is a kind of :DECENTRALIZED."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (= :DECENTRALIZED (.kind ^Currency (unit c))))
-  (^Boolean [c ^Registry registry] (= :DECENTRALIZED (.kind ^Currency (unit c)))))
+  (^Boolean [c] (identical? :DECENTRALIZED (.kind ^Currency (unit c))))
+  (^Boolean [c ^Registry registry] (identical? :DECENTRALIZED (.kind ^Currency (unit c)))))
 
 (def ^{:tag Boolean
        :arglists '([c] [c ^Registry registry])}
@@ -1283,8 +1283,8 @@
 (defn experimental?
   "Returns true if the given currency is a kind of :EXPERIMENTAL."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (= :EXPERIMENTAL (.kind ^Currency (unit c))))
-  (^Boolean [c ^Registry registry] (= :EXPERIMENTAL (.kind ^Currency (unit c)))))
+  (^Boolean [c] (identical? :EXPERIMENTAL (.kind ^Currency (unit c))))
+  (^Boolean [c ^Registry registry] (identical? :EXPERIMENTAL (.kind ^Currency (unit c)))))
 
 ;;
 ;; Localized properties.
