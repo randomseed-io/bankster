@@ -20,7 +20,7 @@
                                cljfmt/cljfmt                 {:mvn/version "0.9.2"}
                                lambdaisland/kaocha           {:mvn/version "1.91.1392"}
                                lambdaisland/kaocha-cloverage {:mvn/version "1.1.89"}
-                               spyscope/spyscope             {:mvn/version "0.1.48"} }
+                               clj-commons/spyscope          {:mvn/version "0.1.48"} }
                  :extra-paths ["dev/src" "test/unit"]
                  :jvm-opts    ["-Dclojure.spec.compile-asserts=true"]}
 
