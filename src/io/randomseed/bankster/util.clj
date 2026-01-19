@@ -6,10 +6,7 @@
 
     io.randomseed.bankster.util
 
-  (:import [java.security SecureRandom])
-
   (:require    [clojure.string            :as      str]
-               [trptr.java-wrapper.locale :as        l]
                [clojure.spec.alpha        :as        s]))
 
 (s/def ::set set?)
@@ -221,8 +218,8 @@
 
 ;; Text handling
 
-(defn ^java.lang.String some-string
-  [^java.lang.String s]
+(defn some-string
+  ^String [^String s]
   (if (or (not (string? s)) (empty? s)) nil s))
 
 (defn to-bytes
@@ -232,9 +229,9 @@
 (def bzero
   (to-bytes nil))
 
-(defn ^java.lang.String bytes-to-string
+(defn bytes-to-string
   "Converts bytes into a string"
-  [b]
+  ^String [b]
   (s/assert ::bytes b)
   (apply str (map #(char (bit-and % 255)) b)))
 
@@ -262,11 +259,11 @@
     default
     (try
       (java.lang.Long/valueOf s)
-      (catch NumberFormatException e default))))
+      (catch NumberFormatException _e default))))
 
-(defn ^clojure.lang.LazySeq juxt-seq
+(defn juxt-seq
   "Like juxt but returns a lazy sequence."
-  [& functions]
+  ^clojure.lang.LazySeq [& functions]
   (fn [& args]
     (map #(apply %1 %2) functions (repeat args))))
 
@@ -274,8 +271,8 @@
   [^String s]
   (java.util.UUID/fromString s))
 
-(defn ^String try-upper-case
-  [^String s]
+(defn try-upper-case
+  ^String [^String s]
   (when (some? s) (str/upper-case s)))
 
 (defn try-parse-int
@@ -284,10 +281,10 @@
   {:tag Integer}
   [s]
   (if (number? s)
-    (try (int s) (catch IllegalArgumentException e nil))
+    (try (int s) (catch IllegalArgumentException _e nil))
     (when (and (seqable? s) (some? (seq s)))
       (try (Integer/parseInt s)
-           (catch NumberFormatException e nil)))))
+           (catch NumberFormatException _e nil)))))
 
 (defn try-parse-long
   "Returns long from an object or nil if the given object does not contain valid
@@ -295,7 +292,7 @@
   {:tag Long}
   [s]
   (if (number? s)
-    (try (long s) (catch IllegalArgumentException e nil))
+    (try (long s) (catch IllegalArgumentException _e nil))
     (when (some? (seq s))
       (try (Long/parseLong s)
-           (catch NumberFormatException e nil)))))
+           (catch NumberFormatException _e nil)))))
