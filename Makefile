@@ -7,7 +7,7 @@ UPREADME    := bin/update-readme
 VERSION     ?= 1.2.17
 GROUP       ?= io.randomseed
 APPNAME     ?= bankster
-DESCRIPTION ?= Money Creation Made Easy
+DESCRIPTION ?= Money as data, done right.
 URL         ?= https://randomseed.io/software/$(APPNAME)/
 SCM         ?= github.com/randomseed-io/$(APPNAME)
 

@@ -1,5 +1,5 @@
 {:name         "bankster"
- :description  "Money Creation Made Easy"
+ :description  "Money as data, done right."
  :license      "GNU Lesser General Public License 3.0"
  :package      io.randomseed/bankster
  :version      "1.2.17"

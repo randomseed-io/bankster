@@ -1,6 +1,6 @@
 # Bankster /ˈbæŋkstə/
 
-**Money Creation Made Easy!**  
+**Money as data, done right.**
 
 *A pragmatic, EDN-friendly money & currency toolkit for Clojure: ISO 4217 + crypto +
 your own currencies, with precision-first arithmetic and an expressive literal/DSL
