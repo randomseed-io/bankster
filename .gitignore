@@ -6,6 +6,11 @@
 /.lein-*
 /.rebel_*
 /.nrepl-port
+target/classes
+.clj-kondo/.cache
+.clj-kondo/imports
+.clojars/login.env
+.lsp/
 .DS_Store
 .hgignore
 .hg/

@@ -1,0 +1,5 @@
+#!/bin/sh
+
+echo "[random-utils] Starting development environment, please wait..."
+
+clojure -A:dev:dev-nrepl:dev-rebel

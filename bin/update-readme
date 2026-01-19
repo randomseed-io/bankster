@@ -1,0 +1,16 @@
+#!/bin/sh
+set -eu
+
+prefix=${1:?usage: update-readme <prefix> <version> [file]}
+ver=${2:?usage: update-readme <prefix> <version> [file]}
+file=${3:-README.md}
+
+PREFIX="$prefix" VER="$ver" perl -0777 -i -pe '
+  my $v = $ENV{VER};
+  my $p = $ENV{PREFIX};
+
+  s{
+    (\Q$p\E[^\n]*?\")                           # prefix ... up to the opening quote
+    ([0-9]+\.[0-9]+\.[0-9]+(?:[-+][0-9A-Za-z.\-]+)?)  # old version
+  }{$1$v}gmx;
+' "$file"

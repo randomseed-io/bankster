@@ -1,0 +1,16 @@
+#!/bin/sh
+
+set -eu
+
+case $0 in
+  */*) self=$0 ;;
+  *)   self=$(command -v -- "$0") || exit 1 ;;
+esac
+
+repo_root=$(
+  CDPATH= cd -- "$(dirname -- "$self")/.." 2>/dev/null && pwd -P
+) || exit 1
+
+cd -- "$repo_root"
+
+exec clojure -T:build "$@"
