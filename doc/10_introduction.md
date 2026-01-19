@@ -1,13 +1,42 @@
 # Introduction
 
-**Money Creation Made Easy!**
+**Money as data, done right.**
+
+*A pragmatic, EDN-friendly money & currency toolkit for Clojure: ISO 4217 + crypto +
+your own currencies, with precision-first arithmetic and an expressive literal/DSL
+layer.*
 
 [![Bankster on Clojars](https://img.shields.io/clojars/v/io.randomseed/bankster.svg)](https://clojars.org/io.randomseed/bankster)
 [![Bankster on cljdoc](https://cljdoc.org/badge/io.randomseed/bankster)](https://cljdoc.org/d/io.randomseed/bankster/CURRENT)
 [![CircleCI](https://circleci.com/gh/randomseed-io/bankster.svg?style=svg)](https://circleci.com/gh/randomseed-io/bankster)
 
-Clojure library to operate on monetary units with cryptocurrencies and custom
+This is Clojure library to operate on monetary units with cryptocurrencies and custom
 currencies support.
+
+## Who is this for?
+
+Bankster shines when you need *money as data* — predictable, comparable, composable —
+without sacrificing ergonomics.
+
+Typical users and use-cases:
+
+- **Fintech / payments / wallets / exchanges**: model fiat + crypto under one coherent API (including non-standard codes).
+- **Accounting-ish domains**: operate on amounts with fixed, explicit scale and controlled rounding.
+- **Data pipelines & ETL**: parse/emit EDN safely (tagged literals, data readers) and keep currency semantics attached to numbers.
+- **Systems integrating many “currency worlds”**: keep separate registries per source/environment (dynamic/global/local registries).
+- **Apps that want a small “money DSL”**: concise literals/macros for currencies and amounts.
+
+If your primary need is exchange-rate discovery, market data, or full-blown
+accounting/ledger rules — Bankster is intentionally smaller and focuses on
+representing currency + amount and doing safe operations around that.
+
+## Why Bankster (in one breath)
+
+- **Precision-first arithmetic**: `BigDecimal` everywhere, currency scale-aware operations, and tooling for non-terminating expansions.
+- **One model for ISO + crypto + custom**: namespaced identifiers like `crypto/ETH`, plus conflict-safe code resolution via weights.
+- **EDN-native ergonomics**: tagged literals (`#money`, `#currency`), readers, macros, and parsing that make data pipelines pleasant.
+- **Registry concept**: treat currencies as a database you can extend, swap, or scope per computation.
+- **Polymorphism**: protocols (`Scalable`, `Monetary`, `Accountable`) keep it extensible and composition-friendly.
 
 ## Features
 
@@ -24,7 +53,7 @@ currencies support.
 * **Auto-rescaling** in math operations to handle non-terminating decimal expansion.
 * Variants of **variadic math functions** with rescaling after each consecutive operation.
 * Optional **rescaling** of monetary amounts with keeping track of nominal scales.
-* Functions for **rounding** to a scale or to the given **interval**.
+* Functions for **rounding** to a scale or to the given **interval**.
 * **Tagged literals** for currencies and monetary amounts.
 * **Data readers** for currencies and monetary amounts expressed with EDN.
 * Customizable currency and money **formatting** with **locale support**.
@@ -35,91 +64,89 @@ To use Bankster in your project, add the following to dependencies section of
 `project.clj` or `build.boot`:
 
 ```clojure
-[io.randomseed/bankster "1.2.16"]
+[io.randomseed/bankster "1.2.17"]
 ```
 
 For `deps.edn` add the following as an element of a map under `:deps` or
 `:extra-deps` key:
 
 ```clojure
-io.randomseed/bankster {:mvn/version "1.2.16"}
-```
-
-Additionally, if you want to utilize specs and generators provided by the Bankster
-you can use (in your development profile):
-
-```clojure
-org.clojure/spec.alpha {:mvn/version "0.2.176"}
-org.clojure/test.check {:mvn/version "0.10.0-alpha4"}
+io.randomseed/bankster {:mvn/version "1.2.17"}
 ```
 
 You can also download JAR from [Clojars](https://clojars.org/io.randomseed/bankster).
 
+---
+
 ## Design
+
+The core design principle: **money is a value with a currency attached**, and
+currencies live in a **registry** that can be global, dynamic, or explicitly passed
+around. This keeps both *precision* and *context* explicit.
 
 ### Registry of currencies
 
-There is a global, shared **registry** (`Registry`) of currencies, which is
+There is a global, shared **registry** (`Registry`) of currencies, which is
 thread-safe and encapsulated in an Atom. It consists of databases (maps) for quickly
 accessing important currency properties. Most of the functions will use this global
-registry, unless a registry is explicitly passed as an argument or set as a dynamic
+registry, unless a registry is explicitly passed as an argument or set as a dynamic
 variable.
 
-Registry is implemented as a record of maps keeping the following associations:
+Registry is implemented as a record of maps keeping the following associations:
 
 * currency ID to currency object;
-* currency ID to a set of country IDs;
+* currency ID to a set of country IDs;
 * currency numeric ID to currency object;
 * country ID to currency object;
 * locale ID to localized properties map;
-* currency code to a sorted set of currency objects.
+* currency code to a sorted set of currency objects.
 
-In most cases you won't have to worry about the internals of a registry. However,
+In most cases you won't have to worry about the internals of a registry. However,
 when working with multiple data sources or data processing engines (like currency
 exchange platforms), you may find it useful to have **different registries** (with
 the same currencies but of different scales). Most of the functions operating on
-monetary units and currencies will accept a registry object as their additional
+monetary units and currencies will accept a registry object as their additional
 argument. The exceptions are math operations (especially variadic) for which the only
-way to use different registry is to set a dynamic variable
-`io.randomseed.bankster.registry/*default*` (which can be done using
-the macro `io.randomseed.bankster.currency/with-registry`).
+way to use different registry is to set a dynamic variable
+`io.randomseed.bankster.registry/*default*` (which can be done using the macro
+`io.randomseed.bankster.currency/with-registry`).
 
-When the library loads, its predefined configuration is read from a default EDN file
+When the library loads, its predefined configuration is read from a default EDN file
 and its contents populates the default, global registry. This registry can be
 modified too.
 
 ### Currency
 
-Each **currency** (`Currency`) is a record having the following fields, reflecting
+Each **currency** (`Currency`) is a record having the following fields, reflecting
 its properties:
 
-* `id` – a keyword **identifying** a currency unit (e.g. `:EUR` or `:crypto/ETH`);
-* `numeric` – a long value being a **numeric identifier** of ISO-standardized currencies;
+* `id` – a keyword **identifying** a currency unit (e.g. `:EUR` or `:crypto/ETH`);
+* `numeric` – a long value being a **numeric identifier** of ISO-standardized currencies;
 * `scale` – an integer of supported **scale** (decimal places);
-* `kind` – a keyword with currency **kind**;
-* `domain` – a keyword with currency **domain**;
-* `weight` – an integer which helps in case there is a conflict of currency codes.
+* `kind` – a keyword with currency **kind**;
+* `domain` – a keyword with currency **domain**;
+* `weight` – an integer which helps in case there is a conflict of currency codes.
 
-**Currency ID** is a unique identifier of a currency within
-a registry. Internally it is a keyword and optionally it can have a namespace. By
-default Bankster identifies standard currencies with IDs reflecting their official
-currency codes and cryptocurrencies with identifiers having `crypto` namespace.
+**Currency ID** is a unique identifier of a currency within a registry. Internally it
+is a keyword and optionally it can have a namespace. By default Bankster identifies
+standard currencies with IDs reflecting their official currency codes and
+cryptocurrencies with identifiers having `crypto` namespace.
 
-**Currency code** is a name of currency ID without its namespace. It is potentially
+**Currency code** is a name of currency ID without its namespace. It is potentially
 conflicting attribute, therefore the mapping of currency codes to sets of currency
-objects exists in a registry. It allows to get currencies using their codes (and not
+objects exists in a registry. It allows to get currencies using their codes (and not
 add namespace, especially when interacting with some external API) and still maintain
 uniqueness of identifiers. If custom currency is created with the same code as
 already existing currency, it is possible to give it a **weight** which will decide
-whether its code will have priority during resolution (and getting from a registry).
+whether its code will have priority during resolution (and getting from a registry).
 
-**Currency domain** is by default the same as a namespace of currency ID (if it is
+**Currency domain** is by default the same as a namespace of currency ID (if it is
 namespaced). For non-namespaced identifiers it can be set to anything. The domain of
 `:ISO-4217` informs the library that this is ISO-standardized currency. The purpose
-of domain is to classify currencies into different realms and create a boundary
+of domain is to classify currencies into different realms and create a boundary
 preventing naming conflicts when codes are the same.
 
-**Currency kind** is a keyword that should describe a class of currency. It can be
+**Currency kind** is a keyword that should describe a class of currency. It can be
 set to anything, even nil, but the suggested values are:
 
   - `:FIAT`          – legal tender issued by government or other authority,
@@ -129,8 +156,8 @@ set to anything, even nil, but the suggested values are:
   - `:COMMODITY`     - accepted medium of exchange based on commodities,
   - `:EXPERIMENTAL`  - pseudo-currency used for testing purposes.
 
-**Currency scale** is the nominal scale of a currency. If it is not set, the
-automatic scale will be used on monetary amounts using such a currency.
+**Currency scale** is the nominal scale of a currency. If it is not set, the
+automatic scale will be used on monetary amounts using such a currency.
 
 Registry-related functions are accepting currency representations based on their
 **identifiers**. Other functions and macros will usually accept **currency
@@ -142,24 +169,26 @@ countries, localized (l10n) settings etc. They are stored in registries too.
 
 ### Money
 
-Having a currency defined we can create **money** objects (`Money`) which are based
+Having a currency defined we can create **money** objects (`Money`) which are based
 on records having 2 fields:
 
-* `currency` – a `Currency` object;
-* `amount` – a `BigDecimal` value.
+* `currency` – a `Currency` object;
+* `amount` – a `BigDecimal` value.
 
 The initial scale (number of decimal places) of an amount will be set to nominal
 scale of the currency. Math operations will then respect this scale during
 calculations and preserve it. In rare cases it is possible to rescale the amount,
-check whether the monetary object is rescaled and scale it back to a scale of
-the currency.
+check whether the monetary object is rescaled and scale it back to a scale of the
+currency.
+
+---
 
 ## Sneak peeks
 
-* It **shows information** about a currency:
+* It **shows information** about a currency:
 
 ```clojure
-;; global registry lookup with a keyword
+;; global registry lookup with a keyword
 (currency/of :PLN)
 #currency{:id :PLN, :domain :ISO-4217, :kind :FIAT, :numeric 985, :scale 2}
 
@@ -167,11 +196,11 @@ the currency.
 (currency/of crypto/ETH)
 #currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :scale 18, :weight 5}
 
-;; global registry lookup with a string (incl. namespace a.k.a domain)
+;; global registry lookup with a string (incl. namespace a.k.a domain)
 (currency/of "crypto/BTC")
 #currency{:id :crypto/BTC, :domain :CRYPTO, :kind :DECENTRALIZED, :scale 8, weight 5}
 
-;; global registry lookup with a currency code
+;; global registry lookup with a currency code
 ;; (weight solves potential conflicts when two currencies have the same currency code)
 (currency/of ETH)
 #currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :scale 18, :weight 5}
@@ -180,11 +209,11 @@ the currency.
 (currency/of 840)
 #currency{:id :USD, :domain :ISO-4217, :kind :FIAT, :numeric 840, :scale 2}
 
-;; global registry lookup using tagged literal with a currency code
+;; global registry lookup using tagged literal with a currency code
 #currency XLM
 #currency{:id :crypto/XLM, :domain :CRYPTO, :kind :FIDUCIARY, :scale 8}
 
-;; global registry lookup using tagged literal with a namespaced identifier
+;; global registry lookup using tagged literal with a namespaced identifier
 #currency crypto/XLM
 #currency{:id :crypto/XLM, :domain :CRYPTO, :kind :FIDUCIARY, :scale 8}
 
@@ -193,7 +222,7 @@ the currency.
 #currency{:id :EUR, :domain :ISO-4217, :kind :FIAT, :numeric 978, :scale 2}
 ```
 
-* It allows to **create a currency** and **register it**:
+* It allows to **create a currency** and **register it**:
 
 ```clojure
 ;; ad hoc currency creation using constructor function
@@ -204,15 +233,15 @@ the currency.
 #currency{:id :crypto/ETH :scale 18}
 #currency{:id :crypto/ETH, :domain :CRYPTO, :scale 18}
 
-;; putting new currency into a global, shared registry
+;; putting new currency into a global, shared registry
 (currency/register! (currency/new :petro/USD 9999 2 :COMBANK) :USA)
 #Registry[{:currencies 221, :countries 250, :version "2021022121170359"} 0x11efe93f]
 
-;; getting currency from a global registry
+;; getting currency from a global registry
 (currency/of :petro/USD)
 #currency{:id :petro/USD, :domain :PETRO, :kind :COMBANK, :numeric 9999, :scale 2}
 
-;; registering new currency expressed as a tagged literal
+;; registering new currency expressed as a tagged literal
 (currency/register! #currency{:id :crypto/AAA :scale 8})
 #Registry[{:currencies 221, :countries 249, :version "2021022121170359"} 0x7eaf7a70]
 ```
@@ -224,11 +253,11 @@ the currency.
 (money/of :EUR 25)
 #money[25.00 EUR]
 
-;; using money/of macro with keyword ID and an amount as a first argument
+;; using money/of macro with keyword ID and an amount as a first argument
 (money/of 25 :EUR)
 #money[25.00 EUR]
 
-;; using money/of macro with joint keyword ID and an amount as a first argument
+;; using money/of macro with joint keyword ID and an amount as a first argument
 (money/of :25_EUR)
 #money[25.00 EUR]
 
@@ -264,23 +293,23 @@ the currency.
 #money[PLN 2.50]
 #money[2.50 PLN]
 
-;; using tagged literal with a namespace
+;; using tagged literal with a namespace
 #money/crypto[1.31337 ETH]
 #money/crypto[1.313370000000000000 ETH]
 
-;; using tagged literal with a currency code
+;; using tagged literal with a currency code
 #money[1.31337 ETH]
 #money/crypto[1.313370000000000000 ETH]
 
-;; using tagged literal with a namespace but the amount goes first
+;; using tagged literal with a namespace but the amount goes first
 #money/crypto[BTC 1.31337]
 #money/crypto[1.31337000 BTC]
 
-;; using default currency in a lexical context
+;; using default currency in a lexical context
 (currency/with EUR (money/of 1000))
 #money[1000.00 EUR]
 
-;; using default currency in a lexical context (alias for the above)
+;; using default currency in a lexical context (alias for the above)
 (money/with-currency EUR (money/of 1000))
 #money[1000.00 EUR]
 
@@ -338,11 +367,11 @@ false
 It allows to perform **math operations** on monetary amounts:
 
 ``` clojure
-;; adding money expressed with tagged literals and with a macro call
+;; adding money expressed with tagged literals and with a macro call
 (money/add #money[EUR 7] #money[0.54 EUR] (money/of 4.40 EUR))
 #money[11.94 EUR]
 
-;; dividing money by a number
+;; dividing money by a number
 (money/div #money/crypto[5 USDT] 2)
 #money/crypto[2.50000000 USDT]
 
@@ -506,15 +535,16 @@ true
 
 And more…
 
+
 ### Warning about literal amounts
 
 Clojure changes number literals into objects of various numeric data types.
-Some of them will have fixed precision when there is a decimal separator
+Some of them will have fixed precision when there is a decimal separator
 present, yet they will not be big decimals before entering monetary functions of
 Bankster.
 
-Putting a decimal number having more than 16–17 digits will often effect in
-**accidental approximation** and casting it to a double value. This value may
+Putting a decimal number having more than 16–17 digits will often effect in
+**accidental approximation** and casting it to a double value. This value may
 become the amount of money which probably is not what you want:
 
 ```clojure
@@ -534,7 +564,7 @@ To work around that you should:
   * `#money "123.456789101112 XXX"`,
   * `#money[123.45678M XXX]`.
 
-As it may not be a problem in case of regular currencies, it may pop-up when using
+As it may not be a problem in case of regular currencies, it may pop-up when using
 scale-wide cryptocurrencies, like Ether or Ethereum tokens, having 18 decimal places.
 
 ## Documentation
@@ -543,29 +573,21 @@ Full documentation including usage examples is available at:
 
 * https://randomseed.io/software/bankster/
 
-## Deum Ethereum
-
-I write Free Software for fun. If you are finding it useful and you are the Ether fan
-too, here it is: `0x2Bed4D2d9240F9fB321bC0194222A4888F62dd0d`.
-
-Stellar Lumens are cool too:
-`GBMUQ6U6334Y5HWF3XGMCRQZKVMFDCSX4YADEVZO7ZXIBDJDXXX2BSME`.
-
 ## Why?
 
-In one of my personal projects I needed support for both, ISO-standardized and custom
+In one of my personal projects I needed support for both, ISO-standardized and custom
 currencies. My first try was Money (by Clojurewerkz), which is quite mature library
-based on Java's Joda Money. However, I needed cryptocurrencies support, and I mean
+based on Java's Joda Money. However, I needed cryptocurrencies support, and I mean
 all of them, including those having non-standard codes (like `DASH`).
 
-First I tried to modify Money and work-around this limitation by imitating such
+First I tried to modify Money and work-around this limitation by imitating such
 currencies with an additional map translating custom codes into standardized
-ones. Then I looked at Joda Money to see that the important classes are marked as
+ones. Then I looked at Joda Money to see that the important classes are marked as
 final and the support for currencies is limited to the "official" ones.
 
 ## License
 
-Copyright © 2021,2022 Paweł Wilk
+Copyright © 2021–2025 Paweł Wilk
 
 Bankster is copyrighted software owned by Paweł Wilk (pw@gnu.org). You may
 redistribute and/or modify this software as long as you comply with the terms of
@@ -595,16 +617,16 @@ make docs
 make jar
 ```
 
-### Rebuilding POM
+### Updating POM
 
 ```bash
 make pom
 ```
 
-### Signing POM
+### Preparing for release
 
 ```bash
-make sig
+make release
 ```
 
 ### Deploying to Clojars
