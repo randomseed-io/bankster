@@ -1,5 +1,10 @@
 # History of Bankster releases
 
+## 1.2.18 (2025-01-19)
+
+- Allocation and distribution of monetary amounts via
+  `money/allocate` and `money/distribute`.
+
 ## 1.2.17 (2025-01-19)
 
 - Building and deployment workflow changed.

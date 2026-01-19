@@ -10,13 +10,10 @@
                             pos? neg? zero?])
 
   (:require [clojure.edn]
-            [clojure.string                  :as           str]
-            [trptr.java-wrapper.locale       :as             l]
             [io.randomseed.bankster          :refer       :all]
             [io.randomseed.bankster.scale    :as         scale]
             [io.randomseed.bankster.currency :as      currency]
             [io.randomseed.bankster.registry :as      registry]
-            [io.randomseed.bankster.util.map :as           map]
             [io.randomseed.bankster.util.fs  :as            fs]
             [io.randomseed.bankster.util     :refer       :all])
 
@@ -142,7 +139,7 @@
        (Money. ^Currency c ^BigDecimal (monetary-scale (mod-fn amount)
                                                        (int (scale/of ^Currency c))))
        (throw (ex-info
-               (str "Cannot create money amount without a valid currency and a default currency was not set.")
+               "Cannot create money amount without a valid currency and a default currency was not set."
                {:amount amount :currency currency})))))
   (^Money [mod-fn ^Currency currency amount ^RoundingMode rounding-mode]
    (when (some? amount)
@@ -151,7 +148,7 @@
                                                        (int (scale/of ^Currency c))
                                                        ^RoundingMode rounding-mode))
        (throw (ex-info
-               (str "Cannot create money amount without a valid currency and a default currency was not set.")
+               "Cannot create money amount without a valid currency and a default currency was not set."
                {:amount amount :currency currency}))))))
 
 (defn parse
@@ -216,7 +213,7 @@
             (~fun b# a#)
             (when (number? b#)
               (~fun a# b#)))))))
-  ([fun a b rounding-mode]
+  ([_fun a b rounding-mode]
    (let [rms# (scale/parse-rounding rounding-mode)]
      (if (or (ident? a) (string? a) (number? a))
        (let [[c# a#] (if (number? a) [b a] [a b])]
@@ -383,14 +380,14 @@
   nil
 
   (value
-    ([c]     nil)
-    ([a b]   (when (some? b) (parse b)))
-    ([a c r] (when (some? c) (parse c nil r))))
+    ([_]     nil)
+    ([_ b]   (when (some? b) (parse b)))
+    ([_ c r] (when (some? c) (parse c nil r))))
 
   (cast
-    ([c]     nil)
-    ([a b]   nil)
-    ([a c r] nil))
+    ([_]     nil)
+    ([_ _]   nil)
+    ([_ _ _] nil))
 
   clojure.lang.Sequential
 
@@ -638,7 +635,7 @@
   (id
     (^clojure.lang.Keyword [money]
      (.id ^Currency (.currency ^Money money)))
-    (^clojure.lang.Keyword [money ^Registry registry]
+    (^clojure.lang.Keyword [money ^Registry _registry]
      (.id ^Currency (.currency ^Money money))))
 
   (defined?
@@ -675,15 +672,15 @@
 
   Money
 
-  (^Boolean scalable? [m] true)
-  (^Boolean applied?  [m] true)
+  (^Boolean scalable? [_] true)
+  (^Boolean applied?  [_] true)
 
   (of [m] (.scale ^BigDecimal (.amount ^Money m)))
 
   (^Money apply
    (^Money [m]
     (let [^Currency cur (.currency ^Money m)
-          sc (int (.scale ^Currency cur))]
+          sc            (int (.scale ^Currency cur))]
       (if (currency/val-auto-scaled? sc) m
           (Money. ^Currency cur
                   (if-some [rm scale/*rounding-mode*]
@@ -725,7 +722,7 @@
   scales. Returns -1 if the second one is less than, 0 if equal to, and 1 if it is
   greater than the first. Nil values are always considered lower when comparing."
   {:added "1.0.0"}
-  ([^Money a] (int 0))
+  ([^Money _] (int 0))
   ([^Money a ^Money b]
    (let [nila (nil? a)
          nilb (nil? b)]
@@ -745,7 +742,7 @@
   second one is less than, 0 if equal to, and 1 if it is greater than the first. Nil
   values are always considered lower when comparing."
   {:added "1.0.0"}
-  ([^Money a] (int 0))
+  ([^Money _] (int 0))
   ([^Money a ^Money b]
    (let [nila (nil? a)
          nilb (nil? b)]
@@ -805,7 +802,7 @@
   currencies with different scales or other properties are considered different. Use
   eq-am? (aliased as ==) to compare amounts regardless of their scales."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money a] true)
+  (^Boolean [^Money _] true)
   (^Boolean [^Money a ^Money b]
    (and (.equals (.amount ^Money a) (.amount ^Money b))
         (same-currencies? a b)))
@@ -828,14 +825,14 @@
   "Return true if the monetary amounts and their currencies are equal, regardless of
   their scales."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money a] true)
+  (^Boolean [^Money _] true)
   (^Boolean [^Money a ^Money b]
    (if-not (same-currencies? a b)
      false
      (let [^BigDecimal am-a (.amount ^Money a)
            ^BigDecimal am-b (.amount ^Money b)
-           sa (int (.scale am-a))
-           sb (int (.scale am-b))]
+           sa               (int (.scale am-a))
+           sb               (int (.scale am-b))]
        (if (clojure.core/= sa sb)
          (.equals ^BigDecimal am-a ^BigDecimal am-b)
          (if (clojure.core/< sa sb)
@@ -860,7 +857,7 @@
   "Returns true if the money amounts or their currencies are different, regardless of
   their scales. Note that currencies with different scales are considered different."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money a] false)
+  (^Boolean [^Money _] false)
   (^Boolean [^Money a ^Money b]
    (not (eq? ^Money a ^Money b)))
   (^Boolean [^Money a ^Money b & more]
@@ -878,7 +875,7 @@
   "Returns true if the money amounts or their currencies are different, regardless of
   their scales."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money a] false)
+  (^Boolean [^Money _] false)
   (^Boolean [^Money a ^Money b]
    (not (eq-am? ^Money a ^Money b)))
   (^Boolean [^Money a ^Money b & more]
@@ -896,7 +893,7 @@
   "Returns non-nil if monetary amounts are in monotonically decreasing order,
   otherwise false."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money a] true)
+  (^Boolean [^Money _] true)
   (^Boolean [^Money a ^Money b]
    (pos-int? (compare-amounts a b)))
   (^Boolean [^Money a ^Money b & more]
@@ -918,7 +915,7 @@
   "Returns non-nil if monetary amounts are in monotonically non-increasing order,
   otherwise false."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money a] true)
+  (^Boolean [^Money _] true)
   (^Boolean [^Money a ^Money b]
    (clojure.core/>= (compare-amounts a b) 0))
   (^Boolean [^Money a ^Money b & more]
@@ -940,7 +937,7 @@
   "Returns non-nil if monetary amounts are in monotonically increasing order,
   otherwise false."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money a] true)
+  (^Boolean [^Money _] true)
   (^Boolean [^Money a ^Money b]
    (neg-int? (compare-amounts a b)))
   (^Boolean [^Money a ^Money b & more]
@@ -962,7 +959,7 @@
   "Returns non-nil if monetary amounts are in monotonically non-decreasing order,
   otherwise false."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money a] true)
+  (^Boolean [^Money _] true)
   (^Boolean [^Money a ^Money b]
    (clojure.core/<= (compare-amounts a b) 0))
   (^Boolean [^Money a ^Money b & more]
@@ -1288,12 +1285,12 @@
   ([] 1M)
   ([a] a)
   ([a b]
-   (let [am? (instance? Money a)
-         bm? (instance? Money b)
+   (let [am?            (instance? Money a)
+         bm?            (instance? Money b)
          ^BigDecimal am (if am?
                           ^BigDecimal (.amount ^Money a)
                           ^BigDecimal (scale/apply a))
-         bm (if bm? (.amount ^Money b) b)]
+         bm             (if bm? (.amount ^Money b) b)]
      (if am?
        (if bm?
          ;; money, money
@@ -1326,27 +1323,27 @@
   ([a b & more]
    (if scale/*each*
      (mul-scaled a b more)
-     (let [am? (instance? Money a)
-           bm? (instance? Money b)
-           ^BigDecimal am (if am?
-                            ^BigDecimal (.amount ^Money a)
-                            ^BigDecimal (scale/apply a))
-           bm  (if bm? (.amount ^Money b) b)
-           mon (volatile! (when am? ^Money a))
-           fun (fn [^BigDecimal a b]
-                 (if-some [^Money m @mon]
-                   (if (instance? Money b)
-                     ;; money, money
-                     (throw (ex-info "Only one multiplied value can be a kind of Money."
-                                     {:multiplicant a :multiplier b}))
-                     ;; money, number
-                     (mul-core ^BigDecimal a b))
-                   (if (instance? Money b)
-                     ;; number, money
-                     (mul-core ^BigDecimal a
-                               ^BigDecimal (.amount ^Money (vreset! mon ^Money b)) nil)
-                     ;; number, number
-                     (mul-core ^BigDecimal a b))))
+     (let [am?             (instance? Money a)
+           bm?             (instance? Money b)
+           ^BigDecimal am  (if am?
+                             ^BigDecimal (.amount ^Money a)
+                             ^BigDecimal (scale/apply a))
+           bm              (if bm? (.amount ^Money b) b)
+           mon             (volatile! (when am? ^Money a))
+           fun             (fn [^BigDecimal a b]
+                             (if-some [^Money _m @mon]
+                               (if (instance? Money b)
+                                 ;; money, money
+                                 (throw (ex-info "Only one multiplied value can be a kind of Money."
+                                                 {:multiplicant a :multiplier b}))
+                                 ;; money, number
+                                 (mul-core ^BigDecimal a b))
+                               (if (instance? Money b)
+                                 ;; number, money
+                                 (mul-core ^BigDecimal a
+                                           ^BigDecimal (.amount ^Money (vreset! mon ^Money b)) nil)
+                                 ;; number, number
+                                 (mul-core ^BigDecimal a b))))
            ^BigDecimal res (reduce fun ^BigDecimal (fun ^BigDecimal am bm) more)]
        (if-some [^Money m @mon]
          (let [^Currency c (.currency ^Money m)]
@@ -1361,7 +1358,7 @@
                                               (int (.scale ^BigDecimal (.amount ^Money m))))))))
          ^BigDecimal res)))))
 
-(def ^{:tag Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0"
        :arglists '([]
                    [a]
                    [a b]
@@ -2073,6 +2070,145 @@
   {:tag Money :added "1.0.0"}
   [^Money a]
   (sub-minor a BigDecimal/ONE))
+
+;;
+;; Distribution and allocation
+;;
+
+(defn- split-scale
+  ^long [^Money m]
+  (let [^Currency   c (.currency m)
+        ^BigDecimal a (.amount m)]
+    (if (currency-auto-scaled? c)
+      (long (.scale a))
+      (long (.scale c)))))
+
+(defn- to-units
+  ^BigInteger [^BigDecimal amount ^long sc]
+  (-> amount
+      (.movePointRight (int sc))
+      (.toBigIntegerExact)))
+
+(defn- from-units
+  ^BigDecimal [^BigInteger units ^long sc]
+  (-> (BigDecimal. units)
+      (.movePointLeft (int sc))))
+
+(defn- to-bigint
+  ^BigInteger [x]
+  (cond
+    (instance? BigInteger x)          x
+    (instance? clojure.lang.BigInt x) (.toBigInteger ^clojure.lang.BigInt x)
+    (integer? x)                      (BigInteger/valueOf (long x))
+    :else                             (throw (ex-info "Ratio must be integer-like"
+                                                      {:got x :type (type x)}))))
+
+(defn allocate
+  "Allocates a monetary amount `a` into parts according to integer `ratios`.
+
+  Returns a vector of `Money` values (same currency as `a`) whose amounts:
+
+  - sum exactly to `a` (sum-preserving),
+  - are expressed in the minimal unit implied by the effective scale
+  (currency nominal scale; for auto-scaled currencies: the scale of `a`),
+  - differ only by whole minor units (no fractional minor units are created),
+  - distribute the leftover remainder deterministically from left to right.
+
+  `ratios` is any sequence of integer-like values (`Long`, `BigInt`,
+  `BigInteger`). Zeros are allowed (yielding zero parts); negative ratios are treated
+  as non-positive and produce zero base allocation.
+
+  For negative `a`, allocation is performed on the absolute value and the sign is
+  applied to all resulting parts (preserving the exact sum).
+
+  Throws `ExceptionInfo` when:
+  - `ratios` is empty,
+  - the sum of ratios is not strictly positive.
+
+  Examples:
+
+  ```
+  (allocate #money[10.00 PLN] [1 1 1])
+  ;; => [#money[3.34 PLN] #money[3.33 PLN] #money[3.33 PLN]]
+
+  (allocate #money[1.00 PLN] [1 2 3])
+  ;; 100 units split by 1:2:3 => bases [16 33 50] remainder 1 => [17 33 50]
+  ;; => [#money[0.17 PLN] #money[0.33 PLN] #money[0.50 PLN]]
+  ```
+  "
+  {:tag clojure.lang.IPersistentVector :added "1.2.18"}
+  ^clojure.lang.IPersistentVector [^Money a ratios]
+  (let [ratiosBI (mapv to-bigint (vec ratios))
+        n        (count ratiosBI)]
+    (when (clojure.core/zero? n)
+      (throw (ex-info "Ratios cannot be empty" {:ratios ratios})))
+    (let [^BigInteger sumrBI (reduce (fn ^BigInteger [^BigInteger v1 ^BigInteger v2]
+                                       (.add v1 v2))
+                                     BigInteger/ZERO
+                                     ratiosBI)]
+      (when (clojure.core/<= (.signum sumrBI) 0)
+        (throw (ex-info "Sum of ratios must be > 0" {:ratios ratios :sum sumrBI})))
+      (let [sc                 (long (split-scale a))
+            ^BigDecimal am     (.amount a)
+            negv?              (clojure.core/neg? (.signum am))
+            ^BigInteger units0 (to-units (.abs am) sc)
+            bases              (mapv (fn ^BigInteger [^BigInteger r]
+                                       (if (clojure.core/<= (.signum r) 0)
+                                         BigInteger/ZERO
+                                         (.divide (.multiply units0 r) sumrBI)))
+                                     ratiosBI)
+            ^BigInteger used   (reduce #(.add ^BigInteger %1 ^BigInteger %2) BigInteger/ZERO bases)
+            ^BigInteger rem    (.subtract units0 used)
+            ;; distribute remainder: left-to-right
+            bases2             (loop [i             (unchecked-int 0)
+                                      bs            bases
+                                      ^BigInteger r rem]
+                                 (if (clojure.core/zero? (.signum ^BigInteger r))
+                                   bs
+                                   (recur (unchecked-inc i)
+                                          (update bs (mod i n)
+                                                  (fn ^BigInteger [^BigInteger v]
+                                                    (.add ^BigInteger v BigInteger/ONE)))
+                                          (.subtract ^BigInteger r BigInteger/ONE))))]
+        (mapv (if negv?
+                (fn ^Money [^BigInteger u]
+                  (Money. ^Currency (.currency a) ^BigDecimal (from-units ^BigInteger (.negate u) sc)))
+                (fn ^Money [^BigInteger u]
+                  (Money. ^Currency (.currency a) ^BigDecimal (from-units ^BigInteger u sc))))
+              bases2)))))
+
+(defn distribute
+  "Distributes a monetary amount `a` into `n` as-even-as-possible parts.
+
+  This is equivalent to:
+  `(allocate a (repeat n 1))`
+
+  Returns a vector of `Money` values (same currency as `a`) such that:
+
+  - the parts sum exactly to `a`,
+  - each part differs from another by at most one minor unit (relative to the
+    effective scale used for splitting),
+  - any remainder is distributed deterministically from left to right.
+
+  `n` must be integer-like and strictly positive; otherwise throws `ExceptionInfo`.
+
+  Examples:
+
+  ```
+  (distribute #money[10.00 PLN] 3)
+  ;; => [#money[3.34 PLN] #money[3.33 PLN] #money[3.33 PLN]]
+
+  (distribute #money[-10.00 PLN] 3)
+  ;; => [#money[-3.34 PLN] #money[-3.33 PLN] #money[-3.33 PLN]]
+  ```
+  "
+  {:tag clojure.lang.IPersistentVector :added "1.2.18"}
+  ^clojure.lang.IPersistentVector [^Money a n]
+  (let [^BigInteger nBI (to-bigint n)]
+    (when (clojure.core/<= (.signum nBI) 0)
+      (throw (ex-info "n must be > 0" {:n n})))
+    (let [n* (.intValueExact nBI)]
+      (allocate ^Money a (repeat n* 1)))))
 
 ;;
 ;; Contextual macros.
