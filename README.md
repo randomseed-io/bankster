@@ -3,8 +3,7 @@
 **Money as data, done right.**
 
 *A pragmatic, EDN-friendly money & currency toolkit for Clojure: ISO 4217 + crypto +
-your own currencies, with precision-first arithmetic and an expressive literal/DSL
-layer.*
+your own currencies, with precision-first arithmetic and an expressive DSL layer.*
 
 [![Bankster on Clojars](https://img.shields.io/clojars/v/io.randomseed/bankster.svg)](https://clojars.org/io.randomseed/bankster)
 [![Bankster on cljdoc](https://cljdoc.org/badge/io.randomseed/bankster)](https://cljdoc.org/d/io.randomseed/bankster/CURRENT)
@@ -33,6 +32,7 @@ representing currency + amount and doing safe operations around that.
 ## Why Bankster (in one breath)
 
 - **Precision-first arithmetic**: `BigDecimal` everywhere, currency scale-aware operations, and tooling for non-terminating expansions.
+- **Allocation and distribution**: built-in functions for allocating and distributing monetary amounts.
 - **One model for ISO + crypto + custom**: namespaced identifiers like `crypto/ETH`, plus conflict-safe code resolution via weights.
 - **EDN-native ergonomics**: tagged literals (`#money`, `#currency`), readers, macros, and parsing that make data pipelines pleasant.
 - **Registry concept**: treat currencies as a database you can extend, swap, or scope per computation.
@@ -54,6 +54,7 @@ representing currency + amount and doing safe operations around that.
 * Variants of **variadic math functions** with rescaling after each consecutive operation.
 * Optional **rescaling** of monetary amounts with keeping track of nominal scales.
 * Functions for **rounding** to a scale or to the given **interval**.
+* Functions for **allocating** and **distributing** of monetary amounts.
 * **Tagged literals** for currencies and monetary amounts.
 * **Data readers** for currencies and monetary amounts expressed with EDN.
 * Customizable currency and money **formatting** with **locale support**.
@@ -448,6 +449,30 @@ It allows to perform **math operations** on monetary amounts:
 
 (money/round-to #money[31.33 USD] 0.5)
 #money[31.50 USD]
+
+;; allocation
+
+(money/allocate #money[10.00 PLN] [1 1 1])
+[#money[3.34 PLN]
+ #money[3.33 PLN]
+ #money[3.33 PLN]]
+
+(money/allocate #money[1.00 PLN] [1 2 3])
+[#money[0.17 PLN]
+ #money[0.33 PLN]
+ #money[0.50 PLN]]
+
+;; distribution
+
+(money/distribute (money/of 1 PLN) 3)
+[#money[0.34 PLN]
+ #money[0.33 PLN]
+ #money[0.33 PLN]]
+
+(money/distribute (money/of 3 PLN) 3)
+[#money[1.00 PLN]
+ #money[1.00 PLN]
+ #money[1.00 PLN]]
 
 ;;
 ;; using inter-ops

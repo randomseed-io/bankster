@@ -14,6 +14,9 @@
             [clojure.spec.alpha              :as                 s]
             [clojure.spec.gen.alpha          :as               gen]
             [orchestra.spec.test             :as                st]
+            [clojure.test.check.generators   :as              tgen]
+            [clojure.test.check.properties   :as              prop]
+            [clojure.test.check.clojure-test :as             ctest]
             [io.randomseed.bankster          :as          bankster]
             [io.randomseed.bankster.spec     :as              spec]
             [expound.alpha                   :as           expound]
@@ -29,6 +32,60 @@
 (defmacro map=
   [a b]
   `(= (into {} ~a) ~b))
+
+(defn- bd-sum
+  "Sum of Money amounts as BigDecimal."
+  [parts]
+  (reduce + 0M (map scale/amount parts)))
+
+(defn- currency-id
+  "Stable currency identity comparison.
+   If Bankster exposes currency/id on Money, use it; otherwise fall back to code."
+  [m]
+  (or (try (c/id m) (catch Throwable _ nil))
+      (c/code m)))
+
+(defn- money-scale
+  "Nominal scale (currency scale) or auto-scale (amount scale) if currency is auto."
+  [m]
+  (let [s (scale/of m)]
+    (long s)))
+
+(defn- to-units
+  "Convert money amount to minor units BigInteger using the (current) money scale."
+  [m]
+  (let [^BigDecimal a (scale/amount m)
+        sc            (int (money-scale m))]
+    (.toBigIntegerExact (.movePointRight a sc))))
+
+(defn- max-unit-gap
+  "max(units) - min(units) as BigInteger"
+  [ms]
+  (let [us (mapv to-units ms)]
+    (.subtract
+     (reduce (fn [^BigInteger a ^BigInteger b] (if (pos? (.compareTo a b)) a b))
+             (first us) (rest us))
+     (reduce (fn [^BigInteger a ^BigInteger b] (if (neg? (.compareTo a b)) a b))
+             (first us) (rest us)))))
+
+(defn- money-vec-pln
+  "Build exact [x.yy :PLN] from integer minor units (grosze)."
+  [^long units]
+  (let [neg? (neg? units)
+        u    (long (Math/abs units))
+        maj  (quot u 100)
+        min  (mod  u 100)]
+    [(str (when neg? "-") maj "." (format "%02d" min)) :PLN]))
+
+(defn- money-vec-xxx
+  "Build exact [x.yyyyy :XXX] from integer units at given scale."
+  [^long units ^long sc]
+  (let [neg? (neg? units)
+        u    (long (Math/abs units))
+        pow  (long (reduce * 1 (repeat sc 10)))
+        maj  (quot u pow)
+        min  (mod  u pow)]
+    [(str (when neg? "-") maj "." (format (str "%0" sc "d") min)) :XXX]))
 
 (deftest of-macro
   (testing "when it returns nil for nil as an amount"
@@ -490,3 +547,101 @@
     (is (= (m/is-neg-or-zero? #money[10 EUR]) false))
     (is (= (m/is-neg-or-zero? #money[-10 EUR]) true))
     (is (= (m/is-neg-or-zero? #money[0 PLN]) true))))
+
+(deftest allocate-basic-weighted-pln
+  (let [m     (m/of "1.00 PLN")
+        parts (m/allocate m [1 2 3])]
+    (is (= 3 (count parts)))
+    (is (= (currency-id m) (currency-id (first parts))))
+    (is (= (scale/amount m) (bd-sum parts)))
+    ;; Deterministic remainder distribution left-to-right:
+    ;; 1.00 PLN = 100 units, ratios 1:2:3 (sum=6)
+    ;; bases: [16,33,50], remainder 1 -> first gets +1 => [17,33,50]
+    (is (= ["0.17 PLN" "0.33 PLN" "0.50 PLN"]
+           (map (fn [x] (str (scale/amount x) " " (c/code x))) parts)))))
+
+(deftest distribute-even-pln
+  (let [m     (m/of "10.00 PLN")
+        parts (m/distribute m 3)]
+    (is (= 3 (count parts)))
+    (is (= (scale/amount m) (bd-sum parts)))
+    ;; 1000 units / 3 => 333 r1 => [334,333,333]
+    (is (= ["3.34 PLN" "3.33 PLN" "3.33 PLN"]
+           (map (fn [x] (str (scale/amount x) " " (c/code x))) parts)))
+    (is (not (pos? (.compareTo (max-unit-gap parts) BigInteger/ONE)))))) ; gap <= 1
+
+(deftest distribute-negative
+  (let [m     (m/of "-10.00 PLN")
+        parts (m/distribute m 3)]
+    (is (= (scale/amount m) (bd-sum parts)))
+    (is (= ["-3.34 PLN" "-3.33 PLN" "-3.33 PLN"]
+           (map (fn [x] (str (scale/amount x) " " (c/code x))) parts)))))
+
+(deftest distribute-auto-scaled-xxx
+  ;; XXX in Bankster is auto-scaled (nominal scale -1), but the amount carries scale.
+  (let [m     (m/of "12.34567 XXX")
+        parts (m/distribute m 3)]
+    (is (= (scale/amount m) (bd-sum parts)))
+    ;; difference at most one unit at amount scale
+    (is (<= (.compareTo (max-unit-gap parts) BigInteger/ONE) 0))
+    ;; currency identity preserved
+    (is (= (currency-id m) (currency-id (first parts))))))
+
+(deftest allocate-errors
+  (is (thrown? clojure.lang.ExceptionInfo
+               (m/allocate (m/of "1.00 PLN") [])))
+  (is (thrown? clojure.lang.ExceptionInfo
+               (m/allocate (m/of "1.00 PLN") [0 0 0])))
+  (is (thrown? clojure.lang.ExceptionInfo
+               (m/distribute (m/of "1.00 PLN") 0)))
+  (is (thrown? clojure.lang.ExceptionInfo
+               (m/distribute (m/of "1.00 PLN") -1))))
+
+;; ----------------------------
+;; generative tests
+;; ----------------------------
+
+(defn money-from-vec
+  [[a cur]]
+  (m/of cur a))
+
+(def gen-pln-money
+  (tgen/let [units (tgen/choose -500000 500000)] ; -5000.00 .. 5000.00 PLN
+    (money-from-vec (money-vec-pln units))))
+
+(def gen-xxx-money
+  ;; auto-scaled: choose a scale and integer units at that scale, build exact string
+  (tgen/let [sc    (tgen/choose 1 8)
+             units (tgen/choose -50000000 50000000)]
+    (money-from-vec (money-vec-xxx units sc))))
+
+(def gen-positive-ratios
+  ;; keep ratios moderate but non-zero; still catches remainder behavior
+  (tgen/vector (tgen/choose 1 100) 1 10))
+
+(ctest/defspec allocate-sum-preserving-pln 300
+  (prop/for-all [m gen-pln-money
+                 rs gen-positive-ratios]
+                (let [parts (m/allocate m rs)]
+                  (and
+                   (= (scale/amount m) (bd-sum parts))
+                   (= (count rs) (count parts))
+                   ;; every part same currency
+                   (every? #(= (currency-id m) (currency-id %)) parts)))))
+
+(ctest/defspec distribute-sum-preserving-and-gap-pln 300
+  (prop/for-all [m gen-pln-money
+                 n (tgen/choose 1 12)]
+                (let [parts (m/distribute m n)]
+                  (and
+                   (= (scale/amount m) (bd-sum parts))
+                   (= n (count parts))
+                   (<= (.compareTo (max-unit-gap parts) BigInteger/ONE) 0)))))
+
+(ctest/defspec distribute-auto-scaled-sum-preserving 200
+  (prop/for-all [m gen-xxx-money
+                 n (tgen/choose 1 12)]
+                (let [parts (m/distribute m n)]
+                  (and
+                   (= (scale/amount m) (bd-sum parts))
+                   (<= (.compareTo (max-unit-gap parts) BigInteger/ONE) 0)))))
