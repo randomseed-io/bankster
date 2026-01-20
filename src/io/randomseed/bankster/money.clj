@@ -18,7 +18,7 @@
             [io.randomseed.bankster.util     :refer       :all])
 
   (:import  [io.randomseed.bankster Currency Registry Money]
-            [java.math MathContext RoundingMode]
+            [java.math BigDecimal BigInteger MathContext RoundingMode]
             [java.text NumberFormat DecimalFormat DecimalFormatSymbols]
             [java.util Locale]))
 
@@ -2097,11 +2097,25 @@
 (defn- to-bigint
   ^BigInteger [x]
   (cond
-    (instance? BigInteger x)          x
+    (int?                          x) (BigInteger/valueOf (long x))
+    (instance? BigInteger          x) x
     (instance? clojure.lang.BigInt x) (.toBigInteger ^clojure.lang.BigInt x)
-    (integer? x)                      (BigInteger/valueOf (long x))
-    :else                             (throw (ex-info "Ratio must be integer-like"
-                                                      {:got x :type (type x)}))))
+    (integer?                      x) (BigInteger/valueOf (long x))
+    :else
+    (throw (ex-info "Ratio must be integer-like"
+                    {:got x :type (type x)}))))
+
+(defn- int-like-pos?
+  "Fast: true if x is integer-like and > 0. No BigInteger allocations for longs or
+  ints."
+  [x]
+  (cond
+    (int?                          x) (clojure.core/> (long x) 0)
+    (instance? BigInteger          x) (clojure.core/> (.signum ^java.math.BigInteger x) 0)
+    (integer?                      x) (clojure.core/pos? x)
+    :else
+    (throw (ex-info "Ratio must be integer-like"
+                    {:got x :type (type x)}))))
 
 (defn allocate
   "Allocates a monetary amount `a` into parts according to integer `ratios`.
@@ -2138,44 +2152,49 @@
   "
   {:tag clojure.lang.IPersistentVector :added "1.2.18"}
   ^clojure.lang.IPersistentVector [^Money a ratios]
-  (let [ratiosBI (mapv to-bigint (vec ratios))
-        n        (count ratiosBI)]
-    (when (clojure.core/zero? n)
+  (let [bcnt (bounded-count 2 ratios)]
+    (when (clojure.core/zero? bcnt)
       (throw (ex-info "Ratios cannot be empty" {:ratios ratios})))
-    (let [^BigInteger sumrBI (reduce (fn ^BigInteger [^BigInteger v1 ^BigInteger v2]
-                                       (.add v1 v2))
-                                     BigInteger/ZERO
-                                     ratiosBI)]
-      (when (clojure.core/<= (.signum sumrBI) 0)
-        (throw (ex-info "Sum of ratios must be > 0" {:ratios ratios :sum sumrBI})))
-      (let [sc                 (long (split-scale a))
-            ^BigDecimal am     (.amount a)
-            negv?              (clojure.core/neg? (.signum am))
-            ^BigInteger units0 (to-units (.abs am) sc)
-            bases              (mapv (fn ^BigInteger [^BigInteger r]
-                                       (if (clojure.core/<= (.signum r) 0)
-                                         BigInteger/ZERO
-                                         (.divide (.multiply units0 r) sumrBI)))
-                                     ratiosBI)
-            ^BigInteger used   (reduce #(.add ^BigInteger %1 ^BigInteger %2) BigInteger/ZERO bases)
-            ^BigInteger rem    (.subtract units0 used)
-            ;; distribute remainder: left-to-right
-            bases2             (loop [i             (unchecked-int 0)
-                                      bs            bases
-                                      ^BigInteger r rem]
-                                 (if (clojure.core/zero? (.signum ^BigInteger r))
-                                   bs
-                                   (recur (unchecked-inc i)
-                                          (update bs (mod i n)
-                                                  (fn ^BigInteger [^BigInteger v]
-                                                    (.add ^BigInteger v BigInteger/ONE)))
-                                          (.subtract ^BigInteger r BigInteger/ONE))))]
-        (mapv (if negv?
-                (fn ^Money [^BigInteger u]
-                  (Money. ^Currency (.currency a) ^BigDecimal (from-units ^BigInteger (.negate u) sc)))
-                (fn ^Money [^BigInteger u]
-                  (Money. ^Currency (.currency a) ^BigDecimal (from-units ^BigInteger u sc))))
-              bases2)))))
+    (if (clojure.core/== bcnt 1)
+      (if (int-like-pos? (first ratios))
+        [a]
+        (throw (ex-info "Sum of ratios must be > 0" {:ratios ratios :sum (first ratios)})))
+      (let [ratiosBI           (mapv to-bigint ratios)
+            n                  (count ratiosBI)
+            ^BigInteger sumrBI (reduce (fn ^BigInteger [^BigInteger v1 ^BigInteger v2]
+                                         (.add v1 v2))
+                                       BigInteger/ZERO
+                                       ratiosBI)]
+        (when (clojure.core/<= (.signum sumrBI) 0)
+          (throw (ex-info "Sum of ratios must be > 0" {:ratios ratios :sum sumrBI})))
+        (let [sc                 (long (split-scale a))
+              ^BigDecimal am     (.amount a)
+              negv?              (clojure.core/neg? (.signum am))
+              ^BigInteger units0 (to-units (.abs am) sc)
+              bases              (mapv (fn ^BigInteger [^BigInteger r]
+                                         (if (clojure.core/<= (.signum r) 0)
+                                           BigInteger/ZERO
+                                           (.divide (.multiply units0 r) sumrBI)))
+                                       ratiosBI)
+              ^BigInteger used   (reduce #(.add ^BigInteger %1 ^BigInteger %2) BigInteger/ZERO bases)
+              ^BigInteger rem    (.subtract units0 used)
+              ;; distribute remainder: left-to-right
+              bases2             (loop [i             (unchecked-int 0)
+                                        bs            bases
+                                        ^BigInteger r rem]
+                                   (if (clojure.core/zero? (.signum ^BigInteger r))
+                                     bs
+                                     (recur (unchecked-inc i)
+                                            (update bs (mod i n)
+                                                    (fn ^BigInteger [^BigInteger v]
+                                                      (.add ^BigInteger v BigInteger/ONE)))
+                                            (.subtract ^BigInteger r BigInteger/ONE))))]
+          (mapv (if negv?
+                  (fn ^Money [^BigInteger u]
+                    (Money. ^Currency (.currency a) ^BigDecimal (from-units ^BigInteger (.negate u) sc)))
+                  (fn ^Money [^BigInteger u]
+                    (Money. ^Currency (.currency a) ^BigDecimal (from-units ^BigInteger u sc))))
+                bases2))))))
 
 (defn distribute
   "Distributes a monetary amount `a` into `n` as-even-as-possible parts.
