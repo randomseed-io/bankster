@@ -1,5 +1,10 @@
 # History of Bankster releases
 
+## 1.2.19 (2025-01-19)
+
+- Performance improvements in `money/allocate`.
+- AOT compilation enabled for `io.randomseed.bankster` namespace.
+
 ## 1.2.18 (2025-01-19)
 
 - Allocation and distribution of monetary amounts via

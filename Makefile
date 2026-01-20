@@ -4,7 +4,7 @@ DEPLOY      := bin/deploy
 DOCS        := bin/docs
 UPREADME    := bin/update-readme
 
-VERSION     ?= 1.2.18
+VERSION     ?= 1.2.19
 GROUP       ?= io.randomseed
 APPNAME     ?= bankster
 DESCRIPTION ?= Money as data, done right.
