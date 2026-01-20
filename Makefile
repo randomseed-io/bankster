@@ -10,13 +10,14 @@ APPNAME     ?= bankster
 DESCRIPTION ?= Money as data, done right.
 URL         ?= https://randomseed.io/software/$(APPNAME)/
 SCM         ?= github.com/randomseed-io/$(APPNAME)
+AOTNS       ?= '[io.randomseed.bankster]'
 
 POMFILE     := pom.xml
 JARNAME     := $(APPNAME)-$(VERSION).jar
 JARFILE     := target/$(APPNAME)-$(VERSION).jar
 DOCPREFIX   := $(GROUP)/$(APPNAME)
 
-.PHONY: default lint doc docs push-docs readers
+.PHONY: default lint doc docs push-docs readme readers
 .PHONY: test test-full test-clj
 .PHONY: sync-pom pom jar
 .PHONY: deploy sig tag clean
@@ -34,12 +35,12 @@ docs: readme
 	@echo "[doc]      -> docs/"
 	@echo "# Introduction" > doc/10_introduction.md
 	@tail -n +2 README.md >> doc/10_introduction.md
-	@$(DOCS) "$(VERSION)"
+	@$(DOCS) :version '"$(VERSION)"'
 
 doc: docs
 
 readers:
-	@echo "[readers]  -> docs/"
+	@echo "[readers]  -> src/"
 	@bin/readers
 
 push-docs:
@@ -56,7 +57,7 @@ test-full:
 test-clj: test
 
 sync-pom:
-	@echo "[sync-pom] -> $(POMFILE)"
+	@echo "[pom]      -> $(POMFILE)"
 	@$(BUILD) sync-pom                  \
 	  :group       "\"$(GROUP)\""       \
 	  :name        "\"$(APPNAME)\""     \

@@ -2,7 +2,6 @@
  :description  "Money as data, done right."
  :license      "GNU Lesser General Public License 3.0"
  :package      io.randomseed/bankster
- :version      "1.2.18"
  :output-path  "docs"
  :source-uri   "https://github.com/randomseed-io/bankster/blob/{version}/{filepath}#L{line}"
  :metadata     {:doc/format :markdown}
