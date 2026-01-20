@@ -75,7 +75,8 @@ jar: readers pom
 	@$(BUILD) jar               \
 	  :group   "\"$(GROUP)\""   \
 	  :name    "\"$(APPNAME)\"" \
-	  :version "\"$(VERSION)\""
+	  :version "\"$(VERSION)\"" \
+	  :aot-ns  $(AOTNS)
 
 sig:
 	@echo "[sig]      -> $(POMFILE).asc"
