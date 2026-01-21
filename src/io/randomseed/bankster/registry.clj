@@ -6,15 +6,21 @@
 
   (:refer-clojure :exclude [new get set! update])
 
-  (:require     [clojure.string                  :as      str]
-                [io.randomseed.bankster          :as bankster]
-                [io.randomseed.bankster.util.map :as      map]
-                [io.randomseed.bankster.util.fs  :as       fs]
-                [io.randomseed.bankster.util     :refer  :all])
+  (:require [io.randomseed.bankster          :as bankster]
+            [io.randomseed.bankster.util.map :as      map])
 
-  (:import  [io.randomseed.bankster Registry]
-            [io.randomseed.bankster Currency Registry]
-            [java.time LocalDateTime format.DateTimeFormatter]))
+  (:import  (io.randomseed.bankster Registry)
+            (java.time              LocalDateTime)
+            (java.time.format       DateTimeFormatter)))
+
+;;
+;; Empty hash maps
+;;
+
+(defn- h-m
+  {:tag clojure.lang.PersistentHashMap :added "1.2.20"}
+  ^clojure.lang.PersistentHashMap []
+  (dissoc (hash-map nil nil) nil))
 
 ;;
 ;; Registry version generator.
@@ -32,7 +38,7 @@
 (def ^{:tag clojure.lang.Atom :added "1.0.0"}
   R
   "Global registry object based on an Atom."
-  (atom (Registry. {} {} {} {} {} {} (default-version))))
+  (atom (Registry. (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (default-version))))
 
 (defn global
   "Returns global registry object."
@@ -61,7 +67,7 @@
 ;;
 
 (defmacro get
-  "Gets the current state of a global registry. If the dynamic variable *default* is
+  "Gets a current state of a global registry. If the dynamic variable *default* is
   set to a truthy value, it will be used instead."
   {:added "1.0.0"}
   []
@@ -75,7 +81,7 @@
   "Creates a new registry."
   {:tag Registry :added "1.0.0"}
   (^Registry []
-   (bankster/->Registry {} {} {} {} {} {} (default-version)))
+   (bankster/->Registry (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (default-version)))
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
               ^clojure.lang.PersistentHashMap cur-nr->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur

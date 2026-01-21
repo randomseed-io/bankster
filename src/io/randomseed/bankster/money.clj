@@ -10,17 +10,24 @@
                             pos? neg? zero?])
 
   (:require [clojure.edn]
-            [io.randomseed.bankster          :refer       :all]
+            [io.randomseed.bankster]
             [io.randomseed.bankster.scale    :as         scale]
             [io.randomseed.bankster.currency :as      currency]
             [io.randomseed.bankster.registry :as      registry]
-            [io.randomseed.bankster.util.fs  :as            fs]
-            [io.randomseed.bankster.util     :refer       :all])
+            [io.randomseed.bankster.util.fs  :as            fs])
 
-  (:import  [io.randomseed.bankster Currency Registry Money]
-            [java.math BigDecimal BigInteger MathContext RoundingMode]
-            [java.text NumberFormat DecimalFormat DecimalFormatSymbols]
-            [java.util Locale]))
+  (:import  (io.randomseed.bankster       Currency
+                                          Registry
+                                          Money)
+            (io.randomseed.bankster.scale Scalable)
+            (java.math                    BigDecimal
+                                          BigInteger
+                                          MathContext
+                                          RoundingMode)
+            (java.text                    NumberFormat
+                                          DecimalFormat
+                                          DecimalFormatSymbols)
+            (java.util                    Locale)))
 
 ;;
 ;; Accountable protocol.
@@ -67,14 +74,14 @@
   {:tag BigDecimal :private true :added "1.0.7"}
   ([n]
    (scale/apply n))
-  ([n sc]
-   (if (currency/val-auto-scaled? sc)
+  ([n ^long sc]
+   (if (currency/val-auto-scaled*? (int sc))
      (scale/apply n)
-     (scale/apply n (int sc))))
-  ([n sc ^RoundingMode rm]
-   (if (currency/val-auto-scaled? sc)
+     (scale/apply n sc)))
+  ([n ^long sc ^RoundingMode rm]
+   (if (currency/val-auto-scaled*? (int sc))
      (scale/apply n)
-     (scale/apply n (int sc) ^RoundingMode rm))))
+     (scale/apply n sc ^RoundingMode rm))))
 
 (defmacro currency-auto-scaled?
   "Returns true if the given Currency object is auto-scaled."
@@ -125,10 +132,10 @@
 (defn parse-int
   "Internal parser with amount modifier."
   {:tag Money :private true :added "1.0.0"}
-  (^Money [mod-fn amount]
+  (^Money [^clojure.lang.IFn mod-fn amount]
    (when (some? amount)
      (if (instance? Money amount)
-       (parse-int mod-fn (.currency ^Money amount) (.amount ^Money amount))
+       (parse-int mod-fn ^Currency (.currency ^Money amount) (long (.amount ^Money amount)))
        (if-some [^Currency cur (currency-unit-strict amount)]
          (parse-int mod-fn cur 0M)
          (let [[cur am] (currency+amount amount)]
@@ -137,7 +144,7 @@
    (when (some? amount)
      (if-some [^Currency c (currency-unit-strict currency)]
        (Money. ^Currency c ^BigDecimal (monetary-scale (mod-fn amount)
-                                                       (int (scale/of ^Currency c))))
+                                                       (long (scale/of ^Currency c))))
        (throw (ex-info
                "Cannot create money amount without a valid currency and a default currency was not set."
                {:amount amount :currency currency})))))
@@ -145,7 +152,7 @@
    (when (some? amount)
      (if-some [^Currency c (currency-unit-strict currency)]
        (Money. ^Currency c ^BigDecimal (monetary-scale (mod-fn amount)
-                                                       (int (scale/of ^Currency c))
+                                                       (long (scale/of ^Currency c))
                                                        ^RoundingMode rounding-mode))
        (throw (ex-info
                "Cannot create money amount without a valid currency and a default currency was not set."
@@ -284,11 +291,11 @@
     (^Money [money amount]
      (when (some? amount)
        (Money. ^Currency   (.currency ^Money money)
-               ^BigDecimal (scale/apply amount (int (.scale ^BigDecimal (.amount ^Money money)))))))
+               ^BigDecimal (scale/apply amount (long (.scale ^BigDecimal (.amount ^Money money)))))))
     (^Money [money amount ^RoundingMode rounding]
      (when (some? amount)
        (Money. ^Currency   (.currency ^Money money)
-               ^BigDecimal (scale/apply amount (int (.scale ^BigDecimal (.amount ^Money money))) rounding)))))
+               ^BigDecimal (scale/apply amount (long (.scale ^BigDecimal (.amount ^Money money))) rounding)))))
 
   (cast
     (^Money [money]
@@ -296,26 +303,26 @@
     (^Money [money currency]
      (let [^Currency cur (currency/unit currency)]
        (Money. ^Currency cur
-               ^BigDecimal (monetary-scale (.amount ^Money money) (int (.scale ^Currency cur))))))
+               ^BigDecimal (monetary-scale (.amount ^Money money) (long (.scale ^Currency cur))))))
     (^Money [money currency ^RoundingMode rounding]
      (let [^Currency cur (currency/unit currency)]
        (Money. ^Currency cur
-               ^BigDecimal (monetary-scale (.amount ^Money money) (int (.scale ^Currency cur)) rounding)))))
+               ^BigDecimal (monetary-scale (.amount ^Money money) (long (.scale ^Currency cur)) rounding)))))
 
   Currency
 
   (value
     (^Money [currency]
      (Money. ^Currency currency
-             ^BigDecimal (monetary-scale 0M (int (.scale ^Currency currency)))))
+             ^BigDecimal (monetary-scale 0M (long (.scale ^Currency currency)))))
     (^Money [currency amount]
      (when (some? amount)
        (Money. ^Currency currency
-               ^BigDecimal (monetary-scale (scale/amount amount) (int (.scale ^Currency currency))))))
+               ^BigDecimal (monetary-scale (scale/amount amount) (long (.scale ^Currency currency))))))
     (^Money [currency amount ^RoundingMode rounding]
      (when (some? amount)
        (Money. ^Currency currency
-               ^BigDecimal (monetary-scale (scale/amount amount) (int (.scale ^Currency currency)) rounding)))))
+               ^BigDecimal (monetary-scale (scale/amount amount) (long (.scale ^Currency currency)) rounding)))))
 
   (cast
     (^Money [currency]
@@ -323,11 +330,11 @@
     (^Money [currency ^Money money]
      (let [^Currency cur (currency/unit currency)]
        (Money. ^Currency   cur
-               ^BigDecimal (monetary-scale (.amount ^Money money) (int (.scale ^Currency cur))))))
+               ^BigDecimal (monetary-scale (.amount ^Money money) (long (.scale ^Currency cur))))))
     (^Money [currency ^Money money ^RoundingMode rounding]
      (let [^Currency cur (currency/unit currency)]
        (Money. ^Currency   cur
-               ^BigDecimal (monetary-scale (.amount ^Money money) (int (.scale ^Currency cur)) rounding)))))
+               ^BigDecimal (monetary-scale (.amount ^Money money) (long (.scale ^Currency cur)) rounding)))))
 
   clojure.lang.Symbol
 
@@ -464,14 +471,14 @@
                                         ^Registry registry)]
      (Money. ^Currency   cur
              ^BigDecimal (monetary-scale (.amount ^Money money)
-                                         (int (.scale ^Currency cur))))))
+                                         (long (.scale ^Currency cur))))))
   (^Money [^Registry registry money ^RoundingMode rounding-mode]
    (let [^Money    money (value money)
          ^Currency cur   (currency/unit ^Currency (.id ^Currency (.currency ^Money money))
                                         ^Registry registry)]
      (Money. ^Currency   cur
              ^BigDecimal (monetary-scale (.amount ^Money money)
-                                         (int (.scale ^Currency cur))
+                                         (long (.scale ^Currency cur))
                                          rounding-mode)))))
 
 ;;
@@ -490,25 +497,25 @@
      (let [^BigDecimal am (.amount ^Money money)]
        (Money. ^Currency   (.currency ^Money money)
                ^BigDecimal (monetary-scale (f am)
-                                           (int (.scale ^BigDecimal am)))))))
+                                           (long (.scale ^BigDecimal am)))))))
   (^Money [money f a]
    (when-some [money (value money)]
      (let [^BigDecimal am (.amount ^Money money)]
        (Money. ^Currency   (.currency ^Money money)
                ^BigDecimal (monetary-scale (f am a)
-                                           (int (.scale ^BigDecimal am)))))))
+                                           (long (.scale ^BigDecimal am)))))))
   (^Money [money f a b]
    (when-some [money (value money)]
      (let [^BigDecimal am (.amount ^Money money)]
        (Money. ^Currency   (.currency ^Money money)
                ^BigDecimal (monetary-scale (f am a b)
-                                           (int (.scale ^BigDecimal am)))))))
+                                           (long (.scale ^BigDecimal am)))))))
   (^Money [money f a b & more]
    (when-some [money (value money)]
      (let [^BigDecimal am (.amount ^Money money)]
        (Money. ^Currency   (.currency ^Money money)
                ^BigDecimal (monetary-scale (clojure.core/apply f am a b more)
-                                           (int (.scale ^BigDecimal am))))))))
+                                           (long (.scale ^BigDecimal am))))))))
 
 (def ^{:tag Money :added "1.2.7"
        :arglists '([money f]
@@ -528,13 +535,13 @@
      (let [^BigDecimal v (scale/apply v)]
        (Money. ^Currency   (.currency ^Money money)
                ^BigDecimal (monetary-scale ^BigDecimal v
-                                           (int (.scale ^BigDecimal (.amount ^Money money))))))))
+                                           (long (.scale ^BigDecimal (.amount ^Money money))))))))
   (^Money [money v ^RoundingMode rounding-mode]
    (when-some [money (value money)]
      (let [^BigDecimal v (scale/apply v)]
        (Money. ^Currency   (.currency ^Money money)
                ^BigDecimal (monetary-scale ^BigDecimal v
-                                           (int (.scale ^BigDecimal (.amount ^Money money)))
+                                           (long (.scale ^BigDecimal (.amount ^Money money)))
                                            ^RoundingMode rounding-mode))))))
 
 ;;
@@ -681,7 +688,7 @@
    (^Money [m]
     (let [^Currency cur (.currency ^Money m)
           sc            (int (.scale ^Currency cur))]
-      (if (currency/val-auto-scaled? sc) m
+      (if (currency/val-auto-scaled*? sc) m
           (Money. ^Currency cur
                   (if-some [rm scale/*rounding-mode*]
                     ^BigDecimal (.setScale ^BigDecimal (.amount ^Money m)
@@ -689,7 +696,7 @@
                                            ^RoundingMode rm)
                     ^BigDecimal (.setScale ^BigDecimal (.amount ^Money m)
                                            (int sc)))))))
-   (^Money [m scale]
+   (^Money [m ^long scale]
     (if-some [rm scale/*rounding-mode*]
       (Money. ^Currency   (.currency ^Money m)
               ^BigDecimal (.setScale ^BigDecimal (.amount ^Money m)
@@ -697,7 +704,7 @@
                                      ^RoundingMode rm))
       (Money. ^Currency   (.currency ^Money m)
               ^BigDecimal (.setScale ^BigDecimal (.amount ^Money m) (int scale)))))
-   (^Money [m scale ^RoundingMode rounding-mode]
+   (^Money [m ^long scale ^RoundingMode rounding-mode]
     (Money. ^Currency   (.currency ^Money m)
             ^BigDecimal (.setScale ^BigDecimal (.amount^Money m)
                                    (int scale)
@@ -706,10 +713,10 @@
   (^BigDecimal amount
    (^BigDecimal [money]
     (.amount ^Money money))
-   (^BigDecimal [money scale]
-    (scale/apply ^BigDecimal (.amount ^Money money) (int scale)))
-   (^BigDecimal [money scale ^RoundingMode r]
-    (scale/apply ^BigDecimal (.amount ^Money money) (int scale) ^RoundingMode r))))
+   (^BigDecimal [money ^long scale]
+    (scale/apply ^BigDecimal (.amount ^Money money) (long scale)))
+   (^BigDecimal [money ^long scale ^RoundingMode r]
+    (scale/apply ^BigDecimal (.amount ^Money money) (long scale) ^RoundingMode r))))
 
 ;;
 ;; Comparators.
@@ -757,7 +764,7 @@
          (int 1)
          (let [^BigDecimal am-a (.amount ^Money a)
                ^BigDecimal am-b (.amount ^Money b)]
-           (assert (clojure.core/= (.scale ^BigDecimal am-a) (.scale ^BigDecimal am-b))
+           (assert (clojure.core/== (.scale ^BigDecimal am-a) (.scale ^BigDecimal am-b))
                    (str "Cannot compare monetary amounts having different decimal scales: "
                         a " (" (.scale ^BigDecimal am-a) "), "
                         b " (" (.scale ^BigDecimal am-b) ")."))
@@ -780,8 +787,8 @@
   {:added "1.0.0"}
   [a]
   (let [csc (int (.scale ^Currency (.currency ^Money a)))]
-    (when-not (currency/val-auto-scaled? csc)
-      (clojure.core/not= csc (.scale ^BigDecimal (.amount ^Money a))))))
+    (when-not (currency/val-auto-scaled*? csc)
+      (not (clojure.core/== csc (.scale ^BigDecimal (.amount ^Money a)))))))
 
 (defn same-currencies?
   "Returns true if both currencies are the same for the given money objects."
@@ -833,7 +840,7 @@
            ^BigDecimal am-b (.amount ^Money b)
            sa               (int (.scale am-a))
            sb               (int (.scale am-b))]
-       (if (clojure.core/= sa sb)
+       (if (clojure.core/== sa sb)
          (.equals ^BigDecimal am-a ^BigDecimal am-b)
          (if (clojure.core/< sa sb)
            (.equals ^BigDecimal (scale/apply am-a sb) ^BigDecimal am-b)
@@ -1045,7 +1052,7 @@
 (defn scale
   "Re-scales the given money using a scale (number of decimal places) and an optional
   rounding mode (required when downscaling). The internal scale for a currency object
-  is NOT updated. If no scale is given, returns the current scale of an amount (not
+  is NOT updated. If no scale is given, returns a current scale of an amount (not
   the nominal scale of a currency – which is important in rescaled amount or
   auto-scaled currencies).
 
@@ -1068,9 +1075,9 @@
   {:tag Money :added "1.0.0"}
   (^Money [^Money money]
    (scale/apply ^Money money))
-  (^Money [^Money money scale]
+  (^Money [^Money money ^long scale]
    (scale/apply ^Money money (int scale)))
-  (^Money [^Money money scale ^RoundingMode rounding-mode]
+  (^Money [^Money money ^long scale ^RoundingMode rounding-mode]
    (scale/apply ^Money money (int scale) ^RoundingMode rounding-mode)))
 
 (defn add
@@ -1710,7 +1717,8 @@
   When no rounding mode is given and rounding is required during scaling to another
   currency then the value of dynamic variable
   `io.randomseed.bankster.scale/*rounding-mode*` will be used."
-  {:tag Money :added "1.0.0"
+  {:tag      Money
+   :added    "1.0.0"
    :arglists '([money price]
                [money price rounding-mode]
                [money to-currency exchange-rate]
@@ -1727,25 +1735,25 @@
               (.amount   ^Money currency-or-price)
               rate-or-rounding-mode)
      (let [^Currency currency (currency/unit currency-or-price)
-           ^Money a (value a)
-           sc (int (scale/of ^Currency currency))]
+           ^Money a           (value a)
+           sc                 (int (scale/of ^Currency currency))]
        (Money. ^Currency   currency
-               ^BigDecimal (if (currency/val-auto-scaled? sc)
+               ^BigDecimal (if (currency/val-auto-scaled*? sc)
                              (.multiply ^BigDecimal (.amount ^Money a)
                                         ^BigDecimal (scale/apply rate-or-rounding-mode))
-                             (scale/apply (.multiply ^BigDecimal (.amount ^Money a)
-                                                     ^BigDecimal (scale/apply rate-or-rounding-mode))
+                             (scale/apply ^BigDecimal (.multiply ^BigDecimal (.amount ^Money a)
+                                                                 ^BigDecimal (scale/apply rate-or-rounding-mode))
                                           (int sc)))))))
   (^Money [a currency rate rounding-mode]
    (let [^Currency currency (currency/unit currency)
-         ^Money a (value a)
-         sc (int (scale/of ^Currency currency))]
+         ^Money a           (value a)
+         sc                 (int (scale/of ^Currency currency))]
      (Money. ^Currency   currency
-             ^BigDecimal (if (currency/val-auto-scaled? sc)
+             ^BigDecimal (if (currency/val-auto-scaled*? sc)
                            (.multiply ^BigDecimal (.amount ^Money a)
                                       ^BigDecimal (scale/apply rate))
-                           (scale/apply (.multiply ^BigDecimal (.amount ^Money a)
-                                                   ^BigDecimal (scale/apply rate))
+                           (scale/apply ^BigDecimal (.multiply ^BigDecimal (.amount ^Money a)
+                                                               ^BigDecimal (scale/apply rate))
                                         (int sc)
                                         rounding-mode))))))
 
@@ -1768,7 +1776,7 @@
                                                                      ^BigDecimal   a#
                                                                      ^BigDecimal   b#
                                                                      ^RoundingMode r#))
-                               (int ~scale)
+                               (long ~scale)
                                ^RoundingMode r#)))
   ([a b r]
    `(let [^BigDecimal a# ~a
@@ -1797,10 +1805,10 @@
   ([a b]
    (rem a b (or scale/*rounding-mode* scale/ROUND_UNNECESSARY)))
   ([a b ^RoundingMode rounding-mode]
-   (let [am? (instance? Money a)
-         bm? (instance? Money b)
+   (let [am?            (instance? Money a)
+         bm?            (instance? Money b)
          ^BigDecimal am (if am? (.amount ^Money a) (scale/apply a))
-         bm (if bm? (.amount ^Money b) b)]
+         bm             (if bm? (.amount ^Money b) b)]
      (if am?
        (let [^Currency c (.currency ^Money a)]
          (if bm?
@@ -1814,9 +1822,9 @@
              (Money. ^Currency c
                      (rem-core ^BigDecimal am ^BigDecimal bm ^RoundingMode rounding-mode))
              (Money. ^Currency c
-                     (scale/apply (rem-core ^BigDecimal am bm
-                                            (.scale ^BigDecimal am)
-                                            ^RoundingMode rounding-mode))))))
+                     (scale/apply ^BigDecimal (rem-core ^BigDecimal am bm
+                                                        (.scale ^BigDecimal am)
+                                                        ^RoundingMode rounding-mode))))))
        (if bm?
          ;; number, money
          (throw (ex-info "Cannot divide a regular number by the monetary amount."
@@ -1858,11 +1866,11 @@
   with rounded amount preserving the original scale. If the rounding mode is not
   given the one from scale/*rounding-mode* is used."
   {:tag Money :added "1.0.0"}
-  (^Money [^Money money scale]
+  (^Money [^Money money ^long scale]
    (round money scale (or scale/*rounding-mode* scale/ROUND_UNNECESSARY)))
-  (^Money [^Money money scale ^RoundingMode rounding-mode]
+  (^Money [^Money money ^long scale ^RoundingMode rounding-mode]
    (let [^BigDecimal am (.amount ^Money money)
-         sc (int (.scale am))]
+         sc             (int (.scale am))]
      (if (clojure.core/>= scale sc)
        money
        (Money. ^Currency   (.currency ^Money money)
@@ -1873,129 +1881,132 @@
                             (int sc)))))))
 
 (defn round-to
-  "Rounds a Money to an interval i (which should also be Money or a number). If
+  "Rounds a Money to an interval i (which should also be a Money or a number). If
   rounding mode is not provided (via the last argument or scale/*rounding-mode*) then
   it defaults to HALF_EVEN. Retains original scale of the amount (but not the nominal
   scale of a currency, if money was given). For nil intervals or intervals which
   amounts are negative or zero, returns unaltered monetary object."
   {:tag Money :added "1.2.9"}
   (^Money [^Money money] money)
-  (^Money [^Money money ^Money i] (round-to money i nil))
-  (^Money [^Money money ^Money i ^RoundingMode rounding-mode]
+  (^Money [^Money money ^Scalable i] (round-to money i nil))
+  (^Money [^Money money ^Scalable i ^RoundingMode rounding-mode]
    (assert (or (nil? i) (scale/scalable? i)) (str "Interval must be scalable or nil: " i))
    (let [^BigDecimal am-s (scale/amount i)]
      (if (or (nil? am-s) (clojure.core/not= 1 (.compareTo ^BigDecimal am-s BigDecimal/ZERO)))
        money
        (do  (assert (or (not (instance? Money i)) (same-currencies? money i))
                     (str "Money and interval should be of the same currency: " money ", " i "."))
-            (let [an (scale/apply money)
-                  sn (scale/of   money)
-                  rm (or rounding-mode scale/*rounding-mode* scale/ROUND_HALF_EVEN)]
+            (let [sn               (long (scale/of money))
+                  ^Money an        (scale/apply money)
+                  ^RoundingMode rm (or rounding-mode scale/*rounding-mode* scale/ROUND_HALF_EVEN)]
               (scale/with-rounding rm
                 (scale/apply
-                 (mul am-s (scale/apply (scale/apply (div an am-s) 0 rm) sn rm))
+                 (mul ^BigDecimal am-s
+                      ^Money (scale/apply ^Money (scale/apply ^Money (div an am-s) 0 rm) sn rm))
                  sn))))))))
 
 (defn major
   "Returns the major part of the given amount of money."
   {:tag BigDecimal :added "1.0.0"}
-  ([^Money a]
+  (^BigDecimal [^Money a]
    (.setScale ^BigDecimal (.amount ^Money a) 0 scale/ROUND_DOWN)))
 
 (defn major->long
   "Returns the major part of the given amount as a long number."
   {:tag 'long :added "1.0.0"}
-  [^Money a]
+  ^long [^Money a]
   (scale/->long ^BigDecimal (.amount ^Money a) scale/ROUND_DOWN))
 
 (defn major->int
-  "Returns the major part of the given amount as a int number."
+  "Returns the major part of the given amount as an int number (may cast to long
+  primitive)."
   {:tag 'int :added "1.0.0"}
-  ([^Money a]
-   (scale/->int ^BigDecimal (.amount ^Money a) scale/ROUND_DOWN)))
+  [^Money a]
+  (int (scale/->int ^BigDecimal (.amount ^Money a) scale/ROUND_DOWN)))
 
 (defn minor
   "Returns the minor part of the given amount."
   {:tag BigDecimal :added "1.0.0"}
-  [^Money a]
+  ^BigDecimal [^Money a]
   (let [^BigDecimal am (.amount ^Money a)
-        sc (.scale am)]
+        sc             (int (.scale am))]
     (-> ^BigDecimal am
-        ^BigDecimal (scale/apply sc scale/ROUND_DOWN)
+        ^BigDecimal (scale/apply (long sc) scale/ROUND_DOWN)
         ^BigDecimal (.remainder BigDecimal/ONE)
         ^BigDecimal (.movePointRight sc))))
 
 (defn minor->long
   "Returns the minor part of the given amount as a long number."
   {:tag 'long :added "1.0.0"}
-  [^Money a]
+  ^long [^Money a]
   (.longValueExact ^BigDecimal (minor ^Money a)))
 
 (defn minor->int
-  "Returns the minor part of the given amount as an integer number."
+  "Returns the minor part of the given amount as an integer number (may cast to long
+  primitive)."
   {:tag 'int :added "1.0.0"}
   [^Money a]
-  (.intValueExact ^BigDecimal (minor ^Money a)))
+  (int (.intValueExact ^BigDecimal (minor ^Money a))))
 
 (defn major-minor
   "Returns a vector with major and minor parts of the given monetary amount."
   {:tag clojure.lang.IPersistentVector :added "1.0.0"}
-  [^Money a]
+  ^clojure.lang.IPersistentVector [^Money a]
   [(major a) (minor a)])
 
 (defn major-minor->int
   "Returns a vector with major and minor parts of the given monetary amount represented
-  as integer numbers."
+  as integer numbers (may cast to long primitives)."
   {:tag clojure.lang.IPersistentVector :added "1.0.0"}
-  [^Money a]
+  ^clojure.lang.IPersistentVector [^Money a]
   [(major->int a) (minor->int a)])
 
 (defn major-minor->long
   "Returns a vector with major and minor parts of the given monetary amount represented
   as long numbers."
   {:tag clojure.lang.IPersistentVector :added "1.0.0"}
-  [^Money a]
+  ^clojure.lang.IPersistentVector [^Money a]
   [(major->long a) (minor->long a)])
 
 (defn ->symbol
   "Converts an amount of the given money to a symbol."
   {:tag clojure.lang.Symbol :added "1.1.0"}
-  [^Money a]
+  ^clojure.lang.Symbol [^Money a]
   (scale/to-symbol ^BigDecimal (.amount ^Money a)))
 
 (defn ->clojure-symbol
   "Converts an amount of the given money to a clojure symbol (with added M when
   needed)."
   {:tag clojure.lang.Symbol :added "1.1.0"}
-  [^Money a]
+  ^clojure.lang.Symbol [^Money a]
   (scale/to-clojure-symbol ^BigDecimal (.amount ^Money a)))
 
 (defn ->double
   "Converts an amount of the given money to a double with optional rescaling."
-  {:tag 'double :added "1.0.0"
+  {:tag      'double :added "1.0.0"
    :arglists '(^double [a]
-               ^double [a scale]
+               ^double [a ^long scale]
                ^double [a rounding-mode]
-               ^double [a scale rounding-mode])}
+               ^double [a ^long scale rounding-mode])}
   (^double [^Money a]
    (scale/->double ^BigDecimal (.amount ^Money a)))
   (^double [^Money a scale-or-rounding]
    (scale/->double ^BigDecimal (.amount ^Money a) scale-or-rounding))
-  (^double [^Money a scale rounding-mode]
+  (^double [^Money a ^long scale rounding-mode]
    (scale/->double ^BigDecimal (.amount ^Money a) scale rounding-mode)))
 
 (defn ->float
   "Converts an amount of the given money to a float with optional rescaling."
-  {:tag 'float :added "1.0.0"
+  {:tag      'float :added "1.0.0"
    :arglists '([a]
-               [a scale]
+               [a ^long scale]
                [a rounding-mode]
-               [a scale rounding-mode])}
+               [a ^long scale rounding-mode])}
   ([^Money a]
    (scale/->float ^BigDecimal (.amount ^Money a)))
   ([^Money a scale-or-rounding]
    (scale/->float ^BigDecimal (.amount ^Money a) scale-or-rounding))
-  ([^Money a scale rounding-mode]
+  ([^Money a ^long scale rounding-mode]
    (scale/->float ^BigDecimal (.amount ^Money a) scale rounding-mode)))
 
 (defn add-major
@@ -2075,19 +2086,20 @@
 ;; Distribution and allocation
 ;;
 
-(defn- split-scale
-  ^long [^Money m]
-  (let [^Currency   c (.currency m)
-        ^BigDecimal a (.amount m)]
-    (if (currency-auto-scaled? c)
-      (long (.scale a))
-      (long (.scale c)))))
+(defmacro split-scale-int
+  "Expands to an (int ...) expression computing scale for Money."
+  [m]
+  `(let [^Money      m# ~m
+         ^Currency   c# (.currency m#)]
+     (int (if (currency-auto-scaled? c#)
+            (.scale ^java.math.BigDecimal (.amount ^io.randomseed.bankster.Money m#))
+            (.scale ^io.randomseed.bankster.Currency c#)))))
 
-(defn- to-units
-  ^BigInteger [^BigDecimal amount ^long sc]
-  (-> amount
-      (.movePointRight (int sc))
-      (.toBigIntegerExact)))
+(defmacro to-units
+  [amount sc]
+  `(-> ^java.math.BigDecimal ~amount
+       (.movePointRight (int ~sc))
+       (.toBigIntegerExact)))
 
 (defn- from-units
   ^BigDecimal [^BigInteger units ^long sc]
@@ -2152,7 +2164,7 @@
   "
   {:tag clojure.lang.IPersistentVector :added "1.2.18"}
   ^clojure.lang.IPersistentVector [^Money a ratios]
-  (let [bcnt (bounded-count 2 ratios)]
+  (let [^long bcnt (bounded-count 2 ratios)]
     (when (clojure.core/zero? bcnt)
       (throw (ex-info "Ratios cannot be empty" {:ratios ratios})))
     (if (clojure.core/== bcnt 1)
@@ -2167,7 +2179,7 @@
                                        ratiosBI)]
         (when (clojure.core/<= (.signum sumrBI) 0)
           (throw (ex-info "Sum of ratios must be > 0" {:ratios ratios :sum sumrBI})))
-        (let [sc                 (long (split-scale a))
+        (let [sc                 (int (split-scale-int a))
               ^BigDecimal am     (.amount a)
               negv?              (clojure.core/neg? (.signum am))
               ^BigInteger units0 (to-units (.abs am) sc)
