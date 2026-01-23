@@ -68,8 +68,9 @@
 ;;
 
 (defmacro get
-  "Gets a current state of a global registry. If the dynamic variable *default* is
-  set to a truthy value, it will be used instead."
+  "Gets a current state of a global registry. If the dynamic variable
+  `io.randomseed.bankster.registry/*default*` is set to a truthy value, it will be
+  used instead."
   {:added "1.0.0"}
   []
   `(or ^Registry *default* ^Registry (deref R)))
@@ -262,58 +263,58 @@
 ;; Getters and helpers.
 ;;
 
-(defmacro currency-id->currency
+(defmacro currency-id->currency*
   "Returns the currency ID to currency map from a registry. If the registry is not
-  given the dynamic variable *default* is tried. If it is not set, current state of a
-  global registry is used instead."
+  given the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If
+  it is not set, current state of a global registry is used instead."
   {:added "1.0.0"}
   ([] `(.cur-id->cur (get)))
   ([registry] `(.cur-id->cur ^io.randomseed.bankster.Registry ~registry)))
 
-(defmacro currency-nr->currency
+(defmacro currency-nr->currency*
   "Returns the currency number to currency map from a registry. If the registry is not
-  given the dynamic variable *default* is tried. If it is not set, current state of a
-  global registry is used instead."
+  given the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If
+  it is not set, current state of a global registry is used instead."
   {:added "1.0.0"}
   ([] `(.cur-nr->cur (get)))
   ([registry] `(.cur-nr->cur ^io.randomseed.bankster.Registry ~registry)))
 
-(defmacro currency-nr->currencies
+(defmacro currency-nr->currencies*
   "Returns the currency number to currencies map from a registry. If the registry is
-  not given the dynamic variable *default* is tried. If it is not set, current state
-  of a global registry is used instead."
+  not given the dynamic variable `io.randomseed.bankster.registry/*default*` is
+  tried. If it is not set, current state of a global registry is used instead."
   {:added "1.0.0"}
   ([] `(.cur-nr->curs (get)))
   ([registry] `(.cur-nr->curs ^io.randomseed.bankster.Registry ~registry)))
 
-(defmacro currency-code->currencies
+(defmacro currency-code->currencies*
   "Returns the currency short-code to currencies map from a registry. If the registry
-  is not given the dynamic variable *default* is tried. If it is not set, current
-  state of a global registry is used instead."
+  is not given the dynamic variable `io.randomseed.bankster.registry/*default*` is
+  tried. If it is not set, current state of a global registry is used instead."
   {:added "1.0.0"}
   ([] `(.cur-code->curs (get)))
   ([registry] `(.cur-code->curs ^io.randomseed.bankster.Registry ~registry)))
 
-(defmacro country-id->currency
+(defmacro country-id->currency*
   "Returns the country ID to currency map from a registry. If the registry is not given
-  the dynamic variable *default* is tried. If it is not set, current state of a
-  global registry is used instead."
+  the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If it is
+  not set, current state of a global registry is used instead."
   {:added "1.0.0"}
   ([] `(.ctr-id->cur (get)))
   ([registry] `(.ctr-id->cur ^io.randomseed.bankster.Registry ~registry)))
 
-(defmacro currency-id->country-ids
+(defmacro currency-id->country-ids*
   "Returns the currency ID to country IDs map from a registry. If the registry is not
-  given the dynamic variable *default* is tried. If it is not set, current state of a
-  global registry is used instead."
+  given the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If
+  it is not set, current state of a global registry is used instead."
   {:added "1.0.0"}
   ([] `(.cur-id->ctr-ids (get)))
   ([registry] `(.cur-id->ctr-ids ^io.randomseed.bankster.Registry ~registry)))
 
-(defmacro currency-id->localized
+(defmacro currency-id->localized*
   "Returns the currency ID to localized propertied map from a registry. If the registry
-  is not given the dynamic variable *default* is tried. If it is not set, current
-  state of a global registry is used instead."
+  is not given the dynamic variable `io.randomseed.bankster.registry/*default*` is
+  tried. If it is not set, current state of a global registry is used instead."
   {:added "1.0.0"}
   ([] `(.cur-id->localized (get)))
   ([registry] `(.cur-id->localized ^io.randomseed.bankster.Registry ~registry)))
