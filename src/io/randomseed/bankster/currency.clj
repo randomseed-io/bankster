@@ -10,15 +10,15 @@
                            name   core-name
                            update core-update})
 
-  (:require [trptr.java-wrapper.locale       :as            l]
-            [smangler.api                    :as           sm]
-            [clojure.string                  :as          str]
+  (:require [trptr.java-wrapper.locale       :as        l]
+            [smangler.api                    :as       sm]
+            [clojure.string                  :as      str]
             [io.randomseed.bankster]
-            [io.randomseed.bankster.config   :as       config]
-            [io.randomseed.bankster.registry :as     registry]
-            [io.randomseed.bankster.scale    :as        scale]
-            [io.randomseed.bankster.util.map :as          map]
-            [io.randomseed.bankster.util     :as           bu])
+            [io.randomseed.bankster.config   :as   config]
+            [io.randomseed.bankster.registry :as registry]
+            [io.randomseed.bankster.scale    :as    scale]
+            [io.randomseed.bankster.util.map :as      map]
+            [io.randomseed.bankster.util     :as       bu])
 
   (:import  (io.randomseed.bankster Currency
                                     Registry)
