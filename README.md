@@ -77,8 +77,6 @@ io.randomseed/bankster {:mvn/version "1.2.19"}
 
 You can also download JAR from [Clojars](https://clojars.org/io.randomseed/bankster).
 
----
-
 ## Design
 
 The core design principle: **money is a value with a currency attached**, and
@@ -181,8 +179,6 @@ scale of the currency. Math operations will then respect this scale during
 calculations and preserve it. In rare cases it is possible to rescale the amount,
 check whether the monetary object is rescaled and scale it back to a scale of the
 currency.
-
----
 
 ## Sneak peeks
 
@@ -666,6 +662,6 @@ make deploy
 bin/repl
 ```
 
-Starts REPL and nREPL server (port number is stored in `.nrepl-port`).
+Starts REPL (and optionally nREPL server with port number is stored in `.nrepl-port`).
 
 [LICENSE]:    https://github.com/randomseed-io/bankster/blob/master/LICENSE
