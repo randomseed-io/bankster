@@ -143,11 +143,11 @@
   currency without any checks regarding its scale or numerical identifier. Use with
   caution. This is intended for applications requiring high elasticity."
   {:added "1.0.0" :tag Currency}
-  (^Currency [id] (if (map? id) (map->new id)         (new-currency id nil nil nil nil nil)))
-  (^Currency [id ^long numeric-id]                    (new-currency id numeric-id nil nil nil nil))
-  (^Currency [id ^long numeric-id ^long scale]        (new-currency id numeric-id scale nil nil nil))
-  (^Currency [id ^long numeric-id ^long scale kind]   (new-currency id numeric-id scale kind nil nil))
-  (^Currency [id numeric-id scale kind domain]        (new-currency id numeric-id scale kind domain nil))
+  (^Currency [id] (if (map? id) (map->new id)   (new-currency id nil nil nil nil nil)))
+  (^Currency [id numeric-id]                    (new-currency id numeric-id nil nil nil nil))
+  (^Currency [id numeric-id ^long scale]        (new-currency id numeric-id scale nil nil nil))
+  (^Currency [id numeric-id ^long scale kind]   (new-currency id numeric-id scale kind nil nil))
+  (^Currency [id numeric-id scale kind domain]  (new-currency id numeric-id scale kind domain nil))
   (^Currency [id numeric-id scale kind domain weight]
    (when (some? id)
      (let [kid        (keyword id)
