@@ -24,3 +24,4 @@ gh-pages
 /bin/test-cljs
 node_modules/
 /cljs-test-runner-out
+.eastwood
