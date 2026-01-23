@@ -7,7 +7,8 @@
   (:refer-clojure :exclude [new get set! update])
 
   (:require [io.randomseed.bankster          :as bankster]
-            [io.randomseed.bankster.util.map :as      map])
+            [io.randomseed.bankster.util.map :as      map]
+            [clojure.tools.logging           :as      log])
 
   (:import  (io.randomseed.bankster Registry)
             (java.time              LocalDateTime)
@@ -72,6 +73,35 @@
   {:added "1.0.0"}
   []
   `(or ^Registry *default* ^Registry (deref R)))
+
+;;
+;; Diagnostics.
+;;
+
+(def ^{:tag Boolean :dynamic true :added "1.3.0"}
+  *warn-on-inconsistency*
+  "Dynamic flag which enables warnings when inconsistencies are found in a
+  registry. Default is false."
+  false)
+
+(def ^{:tag clojure.lang.IFn :dynamic true :added "1.3.0"}
+  *warnings-logger*
+  "A logging function which should take a message string and an optional map. Used to
+  issue registry warnings. Defaults to `clojure.tools.logging/warn`."
+  (fn [ex-message ex-data] (log/warn ex-message ex-data)))
+
+(defmacro inconsistency-warning
+  "Wrapper that displays inconsistency warning when
+  `io.randomseed.bankster.registry/*warn-on-inconsistency*` is truthy. Uses
+  `io.randomseed.bankster.registry/*warnings-logger*` function and passes message and
+  data to it. Always evaluates body in an implicit do."
+  {:added "1.3.0"}
+  [ex-message ex-data & body]
+  `(do (when io.randomseed.bankster.registry/*warn-on-inconsistency*
+         (when-some [f# io.randomseed.bankster.registry/*warnings-logger*]
+           (try (f# (str "Registry inconsistency: " ~ex-message) ~ex-data)
+                (catch Throwable ~'_ nil))))
+       ~@body))
 
 ;;
 ;; Registry constructor.
