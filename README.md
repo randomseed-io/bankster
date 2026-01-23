@@ -241,6 +241,14 @@ currency.
 ;; registering new currency expressed as a tagged literal
 (currency/register! #currency{:id :crypto/AAA :scale 8})
 #Registry[{:currencies 221, :countries 249, :version "2021022121170359"} 0x7eaf7a70]
+
+;; creating an ISO currency (must have: a simple 3-letter code w/o ns and a numeric ID)
+(currency/new :XOX 999 2 :COMBANK)
+#currency{:id :XOX, :domain :ISO-4217, :kind :COMBANK, :numeric 999, :scale 2}
+
+;; creating a strange ISO currency (forced by a namespace but w/o a numerical ID)
+(currency/new :ISO-4217/XOX nil 2 :COMBANK)
+#currency{:id :XOX, :domain :ISO-4217, :kind :COMBANK, :scale 2}
 ```
 
 * It allows to create **monetary amounts**:
