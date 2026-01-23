@@ -15,7 +15,7 @@
      ^long                 numeric  ; currency numeric ID (e.g. 978 or -1 for none)
      ^int                  scale    ; currency supported scale (decimal places, e.g. 2 or -1 for auto)
      ^clojure.lang.Keyword kind     ; currency kind (e.g. :FIAT or :DECENTRALIZED)
-     ^clojure.lang.Keyword domain   ; currency domain (e.g. :ISO-4217 or :CRYPTO)
+     ^clojure.lang.Keyword domain   ; currency domain (e.g. :ISO-4217, :ISO-4217-LEGACY or :CRYPTO)
      ^int                  weight]  ; currency weight (used when getting using currency code)
   Object
   (toString [^Currency c] (name (.id ^Currency c))))
@@ -31,6 +31,7 @@
      ^clojure.lang.PersistentHashMap cur-id->ctr-ids   ; currency ID to set of country IDs
      ^clojure.lang.PersistentHashMap cur-id->localized ; locale ID to localized properties
      ^clojure.lang.PersistentHashMap cur-code->curs    ; currency code to currencies (weighted)
+     ^clojure.lang.PersistentHashMap cur-nr->curs      ; currency numeric ID to currencies (weighted)
      ^String version]
 
   Object
