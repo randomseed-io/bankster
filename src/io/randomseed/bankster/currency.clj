@@ -69,12 +69,45 @@
   [scale]
   `(clojure.core/== auto-scaled ~scale))
 
+;;
+;; Basic helpers
+;;
+
+(defn ascii-az?
+  "Returns true if `s` is non-empty and contains only ASCII letters from a to z and A
+  to Z."
+  {:tag Boolean :private true :added "1.3.0"}
+  ^Boolean [^String s]
+  (when (some? s)
+    (let [n (unchecked-int (.length s))]
+      (when (pos? n)
+        (loop [i (unchecked-int 0)]
+          (if (== i n)
+            true
+            (let [c (int (.charAt s i))]
+              (if (or (and (>= c 65) (<= c 90))
+                      (and (>= c 97) (<= c 122)))
+                (recur (unchecked-inc-int i))
+                false))))))))
+
 (defn valid-numeric-id?
   "Returns true if a numeric ID is valid."
   {:tag Boolean :private true :added "1.3.0"}
   ^Boolean [^long nr]
   (and (not (== (int nr) no-numeric-id))
        (pos? nr)))
+
+(defn try-to-make-iso-domain
+  "Returns `:ISO-4217` when the given numeric ID is valid and the given currency code
+  is a 3-letter simple keyword. Otherwise it returns `nil`."
+  {:private true :added "1.3.0"}
+  [^long numeric-id ^clojure.lang.Keyword code]
+  (let [n (core-name code)]
+    (when (and (valid-numeric-id? numeric-id)
+               (== (unchecked-int (.length ^String n)) 3)
+               (simple-keyword? code)
+               (ascii-az? n))
+      :ISO-4217)))
 
 ;;
 ;; Currency constructor
@@ -83,33 +116,65 @@
 (declare map->new)
 
 (defn new-currency
-  "Creates new currency record from values passed as arguments."
+  "Creates new currency record from values passed as arguments.
+
+  When the given `id` has the `ISO-4217` namespace (case insensitive), it will be
+  stripped of it.
+
+  When the namespace `ISO-4217` was removed from the ID, the domain will be set to
+  `:ISO-4217`, unless `domain` argument is given and it is not `nil`.
+
+  When the `domain` is set to `:ISO-4217` (automatically or manually) and a valid
+  `numeric-id` is given, the ID will be changed to uppercase.
+
+  In short: setting `ISO-4217` namespace in `id` will always cause it to be removed,
+  and a new currency will be treated as if it was an ISO currency, unless the domain
+  was explicitly given.
+
+  Domain property will also be automatically set to `:ISO-4217` when:
+
+  - `domain` was not given (or is `nil`) and was not set automatically,
+  - `numeric-id` is given and is a valid ISO code for a currency,
+  - the given `id` is a simple keyword (after potential stripping the ISO namespace)
+    and consists of 3 letters.
+
+  Setting the domain manually to `:ISO-4217` (with `domain` argument or by setting a
+  namespace of `id` to `ISO-4217`) will cause the currency to be treated as an ISO
+  currency without any checks regarding its scale or numerical identifier. Use with
+  caution. This is intended for applications requiring high elasticity."
   {:added "1.0.0" :tag Currency}
-  (^Currency [id]
-   (if (map? id)
-     (map->new id)
-     (new-currency id nil nil nil nil nil)))
-  (^Currency [id ^long numeric-id]                         (new-currency id numeric-id nil nil nil nil))
-  (^Currency [id ^long numeric-id ^long scale]             (new-currency id numeric-id scale nil nil nil))
-  (^Currency [id ^long numeric-id ^long scale kind]        (new-currency id numeric-id scale kind nil nil))
-  (^Currency [id numeric-id scale kind domain]             (new-currency id numeric-id scale kind domain nil))
+  (^Currency [id] (if (map? id) (map->new id)         (new-currency id nil nil nil nil nil)))
+  (^Currency [id ^long numeric-id]                    (new-currency id numeric-id nil nil nil nil))
+  (^Currency [id ^long numeric-id ^long scale]        (new-currency id numeric-id scale nil nil nil))
+  (^Currency [id ^long numeric-id ^long scale kind]   (new-currency id numeric-id scale kind nil nil))
+  (^Currency [id numeric-id scale kind domain]        (new-currency id numeric-id scale kind domain nil))
   (^Currency [id numeric-id scale kind domain weight]
    (when (some? id)
-     (let [numeric-id (long (or numeric-id no-numeric-id))
+     (let [kid        (keyword id)
+           numeric-id (long (or numeric-id no-numeric-id))
            scale      (int  (or scale auto-scaled))
            weight     (int  (or weight 0))
-           ns-domain  (keyword (bu/try-upper-case (namespace id)))
-           domain     (if (nil? domain) ns-domain
-                          (keyword
-                           (str/upper-case
-                            (if (ident? domain)
-                              (core-name domain)
-                              (let [d (str domain)] (when (seq d) d))))))]
+           ns-domain  (some-> (namespace kid) bu/try-upper-case keyword)
+           iso-ns?    (identical? ns-domain :ISO-4217)
+           kid        (if iso-ns? (keyword (core-name kid)) kid)
+           domain     (if (nil? domain)
+                        (or ns-domain (try-to-make-iso-domain numeric-id kid))
+                        (keyword
+                         (str/upper-case
+                          (if (ident? domain)
+                            (core-name domain)
+                            (let [d (str domain)] (when (seq d) d))))))
+           ns-domain  (when-not iso-ns? ns-domain)
+           kid        (if (and (nil? ns-domain)
+                               (identical? domain :ISO-4217)
+                               (valid-numeric-id? numeric-id))
+                        (keyword (str/upper-case (core-name kid)))
+                        kid)]
        (when (and (some? ns-domain) (not= domain ns-domain))
          (throw (ex-info
-                 "Currency domain should reflect its namespace (upper-cased) if the namespace is set."
-                 {:id id :domain domain :namespace (namespace id)})))
-       (Currency. (keyword id)
+                 "Currency domain should reflect its namespace (upper-cased) if a namespace is set."
+                 {:id kid :domain domain :namespace (namespace kid)})))
+       (Currency. kid
                   (long    numeric-id)
                   (int     scale)
                   (keyword kind)
@@ -640,9 +705,10 @@
   sc)
 
 (defn domain
-  "Returns currency domain as a keyword. For currencies with simple identifiers it will
-  be `:ISO-4217`. For currencies with namespace-qualified identifiers it will be the
-  upper-cased namespace name (e.g. :CRYPTO) set during creation a currency
+  "Returns currency domain as a keyword. For currencies added with simple
+  identifiers (without a namespace) and numerical IDs present it will be
+  `:ISO-4217`. For currencies with namespace-qualified identifiers it will be the
+  upper-cased namespace name (e.g. :CRYPTO) set during creation of a currency
   object. Locale argument is ignored."
   {:tag clojure.lang.Keyword :added "1.0.0"}
   (^clojure.lang.Keyword [c]
@@ -778,7 +844,7 @@
   ID to currency attributes."
   {:tag clojure.lang.IPersistentMap :added "1.0.0" :private true}
   [^clojure.lang.IPersistentMap m]
-  (map prep-currency m))
+  (pmap prep-currency m))
 
 (defn prep-cur->ctr
   "Prepares countries map which may come from an external data source. Expects a map of
