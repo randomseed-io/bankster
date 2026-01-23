@@ -199,46 +199,10 @@
   (^Registry [^Registry registry]
    (if (registry? registry)
      (reset! R ^Registry registry)
-     (reset! R (new-registry ^clojure.lang.PersistentHashMap registry))))
-  (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
-              ^clojure.lang.PersistentHashMap cur-nr->cur
-              ^clojure.lang.PersistentHashMap ctr-id->cur
-              ^clojure.lang.PersistentHashMap cur-id->ctr-ids
-              ^clojure.lang.PersistentHashMap cur-id->localized]
-   (set-state (new-registry cur-id->cur
-                            cur-nr->cur
-                            ctr-id->cur
-                            cur-id->ctr-ids
-                            cur-id->localized
-                            (default-version))))
-  (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
-              ^clojure.lang.PersistentHashMap cur-nr->cur
-              ^clojure.lang.PersistentHashMap ctr-id->cur
-              ^clojure.lang.PersistentHashMap cur-id->ctr-ids
-              ^clojure.lang.PersistentHashMap cur-id->localized
-              ^String version]
-   (set-state (new-registry cur-id->cur
-                            cur-nr->cur
-                            ctr-id->cur
-                            cur-id->ctr-ids
-                            cur-id->localized
-                            version))))
+     (reset! R (new-registry ^clojure.lang.PersistentHashMap registry)))))
 
-(def ^{:tag Registry :added "1.0.0"
-       :arglists '(^Registry [^Registry registry]
-                   ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
-                              ^clojure.lang.PersistentHashMap cur-nr->cur
-                              ^clojure.lang.PersistentHashMap ctr-id->cur
-                              ^clojure.lang.PersistentHashMap cur-id->ctr-ids
-                              ^clojure.lang.PersistentHashMap cur-id->localized
-                              ^clojure.lang.PersistentHashMap cur-code->curs]
-                   ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
-                              ^clojure.lang.PersistentHashMap cur-nr->cur
-                              ^clojure.lang.PersistentHashMap ctr-id->cur
-                              ^clojure.lang.PersistentHashMap cur-id->ctr-ids
-                              ^clojure.lang.PersistentHashMap cur-id->localized
-                              ^clojure.lang.PersistentHashMap cur-code->curs
-                              ^String version])}
+(def ^{:tag      Registry :added "1.0.0"
+       :arglists '(^Registry [^Registry registry])}
   set!
   "Sets current state of a global registry."
   set-state)
