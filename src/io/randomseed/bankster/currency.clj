@@ -69,6 +69,13 @@
   [scale]
   `(clojure.core/== auto-scaled ~scale))
 
+(defn valid-numeric-id?
+  "Returns true if a numeric ID is valid."
+  {:tag Boolean :private true :added "1.3.0"}
+  ^Boolean [^long nr]
+  (and (not (== (int nr) no-numeric-id))
+       (pos? nr)))
+
 ;;
 ;; Currency constructor
 ;;
@@ -216,7 +223,11 @@
    [a b] [a b registry]
    "Returns true if two currencies have the same ID. If the registry is not given,
   it will use the global one, but will first try a dynamic registry bound to the
-  `io.randomseed.bankster.registry/*default*` dynamic variable."))
+  `io.randomseed.bankster.registry/*default*` dynamic variable.
+
+  Look-ups made with numerical identifiers (for ISO-official currencies) may return
+  true if ANY currency from those sharing the same numerical identifier has the same
+  ID."))
 
 ;;
 ;; Currency querying functions, Monetary implementation.
@@ -271,6 +282,14 @@
      (of-id num (registry/get)))
     (^Currency [num ^Registry registry]
      (or (get (registry/currency-nr->currency registry) num)
+         (when-some [^Currency f (first (get (registry/currency-nr->currencies registry) num))]
+           (registry/inconsistency-warning
+            (str "Currency no. " num " found in cur-nr->curs as " (core-symbol (.id f)) " but not in cur-nr->cur")
+            {:nr       num
+             :id       (.id f)
+             :reason   :missing-cur-nr->cur
+             :registry registry}
+            f))
          (throw (ex-info
                  (str "Currency with the numeric ID of " num " not found in a registry.")
                  {:registry registry})))))
@@ -287,38 +306,75 @@
     (^clojure.lang.Keyword [num]
      (id (long num) (registry/get)))
     (^clojure.lang.Keyword [num ^Registry registry]
-     (if-some [c (get (registry/currency-nr->currency registry) num)]
-       (.id ^Currency c)
+     (if-some [^Currency c
+               (or (get (registry/currency-nr->currency registry) num)
+                   (when-some [^Currency f (first (get (registry/currency-nr->currencies registry) num))]
+                     (registry/inconsistency-warning
+                      (str "Currency no. " num " found in cur-nr->curs as " (core-symbol (.id f)) " but not in cur-nr->cur")
+                      {:nr       num
+                       :id       (.id f)
+                       :reason   :missing-cur-nr->cur
+                       :registry registry}
+                      f)))]
+       (.id c)
        (throw (ex-info
                (str "Currency with the numeric ID of " num " not found in a registry.")
                {:registry registry})))))
 
   (defined?
     (^Boolean [num]
-     (contains? (registry/currency-nr->currency) num))
+     (or (contains? (registry/currency-nr->currency)   num)
+         (and (contains? (registry/currency-nr->currencies) num)
+              (registry/inconsistency-warning
+               (str "Currency no. " num " found in cur-nr->curs but not in cur-nr->cur")
+               {:nr       num
+                :reason   :missing-cur-nr->cur
+                :registry (registry/get)}
+               true))))
     (^Boolean [num ^Registry registry]
-     (contains? (registry/currency-nr->currency registry) num)))
+     (or (contains? (registry/currency-nr->currency registry)   num)
+         (and (contains? (registry/currency-nr->currencies registry) num)
+              (registry/inconsistency-warning
+               (str "Currency no. " num " found in cur-nr->curs but not in cur-nr->cur")
+               {:nr       num
+                :reason   :missing-cur-nr->cur
+                :registry registry}
+               true)))))
 
   (present?
     (^Boolean [num]
-     (contains? (registry/currency-nr->currency) num))
+     (or (contains? (registry/currency-nr->currency)   num)
+         (contains? (registry/currency-nr->currencies) num)))
     (^Boolean [num ^Registry registry]
-     (contains? (registry/currency-nr->currency registry) num)))
+     (or (contains? (registry/currency-nr->currency registry)   num)
+         (contains? (registry/currency-nr->currencies registry) num))))
 
   (same-ids?
     (^Boolean [a b]
-     (let [r (registry/get)]
+     (let [r    (registry/get)
+           b-id (id b)]
        (if-some [^Currency c (get (registry/currency-nr->currency r) a)]
-         (identical? (.id ^Currency c) (id b))
-         (throw (ex-info
-                 (str "Currency with the numeric ID of " num " not found in a registry.")
-                 {:registry r})))))
+         (identical? (.id ^Currency c) b-id)
+         (if-some [curs (get (registry/currency-nr->currencies r) a)]
+           (registry/inconsistency-warning
+            (str "Currency no. " a " found in cur-nr->curs but not in cur-nr->cur")
+            {:nr a :reason :missing-cur-nr->cur :registry r}
+            (boolean (some #(identical? b-id (.id ^Currency %)) curs)))
+           (throw (ex-info
+                   (str "Currency with the numeric ID of " num " not found in a registry.")
+                   {:registry r}))))))
     (^Boolean [a b ^Registry registry]
-     (if-some [^Currency c (get (registry/currency-nr->currency registry) a)]
-       (identical? (.id ^Currency c) (id b registry))
-       (throw (ex-info
-               (str "Currency with the numeric ID of " num " not found in a registry.")
-               {:registry registry})))))
+     (let [b-id (id b registry)]
+       (if-some [^Currency c (get (registry/currency-nr->currency registry) a)]
+         (identical? (.id ^Currency c) b-id)
+         (if-some [curs (get (registry/currency-nr->currencies registry) a)]
+           (registry/inconsistency-warning
+            (str "Currency no. " a " found in cur-nr->curs as but not in cur-nr->cur")
+            {:nr a :reason :missing-cur-nr->cur :registry registry}
+            (boolean (some #(identical? b-id (.id ^Currency %)) curs)))
+           (throw (ex-info
+                   (str "Currency with the numeric ID of " num " not found in a registry.")
+                   {:registry registry})))))))
 
   clojure.lang.Keyword
 
@@ -763,12 +819,66 @@
   (map/map-vals prep-localized-props p))
 
 (defn weighted-currencies
-  "Constructor for weighted currencies entries in :cur-code->curs and other databases
-  of a registry."
-  {:tag clojure.lang.PersistentTreeSet :private true :added "1.0.2"}
-  [^clojure.lang.PersistentTreeSet s]
-  (or s (sorted-set-by
-         (fn [^Currency a ^Currency b] (compare (:weight b) (:weight a))))))
+  "Constructor for numeric-ID buckets: smallest weight wins.
+  Total order: (weight asc) then (id asc)."
+  {:tag clojure.lang.PersistentTreeSet :private true :added "1.3.0"}
+  ([]
+   (sorted-set-by
+    (fn [^Currency a ^Currency b]
+      (let [wa (int (.weight a))
+            wb (int (.weight b))]
+        (if (== wa wb)
+          (compare (.id a) (.id b))
+          (compare wa wb))))))
+  (^clojure.lang.PersistentTreeSet [^clojure.lang.PersistentTreeSet s]
+   (or s (weighted-currencies))))
+
+
+(defn remove-currency-by-id-from-set
+  "Removes all currencies with the given ID from a sorted set.
+  Returns nil if empty afterwards."
+  {:tag clojure.lang.PersistentTreeSet :private true :added "1.3.0"}
+  [^clojure.lang.PersistentTreeSet s ^clojure.lang.Keyword cid]
+  (when s
+    (let [r (reduce (fn [^clojure.lang.PersistentTreeSet acc ^Currency cur]
+                      (if (identical? cid (.id cur))
+                        acc
+                        (conj acc cur)))
+                    (weighted-currencies)
+                    s)]
+      (when (pos? (count r)) r))))
+
+(defn remove-weighted-currency
+  "Removes a currency object from a sorted set associated with a currency code keyword
+  in a map."
+  {:tag clojure.lang.PersistentHashMap :private true :added "1.0.2"}
+  [^clojure.lang.PersistentHashMap m cid]
+  (let [code (if (namespace cid) (keyword (core-name cid)) cid)]
+    (if-some [currencies-set (get m code)]
+      (if-some [new-currencies (remove-currency-by-id-from-set currencies-set cid)]
+        (assoc  m cid new-currencies)
+        (dissoc m cid))
+      m)))
+
+(defn register-numeric
+  "Updates numeric indexes:
+  - :cur-nr->curs => sorted-set
+  - :cur-nr->cur  => canonical currency (first from set)"
+  {:tag Registry :private true :added "1.0.2"}
+  [^Registry registry ^Currency c]
+  (let [nr (long (.numeric c))]
+    (if-not (valid-numeric-id? nr)
+      registry
+      (let [nr->curs (registry/currency-nr->currencies registry)
+            old-set  (get nr->curs nr)
+            ;; safety/idempotence: drop any old entry with same ID (even if unregister missed it)
+            old-set  (remove-currency-by-id-from-set old-set (.id c))
+            new-set  (conj (weighted-currencies old-set) c)
+            canon    (first new-set)
+            nr->cur  (registry/currency-nr->currency registry)]
+        (-> registry
+            (assoc :cur-nr->curs (assoc nr->curs nr new-set))
+            (assoc :cur-nr->cur  (assoc nr->cur  nr canon)))))))
 
 ;;
 ;; Adding and removing to/from registry.
@@ -789,70 +899,53 @@
           (assoc :cur-id->ctr-ids (map/remove-empty-values new-cid-ctr currency-ids))
           (assoc :ctr-id->cur     (apply dissoc ctr-to-cur country-ids))))))
 
-(defn remove-currency-from-set
-  "Removed currency object from a set and returns nil if the set is empty after
-  this operation."
-  {:tag clojure.lang.PersistentTreeSet :private true :added "1.0.2"}
-  [^clojure.lang.PersistentTreeSet s ^Currency cur]
-  (when s
-    (if cur
-      (let [r (disj s cur)] (if (zero? (count r)) nil r))
-      s)))
-
-(defn remove-weighted-currency
-  "Removes currency object from a sorted set associated with a currency code keyword in
-  a map."
-  {:tag clojure.lang.PersistentHashMap :private true :added "1.0.2"}
-  [^clojure.lang.PersistentHashMap m cur-code ^Currency cur]
-  (if-not (contains? m cur-code) m
-          (if-some [ncurs (remove-currency-from-set (get m cur-code) cur)]
-            (assoc  m cur-code ncurs)
-            (dissoc m cur-code))))
-
 (defn unregister
-  "Removes a currency from the given registry. Also removes country and numeric ID
-  constrains when necessary and all localized properties associated with a
-  currency. Returns updated registry.
+  "Removes a currency from the given registry. Also removes country mappings and all
+  localized properties associated with a currency. Returns updated registry.
 
-  Please note that removal of a currency which identifier and numeric identifier are
-  the same as already registered currencies, will not only remove the existing
-  currency identified by the ID but will also remove numeric ID from within all
-  currency objects existing in a registry."
+  Numeric-ID indexes:
+
+  - removes the currency from :cur-nr->curs (shared numeric IDs bucket)
+  - updates :cur-nr->cur to the canonical currency (first in bucket), or removes the
+    numeric entry if bucket becomes empty."
   {:tag Registry :added "1.0.0"}
   [^Registry registry currency]
   (when registry
-    (let [^Currency cur       (if (instance? Currency currency) currency (of-id currency registry))
-          id                  (.id ^Currency cur)
-          cur-code            (if (namespace id) (keyword (core-name id)) id)
-          proposed-nr         (.numeric ^Currency cur)
-          proposed-nr         (when-not (clojure.core/== proposed-nr no-numeric-id) proposed-nr)
-          registered-id       id
-          registered-cur      (get (registry/currency-id->currency registry) registered-id)
-          registered-nr       (when registered-cur (.numeric ^Currency registered-cur))
-          registered-nr       (when (and registered-nr (not (clojure.core/== registered-nr no-numeric-id))) registered-nr)
-          registered-by-nr    (when proposed-nr (get (registry/currency-nr->currency registry) (long proposed-nr)))
-          registered-by-nr-id (when registered-by-nr (.id ^Currency registered-by-nr))
-          new-by-nr           (when (and registered-by-nr-id
-                                         (or (not= registered-by-nr-id registered-id)
-                                             (not= registered-by-nr registered-nr)))
-                                (assoc registered-by-nr :numeric (long no-numeric-id)))
-          country-ids         (get (registry/currency-id->country-ids registry) registered-id)
-          ^Registry registry  (if-not new-by-nr
-                                registry
-                                (-> registry
-                                    (assoc-in [:cur-id->cur registered-by-nr-id] new-by-nr)
-                                    (assoc-in [:ctr-id->cur registered-by-nr-id] new-by-nr)
-                                    (map/dissoc-in [:cur-nr->cur proposed-nr])))
-          ^Registry registry  (-> registry
-                                  (map/dissoc-in [:cur-id->cur registered-id])
-                                  (map/dissoc-in [:cur-nr->cur registered-nr])
-                                  (map/dissoc-in [:cur-id->localized registered-id])
-                                  (core-update :cur-code->curs remove-weighted-currency cur-code registered-cur))]
-      (if-not (contains? (registry/currency-id->country-ids registry) registered-id)
-        registry
-        (as-> registry regi
-          (map/dissoc-in regi [:cur-id->ctr-ids registered-id])
-          (apply core-update regi :ctr-id->cur dissoc country-ids))))))
+    (let [^Currency cur        (if (instance? Currency currency) currency (of-id currency registry))
+          cid                  (.id ^Currency cur)
+          ;; prefer actual record from registry (for disj/removal and consistency)
+          ^Currency registered (get (registry/currency-id->currency registry) cid cur)
+          ;; numeric handling (bucket + canonical)
+          nr                   (long (.numeric ^Currency registered))
+          has-nr?              (valid-numeric-id? nr)
+          nr->curs             (when has-nr? (registry/currency-nr->currencies registry))
+          old-bucket           (when has-nr? (get nr->curs nr))
+          new-bucket           (when has-nr? (remove-currency-by-id-from-set old-bucket cid))
+          ^Registry registry   (if-not has-nr?
+                                 registry
+                                 (let [nr->cur (registry/currency-nr->currency registry)]
+                                   (if new-bucket
+                                     (-> registry
+                                         (assoc :cur-nr->curs (assoc nr->curs nr new-bucket))
+                                         (assoc :cur-nr->cur  (assoc nr->cur  nr (first new-bucket))))
+                                     (-> registry
+                                         (assoc :cur-nr->curs (dissoc nr->curs nr))
+                                         (assoc :cur-nr->cur  (dissoc nr->cur  nr))))))
+
+          ;; countries
+          country-ids (get (registry/currency-id->country-ids registry) cid)
+
+          ;; main removals
+          ^Registry registry (-> registry
+                                 (map/dissoc-in [:cur-id->cur       cid])
+                                 (map/dissoc-in [:cur-id->localized cid])
+                                 (map/dissoc-in [:cur-id->ctr-ids   cid])
+                                 (core-update   :cur-code->curs remove-weighted-currency cid))]
+
+      ;; remove country -> currency entries
+      (if (seq country-ids)
+        (apply core-update registry :ctr-id->cur dissoc country-ids)
+        registry))))
 
 (defn remove-countries
   "Removes countries from the given registry. Also unlinks constrained currencies in
@@ -917,11 +1010,11 @@
 
 (defn add-weighted-code
   "Associates the existing currency code with the currency object in the given registry
-  using the value of the .weight field. The given currency-id may be expressed with
-  any object that can be used to get the currency from a registry (internally the
-  unit function is used). Therefore, passing the currency object having a different
-  weight will not cause the weight to be updated since it will be used for
-  identification only.
+  using a value of the .weight field. The given currency-id may be expressed with any
+  object that can be used to get the currency from a registry (internally the unit
+  function is used). Therefore, passing the currency object having a different weight
+  will not cause the weight to be updated since it will be used for identification
+  only.
 
   Currency must exist in the cur-id->cur database of the registry. This function will
   add an association to the cur-code->curs database. If both, the weight and code are
@@ -939,16 +1032,15 @@
                      (if (instance? Currency currency-id) (.id ^Currency currency-id) currency-id)
                      " does not exist in a registry.") {:currency-id currency-id})))
     (let [^Currency c (of-id currency-id registry)
-          cid         (.id ^Currency c)
-          c-weight    (int (.weight ^Currency c))
-          kw-code     (if (simple-keyword? cid) cid (keyword (core-name cid)))
-          currencies  (get (registry/currency-code->currencies registry) kw-code)
-          same-code   (first (drop-while #(not= c-weight (.weight ^Currency %)) currencies))]
-      (if same-code
-        ;; no need to change anything
+          cid      (.id c)
+          kw-code  (if (simple-keyword? cid) cid (keyword (core-name cid)))
+          curs     (get (registry/currency-code->currencies registry) kw-code)
+          already? (some #(identical? (.id ^Currency %) cid) curs)]
+      (if already?
         registry
-        ;; currency already exists but the association is missing
-        (update-in registry [:cur-code->curs kw-code] #(conj (weighted-currencies %) c))))))
+        (update-in registry [:cur-code->curs kw-code]
+           (fn [^clojure.lang.PersistentTreeSet s]
+             (conj (weighted-currencies (remove-currency-by-id-from-set s cid)) c)))))))
 
 (defn register
   "Adds a currency and optional, associated country mappings and/or localized
@@ -999,13 +1091,10 @@
            (throw (ex-info
                    (str "Currency with numeric ID of " cnr " already exists in a registry.")
                    {:currency c, :existing-currency p}))))
-       (let [registry   (unregister registry c)
-             cid-to-cur (registry/currency-id->currency registry)
-             registry   (assoc registry :cur-id->cur (assoc cid-to-cur cid c))
-             numeric-id (.numeric ^Currency c)
-             cnr-to-cur (registry/currency-nr->currency ^Registry registry)
-             registry   (if (or (nil? numeric-id) (== numeric-id no-numeric-id) (<= numeric-id 0)) registry
-                            (assoc registry :cur-nr->cur (assoc cnr-to-cur (long numeric-id) c)))]
+       (let [^Registry registry (unregister registry c)
+             cid-to-cur         (registry/currency-id->currency registry)
+             ^Registry registry (assoc registry :cur-id->cur (assoc cid-to-cur cid c))
+             ^Registry registry (register-numeric registry c)]
          (-> registry
              (add-weighted-code        currency)
              (add-countries            currency country-ids)
