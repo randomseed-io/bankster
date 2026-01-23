@@ -4,8 +4,11 @@
     :author "Paweł Wilk"
     :added  "1.0.0"}
 
-  (:refer-clojure :rename {ns   core-ns   new    core-new symbol core-symbol
-                           name core-name update core-update})
+  (:refer-clojure :rename {ns     core-ns
+                           new    core-new
+                           symbol core-symbol
+                           name   core-name
+                           update core-update})
 
   (:require [trptr.java-wrapper.locale       :as            l]
             [smangler.api                    :as           sm]
@@ -17,10 +20,13 @@
             [io.randomseed.bankster.util.map :as          map]
             [io.randomseed.bankster.util     :as           bu])
 
-  (:import  (io.randomseed.bankster Currency Registry)
-            (java.math RoundingMode)
-            (java.text NumberFormat DecimalFormat DecimalFormatSymbols)
-            (java.util Locale)))
+  (:import  (io.randomseed.bankster Currency
+                                    Registry)
+            (java.math              RoundingMode)
+            (java.text              NumberFormat
+                                    DecimalFormat
+                                    DecimalFormatSymbols)
+            (java.util              Locale)))
 
 ;;
 ;; Constants.
@@ -678,7 +684,17 @@
    (get (registry/country-id->currency registry) (keyword country-id))))
 
 ;;
-;; Parsing helpers.
+;; Converting to Java object.
+;;
+
+(defn java
+  "For ISO-standardized currency, returns corresponding `java.util.Currency` object."
+  {:tag java.util.Currency :added "1.0.0"}
+  (^java.util.Currency [currency] (java.util.Currency/getInstance (code currency)))
+  (^java.util.Currency [currency ^Registry registry] (java.util.Currency/getInstance (code currency registry))))
+
+;;
+;; Parsing and structuring helpers.
 ;;
 
 (defn prep-currency
@@ -970,8 +986,8 @@
   (^Registry [^Registry registry currency country-ids localized-properties ^Boolean update?]
    (when (some? registry)
      (let [^Currency c (if (instance? Currency currency) currency (of-id currency registry))
-           cid         (.id      ^Currency c)
-           cnr         (.numeric ^Currency c)
+           cid         (.id ^Currency c)
+           cnr         (int (.numeric ^Currency c))
            cid-to-cur  (registry/currency-id->currency registry)
            cnr-to-cur  (registry/currency-nr->currency registry)]
        (when-not update?
@@ -1547,16 +1563,6 @@
   name-native
   "Alias for display-name-native."
   display-name-native)
-
-;;
-;; Converting to Java object.
-;;
-
-(defn java
-  "For ISO-standardized currency, returns corresponding `java.util.Currency` object."
-  {:tag java.util.Currency :added "1.0.0"}
-  (^java.util.Currency [currency] (java.util.Currency/getInstance (code currency)))
-  (^java.util.Currency [currency ^Registry registry] (java.util.Currency/getInstance (code currency registry))))
 
 ;;
 ;; Scalable implementation.
