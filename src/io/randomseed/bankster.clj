@@ -32,7 +32,8 @@
      ^clojure.lang.PersistentHashMap cur-id->localized ; locale ID to localized properties
      ^clojure.lang.PersistentHashMap cur-code->curs    ; currency code to currencies (weighted)
      ^clojure.lang.PersistentHashMap cur-nr->curs      ; currency numeric ID to currencies (weighted)
-     ^String version]
+     ^String version                                   ; version string
+     ^clojure.lang.PersistentHashMap ext]              ; extra data
 
   Object
   (toString [^Registry r] (pr-str r)))
