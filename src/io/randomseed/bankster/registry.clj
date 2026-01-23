@@ -18,7 +18,7 @@
 ;;
 
 (defn- h-m
-  {:tag clojure.lang.PersistentHashMap :added "1.2.20"}
+  {:tag clojure.lang.PersistentHashMap :added "1.3.0"}
   ^clojure.lang.PersistentHashMap []
   (dissoc (hash-map nil nil) nil))
 
@@ -38,7 +38,7 @@
 (def ^{:tag clojure.lang.Atom :added "1.0.0"}
   R
   "Global registry object based on an Atom."
-  (atom (Registry. (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (default-version))))
+  (atom (Registry. (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (default-version))))
 
 (defn global
   "Returns global registry object."
@@ -81,13 +81,14 @@
   "Creates a new registry."
   {:tag Registry :added "1.0.0"}
   (^Registry []
-   (bankster/->Registry (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (default-version)))
+   (bankster/->Registry (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (default-version)))
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
               ^clojure.lang.PersistentHashMap cur-nr->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->ctr-ids
               ^clojure.lang.PersistentHashMap cur-id->localized
               ^clojure.lang.PersistentHashMap cur-code->curs
+              ^clojure.lang.PersistentHashMap cur-nr->curs
               ^String version]
    (bankster/->Registry cur-id->cur
                         cur-nr->cur
@@ -95,23 +96,28 @@
                         cur-id->ctr-ids
                         cur-id->localized
                         cur-code->curs
+                        cur-nr->curs
                         version))
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
               ^clojure.lang.PersistentHashMap cur-nr->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->ctr-ids
               ^clojure.lang.PersistentHashMap cur-id->localized
-              ^clojure.lang.PersistentHashMap cur-code->curs]
+              ^clojure.lang.PersistentHashMap cur-code->curs
+              ^clojure.lang.PersistentHashMap cur-nr->curs]
    (new-registry cur-id->cur
                  cur-nr->cur
                  ctr-id->cur
                  cur-id->ctr-ids
+                 cur-id->localized
                  cur-code->curs
+                 cur-nr->curs
                  (default-version)))
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->localized
               ^clojure.lang.PersistentHashMap cur-code->curs
+              ^clojure.lang.PersistentHashMap cur-nr->curs
               ^String version]
    (bankster/->Registry cur-id->cur
                         (map/map-keys-by-v :nr cur-id->cur)
@@ -119,21 +125,24 @@
                         (map/invert-in-sets ctr-id->cur)
                         cur-id->localized
                         cur-code->curs
+                        cur-nr->curs
                         version))
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->localized
-              ^clojure.lang.PersistentHashMap cur-code->curs]
+              ^clojure.lang.PersistentHashMap cur-code->curs
+              ^clojure.lang.PersistentHashMap cur-nr->curs]
    (new-registry cur-id->cur
                  ctr-id->cur
                  cur-id->localized
                  cur-code->curs
+                 cur-nr->curs
                  (default-version)))
   (^Registry [^clojure.lang.PersistentHashMap m]
    (bankster/map->Registry m)))
 
-(def ^{:tag Registry
-       :added "1.0.0"
+(def ^{:tag      Registry
+       :added    "1.0.0"
        :arglists '(^Registry []
                    ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
                               ^clojure.lang.PersistentHashMap cur-nr->cur
@@ -141,22 +150,26 @@
                               ^clojure.lang.PersistentHashMap cur-id->ctr-ids
                               ^clojure.lang.PersistentHashMap cur-id->localized
                               ^clojure.lang.PersistentHashMap cur-code->curs
+                              ^clojure.lang.PersistentHashMap cur-nr->curs
                               ^String version]
                    ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
                               ^clojure.lang.PersistentHashMap cur-nr->cur
                               ^clojure.lang.PersistentHashMap ctr-id->cur
                               ^clojure.lang.PersistentHashMap cur-id->ctr-ids
                               ^clojure.lang.PersistentHashMap cur-id->localized
-                              ^clojure.lang.PersistentHashMap cur-code->curs]
+                              ^clojure.lang.PersistentHashMap cur-code->curs
+                              ^clojure.lang.PersistentHashMap cur-nr->curs]
                    ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
                               ^clojure.lang.PersistentHashMap ctr-id->cur
                               ^clojure.lang.PersistentHashMap cur-id->localized
                               ^clojure.lang.PersistentHashMap cur-code->curs
+                              ^clojure.lang.PersistentHashMap cur-nr->curs
                               ^String version]
                    ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
                               ^clojure.lang.PersistentHashMap ctr-id->cur
                               ^clojure.lang.PersistentHashMap cur-id->localized
-                              ^clojure.lang.PersistentHashMap cur-code->curs]
+                              ^clojure.lang.PersistentHashMap cur-code->curs
+                              ^clojure.lang.PersistentHashMap cur-nr->curs]
                    ^Registry [^clojure.lang.PersistentHashMap m])}
   new
   "Alias for new-registry."
@@ -246,7 +259,7 @@
   in functions which require the registry and it was not passed as an argument."
   {:added "1.0.0"}
   [^Registry registry & body]
-  `(binding [*default* ^Registry ~registry]
+  `(binding [*default* ^io.randomseed.bankster.Registry ~registry]
      ~@body))
 
 ;;
@@ -259,7 +272,7 @@
   global registry is used instead."
   {:added "1.0.0"}
   ([] `(.cur-id->cur (get)))
-  ([registry] `(.cur-id->cur ^Registry ~registry)))
+  ([registry] `(.cur-id->cur ^io.randomseed.bankster.Registry ~registry)))
 
 (defmacro currency-nr->currency
   "Returns the currency number to currency map from a registry. If the registry is not
@@ -267,7 +280,15 @@
   global registry is used instead."
   {:added "1.0.0"}
   ([] `(.cur-nr->cur (get)))
-  ([registry] `(.cur-nr->cur ^Registry ~registry)))
+  ([registry] `(.cur-nr->cur ^io.randomseed.bankster.Registry ~registry)))
+
+(defmacro currency-nr->currencies
+  "Returns the currency number to currencies map from a registry. If the registry is
+  not given the dynamic variable *default* is tried. If it is not set, current state
+  of a global registry is used instead."
+  {:added "1.0.0"}
+  ([] `(.cur-nr->curs (get)))
+  ([registry] `(.cur-nr->curs ^io.randomseed.bankster.Registry ~registry)))
 
 (defmacro currency-code->currencies
   "Returns the currency short-code to currencies map from a registry. If the registry
@@ -275,7 +296,7 @@
   state of a global registry is used instead."
   {:added "1.0.0"}
   ([] `(.cur-code->curs (get)))
-  ([registry] `(.cur-code->curs ^Registry ~registry)))
+  ([registry] `(.cur-code->curs ^io.randomseed.bankster.Registry ~registry)))
 
 (defmacro country-id->currency
   "Returns the country ID to currency map from a registry. If the registry is not given
@@ -283,7 +304,7 @@
   global registry is used instead."
   {:added "1.0.0"}
   ([] `(.ctr-id->cur (get)))
-  ([registry] `(.ctr-id->cur ^Registry ~registry)))
+  ([registry] `(.ctr-id->cur ^io.randomseed.bankster.Registry ~registry)))
 
 (defmacro currency-id->country-ids
   "Returns the currency ID to country IDs map from a registry. If the registry is not
@@ -291,7 +312,7 @@
   global registry is used instead."
   {:added "1.0.0"}
   ([] `(.cur-id->ctr-ids (get)))
-  ([registry] `(.cur-id->ctr-ids ^Registry ~registry)))
+  ([registry] `(.cur-id->ctr-ids ^io.randomseed.bankster.Registry ~registry)))
 
 (defmacro currency-id->localized
   "Returns the currency ID to localized propertied map from a registry. If the registry
@@ -299,18 +320,18 @@
   state of a global registry is used instead."
   {:added "1.0.0"}
   ([] `(.cur-id->localized (get)))
-  ([registry] `(.cur-id->localized ^Registry ~registry)))
+  ([registry] `(.cur-id->localized ^io.randomseed.bankster.Registry ~registry)))
 
 ;;
 ;; Printing.
 ;;
 
-(defmethod print-method Registry
+(defmethod print-method io.randomseed.bankster.Registry
   [r w]
   (let [sid (Integer/toHexString (System/identityHashCode r))]
     (print-simple
      (str "#Registry[{"
-          ":currencies " (count (.cur-id->cur ^Registry r)) ", "
-          ":countries "  (count (.ctr-id->cur ^Registry r)) ", "
-          ":version \""  (.version ^Registry r) "\"} 0x" sid "]")
+          ":currencies " (count (.cur-id->cur ^io.randomseed.bankster.Registry r)) ", "
+          ":countries "  (count (.ctr-id->cur ^io.randomseed.bankster.Registry r)) ", "
+          ":version \""  (.version ^io.randomseed.bankster.Registry r) "\"} 0x" sid "]")
      w)))
