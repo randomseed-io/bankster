@@ -627,6 +627,38 @@
 
   Money
 
+  (to-id
+    ^clojure.lang.Keyword [money]
+    (currency/to-id ^Currency (.currency ^Money money)))
+
+  (to-code
+    ^clojure.lang.Keyword [money]
+    (currency/to-code ^Currency (.currency ^Money money)))
+
+  (to-numeric-id
+    ^long [money]
+    (currency/to-numeric-id ^Currency (.currency ^Money money)))
+
+  (to-currency
+    ^Currency [money]
+    (.currency ^Money money))
+
+  (to-map
+    ^Currency [money]
+    (currency/to-map ^Currency (.currency ^Money money)))
+
+  (resolve
+    (^Currency [money]
+     (currency/resolve ^Currency (.currency ^Money money)))
+    (^Currency [money ^Registry registry]
+     (currency/resolve ^Currency (.currency ^Money money) ^Registry registry)))
+
+  (resolve-all
+    (^clojure.lang.IPersistentSet [money]
+     (currency/resolve-all ^Currency (.currency ^Money money)))
+    (^clojure.lang.IPersistentSet [money ^Registry registry]
+     (currency/resolve-all ^Currency (.currency ^Money money) ^Registry registry)))
+
   (of-id
     (^Currency [money]
      (currency/of-id ^Currency (.currency ^Money money)))
