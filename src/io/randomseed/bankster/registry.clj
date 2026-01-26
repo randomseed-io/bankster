@@ -30,7 +30,7 @@
 (defn default-version
   {:tag String :added "1.0.0"}
   []
-  (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "YYYYMMddHHmmssSS")))
+  (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "yyyyMMddHHmmssSS")))
 
 ;;
 ;; Global, shared registry.
