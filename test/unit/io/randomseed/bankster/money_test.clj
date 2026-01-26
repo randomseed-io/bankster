@@ -211,6 +211,8 @@
     (is (= (c/currency? #money[1 EUR]) false)))
   (testing "when it's possible to validate money as a currency representation"
     (is (= (c/possible? #money[1 EUR]) true)))
+  (testing "when it's possible to validate money as definitive currency representation"
+    (is (= (c/definitive? #money[1 EUR]) true)))
   (testing "when it's possible to check if a currency has numeric ID"
     (is (= (c/has-numeric-id? #money[1 EUR]) true))
     (is (= (c/has-numeric-id? #money[1 crypto/ETH]) false))
@@ -220,9 +222,9 @@
     (is (= (c/has-kind? #money[1 crypto/ETH]) true))
     (is (= (c/has-kind? (m/of 1 #currency{:id :PLN :scale 1})) false)))
   (testing "when it's possible to check if a currency has particular kind"
-    (is (= (c/kind-of? #money[1 EUR] :FIAT) true))
-    (is (= (c/kind-of? #money[1 crypto/ETH] :DECENTRALIZED) true))
-    (is (= (c/kind-of? (m/of 1 #currency{:id :PLN :scale 1}) :FIAT) false)))
+    (is (= (c/kind-of? :FIAT #money[1 EUR]) true))
+    (is (= (c/kind-of? :DECENTRALIZED #money[1 crypto/ETH]) true))
+    (is (= (c/kind-of? :FIAT (m/of 1 #currency{:id :PLN :scale 1})) false)))
   (testing "when it's possible to check if a currency has assigned some country"
     (is (= (c/has-country? #money[1 EUR]) true))
     (is (= (c/has-country? #money[1 crypto/ETH]) false))

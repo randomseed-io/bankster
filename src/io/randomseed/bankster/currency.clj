@@ -3,6 +3,7 @@
   ^{:doc    "Bankster library, currency operations."
     :author "Paweł Wilk"
     :added  "1.0.0"}
+
   (:refer-clojure :rename {ns      core-ns
                            new     core-new
                            symbol  core-symbol
@@ -42,6 +43,15 @@
   "Expresses the scale of a currency which is automatic and not limited to certain
   decimal places."
   (int -1))
+
+(def ^{:tag clojure.lang.Keyword :const true :private true :added "3.0.0"}
+  explicit-nil
+  "Internal sentinel used to express explicit `nil` values coming from currency maps.
+
+  It is used to distinguish between \"value not provided\" (which may trigger
+  inference/defaulting) and \"value explicitly set to nil\" (which should be trusted
+  and suppress inference)."
+  ::nil)
 
 ;;
 ;; Default currency.
@@ -192,15 +202,28 @@
                   (int     weight))))))
 
 (defn map->new
+  "Creates a new currency record from a map."
   {:added "1.0.0" :tag Currency}
   [^clojure.lang.IPersistentMap m]
   (when (and (some? m) (> (count m) 0))
-    (let [id     (or (:id m) (:code m))
-          nr     (long (or (:nr m) (:numeric m) no-numeric-id))
-          sc     (int  (or (:sc m) (:scale   m) auto-scaled))
-          weight (int  (or (:we m) (:weight  m) (int 0)))
-          kind   (or (:ki m) (:kind    m))
-          domain (or (:do m) (:domain  m))]
+    (let [id              (or (:id m) (:code m))
+          nr0             (or (:nr m) (:numeric m) no-numeric-id)
+          nr              (long (if (number? nr0) nr0 (or (bu/try-parse-long nr0) no-numeric-id)))
+          nr              (long (if (< nr 1) no-numeric-id nr))
+          sc0             (or (:sc m) (:scale   m) auto-scaled)
+          sc              (int  (if (number? sc0) sc0 (or (bu/try-parse-int sc0) auto-scaled)))
+          sc              (int  (if (< sc 0) auto-scaled sc))
+          we0             (or (:we m) (:weight  m) (int 0))
+          weight          (int  (if (number? we0) we0 (or (bu/try-parse-int we0) 0)))
+          kind            (or (:ki m) (:kind    m))
+          domain-present? (or (contains? m :do) (contains? m :domain))
+          domain-val      (cond
+                            (contains? m :do)     (get m :do)
+                            (contains? m :domain) (get m :domain)
+                            :else                 nil)
+          domain          (if domain-present?
+                            (if (nil? domain-val) explicit-nil domain-val)
+                            nil)]
       (when-some [c ^Currency (new-currency id nr sc kind domain weight)]
         (if (> (count m) 1)
           (merge c (dissoc m :id :nr :numeric :sc :scale :ki :kind :do :domain :we :weight))
@@ -264,6 +287,24 @@
    [this]
    "Coerces a currency representation to a map of currency fields.
   Registry-free. Returns a map (possibly partial) or `nil`.")
+
+  (^{:tag Boolean :added "3.0.0"}
+   definitive?
+   [this]
+   "Returns `true` when the given value is a *definitive* currency representation: it
+  carries enough information (either explicitly or by type implication) to make
+  negative property checks meaningful for the attributes it determines (e.g. when
+  `domain` is not `:ISO-4217` then it is definitely not an ISO currency).
+
+  For map-based currency specifications, definitiveness is expressed by the presence
+  of keys for core attributes (domain, scale, numeric id). Key presence is
+  significant: an explicitly present key with a `nil` value means \"specified as
+  nil\" and should be trusted.
+
+  Currency `kind` is treated as an optional classification attribute. If present in
+  a representation, it is trusted; if absent, it remains unknown (not inferred).
+
+  This method is registry-free.")
 
   (^{:tag io.randomseed.bankster.Currency :added "2.0.0"}
    resolve
@@ -391,6 +432,278 @@
   ID."))
 
 ;;
+;; Monetary helpers.
+;;
+
+(declare weighted-currencies)
+
+(defn- compare-currency-ids
+  "Compares if two `Currency` objects share the same numeric identifier, scale,
+  identifier, domain, and kind. Arguments are not commutative. Currency
+  `compared-currency` is compared to currency `registered-currency`. It is not
+  considered a mismatch when currency `compared-currency` has `:domain` and/or
+  `:kind` set to `nil` but currency `registered-currency` has those fields set to any
+  values. Returns `registered-currency` if comparison is successful, `nil`
+  otherwise."
+  {:tag Currency :private true :added "2.0.0"}
+  ^Currency [^Currency registered-currency ^Currency compared-currency]
+  (when
+      (and (some? registered-currency)
+           (== (long (.numeric  registered-currency)) (long (.numeric compared-currency)))
+           (== (int  (.scale    registered-currency)) (int  (.scale   compared-currency)))
+           (identical? (.id     registered-currency)  (.id            compared-currency))
+           (or (nil? (.domain compared-currency))
+               (identical? (.domain registered-currency) (.domain compared-currency)))
+           (or (nil? (.kind compared-currency))
+               (identical? (.kind   registered-currency) (.kind   compared-currency))))
+    registered-currency))
+
+(defn- unit-registry
+  "Normalizes a registry argument for strict operations.
+
+  `nil` and `true` mean: use the default registry (preferring
+  `io.randomseed.bankster.registry/*default*` when bound)."
+  {:tag Registry :private true :added "3.0.0"}
+  ^Registry [registry]
+  (cond
+    (nil?  registry) (registry/get)
+    (true? registry) (registry/get)
+    :else            registry))
+
+(defn- unit-resolve!
+  "Resolves `c` in `registry` and throws if it cannot be resolved.
+
+  This is a strict helper for `Monetary/unit` implementations. It is meant for
+  identifier-like currency representations. For already constructed currencies
+  (e.g. `Currency` records) the `nil` registry convention may still mean
+  \"return as-is\" and should be handled by the caller."
+  {:tag Currency :private true :added "3.0.0"}
+  ^Currency [c ^Registry registry]
+  (or (resolve c registry)
+      (throw
+       (ex-info
+        "Currency not found in a registry."
+        {:registry registry
+         :value    c
+         :op       :unit}))))
+
+(def ^{:tag clojure.lang.Keyword :const true :private true :added "3.0.0"}
+  invalid-map-hint
+  ::invalid-map-hint)
+
+(defn- normalize-id-hint
+  "Best-effort, registry-free normalization of an ID hint.
+
+  Strips the ISO namespace (`ISO-4217`, case-insensitive) if present."
+  {:tag clojure.lang.Keyword :private true :added "3.0.0"}
+  [x]
+  (when-some [^clojure.lang.Keyword kid (to-id x)]
+    (let [ns (some-> (namespace kid) bu/try-upper-case)]
+      (if (= ns "ISO-4217")
+        (keyword (core-name kid))
+        kid))))
+
+(defn- normalize-code-hint
+  "Best-effort, registry-free normalization of a currency code hint."
+  {:tag clojure.lang.Keyword :private true :added "3.0.0"}
+  [x]
+  (to-code x))
+
+(defn- normalize-numeric-hint
+  "Normalizes a numeric currency identifier hint.
+
+  - Missing key means \"not specified\" (handled by the caller via `contains?`).
+  - Present key with `nil` value means \"specified as nil\" -> `no-numeric-id`.
+  - Non-nil values are parsed and must satisfy `valid-numeric-id?`."
+  {:tag Object :private true :added "3.0.0"}
+  [x]
+  (cond
+    (nil? x)
+    no-numeric-id
+
+    (number? x)
+    (let [n (long x)]
+      (cond (< n 1)               no-numeric-id
+            (valid-numeric-id? n) n
+            :else                 invalid-map-hint))
+
+    :else
+    (let [n (try (bu/try-parse-long x) (catch Throwable _ nil))]
+      (if (nil? n)
+        invalid-map-hint
+        (normalize-numeric-hint n)))))
+
+(defn- normalize-scale-hint
+  "Normalizes a currency scale hint.
+
+  - Missing key means \"not specified\" (handled by the caller via `contains?`).
+  - Present key with `nil` value means \"specified as nil\" -> `auto-scaled`.
+  - Non-nil values are parsed to integer.
+
+  Negative scales are treated as `auto-scaled` (matching `map->new`)."
+  {:tag Object :private true :added "3.0.0"}
+  [x]
+  (cond
+    (nil? x)
+    auto-scaled
+
+    (number? x)
+    (let [s (int x)]
+      (if (neg? s) auto-scaled s))
+
+    :else
+    (let [s (try (bu/try-parse-int x) (catch Throwable _ nil))]
+      (if (nil? s)
+        invalid-map-hint
+        (normalize-scale-hint s)))))
+
+(defn- normalize-domain-hint
+  "Normalizes a currency domain hint to an upper-cased keyword."
+  {:tag clojure.lang.Keyword :private true :added "3.0.0"}
+  [x]
+  (when-not (nil? x)
+    (when-some [s (not-empty (if (ident? x) (core-name x) (str x)))]
+      (keyword (str/upper-case s)))))
+
+(defn- normalize-kind-hint
+  "Normalizes a currency kind hint to an upper-cased keyword."
+  {:tag clojure.lang.Keyword :private true :added "3.0.0"}
+  [x]
+  (when-not (nil? x)
+    (when-some [s (if (ident? x)
+                    (not-empty (core-name x))
+                    (not-empty (str x)))]
+      (keyword (bu/try-upper-case s)))))
+
+(defn- normalize-weight-hint
+  "Normalizes a currency weight hint.
+
+  - Missing key means \"not specified\" (handled by the caller via `contains?`).
+  - Present key with `nil` value means \"specified as nil\" -> `0`.
+  - Non-nil values are parsed to integer."
+  {:tag Object :private true :added "3.0.0"}
+  [x]
+  (cond (nil? x)    0
+        (number? x) (int x)
+        :else       (let [w (try (bu/try-parse-int x) (catch Throwable _ nil))]
+                      (if (nil? w)
+                        invalid-map-hint
+                        (int w)))))
+
+(defn- compare-map-ids
+  "Compares a registry `Currency` to a map of currency constraints.
+
+  Constraints are **key-presence based**: an attribute is compared only when its key
+  exists in the map. A present key with a `nil` value is meaningful (\"specified as
+  nil\") and is compared using Bankster sentinels (`no-numeric-id`, `auto-scaled`) or
+  `nil` where applicable.
+
+  The function is soft: invalid hints or inconsistent alias values result in `nil`
+  (no match) rather than an exception."
+  {:tag Currency :private true :added "2.0.0"}
+  ^Currency [^Currency registered-currency ^clojure.lang.IPersistentMap compared-map]
+  (when (and (some? registered-currency) (seq compared-map))
+    (let [id?   (contains? compared-map :id)
+          code? (contains? compared-map :code)
+          nr?   (or (contains? compared-map :nr) (contains? compared-map :numeric))
+          sc?   (or (contains? compared-map :sc) (contains? compared-map :scale))
+          we?   (or (contains? compared-map :we) (contains? compared-map :weight))
+          do?   (or (contains? compared-map :do) (contains? compared-map :domain))
+          ki?   (or (contains? compared-map :ki) (contains? compared-map :kind))
+
+          id-val   (when id?   (normalize-id-hint   (get compared-map :id)))
+          code-val (when code? (normalize-code-hint (get compared-map :code)))
+
+          nr1?   (contains? compared-map :nr)
+          nr2?   (contains? compared-map :numeric)
+          nr1    (when nr1? (normalize-numeric-hint (get compared-map :nr)))
+          nr2    (when nr2? (normalize-numeric-hint (get compared-map :numeric)))
+          nr-val (cond (and nr1? nr2? (not= nr1 nr2)) invalid-map-hint
+                       nr1?                           nr1
+                       nr2?                           nr2
+                       :else                          nil)
+
+          sc1?   (contains? compared-map :sc)
+          sc2?   (contains? compared-map :scale)
+          sc1    (when sc1? (normalize-scale-hint (get compared-map :sc)))
+          sc2    (when sc2? (normalize-scale-hint (get compared-map :scale)))
+          sc-val (cond (and sc1? sc2? (not= sc1 sc2)) invalid-map-hint
+                       sc1?                           sc1
+                       sc2?                           sc2
+                       :else                          nil)
+
+          we1?   (contains? compared-map :we)
+          we2?   (contains? compared-map :weight)
+          we1    (when we1? (normalize-weight-hint (get compared-map :we)))
+          we2    (when we2? (normalize-weight-hint (get compared-map :weight)))
+          we-val (cond (and we1? we2? (not= we1 we2)) invalid-map-hint
+                       we1?                           we1
+                       we2?                           we2
+                       :else                          nil)
+
+          do1?   (contains? compared-map :do)
+          do2?   (contains? compared-map :domain)
+          do1    (when do1? (normalize-domain-hint (get compared-map :do)))
+          do2    (when do2? (normalize-domain-hint (get compared-map :domain)))
+          do-val (cond (and do1? do2? (not= do1 do2)) invalid-map-hint
+                       do1?                           do1
+                       do2?                           do2
+                       :else                          nil)
+
+          ki1?   (contains? compared-map :ki)
+          ki2?   (contains? compared-map :kind)
+          ki1    (when ki1? (normalize-kind-hint (get compared-map :ki)))
+          ki2    (when ki2? (normalize-kind-hint (get compared-map :kind)))
+          ki-val (cond (and ki1? ki2? (not= ki1 ki2)) invalid-map-hint
+                       ki1?                           ki1
+                       ki2?                           ki2
+                       :else                          nil)
+
+          id-ns (when id-val (some-> (namespace id-val) bu/try-upper-case keyword))]
+      (when-not (or (and id?   (nil? id-val))
+                    (and code? (nil? code-val))
+                    (identical? invalid-map-hint nr-val)
+                    (identical? invalid-map-hint sc-val)
+                    (identical? invalid-map-hint we-val)
+                    (identical? invalid-map-hint do-val)
+                    (identical? invalid-map-hint ki-val)
+                    (and do? id-ns (not (identical? id-ns :ISO-4217))
+                         (not= do-val id-ns)))
+        (when
+            (and (or (not id?)   (identical? id-val         (.id      registered-currency)))
+                 (or (not code?) (identical? code-val       (to-code  registered-currency)))
+                 (or (not nr?)   (== (long nr-val)    (long (.numeric registered-currency))))
+                 (or (not sc?)   (== (int  sc-val)    (int  (.scale   registered-currency))))
+                 (or (not we?)   (== (int  we-val)    (int  (.weight  registered-currency))))
+                 (or (not do?)   (identical? do-val         (.domain  registered-currency)))
+                 (or (not ki?)   (identical? ki-val         (.kind    registered-currency))))
+            registered-currency)))))
+
+(defn- map-registry-op!
+  "Throws when a currency map is used in a registry-oriented operation.
+
+  Bankster treats maps as currency specifications (constructors), not registry
+  references. Use a scalar identifier (keyword/string/number) to reference a
+  registered currency."
+  [op m registry]
+  (throw
+   (ex-info
+    "Currency maps are currency specifications and cannot be used for registry lookups."
+    {:op       op
+     :value    m
+     :registry registry
+     :hint     "Use a keyword/string/number identifier (or create an explicit registry reference type)."})))
+
+(defn- merge-candidates
+  "Ensures that merged structures are sorted sets."
+  [a b]
+  (cond
+    (and a b) (into (weighted-currencies a) b)
+    a         (not-empty a)
+    b         (not-empty b)
+    :else     nil))
+
+;;
 ;; Currency querying functions, Monetary implementation.
 ;;
 
@@ -426,6 +739,35 @@
      :ki (.kind    ^Currency c)
      :we (.weight  ^Currency c)})
 
+  (definitive?
+    (^Boolean [c]
+     (some? (.id ^Currency c))))
+
+  (resolve
+    (^Currency [c]
+     (resolve ^Currency c nil))
+    (^Currency [c ^Registry registry]
+     (let [^Registry registry (or registry (registry/get))]
+       (or (compare-currency-ids (registry/currency-id->currency* (.id ^Currency c) registry) c)
+           (some #(compare-currency-ids ^Currency % c) (resolve-all (.numeric ^Currency c) registry))))))
+
+  (resolve-all
+    (^clojure.lang.IPersistentSet [c]
+     (resolve-all c nil))
+    (^clojure.lang.IPersistentSet [c ^Registry registry]
+     (let [^Registry registry (or registry (registry/get))
+           by-id              (registry/currency-id->currency*   (.id      ^Currency c) registry)
+           by-num             (registry/currency-nr->currencies* (.numeric ^Currency c) registry)
+           ^Currency fhit     (when by-id  (compare-currency-ids by-id c))
+           hitset             (when by-num (bu/keep-in-set-where #(compare-currency-ids ^Currency % c) by-num))]
+       (if (nil? hitset)
+         (if (nil? fhit)
+           nil
+           #{fhit})
+         (if (nil? fhit)
+           hitset
+           (conj hitset fhit))))))
+
   (of-id
     (^Currency [^Currency currency]
      (of-id (.id ^Currency currency) (registry/get)))
@@ -438,10 +780,13 @@
     (^Currency [^Currency currency]
      currency)
     (^Currency [^Currency currency ^Registry registry]
-     (cond (nil?  registry) currency
-           (true? registry) (unit currency (registry/get))
-           :else
-           (registry/currency-id->currency* (.id ^Currency currency) registry))))
+     (cond
+       (nil? registry)
+       currency
+
+       :else
+       (let [^Registry registry (unit-registry registry)]
+         (unit-resolve! currency registry)))))
 
   (id
     (^clojure.lang.Keyword [^Currency currency] (.id ^Currency currency))
@@ -492,6 +837,10 @@
      :sc (long    (or (.getDefaultFractionDigits ^java.util.Currency c) auto-scaled))
      :do :ISO-4217})
 
+  (definitive?
+    (^Boolean [_]
+     true))
+
   (resolve
     (^Currency [c]
      (resolve ^java.util.Currency c nil))
@@ -526,11 +875,12 @@
 
   (unit
     (^Currency [jc]
-     (of-id jc (registry/get)))
+     (unit jc (registry/get)))
     (^Currency [jc ^Registry registry]
-     (of-id jc registry))
+     (let [^Registry registry (unit-registry registry)]
+       (unit-resolve! jc registry)))
     (^Currency [jc ^Registry registry _]
-     (of-id jc registry)))
+     (unit jc registry)))
 
   (id
     (^clojure.lang.Keyword [jc]
@@ -615,6 +965,10 @@
     [id]
     {:nr (long id)})
 
+  (definitive?
+    (^Boolean [_]
+     false))
+
   (resolve
     (^Currency [num]
      (resolve num nil))
@@ -658,11 +1012,12 @@
 
   (unit
     (^Currency [num]
-     (of-id num (registry/get)))
+     (unit num (registry/get)))
     (^Currency [num ^Registry registry]
-     (of-id num registry))
+     (let [^Registry registry (unit-registry registry)]
+       (unit-resolve! num registry)))
     (^Currency [num ^Registry registry _]
-     (of-id num registry)))
+     (unit num registry)))
 
   (id
     (^clojure.lang.Keyword [num]
@@ -762,6 +1117,10 @@
     [id]
     {:id id})
 
+  (definitive?
+    (^Boolean [_]
+     false))
+
   (resolve
     (^Currency [id]
      (resolve id nil))
@@ -803,13 +1162,8 @@
     (^Currency [id]
      (unit id (registry/get)))
     (^Currency [id ^Registry registry]
-     (or (if (namespace id)
-           (registry/currency-id->currency* id registry)
-           (or (first (registry/currency-code->currencies* id registry))
-               (registry/currency-id->currency* id registry)))
-         (throw (ex-info
-                 (str "Currency " (core-symbol id) " not found in a registry.")
-                 {:registry registry})))))
+     (let [^Registry registry (unit-registry registry)]
+       (unit-resolve! id registry))))
 
   (id
     (^clojure.lang.Keyword [c]
@@ -878,6 +1232,10 @@
   (to-map
     [id]
     {:id (to-id id)})
+
+  (definitive?
+    (^Boolean [_]
+     false))
 
   (resolve
     (^Currency [id]
@@ -956,6 +1314,10 @@
   (to-map
     [id]
     {:id (keyword id)})
+
+  (definitive?
+    (^Boolean [_]
+     false))
 
   (resolve
     (^Currency [id]
@@ -1036,33 +1398,88 @@
           r  (if do (assoc r :do (keyword do))       r)]
       r))
 
+  (definitive?
+    (^Boolean [m]
+     (let [id-ok?      (some? (to-id m))
+           has-domain? (or (contains? m :do) (contains? m :domain))
+           has-scale?  (or (contains? m :sc) (contains? m :scale))
+           has-nr?     (or (contains? m :nr) (contains? m :numeric))]
+       (and id-ok? has-domain? has-scale? has-nr?))))
+
+  (resolve
+    (^Currency [m]
+     (resolve m nil))
+    (^Currency [m ^Registry registry]
+     (let [^Registry registry (or registry (registry/get))
+           id                 (when (contains? m :id)   (to-id (get m :id)))
+           code               (when (contains? m :code) (to-code (get m :code)))
+           nr-raw             (cond
+                                (contains? m :nr)      (get m :nr)
+                                (contains? m :numeric) (get m :numeric)
+                                :else                  nil)
+           nr                 (when (some? nr-raw) (to-numeric-id nr-raw))
+           nr                 (when (and (some? nr) (valid-numeric-id? (long nr))) (long nr))]
+       (or (some #(compare-map-ids ^Currency % m) (some-> id   (resolve-all registry)))
+           (some #(compare-map-ids ^Currency % m) (some-> code (resolve-all registry)))
+           (some #(compare-map-ids ^Currency % m) (some-> nr   (resolve-all registry)))))))
+
+  (resolve-all
+    (^clojure.lang.IPersistentSet [m]
+     (resolve-all m nil))
+    (^clojure.lang.IPersistentSet [m ^Registry registry]
+     (let [^Registry registry (or registry (registry/get))
+           id                 (when (contains? m :id)      (to-id   (get m :id)))
+           code               (when (contains? m :code)    (to-code (get m :code)))
+           nr-raw             (cond (contains? m :nr)      (get m :nr)
+                                    (contains? m :numeric) (get m :numeric)
+                                    :else                  nil)
+           nr                 (when (some? nr-raw) (to-numeric-id nr-raw))
+           nr                 (when (and (some? nr) (valid-numeric-id? (long nr))) (long nr))
+           candidates         (-> nil
+                                  (merge-candidates (some-> id   (resolve-all registry)))
+                                  (merge-candidates (some-> code (resolve-all registry)))
+                                  (merge-candidates (some-> nr   (resolve-all registry))))]
+       (when (seq candidates)
+         (not-empty
+          (into (weighted-currencies)
+                (filter #(compare-map-ids ^Currency % m))
+                candidates))))))
+
   (of-id
-    (^Currency [m] (of-id (get m :id)))
-    (^Currency [m ^Registry registry] (of-id (get m :id) registry)))
+    (^Currency [m]
+     (map-registry-op! :of-id m nil))
+    (^Currency [m ^Registry registry]
+     (map-registry-op! :of-id m registry)))
 
   (unit
     (^Currency [m] (map->new m))
-    (^Currency [m ^Registry registry] (unit (map->new m) registry)))
+    (^Currency [m ^Registry registry]
+     (if (nil? registry)
+       (map->new m)
+       (map-registry-op! :unit m registry))))
 
   (id
-    (^clojure.lang.Keyword [m] (id (keyword (:id m))))
-    (^clojure.lang.Keyword [m ^Registry registry] (id (keyword (:id m)) registry)))
+    (^clojure.lang.Keyword [m] (to-id m))
+    (^clojure.lang.Keyword [m ^Registry registry]
+     (if (nil? registry)
+       (to-id m)
+       (map-registry-op! :id m registry))))
 
   (defined?
     (^Boolean [m]
-     (contains? (registry/currency-id->currency*) (keyword (:id m))))
+     (map-registry-op! :defined? m (registry/get)))
     (^Boolean [m ^Registry registry]
-     (contains? (registry/currency-id->currency* registry) (keyword (:id m)))))
+     (map-registry-op! :defined? m registry)))
 
   (present?
     (^Boolean [m]
-     (present? (keyword (:id m))))
+     (map-registry-op! :present? m (registry/get)))
     (^Boolean [m ^Registry registry]
-     (present? (keyword (:id m)) registry)))
+     (map-registry-op! :present? m registry)))
 
   (same-ids?
-    (^Boolean [m b] (identical? (keyword (:id m)) (id b)))
-    (^Boolean [m b ^Registry registry] (identical? (keyword (:id m)) (id b registry))))
+    (^Boolean [m b] (identical? (to-id m) (id b)))
+    (^Boolean [m b ^Registry registry] (identical? (to-id m) (id b registry))))
 
   nil
 
@@ -1081,6 +1498,10 @@
   (to-currency
     [_]
     nil)
+
+  (definitive?
+    (^Boolean [_]
+     false))
 
   (to-map
     [_]
@@ -1137,64 +1558,86 @@
   "Soft currency coercion macro.
 
   Returns `c` when it is already an instance of `io.randomseed.bankster.Currency`.
-  Otherwise attempts to resolve `c` in a registry and returns the registered
-  `Currency` instance or `nil` when it cannot be resolved.
+  If `c` is a definitive currency representation (see `Monetary/definitive?`), it is
+  coerced locally using `to-currency`. Otherwise it attempts to resolve `c` in a
+  registry and returns the registered `Currency` instance or `nil` when it cannot be
+  resolved.
 
   Unlike `unit`/`of-id`, this helper is meant to be used in \"non-throwing\" code
   paths (e.g. property predicates). Argument `c` is evaluated exactly once.
 
   When `registry` is not provided, the default registry is used (preferring
   `io.randomseed.bankster.registry/*default*` when bound)."
-  {:added "3.0.0"}
+  {:added "2.0.0"}
   ([c]
    `(let [c# ~c]
-      (if (instance? io.randomseed.bankster.Currency c#)
-        c#
-        (resolve c# nil))))
+      (cond (instance? Currency c#) c#
+            (map? c#)               (to-currency c#)
+            (definitive? c#)        (or (to-currency c#) (resolve c# nil))
+            :else                   (resolve c# nil))))
   ([c registry]
-   `(let [c# ~c]
-      (if (instance? Currency c#)
-        c#
-        (resolve c# ^io.randomseed.bankster.Registry ~registry)))))
+   `(let [c#        ~c
+          registry# ^io.randomseed.bankster.Registry ~registry]
+      (cond
+        (instance? Currency c#)    c#
+        (map? c#)                  (to-currency c#)
+        (definitive? c#)           (or (to-currency c#) (resolve c# registry#))
+        :else                      (resolve c# registry#)))))
 
 (defn attempt
   "Soft currency coercion function.
 
   Returns `c` when it is already an instance of `io.randomseed.bankster.Currency`.
-  Otherwise attempts to resolve `c` in a registry and returns the registered
-  `Currency` instance or `nil` when it cannot be resolved.
+  If `c` is a definitive currency representation (see `Monetary/definitive?`), it is
+  coerced locally using `to-currency`. Otherwise it attempts to resolve `c` in a
+  registry and returns the registered `Currency` instance or `nil` when it cannot be
+  resolved.
 
   This is intended for \"non-throwing\" code paths (e.g. property predicates) and
   complements `unit`/`of-id` which may throw when a currency is missing."
-  {:added "3.0.0"}
-  ([c] (if (instance? Currency c) c (resolve c nil)))
-  ([c ^Registry registry] (if (instance? Currency c) c (resolve c registry))))
+  {:added "2.0.0"}
+  ([c]
+   (cond
+     (instance? Currency c) c
+     (map? c)               (to-currency c)
+     (definitive? c)        (or (to-currency c) (resolve c nil))
+     :else                  (resolve c nil)))
+  ([c ^Registry registry]
+   (cond
+     (instance? Currency c)   c
+     (map? c)                 (to-currency c)
+     (definitive? c)          (or (to-currency c) (resolve c registry))
+     :else                    (resolve c registry))))
 
 (defmacro with-attempt
-  "Evaluates `c` and tries to coerce it to a `Currency` using `attempt*`.
+  "Evaluates `c` and tries to coerce it to a `Currency`.
 
   If coercion succeeds, binds the resulting currency to the given symbol and
   evaluates `body`, returning its result. If coercion fails, returns `false`.
 
+  Uses `attempt*` for coercion (non-throwing).
+
   The binding name can be given either as a symbol or as a single-element vector
   (mirroring `if-some` style):
 
-    (with-attempt x registry c   (.id c))
-    (with-attempt x registry [c] (.id c))"
-  {:added "3.0.0"}
+  (with-attempt x registry c   (.id c))
+  (with-attempt x registry [c] (.id c))"
+  {:added "2.0.0"}
   [c registry binding & body]
-  (let [sym (cond
-              (symbol? binding) binding
-              (and (vector? binding)
-                   (== 1 (count binding))
-                   (symbol? (nth binding 0)))
-              (nth binding 0)
-              :else
-              (throw
-               (ex-info "with-attempt expects a symbol or a single-element vector as a binding."
-                        {:binding binding})))
-        ;; Hint the local binding to avoid reflection on field/method access in `body`.
-        sym (with-meta sym (assoc (meta sym) :tag 'io.randomseed.bankster.Currency))]
+  (let [sym (cond (symbol? binding)
+                  binding
+
+                  (and (vector? binding)
+                       (== 1 (count binding))
+                       (symbol? (nth binding 0)))
+                  (nth binding 0)
+
+                  :else
+                  (throw
+                   (ex-info "with-attempt expects a symbol or a single-element vector as a binding."
+                            {:binding binding})))
+        ;; Hint the local binding to avoid reflection on field/method access in body
+        sym (with-meta sym (assoc (meta sym) :tag io.randomseed.bankster.Currency))]
     `(if-some [~sym (attempt* ~c ~registry)]
        (do ~@body)
        false)))
@@ -1202,7 +1645,8 @@
 (defmacro of
   "Returns a currency for the given value by querying the given registry or a global
   registry, which may be shadowed by the value of
-  `io.randomseed.bankster.registry/*default* (see registry/with or with-registry)."
+  `io.randomseed.bankster.registry/*default* (see
+  `io.randomseed.bankster.registry/with` or `with-registry`)."
   {:added "1.0.0"}
   ([currency]
    (let [cur# (parse-currency-code currency &env)]
@@ -1454,7 +1898,7 @@
 (defn weighted-currencies
   "Constructor for numeric-ID buckets: smallest weight wins.
   Total order: (weight asc) then (id asc)."
-  {:tag clojure.lang.PersistentTreeSet :private true :added "1.3.0"}
+  {:tag clojure.lang.PersistentTreeSet :private true :added "2.0.0"}
   ([]
    (sorted-set-by
     (fn [^Currency a ^Currency b]
@@ -1469,7 +1913,7 @@
 (defn remove-currency-by-id-from-set
   "Removes all currencies with the given ID from a sorted set.
   Returns nil if empty afterwards."
-  {:tag clojure.lang.PersistentTreeSet :private true :added "1.3.0"}
+  {:tag clojure.lang.PersistentTreeSet :private true :added "2.0.0"}
   [^clojure.lang.PersistentTreeSet s ^clojure.lang.Keyword cid]
   (when s
     (let [r (reduce (fn [^clojure.lang.PersistentTreeSet acc ^Currency cur]
@@ -1907,17 +2351,48 @@
 (defn possible?
   "Returns `true` if the given value is a possible currency: can be used to get a
   currency from a registry, can be used to create currency on its own, or is a
-  currency. If registry is not given, the default one is used."
-  {:tag Boolean :added "3.0.0"}
+  currency.
+
+  This predicate is semantically wide. If the string or keyword alone can be used to
+  create a valid, ad-hoc currency with automatic scale, and without any properties
+  except identifier, then it will return `true`. Same for certain numbers: if they
+  cannot be used to create a currency on their own (since there is no ID) but can be
+  used to look one up in a registry (treating a number as an ISO-4217 code), they
+  will be positively tested as possible values for currency creation (if there was a
+  hit).
+
+  If `registry` is not given or is `nil`, the default one is used."
+  {:tag Boolean :added "2.0.0"}
   (^Boolean [c]
    (and (some? c)
-        (or (some? (to-currency c))
-            (some? (attempt* c nil)))))
+        (some? (or (to-currency c) (attempt* c nil)))))
   (^Boolean [c ^Registry registry]
    (and (some? c)
-        (or (instance? Currency c)
-            (some? (to-currency c))
-            (some? (attempt* c registry))))))
+        (some? (or (to-currency c) (attempt* c registry))))))
+
+(defn iso-possible?
+  "Returns `true` if the given value is a possible ISO-4217 currency: can be used to
+  get an ISO currency from a registry, can be used to create ISO currency on its own,
+  or is an ISO currency.
+
+  This predicate is semantically wide. If the string or keyword alone cannot be used
+  to create a valid, ad-hoc ISO currency but it can get an ISO currency from a
+  registry, then the function will return `true`. Same for certain numbers: if they
+  cannot be used to create an ISO currency on their own (since there is no ID) but
+  can be used to look one up in a registry (treating a number as an ISO-4217 code),
+  they will be positively tested as possible values for currency creation (if there
+  was a hit).
+
+  If `registry` is not given or is `nil`, the default one is used."
+  {:tag Boolean :added "2.0.0"}
+  (^Boolean [c]
+   (and (some? c)
+        (or (iso-strict-currency? (to-currency c))
+            (iso-strict-currency? (attempt* c nil)))))
+  (^Boolean [c ^Registry registry]
+   (and (some? c)
+        (or (iso-strict-currency? (to-currency c))
+            (iso-strict-currency? (attempt* c registry))))))
 
 (defn has-numeric-id?
   "Returns `true` if the given currency has a numeric ID."
@@ -1946,7 +2421,7 @@
   "Returns `true` if the given currency has a domain set to the first given argument."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [ns c]
-   (with-attempt c nil [c] (in-domain? ns (.domain ^Currency c))))
+   (with-attempt c nil [c] (identical? ns (.domain ^Currency c))))
   (^Boolean [ns c ^Registry registry]
    (with-attempt c registry [c] (identical? ns (.domain ^Currency c)))))
 
@@ -1995,7 +2470,7 @@
   legacy currency having an identifier compliant with the ISO standard. It is just a
   helper which checks if the `:domain` field of a currency equals to
   `:ISO-4217-LEGACY`."
-  {:tag Boolean :added "1.3.0"}
+  {:tag Boolean :added "2.0.0"}
   (^Boolean [c] (in-domain? :ISO-4217-LEGACY c))
   (^Boolean [c ^Registry registry] (in-domain? :ISO-4217-LEGACY c registry)))
 
@@ -2028,7 +2503,7 @@
   iso-legacy?)
 
 (defn has-kind?
-  ignored."
+  "Returns `true` if the given currency has its kind defined."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c]
    (with-attempt c nil [c] (some? (.kind ^Currency c))))
@@ -2114,9 +2589,10 @@
   translated back to their keyword representations."
   {:tag clojure.lang.PersistentHashMap :added "1.0.8"}
   ([c]
-   (map/map-keys
-    (comp keyword str l/locale)
-    (registry/currency-id->localized* (id c))))
+   (let [^Registry registry (registry/get)]
+     (map/map-keys
+      (comp keyword str l/locale)
+      (registry/currency-id->localized* (id c registry) registry))))
   ([c ^Registry registry]
    (map/map-keys
     (comp keyword str l/locale)

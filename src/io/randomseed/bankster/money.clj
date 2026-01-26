@@ -647,6 +647,12 @@
     ^Currency [money]
     (currency/to-map ^Currency (.currency ^Money money)))
 
+  (definitive?
+    (^Boolean [money]
+     (currency/definitive? ^Currency (.currency ^Money money)))
+    (^Boolean [money ^Registry _registry]
+     (currency/definitive? ^Currency (.currency ^Money money))))
+
   (resolve
     (^Currency [money]
      (currency/resolve ^Currency (.currency ^Money money)))
