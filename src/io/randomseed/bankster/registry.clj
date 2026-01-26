@@ -73,7 +73,8 @@
   used instead."
   {:added "1.0.0"}
   []
-  `(or ^Registry *default* ^Registry (deref R)))
+  `(let [d# ^Registry *default*]
+     (or d# ^Registry (deref R))))
 
 ;;
 ;; Diagnostics.
