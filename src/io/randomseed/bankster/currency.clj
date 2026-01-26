@@ -135,7 +135,8 @@
 (defn iso-strict-currency?
   {:tag Boolean :private true :added "2.0.0"}
   ^Boolean [^Currency c]
-  (and (identical?    :ISO-4217 (.domain  c))
+  (and (some? c)
+       (identical?    :ISO-4217 (.domain  c))
        (valid-numeric-id? (long (.numeric c)))
        (iso-strict-code?        (.id      c))))
 
