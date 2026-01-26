@@ -19,7 +19,7 @@
 ;;
 
 (defn- h-m
-  {:tag clojure.lang.PersistentHashMap :added "1.3.0"}
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
   ^clojure.lang.PersistentHashMap []
   (dissoc (hash-map nil nil) nil))
 
@@ -80,13 +80,13 @@
 ;; Diagnostics.
 ;;
 
-(def ^{:tag Boolean :dynamic true :added "1.3.0"}
+(def ^{:tag Boolean :dynamic true :added "2.0.0"}
   *warn-on-inconsistency*
   "Dynamic flag which enables warnings when inconsistencies are found in a
   registry. Default is false."
   false)
 
-(def ^{:tag clojure.lang.IFn :dynamic true :added "1.3.0"}
+(def ^{:tag clojure.lang.IFn :dynamic true :added "2.0.0"}
   *warnings-logger*
   "A logging function which should take a message string and an optional map. Used to
   issue registry warnings. Defaults to `clojure.tools.logging/warn`."
@@ -97,7 +97,7 @@
   `io.randomseed.bankster.registry/*warn-on-inconsistency*` is truthy. Uses
   `io.randomseed.bankster.registry/*warnings-logger*` function and passes message and
   data to it. Always evaluates body in an implicit do."
-  {:added "1.3.0"}
+  {:added "2.0.0"}
   [ex-message ex-data & body]
   `(do (when io.randomseed.bankster.registry/*warn-on-inconsistency*
          (when-some [f# io.randomseed.bankster.registry/*warnings-logger*]
@@ -335,7 +335,7 @@
   "Returns extra data map of a registry.  If the registry is not given the dynamic
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
   current state of a global registry is used instead."
-  {:added "1.3.0"}
+  {:added "2.0.0"}
   ([] `(.ext ^io.randomseed.bankster.Registry (get)))
   ([registry] `(.ext ^io.randomseed.bankster.Registry ~registry))
   ([k registry] `(clojure.core/get (.ext ^io.randomseed.bankster.Registry ~registry) ~k)))
@@ -344,7 +344,7 @@
   "Returns a version string of a registry. If the registry is not given the dynamic
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
   current state of a global registry is used instead."
-  {:added "1.3.0"}
+  {:added "2.0.0"}
   ([] `(.version ^io.randomseed.bankster.Registry (get)))
   ([registry] `(.version ^io.randomseed.bankster.Registry ~registry)))
 
@@ -352,7 +352,7 @@
   "Returns the currency ID to currency map from a registry. If the registry is not
   given the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If
   it is not set, current state of a global registry is used instead."
-  {:tag clojure.lang.PersistentHashMap :added "1.3.0"}
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
   (^clojure.lang.PersistentHashMap [] (currency-id->currency*))
   (^clojure.lang.PersistentHashMap [^Registry registry] (currency-id->currency* registry))
   (^clojure.lang.PersistentHashMap [id ^Registry registry] (currency-id->currency* id registry)))
@@ -361,7 +361,7 @@
   "Returns the currency number to currency map from a registry. If the registry is not
   given the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If
   it is not set, current state of a global registry is used instead."
-  {:tag clojure.lang.PersistentHashMap :added "1.3.0"}
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
   (^clojure.lang.PersistentHashMap [] (currency-nr->currency*))
   (^clojure.lang.PersistentHashMap [^Registry registry] (currency-nr->currency* registry))
   (^clojure.lang.PersistentHashMap [nr ^Registry registry] (currency-nr->currency* nr registry)))
@@ -370,7 +370,7 @@
   "Returns the currency number to currencies map from a registry. If the registry is
   not given the dynamic variable `io.randomseed.bankster.registry/*default*` is
   tried. If it is not set, current state of a global registry is used instead."
-  {:tag clojure.lang.PersistentHashMap :added "1.3.0"}
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
   (^clojure.lang.PersistentHashMap [] (currency-nr->currencies*))
   (^clojure.lang.PersistentHashMap [^Registry registry] (currency-nr->currencies* registry))
   (^clojure.lang.PersistentHashMap [nr ^Registry registry] (currency-nr->currencies* nr registry)))
@@ -379,7 +379,7 @@
   "Returns the currency short-code to currencies map from a registry. If the registry
   is not given the dynamic variable `io.randomseed.bankster.registry/*default*` is
   tried. If it is not set, current state of a global registry is used instead."
-  {:tag clojure.lang.PersistentHashMap :added "1.3.0"}
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
   (^clojure.lang.PersistentHashMap [] (currency-code->currencies*))
   (^clojure.lang.PersistentHashMap [^Registry registry] (currency-code->currencies* registry))
   (^clojure.lang.PersistentHashMap [code ^Registry registry] (currency-code->currencies* code registry)))
@@ -388,7 +388,7 @@
   "Returns the country ID to currency map from a registry. If the registry is not given
   the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If it is
   not set, current state of a global registry is used instead."
-  {:tag clojure.lang.PersistentHashMap :added "1.3.0"}
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
   (^clojure.lang.PersistentHashMap [] (country-id->currency*))
   (^clojure.lang.PersistentHashMap [^Registry registry] (country-id->currency* registry))
   (^clojure.lang.PersistentHashMap [country-id ^Registry registry] (country-id->currency* country-id registry)))
@@ -397,7 +397,7 @@
   "Returns the currency ID to country IDs map from a registry. If the registry is not
   given the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If
   it is not set, current state of a global registry is used instead."
-  {:tag clojure.lang.PersistentHashMap :added "1.3.0"}
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
   (^clojure.lang.PersistentHashMap [] (currency-id->country-ids*))
   (^clojure.lang.PersistentHashMap [^Registry registry] (currency-id->country-ids* registry))
   (^clojure.lang.PersistentHashMap [id ^Registry registry] (currency-id->country-ids* id registry)))
@@ -406,7 +406,7 @@
   "Returns the currency ID to localized propertied map from a registry. If the registry
   is not given the dynamic variable `io.randomseed.bankster.registry/*default*` is
   tried. If it is not set, current state of a global registry is used instead."
-  {:tag clojure.lang.PersistentHashMap :added "1.3.0"}
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
   (^clojure.lang.PersistentHashMap [] (currency-id->localized*))
   (^clojure.lang.PersistentHashMap [^Registry registry] (currency-id->localized* registry))
   (^clojure.lang.PersistentHashMap [id ^Registry registry] (currency-id->localized* id registry)))
@@ -415,7 +415,7 @@
   "Returns a version string of a registry. If the registry is not given the dynamic
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
   current state of a global registry is used instead."
-  {:tag clojure.lang.PersistentHashMap :added "1.3.0"}
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
   (^String [] (version*))
   (^String [^Registry registry] (version* registry)))
 
@@ -423,7 +423,7 @@
   "Returns extra data map of a registry.  If the registry is not given the dynamic
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
   current state of a global registry is used instead."
-  {:tag clojure.lang.PersistentHashMap :added "1.3.0"}
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
   (^clojure.lang.PersistentHashMap [] (ext*))
   (^clojure.lang.PersistentHashMap [^Registry registry] (ext* registry))
   (^clojure.lang.PersistentHashMap [k ^Registry registry] (ext* k registry)))

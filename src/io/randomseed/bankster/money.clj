@@ -1951,16 +1951,15 @@
 
 (defn major->long
   "Returns the major part of the given amount as a long number."
-  {:tag 'long :added "1.0.0"}
+  {:added "1.0.0"}
   ^long [^Money a]
-  (scale/->long ^BigDecimal (.amount ^Money a) scale/ROUND_DOWN))
+  (long (scale/->long ^BigDecimal (.amount ^Money a) scale/ROUND_DOWN)))
 
 (defn major->int
-  "Returns the major part of the given amount as an int number (may cast to long
-  primitive)."
-  {:tag 'int :added "1.0.0"}
-  [^Money a]
-  (int (scale/->int ^BigDecimal (.amount ^Money a) scale/ROUND_DOWN)))
+  "Returns the major part of the given amount as an int number widened to long."
+  {:tag Integer :added "1.0.0"}
+  ^long [^Money a]
+  (long (scale/->int ^BigDecimal (.amount ^Money a) scale/ROUND_DOWN)))
 
 (defn minor
   "Returns the minor part of the given amount."
@@ -1975,16 +1974,15 @@
 
 (defn minor->long
   "Returns the minor part of the given amount as a long number."
-  {:tag 'long :added "1.0.0"}
+  {:added "1.0.0"}
   ^long [^Money a]
   (.longValueExact ^BigDecimal (minor ^Money a)))
 
 (defn minor->int
-  "Returns the minor part of the given amount as an integer number (may cast to long
-  primitive)."
-  {:tag 'int :added "1.0.0"}
-  [^Money a]
-  (int (.intValueExact ^BigDecimal (minor ^Money a))))
+  "Returns the minor part of the given amount as an int number widened to long."
+  {:tag Integer :added "1.0.0"}
+  ^long [^Money a]
+  (long (.intValueExact ^BigDecimal (minor ^Money a))))
 
 (defn major-minor
   "Returns a vector with major and minor parts of the given monetary amount."
@@ -1994,7 +1992,7 @@
 
 (defn major-minor->int
   "Returns a vector with major and minor parts of the given monetary amount represented
-  as integer numbers (may cast to long primitives)."
+  as integer numbers (widened to long)."
   {:tag clojure.lang.IPersistentVector :added "1.0.0"}
   ^clojure.lang.IPersistentVector [^Money a]
   [(major->int a) (minor->int a)])
@@ -2021,7 +2019,7 @@
 
 (defn ->double
   "Converts an amount of the given money to a double with optional rescaling."
-  {:tag      'double :added "1.0.0"
+  {:added    "1.0.0"
    :arglists '(^double [a]
                ^double [a ^long scale]
                ^double [a rounding-mode]

@@ -6,14 +6,13 @@
 
   (:refer-clojure :exclude [+ - * / = not= int long double float > < >= <= compare pos? neg?])
 
-  (:require [io.randomseed.bankster          :refer       :all]
             [io.randomseed.bankster.scale    :as         scale]
             [io.randomseed.bankster.currency :as      currency]
             [io.randomseed.bankster.money    :as         money]
             [io.randomseed.bankster.util     :refer       :all])
 
-  (:import  [io.randomseed.bankster Currency Registry Money]
-            [java.math MathContext RoundingMode]))
+  (:import  (io.randomseed.bankster Money)
+            (java.math MathContext RoundingMode)))
 
 (def ^{:tag io.randomseed.bankster.Money :added "1.0.0"
        :arglists '(^Money []

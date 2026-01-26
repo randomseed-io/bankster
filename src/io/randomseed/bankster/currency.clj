@@ -75,9 +75,19 @@
 
 (defmacro val-auto-scaled*?
   "Returns `true` if the given scale is equal to auto-scaled."
-  {:added "1.3.0"}
+  {:added "2.0.0"}
   [scale]
-  `(clojure.core/== auto-scaled ~scale))
+  `(clojure.core/== auto-scaled (int ~scale)))
+
+;;
+;; Set of all Java currencies.
+;;
+
+(def ^{:tag clojure.lang.PersistentHashSet :added "2.0.0"}
+  java-all-set
+  "A set of Java currencies (instances of `java.util.Currency`, including obsolete
+  currencies."
+  (set (java.util.Currency/getAvailableCurrencies)))
 
 ;;
 ;; Basic helpers
@@ -86,7 +96,7 @@
 (defn ascii-az?
   "Returns `true` if `s` is non-empty and contains only ASCII letters from a to z and A
   to Z."
-  {:tag Boolean :private true :added "1.3.0"}
+  {:tag Boolean :private true :added "2.0.0"}
   ^Boolean [^String s]
   (when (some? s)
     (let [n (unchecked-int (.length s))]
@@ -104,7 +114,7 @@
   "Returns `true` when the given currency code, expressed as keyword, is exactly a
   3-character, simple keyword consisting only of uppercase letters in range of
   A-Z. Otherwise it returns `false`."
-  {:tag Boolean :added "1.3.0"}
+  {:tag Boolean :added "2.0.0"}
   ^Boolean [^clojure.lang.Keyword kid]
   (and (keyword? kid)
        (nil? (.getNamespace kid))
@@ -117,7 +127,7 @@
 
 (defn valid-numeric-id?
   "Returns `true` if a numeric ID is valid."
-  {:tag Boolean :private true :added "1.3.0"}
+  {:tag Boolean :private true :added "2.0.0"}
   ^Boolean [^long nr]
   (and (not (== (int nr) no-numeric-id))
        (pos? nr)))
@@ -132,7 +142,7 @@
 (defn try-to-make-iso-domain
   "Returns `:ISO-4217` when the given numeric ID is valid and the given currency code
   is an uppercase 3-letter simple keyword. Otherwise it returns `nil`."
-  {:private true :added "1.3.0"}
+  {:private true :added "2.0.0"}
   [^long numeric-id ^clojure.lang.Keyword code]
   (when (and (valid-numeric-id? numeric-id) (iso-strict-code? code))
     :ISO-4217))
@@ -265,7 +275,7 @@
    "Coerces a currency representation to a currency code (unqualified keyword).
   Registry-free. May return `nil` if the code cannot be derived.")
 
-  (^{:tag 'long :added "2.0.0"}
+  (^{:tag long :added "2.0.0"}
    to-numeric-id
    [this]
    "Coerces a currency representation to its numeric identifier (ISO 4217 numeric

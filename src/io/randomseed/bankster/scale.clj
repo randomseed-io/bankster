@@ -91,7 +91,7 @@
 (defn div-max-precision
   "Returns the maximum possible precision for the operation of dividing two BigDecimal
   numbers."
-  {:tag 'long :added "1.0.0"}
+  {:added "1.0.0"}
   ^long [^BigDecimal a ^BigDecimal b]
   (long (min (+ (long (.precision ^BigDecimal a))
                 (long (Math/ceil (/ (* 10.0 (int (.precision ^BigDecimal b))) 3.0))))
@@ -433,7 +433,7 @@
 
 (defn ->long
   "Converts to a long with optional rounding."
-  {:tag 'long :added "1.0.0"}
+  {:added "1.0.0"}
   (^long [n]                             (long (.longValueExact ^BigDecimal (amount n 0))))
   (^long [n ^RoundingMode rounding-mode] (long (.longValueExact ^BigDecimal (amount n 0 rounding-mode)))))
 
@@ -477,7 +477,7 @@
   "Converts to a double with optional rescaling and rounding. If the precision of
   double is to small to express the value, rounding must be provided (either
   explicitly or using *rounding-mode*), otherwise an exception will be thrown."
-  {:tag      'double :added "1.1.0"
+  {:added    "1.1.0"
    :arglists '(^double [n]
                ^double [n ^long scale]
                ^double [n rounding-mode]

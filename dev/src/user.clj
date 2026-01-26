@@ -31,6 +31,7 @@
   (:import [io.randomseed.bankster Registry Currency Money]))
 
 (set! *warn-on-reflection* true)
+(set! *unchecked-math* :warn-on-boxed)
 
 (alter-var-root
  #'s/*explain-out*
@@ -53,6 +54,11 @@
                 (constantly true)
                 (when (thread-bound? #'*warn-on-reflection*)
                   (set! *warn-on-reflection* true)))
+
+(alter-var-root #'*unchecked-math*
+                (constantly :warn-on-boxed)
+                (when (thread-bound? #'*unchecked-math*)
+                  (set! *unchecked-math* :warn-on-boxed)))
 
 (comment 
   (refresh-all)

@@ -69,7 +69,7 @@
   "Returns a set with all elements matching `pred` removed.
 
   Returns `nil` when `s` is `nil` or when the resulting set is empty."
-  {:tag clojure.lang.PersistentHashSet :added "1.3.0"}
+  {:tag clojure.lang.PersistentHashSet :added "2.0.0"}
   [^clojure.lang.IFn pred ^clojure.lang.PersistentHashSet s]
   (when (some? s)
     (not-empty
@@ -82,7 +82,7 @@
   "Returns a set with all elements *not* matching `pred` removed.
 
   Returns `nil` when `s` is `nil` or when the resulting set is empty."
-  {:tag clojure.lang.PersistentHashSet :added "1.3.0"}
+  {:tag clojure.lang.PersistentHashSet :added "2.0.0"}
   [^clojure.lang.IFn pred ^clojure.lang.PersistentHashSet s]
   (when (some? s)
     (not-empty
@@ -97,7 +97,7 @@
   Returns a vector of two strings: `[before after]`. When `s` is `nil` or empty,
   returns `[nil nil]`. When there is no slash, returns `[s nil]`. Uses Java
   `indexOf` and `substring`."
-  {:added "1.3.0"}
+  {:added "2.0.0"}
   [^String s]
   (if (and (some? s) (not (.isEmpty ^String s)))
     (let [i (unchecked-int (.indexOf ^String s (int \/)))]
@@ -118,8 +118,8 @@
      (if (~pred v#) v# ~@body)))
 
 (defn count-digits
-  {:added "1.0.0" :tag 'long}
-  [^long n]
+  {:added "1.0.0"}
+  ^long [^long n]
   (if (zero? n) 1
       (unchecked-inc
        (long (Math/floor (Math/log10 n))))))
