@@ -65,6 +65,48 @@
   [obj]
   (when (seq obj) obj))
 
+(defn remove-from-set-where
+  "Returns a set with all elements matching `pred` removed.
+
+  Returns `nil` when `s` is `nil` or when the resulting set is empty."
+  {:tag clojure.lang.PersistentHashSet :added "1.3.0"}
+  [^clojure.lang.IFn pred ^clojure.lang.PersistentHashSet s]
+  (when (some? s)
+    (not-empty
+     (persistent!
+      (reduce (fn [ts x] (if (pred x) (disj! ts x) ts))
+              (transient s)
+              s)))))
+
+(defn keep-in-set-where
+  "Returns a set with all elements *not* matching `pred` removed.
+
+  Returns `nil` when `s` is `nil` or when the resulting set is empty."
+  {:tag clojure.lang.PersistentHashSet :added "1.3.0"}
+  [^clojure.lang.IFn pred ^clojure.lang.PersistentHashSet s]
+  (when (some? s)
+    (not-empty
+     (persistent!
+      (reduce (fn [ts x] (if (pred x) ts (disj! ts x)))
+              (transient s)
+              s)))))
+
+(defn split-on-first-slash
+  "Splits a string on the first slash character ('/').
+
+  Returns a vector of two strings: `[before after]`. When `s` is `nil` or empty,
+  returns `[nil nil]`. When there is no slash, returns `[s nil]`. Uses Java
+  `indexOf` and `substring`."
+  {:added "1.3.0"}
+  [^String s]
+  (if (and (some? s) (not (.isEmpty ^String s)))
+    (let [i (unchecked-int (.indexOf ^String s (int \/)))]
+      (if (neg? i)
+        [s nil]
+        [(not-empty ^String (.substring ^String s 0 i))
+         (not-empty ^String (.substring ^String s (unchecked-inc-int i)))]))
+    [nil nil]))
+
 (defmacro is
   [pred val & body]
   `(let [v# ~val]
