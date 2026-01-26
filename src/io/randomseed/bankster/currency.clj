@@ -192,13 +192,16 @@
            ns-domain  (some-> (namespace kid) bu/try-upper-case keyword)
            iso-ns?    (identical? ns-domain :ISO-4217)
            kid        (if iso-ns? (keyword (core-name kid)) kid)
-           domain     (if (nil? domain)
-                        (or ns-domain (try-to-make-iso-domain numeric-id kid))
-                        (keyword
-                         (str/upper-case
-                          (if (ident? domain)
-                            (core-name domain)
-                            (let [d (str domain)] (when (seq d) d))))))
+           explicit-nil? (identical? domain explicit-nil)
+           domain        (if explicit-nil?
+                           nil
+                           (if (nil? domain)
+                             (or ns-domain (try-to-make-iso-domain numeric-id kid))
+                             (keyword
+                              (str/upper-case
+                               (if (ident? domain)
+                                 (core-name domain)
+                                 (let [d (str domain)] (when (seq d) d)))))))
            ns-domain  (when-not iso-ns? ns-domain)]
        (when (and (some? ns-domain) (not= domain ns-domain))
          (throw (ex-info
