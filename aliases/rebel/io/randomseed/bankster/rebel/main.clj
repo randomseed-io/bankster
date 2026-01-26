@@ -12,6 +12,12 @@
     :init (fn []
             (try
               (println "[bankster] Loading Clojure code, please wait...")
+              (when (System/getProperty "nrepl.load")
+                (try
+                  (require 'nrepl)
+                  (catch Exception e
+                    (.printStackTrace e)
+                    (println "[bankster] Failed to start nREPL (see exception above)."))))
               (require 'user)
               (in-ns 'user)
               (catch Exception e

@@ -2,4 +2,4 @@
 
 echo "[bankster] Starting development environment, please wait..."
 
-clojure -M:nrepl:dev:dev-nrepl:dev-rebel
+clojure -M:dev:dev-nrepl:dev-rebel

@@ -1,34 +1,90 @@
 (ns ^{:clojure.tools.namespace.repl/load false} nrepl
   (:require
-   [nrepl.server :refer [start-server stop-server]]
-   [cider.nrepl]
-   ;;[refactor-nrepl.middleware :as refactor.nrepl]
-   [io.aviso.ansi]
-   [puget.printer :refer [cprint]]))
+   [clojure.java.io :as io]
+   [clojure.string  :as str]
+   [nrepl.server    :as nrepl.server :refer [start-server stop-server]]
+   [cider.nrepl]))
 
-(defn start-nrepl-old
-  [opts]
-  (let [server
-        (start-server
-         :port (:port opts)
-         :handler
-         (apply nrepl.server/default-handler
-                (conj (map #'cider.nrepl/resolve-or-fail cider.nrepl/cider-middleware)
-                      ;; #'refactor.nrepl/wrap-refactor
-                      )))]
-    (spit ".nrepl-port" (:port server))
-    (println (io.aviso.ansi/yellow (str "[bankster] nREPL client can be connected to port " (:port server))))
-    server))
+(def ^:private default-port 5610)
+(def ^:private default-port-file ".nrepl-port")
 
-(defn nrepl-handler []
-  (ns-resolve 'cider.nrepl 'cider-nrepl-handler))
+(defn- parse-long*
+  ^Long [x]
+  (try
+    (cond
+      (nil? x) nil
+      (int? x) (long x)
+      (number? x) (long x)
+      :else (Long/parseLong (str/trim (str x))))
+    (catch Exception _ nil)))
 
-(defn start-nrepl
-  [opts]
-  (let [server (start-server :port (:port opts) :handler (nrepl-handler))]
-    (println (io.aviso.ansi/yellow (str "[bankster] nREPL client can be connected to port " (:port server))))
-    server))
+(defn- configured-port
+  ^Long []
+  (or (parse-long* (System/getProperty "bankster.nrepl.port"))
+      (parse-long* (System/getProperty "nrepl.port"))
+      (parse-long* (System/getenv "BANKSTER_NREPL_PORT"))
+      (parse-long* (System/getenv "NREPL_PORT"))
+      default-port))
+
+(defn- configured-port-file
+  ^String []
+  (or (not-empty (System/getProperty "bankster.nrepl.port-file"))
+      (not-empty (System/getProperty "nrepl.port-file"))
+      default-port-file))
+
+(defn- middleware-var
+  "Best-effort middleware resolver.
+
+  Returns a middleware var or nil when it can't be resolved (missing dep etc.)."
+  [ns-sym var-sym]
+  (try
+    (require ns-sym)
+    (ns-resolve ns-sym var-sym)
+    (catch Throwable _ nil)))
+
+(defn nrepl-handler
+  "Returns the nREPL handler with CIDER middleware and optional extras."
+  []
+  (let [kaocha-mw   (middleware-var 'kaocha-nrepl.middleware   'wrap-kaocha)
+        refactor-mw (middleware-var 'refactor-nrepl.middleware 'wrap-refactor)]
+    (apply nrepl.server/default-handler
+           (cond-> (mapv #'cider.nrepl/resolve-or-fail cider.nrepl/cider-middleware)
+             kaocha-mw   (conj kaocha-mw)
+             refactor-mw (conj refactor-mw)))))
+
+(defonce ^:private !server (atom nil))
+
+(defn start!
+  "Starts an nREPL server (if not started yet) and writes `.nrepl-port` to CWD.
+
+  Options:
+  - :port      integer port (defaults to env/sysprops/5610)
+  - :port-file path to write port file (defaults to `.nrepl-port`)"
+  ([] (start! {}))
+  ([{:keys [port port-file]
+     :or   {port      (configured-port)
+            port-file (configured-port-file)}
+     :as   _opts}]
+   (or @!server
+       (let [server (start-server :port (long port) :handler (nrepl-handler))
+             pf     (io/file port-file)]
+         (spit pf (str (:port server)))
+         (println (str "[bankster] nREPL client can be connected to port " (:port server)
+                       " (" (.getPath pf) ")"))
+         (reset! !server server)))))
+
+(defn stop!
+  "Stops the nREPL server (if running) and tries to delete `.nrepl-port`."
+  []
+  (when-let [server @!server]
+    (stop-server server)
+    (reset! !server nil))
+  (let [pf (io/file (configured-port-file))]
+    (when (.exists pf)
+      (try
+        (.delete pf)
+        (catch Throwable _ nil)))))
 
 (println "[bankster] Starting nREPL server")
 
-(def server (start-nrepl {:port 5610}))
+(start! {})
