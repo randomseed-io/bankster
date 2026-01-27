@@ -137,20 +137,20 @@
   "Alias for `io.randomseed.bankster.money/minor`."
   money/minor)
 
-(def ^{:tag 'int :added "1.0.0"
-       :arglists '(^BigDecimal [^Money a ^Money b])}
+(def ^{:tag      'long :added "1.0.0"
+       :arglists '(^long [^Money a ^Money b])}
   compare
   "Alias for `io.randomseed.bankster.money/compare`."
   money/compare)
 
-(def ^{:tag Integer :added "1.0.0"
-       :arglists '(^int [^Money a])}
+(def ^{:tag      'long :added "1.0.0"
+       :arglists '(^long [^Money a])}
   int
   "Alias for `io.randomseed.bankster.money/major->int`."
   money/major->int)
 
-(def ^{:tag 'long :added "1.0.0"
-       :arglists '(^int [^Money a])}
+(def ^{:tag      'long :added "1.0.0"
+       :arglists '(^long [^Money a])}
   long
   "Alias for io.randomseed.bankster.money/major->long."
   money/major->long)
@@ -161,8 +161,8 @@
   "Alias for io.randomseed.bankster.money/->double."
   money/->double)
 
-(def ^{:tag 'float :added "1.0.0"
-       :arglists '(^float [^Money a])}
+(def ^{:tag      'double :added "1.0.0"
+       :arglists '(^double [^Money a])}
   float
   "Alias for `io.randomseed.bankster.money/->float`."
   money/->float)

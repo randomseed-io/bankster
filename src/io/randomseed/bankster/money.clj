@@ -789,8 +789,8 @@
   scales. Returns -1 if the second one is less than, 0 if equal to, and 1 if it is
   greater than the first. Nil values are always considered lower when comparing."
   {:added "1.0.0"}
-  ([^Money _] (int 0))
-  ([^Money a ^Money b]
+  (^long [^Money _] (unchecked-long 0))
+  (^long [^Money a ^Money b]
    (let [nila (nil? a)
          nilb (nil? b)]
      (assert (or nila nilb (same-currencies? ^Money a ^Money b))
@@ -798,19 +798,19 @@
                   a ", " b))
      (if nila
        (if nilb
-         (int 0)
-         (int -1))
+         (unchecked-long 0)
+         (unchecked-long -1))
        (if nilb
-         (int 1)
-         (int (.compareTo ^BigDecimal (.amount ^Money a) ^BigDecimal (.amount ^Money b))))))))
+         (unchecked-long 1)
+         (unchecked-long (.compareTo ^BigDecimal (.amount ^Money a) ^BigDecimal (.amount ^Money b))))))))
 
 (defn compare
   "Compares two monetary amounts of the same currency and scale. Returns -1 if the
   second one is less than, 0 if equal to, and 1 if it is greater than the first. Nil
   values are always considered lower when comparing."
   {:added "1.0.0"}
-  ([^Money _] (int 0))
-  ([^Money a ^Money b]
+  (^long [^Money _] (unchecked-long 0))
+  (^long [^Money a ^Money b]
    (let [nila (nil? a)
          nilb (nil? b)]
      (assert (or nila nilb (same-currencies? ^Money a ^Money b))
@@ -818,17 +818,17 @@
                   a ", " b))
      (if nila
        (if nilb
-         (int 0)
-         (int -1))
+         (unchecked-long 0)
+         (unchecked-long -1))
        (if nilb
-         (int 1)
+         (unchecked-long 1)
          (let [^BigDecimal am-a (.amount ^Money a)
                ^BigDecimal am-b (.amount ^Money b)]
            (assert (clojure.core/== (.scale ^BigDecimal am-a) (.scale ^BigDecimal am-b))
                    (str "Cannot compare monetary amounts having different decimal scales: "
                         a " (" (.scale ^BigDecimal am-a) "), "
                         b " (" (.scale ^BigDecimal am-b) ")."))
-           (int (.compareTo ^BigDecimal am-a ^BigDecimal am-b))))))))
+           (unchecked-long (.compareTo ^BigDecimal am-a ^BigDecimal am-b))))))))
 
 ;;
 ;; Predicates.
@@ -841,9 +841,9 @@
   (instance? Money a))
 
 (defn rescaled?
-  "Returns true if the given monetary value has different scale than its currency (so
-  it was rescaled). Returns false if the scale is no different. Returns nil if the
-  currency does not have a fixed scale."
+  "Returns `true` if the given monetary value has different scale than its currency (so
+  it was rescaled). Returns `false` if the scale is no different. Returns `nil` if
+  the currency does not have a fixed scale."
   {:added "1.0.0"}
   [a]
   (let [csc (int (.scale ^Currency (.currency ^Money a)))]
@@ -858,11 +858,11 @@
                   ^Currency (.currency ^Money b)))
 
 (defn same-currency-ids?
-  "Returns true if both currencies have the same IDs for the given money objects."
+  "Returns `true` if both currencies have the same IDs for the given money objects."
   {:tag Boolean :added "1.0.0"}
   [^Money a ^Money b]
-  (clojure.core/= (.id ^Currency (.currency ^Money a))
-                  (.id ^Currency (.currency ^Money b))))
+  (clojure.core/identical? (.id ^Currency (.currency ^Money a))
+                           (.id ^Currency (.currency ^Money b))))
 
 (defn eq?
   "Return true if the money amounts and their currencies are equal. Note that
@@ -871,7 +871,7 @@
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money _] true)
   (^Boolean [^Money a ^Money b]
-   (and (.equals (.amount ^Money a) (.amount ^Money b))
+   (and (.equals ^BigDecimal (.amount ^Money a) ^BigDecimal (.amount ^Money b))
         (same-currencies? a b)))
   (^Boolean [^Money a ^Money b & more]
    (if (eq? a b)
@@ -1903,14 +1903,14 @@
 (defn neg
   "Returns the negated amount of the given money. For negative amount it will reverse
   their sign. Same as (sub x)."
-  {:added "1.0.0"}
-  [a]
+  {:tag Money :added "1.0.0"}
+  ^Money [^Money a]
   (sub a))
 
 (defn pos
   "Returns the given money object."
   {:tag Money :added "1.0.0"}
-  [^Money a]
+  ^Money [^Money a]
   a)
 
 (defn abs
@@ -1998,11 +1998,11 @@
   "Returns the minor part of the given amount as a long number."
   {:added "1.0.0"}
   ^long [^Money a]
-  (.longValueExact ^BigDecimal (minor ^Money a)))
+  (long (.longValueExact ^BigDecimal (minor ^Money a))))
 
 (defn minor->int
   "Returns the minor part of the given amount as an int number widened to long."
-  {:tag Integer :added "1.0.0"}
+  {:tag 'long :added "1.0.0"}
   ^long [^Money a]
   (long (.intValueExact ^BigDecimal (minor ^Money a))))
 
@@ -2054,24 +2054,25 @@
    (scale/->double ^BigDecimal (.amount ^Money a) scale rounding-mode)))
 
 (defn ->float
-  "Converts an amount of the given money to a float with optional rescaling."
-  {:tag      'float :added "1.0.0"
-   :arglists '([a]
-               [a ^long scale]
-               [a rounding-mode]
-               [a ^long scale rounding-mode])}
-  ([^Money a]
+  "Converts an amount of the given money to a float with optional rescaling. Resulting
+  type will be widened to double."
+  {:tag      'double :added "1.0.0"
+   :arglists '(^double [a]
+               ^double [a ^long scale]
+               ^double [a rounding-mode]
+               ^double [a ^long scale rounding-mode])}
+  (^double [^Money a]
    (scale/->float ^BigDecimal (.amount ^Money a)))
-  ([^Money a scale-or-rounding]
+  (^double [^Money a scale-or-rounding]
    (scale/->float ^BigDecimal (.amount ^Money a) scale-or-rounding))
-  ([^Money a ^long scale rounding-mode]
+  (^double [^Money a ^long scale rounding-mode]
    (scale/->float ^BigDecimal (.amount ^Money a) scale rounding-mode)))
 
 (defn add-major
   "Increases major amount by the given number. If the number is also expressed as money
   and it has decimal parts, they will be truncated."
   {:tag Money :added "1.0.0"}
-  [^Money a b]
+  ^Money [^Money a b]
   (Money. ^Currency   (.currency ^Money a)
           ^BigDecimal (.add ^BigDecimal (.amount ^Money a)
                             ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN))))
@@ -2080,7 +2081,7 @@
   "Decreases major amount by the given number. If the number is also expressed as money
   and it has decimal parts, they will be truncated."
   {:tag Money :added "1.0.0"}
-  [^Money a b]
+  ^Money [^Money a b]
   (Money. ^Currency   (.currency ^Money a)
           ^BigDecimal (.subtract ^BigDecimal (.amount ^Money a)
                                  ^BigDecimal (scale/apply b 0 scale/ROUND_DOWN))))
@@ -2088,20 +2089,20 @@
 (defn inc-major
   "Increases major amount by 1."
   {:tag Money :added "1.0.0"}
-  [^Money a]
+  ^Money [^Money a]
   (add-major a BigDecimal/ONE))
 
 (defn dec-major
   "Decreases major amount by 1."
   {:tag Money :added "1.0.0"}
-  [^Money a]
+  ^Money [^Money a]
   (sub-major a BigDecimal/ONE))
 
 (defn add-minor
   "Increases minor amount by the given number. If the number is also expressed as money
   and it has decimal parts, they will be truncated.."
   {:tag Money :added "1.0.0"}
-  [^Money a b]
+  ^Money [^Money a b]
   (let [^BigDecimal am (.amount ^Money a)]
     (Money.
      ^Currency   (.currency ^Money a)
