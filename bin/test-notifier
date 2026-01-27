@@ -21,21 +21,24 @@ fi
 
 sender="${BANKSTER_NOTIFIER_SENDER:-${TERMINAL_NOTIFIER_SENDER:-}}"
 
-if [ -z "${sender}" ]; then
-  case "${TERM_PROGRAM:-}" in
-    iTerm.app|iTerm2.app)
-      sender="com.googlecode.iterm2"
-      ;;
-    Apple_Terminal)
-      sender="com.apple.Terminal"
-      ;;
-    *)
-      sender="com.apple.Terminal"
-      ;;
-  esac
+if [ -n "${USE_NOLOGIN}" ]; then
+  if [ -z "${sender}" ]; then
+    case "${TERM_PROGRAM:-}" in
+      iTerm.app|iTerm2.app)
+        sender="com.googlecode.iterm2"
+        ;;
+      Apple_Terminal)
+        sender="com.apple.Terminal"
+        ;;
+      *)
+        sender="com.apple.Terminal"
+        ;;
+    esac
+  fi
+  terminal-notifier -sender "${sender}" -message "${1}" -title "${2}" -appIcon "${3}"
+else
+  terminal-notifier -message "${1}" -title "${2}" -appIcon "${3}"
 fi
-
-terminal-notifier -sender "${sender}" -message "${1}" -title "${2}" -appIcon "${3}"
 
 if [ "${BANKSTER_TEST_NOTIFIER_STRICT:-}" = "1" ]; then
   exit $?

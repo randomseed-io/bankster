@@ -12,5 +12,8 @@
 # Notes:
 # - Uses `zsh -f` (no rc files). It inherits current environment variables.
 
+USES_NOLOGIN=1
+export USES_NOLOGIN
+
 exec zsh -f -c 'exec "$@"' zsh "$@"
 
