@@ -1,6 +1,4 @@
-(ns io.randomseed.bankster.util.map
-
-  (:require [io.randomseed.bankster.util :refer :all]))
+(ns io.randomseed.bankster.util.map)
 
 (defmacro lazy-get
   "Like get but the default value is not evaluated if the key is found."

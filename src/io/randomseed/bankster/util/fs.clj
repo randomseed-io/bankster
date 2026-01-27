@@ -1,8 +1,10 @@
-(ns io.randomseed.bankster.util.fs
+(ns
 
-  ^{:doc    "Support functions and macros, filesystem operations."
-    :author "Paweł Wilk"
-    :added  "1.0.0"}
+    ^{:doc    "Support functions and macros, filesystem operations."
+      :author "Paweł Wilk"
+      :added  "1.0.0"}
+
+    io.randomseed.bankster.util.fs
 
   (:require [clojure.string              :as      str]
             [clojure.java.io             :as       io]

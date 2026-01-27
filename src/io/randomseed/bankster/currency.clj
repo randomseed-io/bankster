@@ -1,8 +1,9 @@
-(ns io.randomseed.bankster.currency
 
-  ^{:doc    "Bankster library, currency operations."
-    :author "Paweł Wilk"
-    :added  "1.0.0"}
+    ^{:doc    "Bankster library, currency operations."
+      :author "Paweł Wilk"
+      :added  "1.0.0"}
+
+    io.randomseed.bankster.currency
 
   (:refer-clojure :rename {ns      core-ns
                            new     core-new

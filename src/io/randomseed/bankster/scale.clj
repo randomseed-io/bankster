@@ -1,8 +1,10 @@
-(ns io.randomseed.bankster.scale
+(ns
 
-  ^{:doc    "Bankster library, scalable protocol with implementation."
-    :author "Paweł Wilk"
-    :added  "1.0.0"}
+    ^{:doc    "Bankster library, scalable protocol with implementation."
+      :author "Paweł Wilk"
+      :added  "1.0.0"}
+
+    io.randomseed.bankster.scale
 
   (:refer-clojure :exclude [apply])
 

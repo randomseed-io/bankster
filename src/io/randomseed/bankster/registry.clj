@@ -1,8 +1,10 @@
-(ns io.randomseed.bankster.registry
+(ns
 
-  ^{:doc    "Bankster, registry management."
-    :author "Paweł Wilk"
-    :added  "1.0.0"}
+    ^{:doc    "Bankster, registry management."
+      :author "Paweł Wilk"
+      :added  "1.0.0"}
+
+    io.randomseed.bankster.registry
 
   (:refer-clojure :exclude [new get set! update])
 

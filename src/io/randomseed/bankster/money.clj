@@ -1,8 +1,10 @@
-(ns io.randomseed.bankster.money
+(ns
 
-  ^{:doc    "Bankster library, money operations."
-    :author "Paweł Wilk"
-    :added  "1.0.0"}
+    ^{:doc    "Bankster library, money operations."
+      :author "Paweł Wilk"
+      :added  "1.0.0"}
+
+    io.randomseed.bankster.money
 
   (:refer-clojure :exclude [apply format compare cast rem
                             = == not= not== < > >= <=

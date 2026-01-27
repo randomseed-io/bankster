@@ -1,8 +1,10 @@
-(ns io.randomseed.bankster.money.inter-ops
+(ns
 
-  ^{:doc    "Bankster library, transparent wrappers for money operations."
-    :author "Paweł Wilk"
-    :added  "1.0.0"}
+    ^{:doc    "Bankster library, transparent wrappers for money operations."
+      :author "Paweł Wilk"
+      :added  "1.0.0"}
+
+    io.randomseed.bankster.money.inter-ops
 
   (:refer-clojure :exclude [> < >= <= + - * / = not= long int double float compare pos? neg?])
 

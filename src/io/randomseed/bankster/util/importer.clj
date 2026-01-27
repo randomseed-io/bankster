@@ -1,8 +1,10 @@
-(ns io.randomseed.bankster.util.importer
+(ns
 
-  ^{:doc    "Bankster library, import-export operations."
-    :author "Paweł Wilk"
-    :added  "1.0.0"}
+    ^{:doc    "Bankster library, import-export operations."
+      :author "Paweł Wilk"
+      :added  "1.0.0"}
+
+    io.randomseed.bankster.util.importer
 
   (:require [clojure.java.io                 :as       io]
             [clojure.data.csv                :as      csv]
@@ -17,8 +19,9 @@
             [io.randomseed.bankster.util.map :as      map]
             [io.randomseed.bankster.util     :refer  :all])
 
-  (:import  [io.randomseed.bankster Currency Registry]
-            [java.time LocalDateTime format.DateTimeFormatter]))
+  (:import  (io.randomseed.bankster Currency Registry)
+            (java.time              LocalDateTime)
+            (java.time.format       DateTimeFormatter)))
 
 ;;
 ;; Pathnames and URIs.

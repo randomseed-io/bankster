@@ -1,17 +1,18 @@
-(ns io.randomseed.bankster.config
+(ns
 
-  ^{:doc    "Bankster library, configuration handling."
-    :author "Paweł Wilk"
-    :added  "1.0.0"}
+    ^{:doc    "Bankster library, configuration handling."
+      :author "Paweł Wilk"
+      :added  "1.0.0"}
+
+    io.randomseed.bankster.config
 
   (:refer-clojure :exclude [load])
 
   (:require [clojure.edn                    :as      edn]
-            [io.randomseed.bankster.util    :refer  :all]
             [io.randomseed.bankster.util.fs :as       fs]
             [io.randomseed.bankster])
 
-  (:import  [io.randomseed.bankster Currency Registry]))
+  (:import  (io.randomseed.bankster Currency Registry)))
 
 ;;
 ;; Default configuration filename.
