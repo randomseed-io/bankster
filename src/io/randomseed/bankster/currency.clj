@@ -1,3 +1,4 @@
+(ns
 
     ^{:doc    "Bankster library, currency operations."
       :author "Paweł Wilk"
@@ -1768,8 +1769,7 @@
 
   (present?
     (^Boolean [_] false)
-    (^Boolean [_ ^Registry _registry] false))
-  )
+    (^Boolean [_ ^Registry _registry] false)))
 
 (defn parse-currency-code
   "Internal helper which transforms currency codes into keywords."
@@ -2217,8 +2217,8 @@
 
 (defn register-numeric
   "Updates numeric indexes:
-  - `:cur-nr->curs` => sorted-set
-  - `:cur-nr->cur`  => canonical currency (first from set)"
+   - `:cur-nr->curs` => sorted-set
+   - `:cur-nr->cur`  => canonical currency (first from set)"
   {:tag Registry :private true :added "1.0.2"}
   [^Registry registry ^Currency c]
   (let [nr (long (.numeric c))]
@@ -2572,7 +2572,7 @@
      (let [regi (or regi (registry/new-registry))
            curs (prep-currencies          (config/currencies cfg))
            ctrs (prep-cur->ctr            (config/countries  cfg))
-           lpro                           (config/localized  cfg)
+           lpro (config/localized  cfg)
            vers (str                      (config/version    cfg))
            regi (if (nil? vers) regi (assoc regi :version vers))]
        (reduce (fn ^Registry [^Registry r ^Currency c]
@@ -2997,24 +2997,25 @@
 
   A locale can be expressed as `java.util.Locale` object or any other object (like a
   string or a keyword) which can be used to look up the locale."
-          (memoize
-           (fn symbol
-             (^String [c]        (symbol c (Locale/getDefault) (registry/get)))
-             (^String [c locale] (symbol c locale (registry/get)))
-	             (^String [c locale ^Registry registry]
-	              (let [^Registry registry (unit-registry registry)
-	                    lc (l/locale locale)
-	                    lp (try (localized-property :symbol c lc registry)
-	                            (catch clojure.lang.ExceptionInfo _e nil))]
-	                (if (some? lp)
-	                  lp
-	                  (let [scode (code c registry)]
-	                    (or (when (iso? c registry)
-                          (try (-> scode
-                                   ^java.util.Currency (java.util.Currency/getInstance)
-                                   (.getSymbol lc))
-                               (catch IllegalArgumentException _e nil)))
-                        scode))))))))
+
+  (memoize
+   (fn symbol
+     (^String [c]        (symbol c (Locale/getDefault) (registry/get)))
+     (^String [c locale] (symbol c locale (registry/get)))
+     (^String [c locale ^Registry registry]
+      (let [^Registry registry (unit-registry registry)
+            lc                 (l/locale locale)
+            lp                 (try (localized-property :symbol c lc registry)
+                                    (catch clojure.lang.ExceptionInfo _e nil))]
+        (if (some? lp)
+          lp
+          (let [scode (code c registry)]
+            (or (when (iso? c registry)
+                  (try (-> scode
+                           ^java.util.Currency (java.util.Currency/getInstance)
+                           (.getSymbol lc))
+                       (catch IllegalArgumentException _e nil)))
+                scode))))))))
 
 (defn symbol-native
   "Like symbol but for ISO-standardized currencies uses locale assigned to the first
@@ -3051,35 +3052,36 @@
   The following tactic is applied:
 
   - The registry field .cur-id->localized is looked up for the currency ID key. If
-  it's found then a key with the given locale object (a kind of `java.util.Locale`) is
-  obtained. If there is no such key, the default one :* is tried (a keyword). The
-  resulting value should be a map of localized properties in which an entry under the
-  key `:symbol` should exist. Its value will be returned, if found.
+    it's found then a key with the given locale object (a kind of `java.util.Locale`)
+    is obtained. If there is no such key, the default one :* is tried (a keyword). The
+    resulting value should be a map of localized properties in which an entry under the
+    key `:symbol` should exist. Its value will be returned, if found.
 
   - If the above method failed and the given currency is ISO-standardized then Java
-  methods will be tried to obtain it.
+    methods will be tried to obtain it.
 
   - If the above method failed a currency code will be returned.
 
   A locale can be expressed as `java.util.Locale` object or any other object (like a
   string or a keyword) which can be used to look up the locale."
-          (memoize
-           (fn display-name
-             (^String [c]        (display-name c (Locale/getDefault) (registry/get)))
-             (^String [c locale] (display-name c locale (registry/get)))
-	             (^String [c locale ^Registry registry]
-	              (let [^Registry registry (unit-registry registry)
-	                    lc (l/locale locale)
-	                    lp (try (localized-property :name c lc registry)
-	                            (catch clojure.lang.ExceptionInfo _e nil))]
-	                (if (some? lp) lp
-	                    (let [scode (code c registry)]
-	                      (or (when (iso? c registry)
-	                            (try (-> scode
-                                     ^java.util.Currency (java.util.Currency/getInstance)
-                                     (.getDisplayName lc))
-                                 (catch IllegalArgumentException _e nil)))
-                          scode))))))))
+
+  (memoize
+   (fn display-name
+     (^String [c]        (display-name c (Locale/getDefault) (registry/get)))
+     (^String [c locale] (display-name c locale (registry/get)))
+     (^String [c locale ^Registry registry]
+      (let [^Registry registry (unit-registry registry)
+            lc                 (l/locale locale)
+            lp                 (try (localized-property :name c lc registry)
+                                    (catch clojure.lang.ExceptionInfo _e nil))]
+        (if (some? lp) lp
+            (let [scode (code c registry)]
+              (or (when (iso? c registry)
+                    (try (-> scode
+                             ^java.util.Currency (java.util.Currency/getInstance)
+                             (.getDisplayName lc))
+                         (catch IllegalArgumentException _e nil)))
+                  scode))))))))
 
 (defn display-name-native
   "Like display-name but for ISO-standardized currencies uses locale assigned to the
