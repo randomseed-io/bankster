@@ -34,18 +34,18 @@
 ;;
 
 (def ^{:tag 'long :const true :added "1.0.0"}
-  no-numeric-id
+  ^long no-numeric-id
   "Expresses the value of currency's numeric ID which does not exist."
   (long -1))
 
 (def ^{:tag 'int :const true :added "1.0.0"}
-  auto-scaled
+  ^int auto-scaled
   "Expresses the scale of a currency which is automatic and not limited to certain
   decimal places."
   (int -1))
 
 (def ^{:tag clojure.lang.Keyword :const true :private true :added "3.0.0"}
-  explicit-nil
+  ^clojure.lang.Keyword explicit-nil
   "Internal sentinel used to express explicit `nil` values coming from currency maps.
 
   It is used to distinguish between \"value not provided\" (which may trigger
@@ -58,7 +58,7 @@
 ;;
 
 (def ^{:added "1.0.0" :tag Currency :dynamic true}
-  *default*
+  ^Currency *default*
   "Default currency unit to be applied when creating Money objects without the currency
   specified."
   nil)
@@ -104,7 +104,7 @@
         (loop [i (unchecked-int 0)]
           (if (== i n)
             true
-            (let [c (int (.charAt s i))]
+            (let [c (unchecked-int (.charAt s i))]
               (if (or (and (>= c 65) (<= c 90))
                       (and (>= c 97) (<= c 122)))
                 (recur (unchecked-inc-int i))
@@ -120,9 +120,9 @@
        (nil? (.getNamespace kid))
        (let [^String n (.getName kid)]
          (and (== 3 (unchecked-int (.length n)))
-              (let [c0 (int (.charAt n 0))
-                    c1 (int (.charAt n 1))
-                    c2 (int (.charAt n 2))]
+              (let [c0 (unchecked-int (.charAt n 0))
+                    c1 (unchecked-int (.charAt n 1))
+                    c2 (unchecked-int (.charAt n 2))]
                 (and (<= 65 c0 90) (<= 65 c1 90) (<= 65 c2 90)))))))
 
 (defn valid-numeric-id?
@@ -188,8 +188,8 @@
    (when (some? id)
      (let [kid        (keyword id)
            numeric-id (long (or numeric-id no-numeric-id))
-           scale      (int  (or scale auto-scaled))
-           weight     (int  (or weight 0))
+           scale      (unchecked-int (or scale auto-scaled))
+           weight     (unchecked-int (or weight 0))
            ns-domain  (some-> (namespace kid) bu/try-upper-case keyword)
            iso-ns?    (identical? ns-domain :ISO-4217)
            kid        (if iso-ns? (keyword (core-name kid)) kid)
@@ -209,11 +209,11 @@
                  "Currency domain should reflect its namespace (upper-cased) if a namespace is set."
                  {:id kid :domain domain :namespace (namespace kid)})))
        (Currency. kid
-                  (long    numeric-id)
-                  (int     scale)
-                  (keyword kind)
-                  (keyword domain)
-                  (int     weight))))))
+                  (unchecked-long numeric-id)
+                  (unchecked-int  scale)
+                  (keyword        kind)
+                  (keyword        domain)
+                  (unchecked-int  weight))))))
 
 (defn map->new
   "Creates a new currency record from a map."
@@ -225,10 +225,10 @@
           nr              (long (if (number? nr0) nr0 (or (bu/try-parse-long nr0) no-numeric-id)))
           nr              (long (if (< nr 1) no-numeric-id nr))
           sc0             (or (:sc m) (:scale   m) auto-scaled)
-          sc              (int  (if (number? sc0) sc0 (or (bu/try-parse-int sc0) auto-scaled)))
-          sc              (int  (if (< sc 0) auto-scaled sc))
+          sc              (unchecked-int (if (number? sc0) sc0 (or (bu/try-parse-int sc0) auto-scaled)))
+          sc              (unchecked-int (if (< sc 0) auto-scaled sc))
           we0             (or (:we m) (:weight  m) (int 0))
-          weight          (int  (if (number? we0) we0 (or (bu/try-parse-int we0) 0)))
+          weight          (unchecked-int (if (number? we0) we0 (or (bu/try-parse-int we0) 0)))
           kind            (or (:ki m) (:kind    m))
           domain-present? (or (contains? m :do) (contains? m :domain))
           domain-val      (cond
@@ -463,9 +463,9 @@
   ^Currency [^Currency registered-currency ^Currency compared-currency]
   (when
       (and (some? registered-currency)
-           (== (long (.numeric  registered-currency)) (long (.numeric compared-currency)))
-           (== (int  (.scale    registered-currency)) (int  (.scale   compared-currency)))
-           (identical? (.id     registered-currency)  (.id            compared-currency))
+           (== (unchecked-long (.numeric  registered-currency)) (unchecked-long (.numeric compared-currency)))
+           (== (unchecked-int  (.scale    registered-currency)) (unchecked-int  (.scale   compared-currency)))
+           (identical? (.id registered-currency) (.id compared-currency))
            (or (nil? (.domain compared-currency))
                (identical? (.domain registered-currency) (.domain compared-currency)))
            (or (nil? (.kind compared-currency))
@@ -878,7 +878,7 @@
            (when-some [jcode (keyword ^String (.getCurrencyCode jc))]
              (let [jsca (int (.getDefaultFractionDigits jc))]
                (some (fn [^Currency c]
-                       (and (== jsca    ^int  (.scale c))
+                       (and (== jsca     ^int (.scale c))
                             (identical? jcode (.id    c))))
                      curs))))
          (throw (ex-info
@@ -1660,7 +1660,7 @@
   "Returns a currency for the given value by querying the given registry or a global
   registry, which may be shadowed by the value of
   `io.randomseed.bankster.registry/*default* (see
-  `io.randomseed.bankster.registry/with` or `with-registry`)."
+  ``io.randomseed.bankster.registry/with`` or `with-registry`)."
   {:added "1.0.0"}
   ([currency]
    (let [cur# (parse-currency-code currency &env)]
@@ -1705,20 +1705,21 @@
   nr)
 
 (defn sc
-  the assigned decimal places it will return nil (the value of auto-scaled). Locale
+  "Returns currency scale (decimal places) as a number. For currencies without the
+  assigned decimal places it will return `nil` (the value of auto-scaled). Locale
   argument is ignored."
   {:added "1.0.0"}
   ([c]
    (when-some [^Currency c (unit c)]
-     (let [sc (int (.scale ^Currency c))]
+     (let [sc (unchecked-int (.scale ^Currency c))]
        (when-not (== sc auto-scaled) (long sc)))))
   ([c ^Registry registry]
    (when-some [^Currency c (unit c registry)]
-     (let [sc (int (.scale ^Currency c))]
+     (let [sc (unchecked-int (.scale ^Currency c))]
        (when-not (== sc auto-scaled) (long sc)))))
   ([c _locale ^Registry registry]
    (when-some [^Currency c (unit c registry)]
-     (let [sc (int (.scale ^Currency c))]
+     (let [sc (unchecked-int (.scale ^Currency c))]
        (when-not (== sc auto-scaled) (long sc))))))
 
 (def ^{:arglists '([c]
@@ -1838,8 +1839,13 @@
   the currency does not exist, has a different scale or a different numeric code,
   `nil` is returned."
   {:tag java.util.Currency :added "1.0.0"}
-  (^java.util.Currency [currency] (java.util.Currency/getInstance (code currency)))
-  (^java.util.Currency [currency ^Registry registry] (java.util.Currency/getInstance (code currency registry))))
+  (^java.util.Currency [currency]
+   (java currency nil))
+  (^java.util.Currency [currency ^Registry registry]
+   (when-some [^Currency currency (unit currency registry)]
+     (when-some [^String code (code currency)]
+       (when-some [^java.util.Currency c (try (java.util.Currency/getInstance code) (catch Throwable _ nil))]
+         c))))) ;; FIXME
 
 ;;
 ;; Parsing and structuring helpers.
