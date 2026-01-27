@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# Runs a command in a clean shell (no login, no rc files).
+#
+# Useful in sandboxed runners where your login shell init (e.g. sourcing RVM) may
+# fail/noise on every invocation (e.g. `ps: operation not permitted`).
+#
+# Examples:
+#   bin/no-login bin/test --no-profiling
+#   bin/no-login clojure -M:test
+#
+# Notes:
+# - Uses `zsh -f` (no rc files). It inherits current environment variables.
+
+exec zsh -f -c 'exec "$@"' zsh "$@"
+
