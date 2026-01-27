@@ -58,8 +58,8 @@
   "Starts an nREPL server (if not started yet) and writes `.nrepl-port` to CWD.
 
   Options:
-  - :port      integer port (defaults to env/sysprops/5610)
-  - :port-file path to write port file (defaults to `.nrepl-port`)"
+  - `:port`      integer port (defaults to env/sysprops/5610)
+  - `:port-file` path to write port file (defaults to `.nrepl-port`)"
   ([] (start! {}))
   ([{:keys [port port-file]
      :or   {port      (configured-port)

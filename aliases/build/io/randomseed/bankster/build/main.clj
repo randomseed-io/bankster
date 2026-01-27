@@ -44,7 +44,7 @@
   (.exists (io/file path)))
 
 (defn- ensure-module!
-  "Ensures module exists on disk (deps.edn + pom.xml). Returns module files."
+  "Ensures module exists on disk (`deps.edn` + `pom.xml`). Returns module files."
   [{:keys [module dir deps pom] :as mfiles}]
   (when-not (file-exists? deps)
     (throw (ex-info "Missing deps.edn"
@@ -103,12 +103,12 @@
   class-dir)
 
 (defn sync-pom
-  "Sync deps.edn -> pom.xml (dependency section).
-   - clojure -T:build sync-pom
-   - clojure -T:build sync-pom :name    \"utils-core\" \\
-                               :group   'io.randomseed \\
-                               :version \"1.0.0\"      \\
-                               :local-root-version \"${project.version}\""
+  "Sync `deps.edn` -> `pom.xml` (dependency section).
+   - clojure -T`:build` sync-pom
+   - clojure -T`:build` sync-pom `:name`    \"utils-core\" \\
+                               `:group`   '`io.randomseed` \\
+                               `:version` \"1.0.0\"      \\
+                               `:local-root-version` \"${`project.version`}\""
   [{:keys [local-root-version aliases] :as opts}]
   (let [{:keys [deps pom]} (module-files opts)]
     (pom-sync/sync-pom-deps! deps pom
@@ -124,10 +124,10 @@
 
 (defn jar
   "Updates POM with dependencies and builds a single module JAR.
-   - clojure -T:build jar :module  :core          \\
-                          :name    \"utils-core\"  \\
-                          :group   'io.randomseed \\
-                          :version \"1.0.0\""
+   - clojure -T`:build` jar `:module`  `:core`          \\
+                          `:name`    \"utils-core\"  \\
+                          `:group`   '`io.randomseed` \\
+                          `:version` \"1.0.0\""
   [opts]
   (let [mfiles    (module-files     opts)
         aot-ns    (aot-ns           opts)

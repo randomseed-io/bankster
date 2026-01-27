@@ -6,18 +6,18 @@
 
   (:refer-clojure :exclude [> < >= <= + - * / = not= long int double float compare pos? neg?])
 
-  (:require [io.randomseed.bankster          :refer       :all]
-            [io.randomseed.bankster.scale    :as         scale]
-            [io.randomseed.bankster.currency :as      currency]
-            [io.randomseed.bankster.money    :as         money]
-            [io.randomseed.bankster.money    :refer   [money?]]
-            [io.randomseed.bankster.util     :refer       :all])
+  (:require [io.randomseed.bankster]
+            [io.randomseed.bankster.scale :as scale]
+            [io.randomseed.bankster.money :as money :refer [money?]])
 
-  (:import  [io.randomseed.bankster Currency Registry Money]
-            [java.math MathContext RoundingMode]))
+  (:import  (io.randomseed.bankster Currency
+                                    Registry
+                                    Money)
+            (java.math              MathContext
+                                    RoundingMode)))
 
 (defn +
-  "Calls io.randomseed.bankster.money/add for Money argument, clojure.core/+ for other
+  "Calls `io.randomseed.bankster.money/add` for Money argument, `clojure.core/+` for other
   data types."
   {:added "1.0.0"}
   ([]            (money/add))
@@ -26,7 +26,7 @@
   ([a b  & more] (if (money? a) (apply money/add a b more) (apply clojure.core/+ a b more))))
 
 (defn -
-  "Calls io.randomseed.bankster.money/sub for Money argument, clojure.core/- for other
+  "Calls `io.randomseed.bankster.money/sub` for Money argument, `clojure.core/-` for other
   data types."
   {:added "1.0.0"}
   ([a]           (if (money? a) (money/sub a) (clojure.core/- a)))
@@ -34,7 +34,7 @@
   ([a b & more]  (if (money? a) (apply money/sub a b more) (apply clojure.core/- a b more))))
 
 (defn *
-  "Calls io.randomseed.bankster.money/mul for Money argument, clojure.core/* for other
+  "Calls `io.randomseed.bankster.money/mul` for Money argument, `clojure.core/*` for other
   data types."
   {:added "1.0.0"}
   ([]            (money/mul))
@@ -43,7 +43,7 @@
   ([a b & more]  (apply money/mul a b more)))
 
 (defn /
-  "Calls io.randomseed.bankster.money/div for Money argument, clojure.core// for other
+  "Calls `io.randomseed.bankster.money/div` for Money argument, `clojure.core//` for other
   data types."
   {:added "1.0.0"}
   ([a]           (if (money? a) (money/div a) (clojure.core// a)))
@@ -51,7 +51,7 @@
   ([a b & more]  (if (money? a) (apply money/div a b more) (apply clojure.core// a b more))))
 
 (defn =
-  "Calls io.randomseed.bankster.money/eq? for Money argument, clojure.core/= for other
+  "Calls `io.randomseed.bankster.money/eq?` for Money argument, `clojure.core/=` for other
   data types."
   {:tag Boolean :added "1.0.0"}
   ([a]           true)
@@ -63,7 +63,7 @@
                    false)))
 
 (defn not=
-  "Calls io.randomseed.bankster.money/ne? for Money argument, clojure.core/not= for
+  "Calls `io.randomseed.bankster.money/ne?` for Money argument, `clojure.core/not=` for
   other data types."
   {:tag Boolean :added "1.0.0"}
   ([a]           false)
@@ -75,7 +75,7 @@
                    true)))
 
 (defn >
-  "Calls io.randomseed.bankster.money/gt? for Money argument, clojure.core/> for other
+  "Calls `io.randomseed.bankster.money/gt?` for Money argument, `clojure.core/>` for other
   data types."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [a]          true)
@@ -87,7 +87,7 @@
                            false)))
 
 (defn >=
-  "Calls io.randomseed.bankster.money/ge? for Money argument, clojure.core/>= for other
+  "Calls `io.randomseed.bankster.money/ge?` for Money argument, `clojure.core/>=` for other
   data types."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [a]          true)
@@ -99,7 +99,7 @@
                            false)))
 
 (defn <
-  "Calls io.randomseed.bankster.money/lt? for Money argument, clojure.core/> for other
+  "Calls `io.randomseed.bankster.money/lt?` for Money argument, `clojure.core/<` for other
   data types."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [a]          true)
@@ -111,7 +111,7 @@
                            false)))
 
 (defn <=
-  "Calls io.randomseed.bankster.money/le? for Money argument, clojure.core/<= for other
+  "Calls `io.randomseed.bankster.money/le?` for Money argument, `clojure.core/<=` for other
   data types."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [a]          true)
@@ -147,13 +147,13 @@
   [a] (if (money? a) (money/->float a) (clojure.core/float a)))
 
 (defn pos?
-  "Calls io.randomseed.bankster.money/is-pos? for Money argument, clojure.core/pos?
+  "Calls `io.randomseed.bankster.money/is-pos?` for Money argument, `clojure.core/pos?`
   for other data types."
   {:tag Boolean :added "1.0.0"}
   [a] (if (money? a) (money/is-pos? a) (clojure.core/pos? a)))
 
 (defn neg?
-  "Calls io.randomseed.bankster.money/is-neg? for Money argument, clojure.core/neg?
+  "Calls `io.randomseed.bankster.money/is-neg?` for Money argument, `clojure.core/neg?`
   for other data types."
   {:tag Boolean :added "1.0.0"}
   [a] (if (money? a) (money/is-neg? a) (clojure.core/neg? a)))
@@ -163,7 +163,7 @@
                    ^BigDecimal [^Money a scale]
                    ^BigDecimal [^Money a scale ^RoundingMode rounding-mode])}
   integer
-  "Alias for io.randomseed.bankster.scale/integer."
+  "Alias for `io.randomseed.bankster.scale/integer`."
   scale/integer)
 
 (def ^{:tag BigDecimal
@@ -171,23 +171,23 @@
                    ^BigDecimal [^Money a scale]
                    ^BigDecimal [^Money a scale ^RoundingMode rounding-mode])}
   fractional
-  "Alias for io.randomseed.bankster.scale/fractional."
+  "Alias for `io.randomseed.bankster.scale/fractional`."
   scale/fractional)
 
 (def ^{:tag BigDecimal
        :arglists '(^BigDecimal [^Money a])}
   major
-  "Alias for io.randomseed.bankster.money/major."
+  "Alias for `io.randomseed.bankster.money/major`."
   money/major)
 
 (def ^{:tag BigDecimal
        :arglists '(^BigDecimal [^Money a])}
   minor
-  "Alias for io.randomseed.bankster.money/minor."
+  "Alias for `io.randomseed.bankster.money/minor`."
   money/minor)
 
 (defn compare
-  "Calls io.randomseed.bankster.money/compare for Money argument, clojure.core/compare
+  "Calls `io.randomseed.bankster.money/compare` for Money argument, `clojure.core/compare`
   for other data types."
   {:tag 'int :added "1.0.0"}
   [a b] (if (money? a) (money/compare a b) (clojure.core/compare a b)))

@@ -202,7 +202,7 @@
   to a global registry) creates a dump in EDN format.
 
   Filename will be placed in the default directory of resources (the same that which
-  config.edn)."
+  `config.edn`)."
   {:added "1.0.0"}
   ([]
    (dump default-dump-filename (registry/get)))
@@ -221,7 +221,7 @@
   to a global registry) creates a configuration file in EDN format.
 
   Filename will be placed in the default directory of resources (the same which holds
-  config.edn)."
+  `config.edn`)."
   {:added "1.0.0"}
   ([]
    (export default-export-filename (registry/get)))

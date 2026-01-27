@@ -16,21 +16,21 @@
     s))
 
 (defn- maven-meta-dir
-  "Returns META-INF/maven/<groupId>/<artifactId> directory under class-dir."
+  "Returns `META-INF/maven/<groupId>/<artifactId>` directory under class-dir."
   [class-dir group-id artifact-id]
   (io/file class-dir "META-INF" "maven" (as-str group-id) (as-str artifact-id)))
 
 (defn install-maven-metadata!
-  "Copies POM into jar's META-INF/maven/... and writes pom.properties.
+  "Copies POM into jar's `META-INF/maven/...` and writes pom.properties.
 
   Args:
-  - :class-dir   (required) path to module-specific class dir
-  - :group-id    (required) e.g. \"io.randomseed\"
-  - :artifact-id (required) e.g. \"utils-core\"
-  - :version     (required) e.g. \"1.0.0\"
-  - :pom         one of:
-      * java.io.File / string path to pom.xml
-      * java.io.InputStream (e.g. your (pom-stream m))
+  - `:class-dir`   (required) path to module-specific class dir
+  - `:group-id`    (required) e.g. \"`io.randomseed`\"
+  - `:artifact-id` (required) e.g. \"utils-core\"
+  - `:version`     (required) e.g. \"1.0.0\"
+  - `:pom`         one of:
+      * `java.io.File` / string path to `pom.xml`
+      * `java.io.InputStream` (e.g. your (pom-stream m))
     (required)
 
   Returns class-dir."

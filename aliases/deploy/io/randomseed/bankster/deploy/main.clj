@@ -4,10 +4,10 @@
 
 (defn deploy
   "Usage:
-    clj -T:deploy deploy :artifact '\"target/bankster-1.0.1.jar\"'
+    clj -T`:deploy` deploy `:artifact` '\"target/bankster-1.0.1.jar\"'
   Optional:
-    :sign? true|false
-    :sign-key-id '\"<fingerprint>\"'
+    `:sign?` true|false
+    `:sign-key-id` '\"<fingerprint>\"'
   Env:
     CLOJARS_USERNAME, CLOJARS_PASSWORD (already in bin/deploy)"
   [{:keys [artifact sign? sign-key-id installer pom-file]

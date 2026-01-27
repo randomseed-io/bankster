@@ -6,10 +6,9 @@
 
   (:refer-clojure :exclude [+ - * / = not= int long double float > < >= <= compare pos? neg?])
 
-            [io.randomseed.bankster.scale    :as         scale]
-            [io.randomseed.bankster.currency :as      currency]
-            [io.randomseed.bankster.money    :as         money]
-            [io.randomseed.bankster.util     :refer       :all])
+  (:require [io.randomseed.bankster]
+            [io.randomseed.bankster.scale :as scale]
+            [io.randomseed.bankster.money :as money])
 
   (:import  (io.randomseed.bankster Money)
             (java.math MathContext RoundingMode)))
@@ -20,7 +19,7 @@
                    ^Money [^Money a ^Money b]
                    ^Money [^Money a ^Money b & more])}
   +
-  "Alias for io.randomseed.bankster.money/add."
+  "Alias for `io.randomseed.bankster.money/add`."
   money/add)
 
 (def ^{:tag io.randomseed.bankster.Money :added "1.0.0"
@@ -28,7 +27,7 @@
                    ^Money [^Money a ^Money b]
                    ^Money [^Money a ^Money b & more])}
   -
-  "Alias for io.randomseed.bankster.money/subtract."
+  "Alias for `io.randomseed.bankster.money/subtract`."
   money/sub)
 
 (def ^{:tag io.randomseed.bankster.Money :added "1.0.0"
@@ -37,7 +36,7 @@
                    ^Money [a b]
                    ^Money [a b & more])}
   *
-  "Alias for io.randomseed.bankster.money/multiply."
+  "Alias for `io.randomseed.bankster.money/multiply`."
   money/mul)
 
 (def ^{:tag io.randomseed.bankster.Money :added "1.0.0"
@@ -45,7 +44,7 @@
                    ^Money [^Money a ^Money b]
                    ^Money [^Money a ^Money b & more])}
   /
-  "Alias for io.randomseed.bankster.money/divide."
+  "Alias for `io.randomseed.bankster.money/divide`."
   money/div)
 
 (def ^{:tag Boolean :added "1.0.0"
@@ -54,7 +53,7 @@
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
   =
-  "Alias for io.randomseed.bankster.money/eq?."
+  "Alias for `io.randomseed.bankster.money/eq?`."
   money/eq?)
 
 (def ^{:tag Boolean :added "1.0.0"
@@ -63,7 +62,7 @@
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
   not=
-  "Alias for io.randomseed.bankster.money/ne?."
+  "Alias for `io.randomseed.bankster.money/ne?`."
   money/ne?)
 
 (def ^{:tag Boolean :added "1.0.0"
@@ -71,7 +70,7 @@
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
   >
-  "Alias for io.randomseed.bankster.money/gt?."
+  "Alias for `io.randomseed.bankster.money/gt?`."
   money/gt?)
 
 (def ^{:tag Boolean :added "1.0.0"
@@ -79,7 +78,7 @@
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
   >=
-  "Alias for io.randomseed.bankster.money/ge?."
+  "Alias for `io.randomseed.bankster.money/ge?`."
   money/ge?)
 
 (def ^{:tag Boolean :added "1.0.0"
@@ -87,7 +86,7 @@
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
   <
-  "Alias for io.randomseed.bankster.money/lt?."
+  "Alias for `io.randomseed.bankster.money/lt?`."
   money/lt?)
 
 (def ^{:tag Boolean :added "1.0.0"
@@ -95,19 +94,19 @@
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
   <=
-  "Alias for io.randomseed.bankster.money/le?."
+  "Alias for `io.randomseed.bankster.money/le?`."
   money/le?)
 
 (def ^{:tag Boolean :added "1.0.0"
        :arglists '(^Boolean [^Money a])}
   pos?
-  "Alias for io.randomseed.bankster.money/is-pos?."
+  "Alias for `io.randomseed.bankster.money/is-pos?`."
   money/is-pos?)
 
 (def ^{:tag Boolean :added "1.0.0"
        :arglists '(^Boolean [^Money a])}
   neg?
-  "Alias for io.randomseed.bankster.money/is-neg?."
+  "Alias for `io.randomseed.bankster.money/is-neg?`."
   money/is-neg?)
 
 (def ^{:tag BigDecimal :added "1.0.0"
@@ -115,7 +114,7 @@
                    ^BigDecimal [^Money a scale]
                    ^BigDecimal [^Money a scale ^RoundingMode rounding-mode])}
   integer
-  "Alias for io.randomseed.bankster.scale/integer."
+  "Alias for `io.randomseed.bankster.scale/integer`."
   scale/integer)
 
 (def ^{:tag BigDecimal :added "1.0.0"
@@ -123,31 +122,31 @@
                    ^BigDecimal [^Money a scale]
                    ^BigDecimal [^Money a scale ^RoundingMode rounding-mode])}
   fractional
-  "Alias for io.randomseed.bankster.scale/fractional."
+  "Alias for `io.randomseed.bankster.scale/fractional`."
   scale/fractional)
 
 (def ^{:tag BigDecimal :added "1.0.0"
        :arglists '(^BigDecimal [^Money a])}
   major
-  "Alias for io.randomseed.bankster.money/major."
+  "Alias for `io.randomseed.bankster.money/major`."
   money/major)
 
 (def ^{:tag BigDecimal :added "1.0.0"
        :arglists '(^BigDecimal [^Money a])}
   minor
-  "Alias for io.randomseed.bankster.money/minor."
+  "Alias for `io.randomseed.bankster.money/minor`."
   money/minor)
 
 (def ^{:tag 'int :added "1.0.0"
        :arglists '(^BigDecimal [^Money a ^Money b])}
   compare
-  "Alias for io.randomseed.bankster.money/compare."
+  "Alias for `io.randomseed.bankster.money/compare`."
   money/compare)
 
-(def ^{:tag 'int :added "1.0.0"
+(def ^{:tag Integer :added "1.0.0"
        :arglists '(^int [^Money a])}
   int
-  "Alias for io.randomseed.bankster.money/major->int."
+  "Alias for `io.randomseed.bankster.money/major->int`."
   money/major->int)
 
 (def ^{:tag 'long :added "1.0.0"
@@ -165,5 +164,5 @@
 (def ^{:tag 'float :added "1.0.0"
        :arglists '(^float [^Money a])}
   float
-  "Alias for io.randomseed.bankster.money/->float."
+  "Alias for `io.randomseed.bankster.money/->float`."
   money/->float)

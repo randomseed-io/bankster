@@ -166,14 +166,14 @@
   (^Money [currency amount ^RoundingMode rounding-mode] (parse-int identity currency amount rounding-mode)))
 
 (defn parse-major
-  "Internal parser with scale/integer as an amount modifier."
+  "Internal parser with `scale/integer` as an amount modifier."
   {:tag Money :no-doc :true :added "1.0.0"}
   (^Money [amount] (parse-int scale/integer amount))
   (^Money [currency amount] (parse-int scale/integer currency amount))
   (^Money [currency amount ^RoundingMode rounding-mode] (parse-int scale/integer currency amount rounding-mode)))
 
 (defn parse-minor
-  "Internal parser with scale/fractional as an amount modifier."
+  "Internal parser with `scale/fractional` as an amount modifier."
   {:tag Money :no-doc :true :added "1.0.0"}
   (^Money [amount] (parse-int scale/fractional amount))
   (^Money [currency amount] (parse-int scale/fractional currency amount))
@@ -235,7 +235,7 @@
 (defmacro of
   "Returns the amount of money as a Money object consisting of a currency and a
   value. Currency can be a currency object and for registered currencies: a keyword,
-  a symbol or a string (e.g. EUR, :EUR, \"PLN\" or crypto/ETH), or even a number (for
+  a symbol or a string (e.g. EUR, `:EUR`, \"PLN\" or crypto/ETH), or even a number (for
   ISO-compliant currencies).
 
   The given amount can be any numeric value or a string that can be converted to
@@ -264,14 +264,14 @@
   ([a b rounding-mode] (of-gen parse a b rounding-mode)))
 
 (defmacro of-major
-  "Like io.randomseed.money/of but sets the amount of major part only."
+  "Like `io.randomseed.money/of` but sets the amount of major part only."
   ([]    (of-gen parse))
   ([a]   (of-gen parse-major a))
   ([a b] (of-gen parse-major a b))
   ([a b rounding-mode] (of-gen parse-major a b rounding-mode)))
 
 (defmacro of-minor
-  "Like io.randomseed.money/of but sets the amount of minor part only."
+  "Like `io.randomseed.money/of` but sets the amount of minor part only."
   ([]    (of-gen parse))
   ([a]   (of-gen parse-minor a))
   ([a b] (of-gen parse-minor a b))
@@ -1902,7 +1902,7 @@
 (defn round
   "Rounds the amount of money using the given scale and rounding mode. Returns money
   with rounded amount preserving the original scale. If the rounding mode is not
-  given the one from scale/*rounding-mode* is used."
+  given the one from `scale/*rounding-mode*` is used."
   {:tag Money :added "1.0.0"}
   (^Money [^Money money ^long scale]
    (round money scale (or scale/*rounding-mode* scale/ROUND_UNNECESSARY)))
@@ -1920,7 +1920,7 @@
 
 (defn round-to
   "Rounds a Money to an interval i (which should also be a Money or a number). If
-  rounding mode is not provided (via the last argument or scale/*rounding-mode*) then
+  rounding mode is not provided (via the last argument or `scale/*rounding-mode*`) then
   it defaults to HALF_EVEN. Retains original scale of the amount (but not the nominal
   scale of a currency, if money was given). For nil intervals or intervals which
   amounts are negative or zero, returns unaltered monetary object."
@@ -2282,20 +2282,20 @@
 ;;
 
 (defmacro with-rounding
-  "Alias for io.randomseed.bankster.scale/with-rounding."
+  "Alias for `io.randomseed.bankster.scale/with-rounding`."
   {:added "1.0.0"}
   [rounding-mode & body]
   (list* 'io.randomseed.bankster.scale/with-rounding rounding-mode body))
 
 (defmacro with-rescaling
-  "Alias for io.randomseed.bankster.scale/with-rescaling."
+  "Alias for `io.randomseed.bankster.scale/with-rescaling`."
   {:added "1.0.0"}
   [rounding-mode & body]
   (list* 'io.randomseed.bankster.scale/with-rescaling rounding-mode body))
 
 (defmacro with-currency
   "Sets a default currency in a lexical context of the body. Has the same effect as
-  io.randomseed.bankster.currency/with."
+  `io.randomseed.bankster.currency/with`."
   {:added "1.0.0"}
   [currency & body]
   (let [cur# (if (symbol? currency) (keyword currency) currency)]
@@ -2326,7 +2326,7 @@
 (defn code-literal
   "Tagged literal handler for Money objects expressed as tagged literals in Clojure
   code. Returns compound forms (parsing function invocations that can be influenced
-  by the runtime environment, e.g. dynamic variables like scale/*rounding-mode*)."
+  by the runtime environment, e.g. dynamic variables like `scale/*rounding-mode*`)."
   {:added "1.2.4"}
   [arg]
   (if (nil? arg)
@@ -2353,7 +2353,7 @@
 (defn defliteral
   "For the given currency identifier or a currency object it creates a tagged literal
   in a form of #money/CURRENCY where the CURRENCY is a currency code. As a side
-  effect it creates a function of name io.randomseed.bankster.money/of-CURRENCY that
+  effect it creates a function of name `io.randomseed.bankster.money/of-CURRENCY` that
   will handle the literal.
 
   The literals will be bound to *data-readers* in a local thread."
@@ -2430,22 +2430,22 @@
   If there are 3 arguments passed the third one should be a map of options
   customizing the formatting. It can have the following keys:
 
-  - :rounding-mode   - RoundingMode, rounding mode to apply when scaling (if `scale/*rounding-mode*` is not set)
-  - :grouping        - Boolean, if true then grouping will be used
-  - :grouping-size   - integer, size of a group when grouping
-  - :negative-prefix - String, negative prefix to use
-  - :negative-suffix - String, negative suffix to use
-  - :positive-prefix - String, positive prefix to use
-  - :positive-suffix - String, positive suffix to use
-  - :always-sep-dec  - Boolean, if true then the decimal separator will always be shown
-  - :currency-symbol-fn  - a function used on a bankster/Currency object to get its symbol as a string
-  - :min-fraction-digits - integer, the minimum number of digits allowed in the fraction portion of an amount
-  - :min-integer-digits  - integer, the minimum number of digits allowed in the integer portion of an amount
-  - :max-fraction-digits - integer, the maximum number of digits allowed in the fraction portion of an amount
-  - :max-integer-digits  - integer, the maximum number of digits allowed in the integer portion of an amount
-  - :scale               - sets both :min-fraction-digits and :max-fraction-digits to the same value.
+  - `:rounding-mode`   - RoundingMode, rounding mode to apply when scaling (if `scale/*rounding-mode*` is not set)
+  - `:grouping`        - Boolean, if true then grouping will be used
+  - `:grouping-size`   - integer, size of a group when grouping
+  - `:negative-prefix` - String, negative prefix to use
+  - `:negative-suffix` - String, negative suffix to use
+  - `:positive-prefix` - String, positive prefix to use
+  - `:positive-suffix` - String, positive suffix to use
+  - `:always-sep-dec`  - Boolean, if true then the decimal separator will always be shown
+  - `:currency-symbol-fn`  - a function used on a bankster/Currency object to get its symbol as a string
+  - `:min-fraction-digits` - integer, the minimum number of digits allowed in the fraction portion of an amount
+  - `:min-integer-digits`  - integer, the minimum number of digits allowed in the integer portion of an amount
+  - `:max-fraction-digits` - integer, the maximum number of digits allowed in the fraction portion of an amount
+  - `:max-integer-digits`  - integer, the maximum number of digits allowed in the integer portion of an amount
+  - `:scale`               - sets both `:min-fraction-digits` and `:max-fraction-digits` to the same value.
 
-  The function assigned to the :currency-symbol-fn should take 3 arguments:
+  The function assigned to the `:currency-symbol-fn` should take 3 arguments:
   currency, locale and registry.
 
   Note that you may gain some speed by re-using the extended formatter (basic
@@ -2480,8 +2480,8 @@
 
 (defn format-with
   "Formats the amount of money using the formatter provided. Formatters can be created
-  with io.randomseed.bankster.currency/formatter and
-  io.randomseed.bankster.currency/formatter-extended."
+  with `io.randomseed.bankster.currency/formatter` and
+  `io.randomseed.bankster.currency/formatter-extended`."
   {:tag String :added "1.0.0"}
   [^DecimalFormat formatter ^Money money]
   (.format ^DecimalFormat formatter ^BigDecimal (.amount ^Money money)))

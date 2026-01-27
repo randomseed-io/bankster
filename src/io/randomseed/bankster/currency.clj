@@ -1577,7 +1577,7 @@
   registry and returns the registered `Currency` instance or `nil` when it cannot be
   resolved.
 
-  Unlike `unit`/`of-id`, this helper is meant to be used in \"non-throwing\" code
+  Unlike `unit` and `of-id`, this helper is meant to be used in \"non-throwing\" code
   paths (e.g. property predicates). Argument `c` is evaluated exactly once.
 
   When `registry` is not provided, the default registry is used (preferring
@@ -1608,7 +1608,7 @@
   resolved.
 
   This is intended for \"non-throwing\" code paths (e.g. property predicates) and
-  complements `unit`/`of-id` which may throw when a currency is missing."
+  complements `unit` and `of-id` which may throw when a currency is missing."
   {:added "2.0.0"}
   ([c]
    (cond
@@ -1705,7 +1705,6 @@
   nr)
 
 (defn sc
-  "Returns currency scale (decimal places) as an integer number. For currencies without
   the assigned decimal places it will return nil (the value of auto-scaled). Locale
   argument is ignored."
   {:added "1.0.0"}
@@ -1733,7 +1732,7 @@
   "Returns currency domain as a keyword. For currencies added with simple
   identifiers (without a namespace) and numerical IDs present it will be
   `:ISO-4217`. For currencies with namespace-qualified identifiers it will be the
-  upper-cased namespace name (e.g. :CRYPTO) set during creation of a currency
+  upper-cased namespace name (e.g. `:CRYPTO`) set during creation of a currency
   object. Locale argument is ignored."
   {:tag clojure.lang.Keyword :added "1.0.0"}
   (^clojure.lang.Keyword [c]
@@ -1755,12 +1754,12 @@
   "Returns currency kind. It is a keyword which describes origin of its value. Currently
   known kinds are:
 
-  - :FIAT          – legal tender issued by government or other authority
-  - :FIDUCIARY     - accepted medium of exchange issued by a fiduciary or fiduciaries
-  - :DECENTRALIZED - accepted medium of exchange issued by a distributed ledger
-  - :COMBANK       - commercial bank money
-  - :COMMODITY     - accepted medium of exchange based on commodities
-  - :EXPERIMENTAL  - pseudo-currency used for testing purposes.
+  - `:FIAT`          – legal tender issued by government or other authority
+  - `:FIDUCIARY`     - accepted medium of exchange issued by a fiduciary or fiduciaries
+  - `:DECENTRALIZED` - accepted medium of exchange issued by a distributed ledger
+  - `:COMBANK`       - commercial bank money
+  - `:COMMODITY`     - accepted medium of exchange based on commodities
+  - `:EXPERIMENTAL`  - pseudo-currency used for testing purposes.
 
   The function may return nil if the currency is a no-currency. Locale argument is
   ignored."
@@ -1835,7 +1834,9 @@
 ;;
 
 (defn java
-  "For ISO-standardized currency, returns corresponding `java.util.Currency` object."
+  "For ISO-standardized currency, returns corresponding `java.util.Currency` object. If
+  the currency does not exist, has a different scale or a different numeric code,
+  `nil` is returned."
   {:tag java.util.Currency :added "1.0.0"}
   (^java.util.Currency [currency] (java.util.Currency/getInstance (code currency)))
   (^java.util.Currency [currency ^Registry registry] (java.util.Currency/getInstance (code currency registry))))
@@ -1952,8 +1953,8 @@
 
 (defn register-numeric
   "Updates numeric indexes:
-  - :cur-nr->curs => sorted-set
-  - :cur-nr->cur  => canonical currency (first from set)"
+  - `:cur-nr->curs` => sorted-set
+  - `:cur-nr->cur`  => canonical currency (first from set)"
   {:tag Registry :private true :added "1.0.2"}
   [^Registry registry ^Currency c]
   (let [nr (long (.numeric c))]
@@ -1995,8 +1996,8 @@
 
   Numeric-ID indexes:
 
-  - removes the currency from :cur-nr->curs (shared numeric IDs bucket)
-  - updates :cur-nr->cur to the canonical currency (first in bucket), or removes the
+  - removes the currency from `:cur-nr->curs` (shared numeric IDs bucket)
+  - updates `:cur-nr->cur` to the canonical currency (first in bucket), or removes the
     numeric entry if bucket becomes empty."
   {:tag Registry :added "1.0.0"}
   [^Registry registry currency]
@@ -2696,15 +2697,15 @@
   The following tactic is applied:
 
   - The registry field .cur-id->localized is looked up for the currency ID key. If
-  it's found then a key with the given locale object (a kind of java.util.Locale) is
+  it's found then a key with the given locale object (a kind of `java.util.Locale`) is
   obtained. If there is no such key, the default one :* is tried (a keyword). The
   resulting value should be a map of localized properties in which an entry under the
-  key :symbol should exist. Its value will be returned, if found.
+  key `:symbol` should exist. Its value will be returned, if found.
 
   - If the above method failed and the given currency is ISO-standardized then Java
   methods will be tried to obtain it.
 
-  A locale can be expressed as java.util.Locale object or any other object (like a
+  A locale can be expressed as `java.util.Locale` object or any other object (like a
   string or a keyword) which can be used to look up the locale."
   (memoize
    (fn symbol
@@ -2748,17 +2749,17 @@
   The following tactic is applied:
 
   - The registry field .cur-id->localized is looked up for the currency ID key. If
-  it's found then a key with the given locale object (a kind of java.util.Locale) is
+  it's found then a key with the given locale object (a kind of `java.util.Locale`) is
   obtained. If there is no such key, the default one :* is tried (a keyword). The
   resulting value should be a map of localized properties in which an entry under the
-  key :symbol should exist. Its value will be returned, if found.
+  key `:symbol` should exist. Its value will be returned, if found.
 
   - If the above method failed and the given currency is ISO-standardized then Java
   methods will be tried to obtain it.
 
   - If the above method failed a currency code will be returned.
 
-  A locale can be expressed as java.util.Locale object or any other object (like a
+  A locale can be expressed as `java.util.Locale` object or any other object (like a
   string or a keyword) which can be used to look up the locale."
   (memoize
    (fn display-name
@@ -2877,7 +2878,7 @@
 (defmacro with-registry
   "Sets a registry in a lexical context of the body to be used instead of a global one
   in functions which require the registry and it was not passed as an argument. Has
-  the same effect as registry/with."
+  the same effect as `registry/with`."
   {:added "1.0.0"}
   [^Registry registry & body]
   `(binding [registry/*default* ^Registry ~registry]
@@ -2998,13 +2999,13 @@
   - `:min-integer-digits` - integer, the minimum number of digits allowed in the integer portion of an amount
   - `:max-fraction-digits` - integer, the maximum number of digits allowed in the fraction portion of an amount
   - `:max-integer-digits`  - integer, the maximum number of digits allowed in the integer portion of an amount
-  - `:scale`               - sets both :min-fraction-digits and :max-fraction digits to the same value.
+  - `:scale`               - sets both `:min-fraction-digits` and `:max-fraction` digits to the same value.
 
   When choosing different currency, all parameters of a formatter are initially set
   to that currency. Additionally re-scaling may take place for the amount if scales
   are different.
 
-  The function assigned to the :currency-symbol-fn should take 3 arguments:
+  The function assigned to the `:currency-symbol-fn` should take 3 arguments:
   currency, locale and registry.
 
   It is advised to express locale using a keyword when huge amount of operations is

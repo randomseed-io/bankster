@@ -224,7 +224,7 @@
        (= artifactId "clojure")))
 
 (defn- lib->ga
-  "deps.edn lib symbol (group/artifact) -> [groupId artifactId]."
+  "`deps.edn` lib symbol (group/artifact) -> [groupId artifactId]."
   [lib]
   (let [s (str lib)
         i (.indexOf ^String s "/")]
@@ -238,7 +238,7 @@
       (str/starts-with? root "../")))
 
 (defn- artifact-base
-  "Given a lib symbol like io.randomseed/utils-log returns the artifact base,
+  "Given a lib symbol like `io.randomseed/utils-log` returns the artifact base,
    i.e. the part after '/' up to the first '-' (or whole artifact if no '-')."
   [lib]
   (let [s   (str lib)
@@ -251,12 +251,12 @@
   "Returns Maven-representable version string, or nil (skip).
 
    Rules:
-   - {:mvn/version \"x\"} -> \"x\"
-   - {:local/root \"./...\" or \"../...\"} -> local-root-version/version ONLY when:
-       * :name option was provided, AND
-       * artifact-base(lib) == artifact-base(:name)
+   - {`:mvn/version` \"x\"} -> \"x\"
+   - {`:local/root` \"./...\" or \"../...\"} -> local-root-version/version ONLY when:
+       * `:name` option was provided, AND
+       * artifact-base(lib) == artifact-base(`:name`)
      Otherwise for relative local/root: nil (skipped).
-   - other {:local/root ...} -> local-root-version (backward-compatible)
+   - other {`:local/root` ...} -> local-root-version (backward-compatible)
    - git deps etc -> nil"
   [lib coord {:keys [local-root-version version name]}]
   (cond
@@ -284,10 +284,10 @@
 (defn- merge-alias-deps
   "Return an effective deps after merging with the given aliases.
    Minimal model:
-   - start: (:deps m)
-   - :replace-deps (if exists in alias) replaces all
-   - :extra-deps adds or overrides (if exists)
-   - :override-deps overrides or adds (if does not exist)"
+   - start: (`:deps` m)
+   - `:replace-deps` (if exists in alias) replaces all
+   - `:extra-deps` adds or overrides (if exists)
+   - `:override-deps` overrides or adds (if does not exist)"
   [deps-edn {:keys [aliases]}]
   (let [base-deps (or (:deps deps-edn) {})
         alias-m   (or (:aliases deps-edn) {})
@@ -306,13 +306,13 @@
      chosen)))
 
 (defn deps->maven-deps
-  "Reads deps.edn and returns normalized Maven deps:
-   [{:groupId .. :artifactId .. :version ..} ...] sorted deterministically.
+  "Reads `deps.edn` and returns normalized Maven deps:
+   [{`:groupId` .. `:artifactId` .. `:version` ..} ...] sorted deterministically.
 
    Options:
-     :version            (version)
-     :local-root-version (default version, then \"${project.version}\")
-     :name               (used only for relative :local/root replacement rule)"
+     `:version`            (version)
+     `:local-root-version` (default version, then \"${`project.version`}\")
+     `:name`               (used only for relative `:local/root` replacement rule)"
   ([deps-edn-path] (deps->maven-deps deps-edn-path nil))
   ([deps-edn-path opts]
    (let [m    (read-edn-file deps-edn-path)
@@ -335,21 +335,21 @@
     (zip/root z1)))
 
 (defn sync-pom-deps!
-  "Reads deps.edn :deps and updates pom.xml:
+  "Reads `deps.edn` `:deps` and updates `pom.xml`:
    - updates <dependencies> via XML transform (no text splicing)
    - updates project fields via update-project-fields (your zipper pass)
-   Returns {:pom ... :deps N}.
+   Returns {`:pom` ... `:deps` N}.
 
    Options:
-     :url         (url)
-     :scm         (scm)
-     :name        (name)
-     :group       (group)
-     :lib-name    (group/name)
-     :version     (version)
-     :description (description)
-     :local-root-version (fallback to version, then to \"${project.version}\")
-     :aliases     (a list used to get extra dependencies from deps.edn)"
+     `:url`         (url)
+     `:scm`         (scm)
+     `:name`        (name)
+     `:group`       (group)
+     `:lib-name`    (group/name)
+     `:version`     (version)
+     `:description` (description)
+     `:local-root-version` (fallback to version, then to \"${`project.version`}\")
+     `:aliases`     (a list used to get extra dependencies from `deps.edn`)"
   ([deps-edn-path pom-path]
    (sync-pom-deps! deps-edn-path pom-path nil))
   ([deps-edn-path pom-path opts]

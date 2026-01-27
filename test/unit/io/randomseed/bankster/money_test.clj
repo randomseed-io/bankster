@@ -69,7 +69,7 @@
              (first us) (rest us)))))
 
 (defn- money-vec-pln
-  "Build exact [x.yy :PLN] from integer minor units (grosze)."
+  "Build exact [`x.yy` `:PLN`] from integer minor units (grosze)."
   [^long units]
   (let [neg? (neg? units)
         u    (long (Math/abs units))
@@ -78,7 +78,7 @@
     [(str (when neg? "-") maj "." (format "%02d" min)) :PLN]))
 
 (defn- money-vec-xxx
-  "Build exact [x.yyyyy :XXX] from integer units at given scale."
+  "Build exact [`x.yyyyy` `:XXX`] from integer units at given scale."
   [^long units ^long sc]
   (let [neg? (neg? units)
         u    (long (Math/abs units))
