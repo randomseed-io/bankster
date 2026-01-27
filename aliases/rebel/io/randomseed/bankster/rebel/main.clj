@@ -14,7 +14,7 @@
               (println "[bankster] Loading Clojure code, please wait...")
               (when (System/getProperty "nrepl.load")
                 (try
-                  (require 'nrepl)
+                  (require 'io.randomseed.bankster.nrepl)
                   (catch Exception e
                     (.printStackTrace e)
                     (println "[bankster] Failed to start nREPL (see exception above)."))))

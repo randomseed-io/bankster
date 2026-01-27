@@ -1,4 +1,4 @@
-(ns ^{:clojure.tools.namespace.repl/load false} nrepl
+(ns ^{:clojure.tools.namespace.repl/load false} io.randomseed.bankster.nrepl
   (:require
    [clojure.java.io :as io]
    [clojure.string  :as str]
@@ -45,12 +45,26 @@
 (defn nrepl-handler
   "Returns the nREPL handler with CIDER middleware and optional extras."
   []
-  (let [kaocha-mw   (middleware-var 'kaocha-nrepl.middleware   'wrap-kaocha)
-        refactor-mw (middleware-var 'refactor-nrepl.middleware 'wrap-refactor)]
+  (let [kaocha-mw     (middleware-var 'kaocha-nrepl.middleware   'wrap-kaocha)
+        refactor-mw   (middleware-var 'refactor-nrepl.middleware 'wrap-refactor)
+        piggieback-mw (middleware-var 'cider.piggieback          'wrap-cljs-repl)
+        mw-symbol     (fn [mw]
+                        (cond
+                          (symbol? mw) mw
+                          (var? mw)    (symbol (-> mw meta :ns ns-name)
+                                               (-> mw meta :name))
+                          (instance? clojure.lang.Named mw)
+                          (symbol (namespace mw) (name mw))
+                          :else nil))
+        base-mw       (if piggieback-mw
+                        cider.nrepl/cider-middleware
+                        (remove #(= 'cider.nrepl/wrap-complete (mw-symbol %))
+                                cider.nrepl/cider-middleware))]
     (apply nrepl.server/default-handler
-           (cond-> (mapv #'cider.nrepl/resolve-or-fail cider.nrepl/cider-middleware)
-             kaocha-mw   (conj kaocha-mw)
-             refactor-mw (conj refactor-mw)))))
+           (cond-> (mapv #'cider.nrepl/resolve-or-fail base-mw)
+             piggieback-mw (conj piggieback-mw)
+             kaocha-mw     (conj kaocha-mw)
+             refactor-mw   (conj refactor-mw)))))
 
 (defonce ^:private !server (atom nil))
 

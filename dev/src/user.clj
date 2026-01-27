@@ -41,7 +41,7 @@
                            :theme    :figwheel-theme})))
 
 (when (System/getProperty "nrepl.load")
-  (require 'nrepl))
+  (require 'io.randomseed.bankster.nrepl))
 
 (st/instrument)
 
