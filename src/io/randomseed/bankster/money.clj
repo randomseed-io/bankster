@@ -124,10 +124,24 @@
     (if fdigi? [b a] [a b])))
 
 (defmacro currency-unit-strict
-  "Int."
+  "Internal currency coercion helper for money parsing/constructors.
+
+  - For maps, treats the value as a currency specification and creates an ad-hoc
+    `Currency` using `io.randomseed.bankster.currency/new-currency`.
+  - For other non-numeric inputs, uses `io.randomseed.bankster.currency/unit` (registry
+    lookup).
+
+  Returns `nil` for numeric inputs."
   {:tag Currency :added "1.0.0" :private true}
   [a]
-  `(let [na# ~a] (when-not (number? na#) (currency/unit na#))))
+  `(let [na# ~a]
+     (when-not (number? na#)
+       (cond
+         (map? na#)
+         (currency/to-currency na#)
+
+         :else
+         (currency/unit na#)))))
 
 (defn parse-int
   "Internal parser with amount modifier."
@@ -139,15 +153,24 @@
        (if-some [^Currency cur (currency-unit-strict amount)]
          (parse-int mod-fn cur 0M)
          (let [[cur am] (currency+amount amount)]
-           (parse-int mod-fn cur (or am 0M)))))))
+           (let [am (or am 0M)]
+             (if (nil? cur)
+               (if-some [d currency/*default*]
+                 (parse-int mod-fn d am)
+                 ;; Preserve the existing exception shape thrown by the 2-arity
+                 ;; variant (strict: explicit currency `nil` is not allowed).
+                 (parse-int mod-fn nil am))
+               (parse-int mod-fn cur am))))))))
   (^Money [mod-fn currency amount]
    (when (some? amount)
      (if-some [^Currency c (currency-unit-strict currency)]
        (Money. ^Currency c ^BigDecimal (monetary-scale (mod-fn amount)
                                                        (long (scale/of ^Currency c))))
        (throw (ex-info
-               "Cannot create money amount without a valid currency and a default currency was not set."
-               {:amount amount :currency currency})))))
+               "Cannot create money amount without a valid currency."
+               {:amount   amount
+                :currency currency
+                :default  currency/*default*})))))
   (^Money [mod-fn ^Currency currency amount ^RoundingMode rounding-mode]
    (when (some? amount)
      (if-some [^Currency c (currency-unit-strict currency)]
@@ -155,8 +178,10 @@
                                                        (long (scale/of ^Currency c))
                                                        ^RoundingMode rounding-mode))
        (throw (ex-info
-               "Cannot create money amount without a valid currency and a default currency was not set."
-               {:amount amount :currency currency}))))))
+               "Cannot create money amount without a valid currency."
+               {:amount   amount
+                :currency currency
+                :default  currency/*default*}))))))
 
 (defn parse
   "Internal parser without amount modifier."
@@ -635,6 +660,14 @@
     ^clojure.lang.Keyword [money]
     (currency/to-code ^Currency (.currency ^Money money)))
 
+  (to-id-str
+    ^String [money]
+    (currency/to-id-str ^Currency (.currency ^Money money)))
+
+  (to-code-str
+    ^String [money]
+    (currency/to-code-str ^Currency (.currency ^Money money)))
+
   (to-numeric-id
     ^long [money]
     (currency/to-numeric-id ^Currency (.currency ^Money money)))
@@ -691,23 +724,18 @@
      (contains? (registry/currency-id->currency* registry)
                 (.id ^Currency (.currency ^Money money)))))
 
-  (present?
-    (^Boolean [money]
-     (let [id (.id ^Currency (.currency ^Money money))]
-       (if (namespace id)
-         (contains? (registry/currency-id->currency*) id)
-         (contains? (registry/currency-code->currencies*) id))))
-    (^Boolean [money ^Registry registry]
-     (let [id (.id ^Currency (.currency ^Money money))]
-       (if (namespace id)
-         (contains? (registry/currency-id->currency* registry) id)
-         (contains? (registry/currency-code->currencies* registry) id)))))
-
-  (same-ids?
-    (^Boolean [a b]
-     (clojure.core/= (.id ^Currency (.currency ^Money a)) (currency/id b)))
-    (^Boolean [a b ^Registry registry]
-     (clojure.core/= (.id ^Currency (.currency ^Money a)) (currency/id b registry)))))
+	  (present?
+	    (^Boolean [money]
+	     (let [id (.id ^Currency (.currency ^Money money))]
+	       (if (namespace id)
+	         (contains? (registry/currency-id->currency*) id)
+	         (contains? (registry/currency-code->currencies*) id))))
+	    (^Boolean [money ^Registry registry]
+	     (let [id (.id ^Currency (.currency ^Money money))]
+	       (if (namespace id)
+	         (contains? (registry/currency-id->currency* registry) id)
+	         (contains? (registry/currency-code->currencies* registry) id)))))
+	  )
 
 ;;
 ;; Scalable implementation.

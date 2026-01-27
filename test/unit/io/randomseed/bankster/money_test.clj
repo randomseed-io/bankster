@@ -291,7 +291,7 @@
     (is (= (m/value 12.345 #currency :EUR scale/ROUND_UP) #money[12.35 EUR]))
     (m/with-currency EUR
       (is (= (m/value 12.34) #money[12.34 EUR]))
-      (is (= (m/value 12.345 nil scale/ROUND_UP) #money[12.35 EUR])))
+      (is (= (m/with-rounding scale/ROUND_UP (m/value 12.345)) #money[12.35 EUR])))
     (is (= (m/value #currency :EUR) #money[0 EUR]))
     (testing "when it can create a monetary value based on other monetary value"
       (is (= (m/value #money[5 EUR]) #money[5 EUR]))

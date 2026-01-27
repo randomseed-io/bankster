@@ -134,11 +134,11 @@
     (is (= (c/resolve-all {:id :EUR :weight 0}) #{#currency EUR}))
     (is (= (c/resolve-all {:id :EUR :weight 1}) nil)))
   (testing "when it gets a currency unit from a registry or returns it when given directly"
-    (is (map= (c/unit #currency EUR)  {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
-    (is (map= (c/unit :EUR)  {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
-    (is (map= (c/unit "EUR") {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
-    (is (map= (c/unit 978)   {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
-    (is (map= (c/unit {:id :EUR}) {:id :EUR :domain nil :kind nil :numeric -1 :scale -1 :weight 0})))
+    (is (map= (c/unit #currency EUR) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
+    (is (map= (c/unit :EUR)          {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
+    (is (map= (c/unit "EUR")         {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
+    (is (map= (c/unit 978)           {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
+    (is (map= (c/unit {:id :EUR})    {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0})))
   (testing "when it checks if a currency is defined"
     (is (= (c/defined? :PLN) true))
     (is (= (c/defined? :PPPP) false))
