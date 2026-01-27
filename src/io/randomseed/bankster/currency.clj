@@ -1017,9 +1017,9 @@
 
   (present?
     (^Boolean [^Currency currency]
-     (present? (.id ^Currency currency)))
+     (boolean (resolve currency nil)))
     (^Boolean [^Currency currency ^Registry registry]
-     (present? (.id ^Currency currency) registry)))
+     (boolean (resolve currency registry))))
 
   java.util.Currency
 
@@ -1105,37 +1105,21 @@
 
   (id
     (^clojure.lang.Keyword [jc]
-     (when-some [^Currency c (of-id jc (registry/get))] (.id c)))
+     (id (to-id jc)))
     (^clojure.lang.Keyword [jc ^Registry registry]
-     (when-some [^Currency c (of-id jc registry)] (.id c))))
+     (id (to-id jc) registry)))
 
   (defined?
-    (^Boolean [num]
-     (or (contains? (registry/currency-nr->currency*) num)
-         (and (contains? (registry/currency-nr->currencies*) num)
-              (registry/inconsistency-warning
-               (str "Currency no. " num " found in cur-nr->curs but not in cur-nr->cur")
-               {:nr       num
-                :reason   :missing-cur-nr->cur
-                :registry (registry/get)}
-               true))))
-    (^Boolean [num ^Registry registry]
-     (or (contains? (registry/currency-nr->currency* registry)   num)
-         (and (contains? (registry/currency-nr->currencies* registry) num)
-              (registry/inconsistency-warning
-               (str "Currency no. " num " found in cur-nr->curs but not in cur-nr->cur")
-               {:nr       num
-                :reason   :missing-cur-nr->cur
-                :registry registry}
-               true)))))
+    (^Boolean [jc]
+     (defined? (to-id jc)))
+    (^Boolean [jc ^Registry registry]
+     (defined? (to-id jc) registry)))
 
   (present?
-    (^Boolean [num]
-     (or (contains? (registry/currency-nr->currency*)   num)
-         (contains? (registry/currency-nr->currencies*) num)))
-    (^Boolean [num ^Registry registry]
-     (or (contains? (registry/currency-nr->currency* registry)   num)
-         (contains? (registry/currency-nr->currencies* registry) num))))
+    (^Boolean [jc]
+     (present? (to-currency jc) nil))
+    (^Boolean [jc ^Registry registry]
+     (present? (to-currency jc) registry)))
 
   Number
 
@@ -2060,13 +2044,25 @@
 (defn countries
   "Returns a set of country IDs (keywords) for which the given currency is main
   currency. If there are no countries associated with a currency, returns nil. Locale
-  argument is ignored."
+  argument is ignored.
+
+  Throws when a currency cannot be resolved in the registry. This lets consumers
+  distinguish \"no countries\" (`nil`) from \"unknown currency\" (exception)."
   {:tag clojure.lang.PersistentHashSet :added "1.0.0"}
   (^clojure.lang.PersistentHashSet [c]
    (countries c (registry/get)))
   (^clojure.lang.PersistentHashSet [c ^Registry registry]
-   (let [^Registry registry (unit-registry registry)]
-     (registry/currency-id->country-ids* (id c registry) registry))) ;; should (id c) consult registry?
+   (when (some? c)
+     (let [^Registry registry (unit-registry registry)
+           cid               (id c registry)]
+       (if (registry/currency-id->currency* cid registry)
+         (registry/currency-id->country-ids* cid registry)
+         (throw (ex-info
+                 "Currency not found in a registry."
+                 {:op       :countries
+                  :value    c
+                  :id       cid
+                  :registry registry}))))))
   (^clojure.lang.PersistentHashSet [c _locale ^Registry registry]
    (countries c registry)))
 
@@ -2088,17 +2084,25 @@
 
 (defn java
   "For ISO-standardized currency, returns corresponding `java.util.Currency` object. If
-  the currency does not exist, has a different scale or a different numeric code,
-  `nil` is returned."
+  the currency does not exist, is not ISO (its `:domain` is not `:ISO-4217`), has a
+  different scale (fraction digits), or a different numeric code, `nil` is returned."
   {:tag java.util.Currency :added "1.0.0"}
   (^java.util.Currency [currency]
    (java currency nil))
   (^java.util.Currency [currency ^Registry registry]
    (let [^Registry registry (unit-registry registry)]
      (when-some [^Currency currency (attempt currency registry)]
-       (when-some [^String code (code currency)]
-         (when-some [^java.util.Currency c (try (java.util.Currency/getInstance code) (catch Throwable _ nil))]
-           c)))))) ;; FIXME
+       (when (identical? :ISO-4217 (.domain ^Currency currency))
+         (let [nr (.numeric ^Currency currency)
+               sc (.scale   ^Currency currency)]
+           (when (and (not (== no-numeric-id nr))
+                      (not (val-auto-scaled*? sc)))
+             (when-some [^String code (code currency)]
+               (when-some [^java.util.Currency jc (try (java.util.Currency/getInstance code)
+                                                      (catch Throwable _ nil))]
+                 (when (and (== nr (long (.getNumericCode ^java.util.Currency jc)))
+                            (== sc (int  (.getDefaultFractionDigits ^java.util.Currency jc))))
+                   jc))))))))))
 
 ;;
 ;; Parsing and structuring helpers.
@@ -2860,18 +2864,29 @@
 
 (defn localized-properties
   "Returns a map of localized properties for the given currency. Locale objects are
-  translated back to their keyword representations."
+  translated back to their keyword representations.
+
+  Throws when a currency cannot be resolved in the registry. Returns `nil` when there
+  are no localized properties for the currency."
   {:tag clojure.lang.PersistentHashMap :added "1.0.8"}
   ([c]
-   (let [^Registry registry (registry/get)]
-     (map/map-keys
-      (comp keyword str l/locale)
-      (registry/currency-id->localized* (id c registry) registry))))
+   (localized-properties c (registry/get)))
   ([c ^Registry registry]
-   (let [^Registry registry (unit-registry registry)]
-     (map/map-keys
-      (comp keyword str l/locale)
-      (registry/currency-id->localized* (id c registry) registry)))))
+   (when (some? c)
+     (let [^Registry registry (unit-registry registry)
+           cid               (id c registry)]
+       (when-not (registry/currency-id->currency* cid registry)
+         (throw (ex-info
+                 "Currency not found in a registry."
+                 {:op       :localized-properties
+                  :value    c
+                  :id       cid
+                  :registry registry})))
+       (when-some [m (registry/currency-id->localized* cid registry)]
+         (not-empty
+          (map/map-keys
+           (comp keyword str l/locale)
+           m)))))))
 
 (defn get-localized-property
   "Returns localized properties of the currency object for the given locale."
@@ -2884,6 +2899,10 @@
   default locale for the environment will be used. Locale can be expressed as a
   Locale object or any object which can be used to identify the locale (e.g. a keyword
   or a string).
+
+  Throws when a currency cannot be resolved in the registry. Returns `nil` when the
+  property is not present for the currency or when the currency has no localized
+  properties.
 
   Localized properties are maps keyed by currency identifiers, containing another
   maps keyed by locale objects. There is a special key :* which identifies default
@@ -2936,15 +2955,24 @@
    (let [^Registry registry (unit-registry registry)
          cid    (id currency-id registry)
          locale (l/locale locale)]
-     (when-some [m (registry/currency-id->localized* cid registry)]
-       (or (get (get m locale) property)
-           (some #(and (some? %)
-                       (not (contains? locale-seps
-                                       (.charAt ^String %
-                                                (unchecked-dec (count %)))))
-                       (get (get m (l/locale %)) property))
-                 (sm/all-prefixes locale-seps (str locale)))
-           (get (get m :*) property))))))
+     (when (some? cid)
+       (when-not (registry/currency-id->currency* cid registry)
+         (throw (ex-info
+                 "Currency not found in a registry."
+                 {:op       :localized-property
+                  :property property
+                  :value    currency-id
+                  :id       cid
+                  :registry registry})))
+       (when-some [m (registry/currency-id->localized* cid registry)]
+         (or (get (get m locale) property)
+             (some #(and (some? %)
+                         (not (contains? locale-seps
+                                         (.charAt ^String %
+                                                  (unchecked-dec (count %)))))
+                         (get (get m (l/locale %)) property))
+                   (sm/all-prefixes locale-seps (str locale)))
+             (get (get m :*) property)))))))
 
 (def ^{:tag      String :added "1.0.0"
        :arglists '(^String [currency]
@@ -2972,14 +3000,15 @@
            (fn symbol
              (^String [c]        (symbol c (Locale/getDefault) (registry/get)))
              (^String [c locale] (symbol c locale (registry/get)))
-             (^String [c locale ^Registry registry]
-              (let [^Registry registry (unit-registry registry)
-                    lc (l/locale locale)
-                    lp (localized-property :symbol c lc registry)]
-                (if (some? lp)
-                  lp
-                  (let [scode (code c registry)]
-                    (or (when (iso? c registry)
+	             (^String [c locale ^Registry registry]
+	              (let [^Registry registry (unit-registry registry)
+	                    lc (l/locale locale)
+	                    lp (try (localized-property :symbol c lc registry)
+	                            (catch clojure.lang.ExceptionInfo _e nil))]
+	                (if (some? lp)
+	                  lp
+	                  (let [scode (code c registry)]
+	                    (or (when (iso? c registry)
                           (try (-> scode
                                    ^java.util.Currency (java.util.Currency/getInstance)
                                    (.getSymbol lc))
@@ -3037,14 +3066,15 @@
            (fn display-name
              (^String [c]        (display-name c (Locale/getDefault) (registry/get)))
              (^String [c locale] (display-name c locale (registry/get)))
-             (^String [c locale ^Registry registry]
-              (let [^Registry registry (unit-registry registry)
-                    lc (l/locale locale)
-                    lp (localized-property :name c lc registry)]
-                (if (some? lp) lp
-                    (let [scode (code c registry)]
-                      (or (when (iso? c registry)
-                            (try (-> scode
+	             (^String [c locale ^Registry registry]
+	              (let [^Registry registry (unit-registry registry)
+	                    lc (l/locale locale)
+	                    lp (try (localized-property :name c lc registry)
+	                            (catch clojure.lang.ExceptionInfo _e nil))]
+	                (if (some? lp) lp
+	                    (let [scode (code c registry)]
+	                      (or (when (iso? c registry)
+	                            (try (-> scode
                                      ^java.util.Currency (java.util.Currency/getInstance)
                                      (.getDisplayName lc))
                                  (catch IllegalArgumentException _e nil)))

@@ -724,18 +724,12 @@
      (contains? (registry/currency-id->currency* registry)
                 (.id ^Currency (.currency ^Money money)))))
 
-	  (present?
-	    (^Boolean [money]
-	     (let [id (.id ^Currency (.currency ^Money money))]
-	       (if (namespace id)
-	         (contains? (registry/currency-id->currency*) id)
-	         (contains? (registry/currency-code->currencies*) id))))
-	    (^Boolean [money ^Registry registry]
-	     (let [id (.id ^Currency (.currency ^Money money))]
-	       (if (namespace id)
-	         (contains? (registry/currency-id->currency* registry) id)
-	         (contains? (registry/currency-code->currencies* registry) id)))))
-	  )
+  (present?
+    (^Boolean [money]
+     (currency/present? ^Currency (.currency ^Money money)))
+    (^Boolean [money ^Registry registry]
+     (currency/present? ^Currency (.currency ^Money money) ^Registry registry)))
+)
 
 ;;
 ;; Scalable implementation.

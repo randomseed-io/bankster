@@ -18,6 +18,7 @@
             [io.randomseed.bankster.spec     :as              spec]
             [expound.alpha                   :as           expound]
             [io.randomseed.bankster.registry :as          registry]
+            [io.randomseed.bankster.money    :as                 m]
             [io.randomseed.bankster.currency :as                 c]))
 
 (s/check-asserts true)
@@ -146,6 +147,17 @@
     (is (= (c/defined? #currency crypto/ETH) true))
     (is (= (c/defined? 978) true))
     (is (= (c/defined? 10101010) false)))
+  (testing "when it checks if a currency is present"
+    (is (= (c/present? :PLN) true))
+    (is (= (c/present? :PPPP) false))
+    (is (= (c/present? #currency PLN) true))
+    (is (= (c/present? #currency{:id :PLN :scale 1}) false))
+    (is (= (c/present? (m/of :EUR 1)) true))
+    (is (= (c/present? (m/of #currency{:id :PLN :scale 1} 1)) false))
+    (let [jc (java.util.Currency/getInstance "EUR")]
+      (is (= (c/defined? jc) true))
+      (is (= (c/present? jc) true))
+    (is (= (c/id jc) :EUR))))
   (testing "when it checks whether two currencies have the same IDs"
     (is (= (c/same-ids? :PLN :PLN) true))
     (is (= (c/same-ids? :PLN "PLN") true))
@@ -157,6 +169,20 @@
     (is (= (c/same-ids? :crypto/USDT #currency crypto/USDT) true))
     (is (= (c/same-ids? :USDT #currency crypto/USDT) false))
     (is (= (c/same-ids? #currency crypto/USDT :PLN) false))))
+
+(deftest currency-java
+  (testing "when it converts currency to java.util.Currency"
+    (let [^java.util.Currency eur (c/java :EUR)]
+      (is (instance? java.util.Currency eur))
+      (is (= "EUR" (.getCurrencyCode eur)))
+      (is (= 978   (.getNumericCode eur)))
+      (is (= 2     (.getDefaultFractionDigits eur))))
+    (is (= (c/java (c/new :EUR 978 1 nil :ISO-4217)) nil))
+    (is (= (c/java (c/new :EUR 999 2 nil :ISO-4217)) nil))
+    (is (= (c/java (c/new :EUR 978 2 nil :CRYPTO)) nil))
+    (is (= (c/java (c/new :EUR c/no-numeric-id 2 nil :ISO-4217)) nil))
+    (is (= (c/java (c/new :EUR 978 c/auto-scaled nil :ISO-4217)) nil))
+    (is (= (c/java (c/new :PPPP 123 2 nil :ISO-4217)) nil))))
 
 (deftest currency-properties
   (testing "when it's possible to get the numeric value of an ISO currency"
@@ -191,7 +217,12 @@
   (testing "when it's possible to get countries associated with a currency"
     (is (= (c/countries #currency USD) #{:TL :IO :PR :BQ :EC :VG :US :GU :AS :PW :TC :MP :VI :FM :MH :UM}))
     (is (= (c/countries #currency crypto/ETH) nil))
-    (is (= (c/countries #currency{:id :PLN :scale 1}) #{:PL})))
+    (is (= (c/countries #currency{:id :PLN :scale 1}) #{:PL}))
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (c/countries #currency{:id :PPPP}))))
+  (testing "when it gets localized properties"
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (c/localized-properties #currency{:id :PPPP}))))
   (testing "when it's possible to distinguish other type of values from the currency"
     (is (= (c/currency? #currency EUR) true))
     (is (= (c/currency? #currency :EUR) true))
@@ -272,4 +303,6 @@
     (is (= (c/name :crypto/ETH :en) "Ether"))
     (is (#{"EUR" "€"} (c/symbol :EUR :en_US)))
     (is (#{"EUR" "€"} (c/symbol :EUR :en)))
-    (is (= (c/symbol :PLN :pl) "zł"))))
+    (is (= (c/symbol :PLN :pl) "zł"))
+    (is (thrown? clojure.lang.ExceptionInfo
+                 (c/localized-property :name #currency{:id :PPPP} :pl)))))
