@@ -195,7 +195,7 @@
    (when (some? registry)
      (sorted-map-by
       #(compare %2 %1)
-      :version    (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "YYYYMMddHHmmssSS"))
+      :version    (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "yyyyMMddHHmmssSS"))
       :localized  (into (sorted-map) (map/map-vals localized->map (:cur-id->localized registry)))
       :currencies (into (sorted-map) (map/map-vals currency->map  (:cur-id->cur registry)))
       :countries  (into (sorted-map) (map/map-vals :id (:ctr-id->cur registry)))))))
