@@ -93,23 +93,6 @@
 ;; Basic helpers
 ;;
 
-(defn ascii-az?
-  "Returns `true` if `s` is non-empty and contains only ASCII letters from a to z and A
-  to Z."
-  {:tag Boolean :private true :added "2.0.0"}
-  ^Boolean [^String s]
-  (when (some? s)
-    (let [n (unchecked-int (.length s))]
-      (when (pos? n)
-        (loop [i (unchecked-int 0)]
-          (if (== i n)
-            true
-            (let [c (unchecked-int (.charAt s i))]
-              (if (or (and (>= c 65) (<= c 90))
-                      (and (>= c 97) (<= c 122)))
-                (recur (unchecked-inc-int i))
-                false))))))))
-
 (defn iso-strict-code?
   "Returns `true` when the given currency code, expressed as keyword, is exactly a
   3-character, simple keyword consisting only of uppercase letters in range of
