@@ -1047,10 +1047,10 @@
   le?)
 
 (defn is-zero?
-  "Returns true if the given monetary amount is a positive number."
+  "Returns true if the given monetary amount is zero."
   {:tag Boolean :added "1.0.0"}
   [^Money a]
-  (clojure.core/zero? (.compareTo 0M ^BigDecimal (.amount ^Money a))))
+  (clojure.core/zero? (.compareTo ^BigDecimal (.amount ^Money a) 0M)))
 
 (def ^{:tag Money :added "1.2.0"
        :arglists '(^Boolean [^Money a])}
@@ -1062,7 +1062,7 @@
   "Returns true if the given monetary amount is a negative number."
   {:tag Boolean :added "1.0.0"}
   [^Money a]
-  (pos-int? (.compareTo 0M ^BigDecimal (.amount ^Money a))))
+  (neg-int? (.compareTo ^BigDecimal (.amount ^Money a) 0M)))
 
 (def ^{:tag Money :added "1.2.0"
        :arglists '(^Boolean [^Money a])}
@@ -1074,7 +1074,7 @@
   "Returns true if the given monetary amount is a positive number."
   {:tag Boolean :added "1.0.0"}
   [^Money a]
-  (neg-int? (.compareTo 0M ^BigDecimal (.amount ^Money a))))
+  (pos-int? (.compareTo ^BigDecimal (.amount ^Money a) 0M)))
 
 
 (def ^{:tag Money :added "1.2.0"
@@ -1087,7 +1087,7 @@
   "Returns true if the given monetary amount is a negative number or zero."
   {:tag Boolean :added "1.0.0"}
   [^Money a]
-  (clojure.core/>= (.compareTo 0M ^BigDecimal (.amount ^Money a)) 0))
+  (clojure.core/<= (.compareTo ^BigDecimal (.amount ^Money a) 0M) 0))
 
 (def ^{:tag Money :added "1.2.0"
        :arglists '(^Boolean [^Money a])}
@@ -1099,7 +1099,7 @@
   "Returns true if the given monetary amount is a positive number or zero."
   {:tag Boolean :added "1.0.0"}
   [^Money a]
-  (clojure.core/<= (.compareTo 0M ^BigDecimal (.amount ^Money a)) 0))
+  (clojure.core/>= (.compareTo ^BigDecimal (.amount ^Money a) 0M) 0))
 
 (def ^{:tag Money :added "1.2.0"
        :arglists '(^Boolean [^Money a])}
