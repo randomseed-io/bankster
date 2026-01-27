@@ -1,3 +1,44 @@
 #!/bin/sh
 
-terminal-notifier -message "${1}" -title "${2}" -appIcon "${3}"
+# Kaocha notifier hook.
+#
+# Args:
+#   1: message
+#   2: title
+#   3: icon path
+#   4: failed? (unused)
+#
+# Env:
+#   - BANKSTER_NOTIFIER_SENDER / TERMINAL_NOTIFIER_SENDER
+#       Bundle id passed as `terminal-notifier -sender ...` (e.g. `com.apple.Terminal`,
+#       `com.googlecode.iterm2`).
+#   - BANKSTER_TEST_NOTIFIER_STRICT=1
+#       If set, propagate `terminal-notifier` exit code (otherwise ignore failures).
+
+if ! command -v terminal-notifier >/dev/null 2>&1; then
+  exit 0
+fi
+
+sender="${BANKSTER_NOTIFIER_SENDER:-${TERMINAL_NOTIFIER_SENDER:-}}"
+
+if [ -z "${sender}" ]; then
+  case "${TERM_PROGRAM:-}" in
+    iTerm.app|iTerm2.app)
+      sender="com.googlecode.iterm2"
+      ;;
+    Apple_Terminal)
+      sender="com.apple.Terminal"
+      ;;
+    *)
+      sender="com.apple.Terminal"
+      ;;
+  esac
+fi
+
+terminal-notifier -sender "${sender}" -message "${1}" -title "${2}" -appIcon "${3}"
+
+if [ "${BANKSTER_TEST_NOTIFIER_STRICT:-}" = "1" ]; then
+  exit $?
+fi
+
+exit 0
