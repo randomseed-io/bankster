@@ -53,9 +53,28 @@
 (defn =
   "Calls `io.randomseed.bankster.money/eq?` for Money argument, `clojure.core/=` for other
   data types."
-  {:tag Boolean :added "1.0.0"}
-  ([a]           true)
-  ([a b]         (if (money? a) (if (money? b) (money/eq? a b) false) (if (money? b) false (clojure.core/= a b))))
+  {:tag            Boolean
+   :added          "1.0.0"
+   :inline
+   (fn [a b]
+     `(let [a# ~a
+            b# ~b]
+        (if (io.randomseed.bankster.money/money? a#)
+          (if (io.randomseed.bankster.money/money? b#)
+            (io.randomseed.bankster.money/eq? a# b#)
+            false)
+          (if (io.randomseed.bankster.money/money? b#)
+            false
+            (clojure.core/= a# b#)))))
+   :inline-arities #{2}}
+  ([_]           true)
+  ([a b]         (if (io.randomseed.bankster.money/money? a)
+                   (if (io.randomseed.bankster.money/money? b)
+                     (io.randomseed.bankster.money/eq? a b)
+                     false)
+                   (if (io.randomseed.bankster.money/money? b)
+                     false
+                     (clojure.core/= a b))))
   ([a b & more]  (if (= a b)
                    (if (next more)
                      (recur b (first more) (next more))
@@ -65,21 +84,55 @@
 (defn not=
   "Calls `io.randomseed.bankster.money/ne?` for Money argument, `clojure.core/not=` for
   other data types."
-  {:tag Boolean :added "1.0.0"}
-  ([a]           false)
-  ([a b]         (if (money? a) (if (money? b) (money/ne? a b) true) (if (money? b) true (clojure.core/not= a b))))
-  ([a b & more]  (if (not= a b)
-                   (if (next more)
-                     (recur b (first more) (next more))
-                     (not= b (first more)))
-                   true)))
+  {:tag            Boolean
+   :added          "1.0.0"
+   :inline
+   (fn [a b]
+     `(let [a# ~a
+            b# ~b]
+        (if (io.randomseed.bankster.money/money? a#)
+          (if (io.randomseed.bankster.money/money? b#)
+            (io.randomseed.bankster.money/ne? a# b#)
+            true)
+          (if (io.randomseed.bankster.money/money? b#)
+            true
+            (clojure.core/not= a# b#)))))
+   :inline-arities #{2}}
+  ([_]           false)
+  ([a b]         (if (io.randomseed.bankster.money/money? a)
+                   (if (io.randomseed.bankster.money/money? b)
+                     (io.randomseed.bankster.money/ne? a b)
+                     true)
+                   (if (io.randomseed.bankster.money/money? b)
+                     true
+                     (clojure.core/not= a b))))
+  ([a b & more]  (not (apply = a b more))))
 
 (defn >
   "Calls `io.randomseed.bankster.money/gt?` for Money argument, `clojure.core/>` for other
   data types."
-  {:tag Boolean :added "1.0.0"}
-  (^Boolean [a]          true)
-  (^Boolean [a b]        (if (money? a) (if (money? b) (money/gt? a b) false) (if (money? b) false (clojure.core/> a b))))
+  {:tag            Boolean
+   :added          "1.0.0"
+   :inline
+   (fn [a b]
+     `(let [a# ~a
+            b# ~b]
+        (if (io.randomseed.bankster.money/money? a#)
+          (if (io.randomseed.bankster.money/money? b#)
+            (io.randomseed.bankster.money/gt? a# b#)
+            false)
+          (if (io.randomseed.bankster.money/money? b#)
+            false
+            (clojure.core/> a# b#)))))
+   :inline-arities #{2}}
+  (^Boolean [_]          true)
+  (^Boolean [a b]        (if (io.randomseed.bankster.money/money? a)
+                           (if (io.randomseed.bankster.money/money? b)
+                             (io.randomseed.bankster.money/gt? a b)
+                             false)
+                           (if (io.randomseed.bankster.money/money? b)
+                             false
+                             (clojure.core/> a b))))
   (^Boolean [a b & more] (if (> a b)
                            (if (next more)
                              (recur b (first more) (next more))
@@ -89,9 +142,28 @@
 (defn >=
   "Calls `io.randomseed.bankster.money/ge?` for Money argument, `clojure.core/>=` for other
   data types."
-  {:tag Boolean :added "1.0.0"}
-  (^Boolean [a]          true)
-  (^Boolean [a b]        (if (money? a) (if (money? b) (money/ge? a b) false) (if (money? b) false (clojure.core/>= a b))))
+  {:tag            Boolean
+   :added          "1.0.0"
+   :inline
+   (fn [a b]
+     `(let [a# ~a
+            b# ~b]
+        (if (io.randomseed.bankster.money/money? a#)
+          (if (io.randomseed.bankster.money/money? b#)
+            (io.randomseed.bankster.money/ge? a# b#)
+            false)
+          (if (io.randomseed.bankster.money/money? b#)
+            false
+            (clojure.core/>= a# b#)))))
+   :inline-arities #{2}}
+  (^Boolean [_]          true)
+  (^Boolean [a b]        (if (io.randomseed.bankster.money/money? a)
+                           (if (io.randomseed.bankster.money/money? b)
+                             (io.randomseed.bankster.money/ge? a b)
+                             false)
+                           (if (io.randomseed.bankster.money/money? b)
+                             false
+                             (clojure.core/>= a b))))
   (^Boolean [a b & more] (if (>= a b)
                            (if (next more)
                              (recur b (first more) (next more))
@@ -101,9 +173,28 @@
 (defn <
   "Calls `io.randomseed.bankster.money/lt?` for Money argument, `clojure.core/<` for other
   data types."
-  {:tag Boolean :added "1.0.0"}
-  (^Boolean [a]          true)
-  (^Boolean [a b]        (if (money? a) (if (money? b) (money/lt? a b) false) (if (money? b) false (clojure.core/< a b))))
+  {:tag            Boolean
+   :added          "1.0.0"
+   :inline
+   (fn [a b]
+     `(let [a# ~a
+            b# ~b]
+        (if (io.randomseed.bankster.money/money? a#)
+          (if (io.randomseed.bankster.money/money? b#)
+            (io.randomseed.bankster.money/lt? a# b#)
+            false)
+          (if (io.randomseed.bankster.money/money? b#)
+            false
+            (clojure.core/< a# b#)))))
+   :inline-arities #{2}}
+  (^Boolean [_]          true)
+  (^Boolean [a b]        (if (io.randomseed.bankster.money/money? a)
+                           (if (io.randomseed.bankster.money/money? b)
+                             (io.randomseed.bankster.money/lt? a b)
+                             false)
+                           (if (io.randomseed.bankster.money/money? b)
+                             false
+                             (clojure.core/< a b))))
   (^Boolean [a b & more] (if (< a b)
                            (if (next more)
                              (recur b (first more) (next more))
@@ -113,9 +204,28 @@
 (defn <=
   "Calls `io.randomseed.bankster.money/le?` for Money argument, `clojure.core/<=` for other
   data types."
-  {:tag Boolean :added "1.0.0"}
-  (^Boolean [a]          true)
-  (^Boolean [a b]        (if (money? a) (if (money? b) (money/le? a b) false) (if (money? b) false (clojure.core/<= a b))))
+  {:tag            Boolean
+   :added          "1.0.0"
+   :inline
+   (fn [a b]
+     `(let [a# ~a
+            b# ~b]
+        (if (io.randomseed.bankster.money/money? a#)
+          (if (io.randomseed.bankster.money/money? b#)
+            (io.randomseed.bankster.money/le? a# b#)
+            false)
+          (if (io.randomseed.bankster.money/money? b#)
+            false
+            (clojure.core/<= a# b#)))))
+   :inline-arities #{2}}
+  (^Boolean [_]          true)
+  (^Boolean [a b]        (if (io.randomseed.bankster.money/money? a)
+                           (if (io.randomseed.bankster.money/money? b)
+                             (io.randomseed.bankster.money/le? a b)
+                             false)
+                           (if (io.randomseed.bankster.money/money? b)
+                             false
+                             (clojure.core/<= a b))))
   (^Boolean [a b & more] (if (<= a b)
                            (if (next more)
                              (recur b (first more) (next more))
@@ -123,42 +233,104 @@
                            false)))
 
 (defn long
-  "Calls io.randomseed.bankster.money/major->long for Money argument, clojure.core/long
-  for other data types."
-  {:tag 'long :added "1.0.0"}
-  [a] (if (money? a) (money/major->long a) (clojure.core/long a)))
+  "Calls `io.randomseed.bankster.money/major->long` for Money argument, falls back to
+  `clojure.core/long` for other data types."
+  {:added          "1.0.0"
+   :inline
+   (fn [x]
+     `(let [x# ~x]
+        (if (instance? io.randomseed.bankster.Money x#)
+          (clojure.core/long (io.randomseed.bankster.money/major->long x#))
+          (clojure.core/long x#))))
+   :inline-arities #{1}}
+  ^long
+  [x]
+  (if (instance? io.randomseed.bankster.Money x)
+    (clojure.core/long (io.randomseed.bankster.money/major->long x))
+    (clojure.core/long x)))
 
 (defn int
-  "Calls io.randomseed.bankster.money/major->int for Money argument, clojure.core/int
-  for other data types."
-  {:tag 'int :added "1.0.0"}
-  [a] (if (money? a) (money/major->int a) (clojure.core/int a)))
+  "Calls `io.randomseed.bankster.money/major->int` for Money argument, falls back to
+  `clojure.core/int` for other data types."
+  {:added          "1.0.0"
+   :inline
+   (fn [x]
+     `(let [x# ~x]
+        (if (instance? io.randomseed.bankster.Money x#)
+          (clojure.core/int (io.randomseed.bankster.money/major->int x#))
+          (clojure.core/int x#))))
+   :inline-arities #{1}}
+  [x]
+  (if (instance? io.randomseed.bankster.Money x)
+    (clojure.core/int (io.randomseed.bankster.money/major->int x))
+    (clojure.core/int x)))
 
 (defn double
-  "Calls io.randomseed.bankster.money/->double for Money argument, clojure.core/double
-  for other data types."
-  {:tag 'double :added "1.0.0"}
-  [a] (if (money? a) (money/->double a) (clojure.core/double a)))
+  "Calls `io.randomseed.bankster.money/->double` for Money argument, falls back to
+  `clojure.core/double` for other data types."
+  {:added          "1.0.0"
+   :inline
+   (fn [x]
+     `(let [x# ~x]
+        (if (instance? Money x#)
+          (clojure.core/double (io.randomseed.bankster.money/->double x#))
+          (clojure.core/double x#))))
+   :inline-arities #{1}}
+  ^double
+  [x]
+  (if (instance? io.randomseed.bankster.Money x)
+    (clojure.core/double (io.randomseed.bankster.money/->double x))
+    (clojure.core/double x)))
 
 (defn float
-  "Calls io.randomseed.bankster.money/->float for Money argument, clojure.core/float
-  for other data types."
-  {:tag 'float :added "1.0.0"}
-  [a] (if (money? a) (money/->float a) (clojure.core/float a)))
+  "Calls `io.randomseed.bankster.money/->float` for Money argument, falls back to
+  `clojure.core/float` for other data types."
+  {:added          "1.0.0"
+   :inline
+   (fn [x]
+     `(let [x# ~x]
+        (if (instance? io.randomseed.bankster.Money x#)
+          (clojure.core/float (io.randomseed.bankster.money/->float x#))
+          (clojure.core/float x#))))
+   :inline-arities #{1}}
+  [x]
+  (if (instance? io.randomseed.bankster.Money x)
+    (clojure.core/float (io.randomseed.bankster.money/->float x))
+    (clojure.core/float x)))
 
 (defn pos?
   "Calls `io.randomseed.bankster.money/is-pos?` for Money argument, `clojure.core/pos?`
   for other data types."
-  {:tag Boolean :added "1.0.0"}
-  [a] (if (money? a) (money/is-pos? a) (clojure.core/pos? a)))
+  {:added          "1.0.0"
+   :inline
+   (fn [a]
+     `(let [a# ~a]
+        (if (io.randomseed.bankster.money/money? a#)
+          (io.randomseed.bankster.money/is-pos? a#)
+          (clojure.core/pos? a#))))
+   :inline-arities #{1}}
+  [a]
+  (if (io.randomseed.bankster.money/money? a)
+    (io.randomseed.bankster.money/is-pos? a)
+    (clojure.core/pos? a)))
 
 (defn neg?
   "Calls `io.randomseed.bankster.money/is-neg?` for Money argument, `clojure.core/neg?`
   for other data types."
-  {:tag Boolean :added "1.0.0"}
-  [a] (if (money? a) (money/is-neg? a) (clojure.core/neg? a)))
+  {:added          "1.0.0"
+   :inline
+   (fn [a]
+     `(let [a# ~a]
+        (if (io.randomseed.bankster.money/money? a#)
+          (io.randomseed.bankster.money/is-neg? a#)
+          (clojure.core/neg? a#))))
+   :inline-arities #{1}}
+  [a]
+  (if (io.randomseed.bankster.money/money? a)
+    (io.randomseed.bankster.money/is-neg? a)
+    (clojure.core/neg? a)))
 
-(def ^{:tag BigDecimal
+(def ^{:tag      BigDecimal
        :arglists '(^BigDecimal [^Money a]
                    ^BigDecimal [^Money a scale]
                    ^BigDecimal [^Money a scale ^RoundingMode rounding-mode])}
@@ -166,7 +338,7 @@
   "Alias for `io.randomseed.bankster.scale/integer`."
   scale/integer)
 
-(def ^{:tag BigDecimal
+(def ^{:tag      BigDecimal
        :arglists '(^BigDecimal [^Money a]
                    ^BigDecimal [^Money a scale]
                    ^BigDecimal [^Money a scale ^RoundingMode rounding-mode])}
@@ -189,5 +361,16 @@
 (defn compare
   "Calls `io.randomseed.bankster.money/compare` for Money argument, `clojure.core/compare`
   for other data types."
-  {:tag 'int :added "1.0.0"}
-  [a b] (if (money? a) (money/compare a b) (clojure.core/compare a b)))
+  {:added          "1.0.0"
+   :inline
+   (fn [a b]
+     `(let [a# ~a
+            b# ~b]
+        (if (io.randomseed.bankster.money/money? a#)
+          (io.randomseed.bankster.money/compare a# b#)
+          (clojure.core/compare a# b#))))
+   :inline-arities #{2}}
+  [a b]
+  (if (io.randomseed.bankster.money/money? a)
+    (io.randomseed.bankster.money/compare a b)
+    (clojure.core/compare a b)))
