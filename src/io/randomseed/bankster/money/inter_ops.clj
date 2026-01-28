@@ -22,35 +22,43 @@
   "Calls `io.randomseed.bankster.money/add` when any argument is a kind of Money,
   otherwise delegates to `clojure.core/+`."
   {:added "1.0.0"}
-  ([]            (money/add))
-  ([a]           a)
-  ([a b]         (if (money? a) (money/add a b) (clojure.core/+ a b)))
-  ([a b  & more] (if (money? a) (apply money/add a b more) (apply clojure.core/+ a b more))))
+  ([]            (clojure.core/+))
+  ([a]           (if (money? a) a (clojure.core/+ a)))
+  ([a b]         (if (or (money? a) (money? b)) (money/add a b) (clojure.core/+ a b)))
+  ([a b  & more] (if (or (money? a) (money? b) (some money? more))
+                   (apply money/add a b more)
+                   (apply clojure.core/+ a b more))))
 
 (defn -
   "Calls `io.randomseed.bankster.money/sub` when any argument is a kind of Money,
   otherwise delegates to `clojure.core/-`."
   {:added "1.0.0"}
   ([a]           (if (money? a) (money/sub a) (clojure.core/- a)))
-  ([a b]         (if (money? a) (money/sub a b) (clojure.core/- a b)))
-  ([a b & more]  (if (money? a) (apply money/sub a b more) (apply clojure.core/- a b more))))
+  ([a b]         (if (or (money? a) (money? b)) (money/sub a b) (clojure.core/- a b)))
+  ([a b & more]  (if (or (money? a) (money? b) (some money? more))
+                   (apply money/sub a b more)
+                   (apply clojure.core/- a b more))))
 
 (defn *
   "Calls `io.randomseed.bankster.money/mul` when any argument is a kind of Money,
   otherwise delegates to `clojure.core/*`."
   {:added "1.0.0"}
-  ([]            (money/mul))
-  ([a]           (if (money? a) (money/mul a) (num a)))
+  ([]            (clojure.core/*))
+  ([a]           (if (money? a) a (clojure.core/* a)))
   ([a b]         (if (or (money? a) (money? b)) (money/mul a b) (clojure.core/* a b)))
-  ([a b & more]  (apply money/mul a b more)))
+  ([a b & more]  (if (or (money? a) (money? b) (some money? more))
+                   (apply money/mul a b more)
+                   (apply clojure.core/* a b more))))
 
 (defn /
   "Calls `io.randomseed.bankster.money/div` when any argument is a kind of Money,
   otherwise delegates to `clojure.core//`."
   {:added "1.0.0"}
   ([a]           (if (money? a) (money/div a) (clojure.core// a)))
-  ([a b]         (if (money? a) (money/div a b) (clojure.core// a b)))
-  ([a b & more]  (if (money? a) (apply money/div a b more) (apply clojure.core// a b more))))
+  ([a b]         (if (or (money? a) (money? b)) (money/div a b) (clojure.core// a b)))
+  ([a b & more]  (if (or (money? a) (money? b) (some money? more))
+                   (apply money/div a b more)
+                   (apply clojure.core// a b more))))
 
 (defn =
   "Calls `io.randomseed.bankster.money/eq?` for Money argument, `clojure.core/=` for other
