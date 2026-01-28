@@ -1,6 +1,6 @@
 (ns
 
-    ^{:doc    "Public specs of bankster."
+    ^{:doc    "Public specs of Bankster."
       :author "Paweł Wilk"
       :added  "1.0.0"
       :no-doc true}

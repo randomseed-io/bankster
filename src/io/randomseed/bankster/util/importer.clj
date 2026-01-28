@@ -64,7 +64,7 @@
 
 (def ^{:const true :tag String :added "1.0.0"}
   default-handlers-namespace
-  "Default namespace of a reader handlers."
+  "Default namespace of reader handlers."
   "io.randomseed.bankster.money")
 
 (def ^{:const true :tag String :added "1.0.0"}
@@ -124,8 +124,8 @@
 
 (defn countries-load
   "Reads CSV file in a format compliant with Joda Money and returns a map with currency
-  to countries associations where countries are as sets. The pathname should be
-  relative to resources directory."
+  to countries associations where countries are sets. The pathname should be
+  relative to the resources directory."
   {:added "1.0.0"}
   ([]
    (countries-load nil))
@@ -137,9 +137,9 @@
           (map/invert-in-sets)))))
 
 (defn currencies-load
-  "Reads CSV file compliant with Joda Money and returns a map with currency
-  ID (keyword) as a key and currency data as its value (vector). The pathname should
-  be relative to resources directory."
+  "Reads a CSV file compliant with Joda Money and returns a sequence of currencies.
+
+  The pathname should be relative to the resources directory."
   {:added "1.0.0"}
   ([]
    (currencies-load nil))
@@ -168,7 +168,7 @@
 
 (defn currency->map
   "Takes a currency and returns a map suitable for putting into a configuration
-  file. Extensions fields are ignored."
+  file. Extension fields are ignored."
   {:added "1.0.0"}
   [{:keys [:numeric :scale :kind :weight]}]
   (as-> (sorted-map) m
@@ -186,8 +186,8 @@
 
 (defn registry->map
   "Takes a registry and returns a map suitable for putting into a configuration
-  file. Extensions fields are ignored. When registry is not given it uses the global
-  one. Extension fields are ignored."
+  file. Extension fields are ignored. When registry is not given it uses the global
+  one."
   {:added "1.0.0"}
   ([]
    (registry->map (registry/state)))
@@ -204,8 +204,8 @@
   "For the given filename (defaults to default-dump-filename) and a registry (defaults
   to a global registry) creates a dump in EDN format.
 
-  Filename will be placed in the default directory of resources (the same that which
-  `config.edn`)."
+  Filename will be placed in the default directory of resources (the same directory
+  as `config.edn`)."
   {:added "1.0.0"}
   ([]
    (dump default-dump-filename (registry/get)))
@@ -220,11 +220,11 @@
        (spit pathname (puget/pprint-str registry))))))
 
 (defn export
-  "For the given filename (defaults to default-dump-filename) and a registry (defaults
+  "For the given filename (defaults to default-export-filename) and a registry (defaults
   to a global registry) creates a configuration file in EDN format.
 
-  Filename will be placed in the default directory of resources (the same which holds
-  `config.edn`)."
+  Filename will be placed in the default directory of resources (the same directory
+  that holds `config.edn`)."
   {:added "1.0.0"}
   ([]
    (export default-export-filename (registry/get)))
@@ -273,7 +273,7 @@
   on a basis of registry information and data reader map files referring to the
   created handlers.
 
-  The purpose of generation is primary to create handlers for literals in forms of
+  The purpose of generation is primarily to create handlers for literals in forms of
   #money/NS[…], where NS is a namespace that corresponds to a namespace of a
   currency. Possible namespaces are taken from a registry (a map from its field
   .cur-id->cur).

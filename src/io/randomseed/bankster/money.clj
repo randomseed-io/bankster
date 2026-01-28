@@ -44,8 +44,9 @@
    [num] [currency num] [currency num rounding-mode]
    "Creates new Money object for the given value which will become an amount. If the
   currency is not given it will try to use the default one, taken from the
-  `*default-currency*` dynamic variable. Optional rounding-mode should be a rounding
-  mode used when the conversion to a scaled monetary amount requires rounding.
+  `io.randomseed.bankster.currency/*default*` dynamic variable. Optional
+  rounding-mode should be a rounding mode used when the conversion to a scaled
+  monetary amount requires rounding.
 
   In its unary form, when the argument is not numeric, it will try to get the
   currency object (identified by a string, a symbol or a keyword) from the default,
@@ -291,14 +292,14 @@
   ([a b rounding-mode] (of-gen parse a b rounding-mode)))
 
 (defmacro of-major
-  "Like `io.randomseed.money/of` but sets the amount of major part only."
+  "Like `io.randomseed.bankster.money/of` but sets the amount of major part only."
   ([]    (of-gen parse))
   ([a]   (of-gen parse-major a))
   ([a b] (of-gen parse-major a b))
   ([a b rounding-mode] (of-gen parse-major a b rounding-mode)))
 
 (defmacro of-minor
-  "Like `io.randomseed.money/of` but sets the amount of minor part only."
+  "Like `io.randomseed.bankster.money/of` but sets the amount of minor part only."
   ([]    (of-gen parse))
   ([a]   (of-gen parse-minor a))
   ([a b] (of-gen parse-minor a b))
@@ -788,8 +789,9 @@
 
 (defn compare-amounts
   "Compares two monetary amounts of the same currency, regardless of their
-  scales. Returns -1 if the second one is less than, 0 if equal to, and 1 if it is
-  greater than the first. Nil values are always considered lower when comparing."
+  scales. Returns -1 if the first one is less than the second, 0 if equal to, and 1
+  if it is greater than the second. Nil values are always considered lower when
+  comparing."
   {:added "1.0.0"}
   (^long [^Money _] (unchecked-long 0))
   (^long [^Money a ^Money b]
@@ -811,8 +813,8 @@
 
 (defn compare
   "Compares two monetary amounts of the same currency and scale. Returns -1 if the
-  second one is less than, 0 if equal to, and 1 if it is greater than the first. Nil
-  values are always considered lower when comparing."
+  first one is less than the second, 0 if equal to, and 1 if it is greater than the
+  second. Nil values are always considered lower when comparing."
   {:added "1.0.0"}
   (^long [^Money _] (unchecked-long 0))
   (^long [^Money a ^Money b]
@@ -1461,10 +1463,10 @@
   "In its binary variant it performs division without rounding and rescaling.
 
   In its ternary variant divides with precision calculated to fit the longest possible
-  result (unless there is non-terminating decimal expansion then the result will be
+  result (unless there is a non-terminating decimal expansion then the result will be
   rounded).
 
-  In its quartary variant divides with scale and rounding mode."
+  In its quaternary variant divides with scale and rounding mode."
   {:added "1.0.0" :private true}
   ([a b scale r]
    `^BigDecimal (.divide ^BigDecimal ~a
@@ -1835,10 +1837,10 @@
   "In its binary variant it performs remainder calculation without rounding and rescaling.
 
   In its ternary variant gets the remainder with precision calculated to fit the
-  longest possible result (unless there is non-terminating decimal expansion then the
-  result will be rounded).
+  longest possible result (unless there is a non-terminating decimal expansion then
+  the result will be rounded).
 
-  In its quartary variant calculates the remainder with scale and rounding mode."
+  In its quaternary variant calculates the remainder with scale and rounding mode."
   {:added "1.2.0" :private true}
   ([a b scale r]
    `(let [^BigDecimal   a# ~a
@@ -1958,8 +1960,8 @@
   "Rounds a Money to an interval i (which should also be a Money or a number). If
   rounding mode is not provided (via the last argument or `scale/*rounding-mode*`) then
   it defaults to HALF_EVEN. Retains original scale of the amount (but not the nominal
-  scale of a currency, if money was given). For nil intervals or intervals which
-  amounts are negative or zero, returns unaltered monetary object."
+  scale of a currency, if money was given). For nil intervals or intervals whose
+  amounts are negative or zero, returns an unaltered monetary object."
   {:tag Money :added "1.2.9"}
   (^Money [^Money money] money)
   (^Money [^Money money ^Scalable i] (round-to money i nil))

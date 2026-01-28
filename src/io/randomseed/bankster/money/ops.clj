@@ -29,7 +29,7 @@
                    ^Money [^Money a ^Money b]
                    ^Money [^Money a ^Money b & more])}
   -
-  "Alias for `io.randomseed.bankster.money/subtract`."
+  "Alias for `io.randomseed.bankster.money/sub`."
   money/sub)
 
 (def ^{:tag io.randomseed.bankster.Money :added "1.0.0"
@@ -38,7 +38,7 @@
                    ^Money [a b]
                    ^Money [a b & more])}
   *
-  "Alias for `io.randomseed.bankster.money/multiply`."
+  "Alias for `io.randomseed.bankster.money/mul`."
   money/mul)
 
 (def ^{:tag io.randomseed.bankster.Money :added "1.0.0"
@@ -46,7 +46,7 @@
                    ^Money [^Money a ^Money b]
                    ^Money [^Money a ^Money b & more])}
   /
-  "Alias for `io.randomseed.bankster.money/divide`."
+  "Alias for `io.randomseed.bankster.money/div`."
   money/div)
 
 (def ^{:tag Boolean :added "1.0.0"
@@ -154,13 +154,13 @@
 (def ^{:tag      'long :added "1.0.0"
        :arglists '(^long [^Money a])}
   long
-  "Alias for io.randomseed.bankster.money/major->long."
+  "Alias for `io.randomseed.bankster.money/major->long`."
   money/major->long)
 
 (def ^{:tag 'double :added "1.0.0"
        :arglists '(^double [^Money a])}
   double
-  "Alias for io.randomseed.bankster.money/->double."
+  "Alias for `io.randomseed.bankster.money/->double`."
   money/->double)
 
 (def ^{:tag      'double :added "1.0.0"

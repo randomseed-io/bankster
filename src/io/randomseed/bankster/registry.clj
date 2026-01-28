@@ -61,7 +61,7 @@
 
 (def ^{:dynamic true :tag Registry :added "1.0.0"}
   *default*
-  "Registry, that if set to a truthy value (not nil and not false), will be used
+  "Registry that, if set to a truthy value (not nil and not false), will be used
   instead of a global, shared registry."
   nil)
 

@@ -156,7 +156,7 @@
   argument (passing successive values during calls to it) and generates a map with
   keys updated by results returned by the function. When the third argument is
   given then it should be a map on which operations are performed instead of using
-  and empty map."
+  an empty map."
   {:added "1.0.0" :tag clojure.lang.Associative}
   ([^clojure.lang.IFn f
     ^clojure.lang.Associative m]
@@ -239,7 +239,7 @@
 
 (defn map-values
   "Recursively transforms values of a coll using function f. The function should take a
-  value and return new value."
+  value and return a new value."
   {:added "1.0.0" :tag clojure.lang.Associative}
   [^clojure.lang.IFn f, ^clojure.lang.Associative coll]
   (reduce-kv (fn [^clojure.lang.Associative m, ^clojure.lang.Keyword k, v]

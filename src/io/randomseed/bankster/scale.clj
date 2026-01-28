@@ -143,7 +143,7 @@
   (^{:tag Boolean :added "1.0.0"}
    applied?
    [num]
-   "Returns true if the value is of type which contains scaling information.")
+   "Returns true if the value is of a type that contains scaling information.")
 
   (^{:tag Boolean :added "1.0.0"}
    scalable?

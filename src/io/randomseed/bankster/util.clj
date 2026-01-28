@@ -45,8 +45,8 @@
   (must-have-ns (ensure-keyword id) ns))
 
 (defmacro try-null
-  "Evaluates body and if NullPointerException exception is caught it returns
-  nil. Otherwise it returns the value of last expression in the body."
+  "Evaluates body and if a NullPointerException is caught it returns nil. Otherwise
+  it returns the value of the last expression in the body."
   {:added "1.0.0"}
   [& body]
   `(try ~@body
@@ -318,8 +318,8 @@
   (when (some? s) (str/upper-case s)))
 
 (defn try-parse-int
-  "Returns integer from an object or nil if the given object does not contain valid
-  integer."
+  "Returns an integer from an object or nil if the given object does not contain a
+  valid integer."
   {:tag Integer}
   [s]
   (if (number? s)
@@ -329,7 +329,7 @@
            (catch NumberFormatException _e nil)))))
 
 (defn try-parse-long
-  "Returns long from an object or nil if the given object does not contain valid
+  "Returns a long from an object or nil if the given object does not contain a valid
   long."
   {:tag Long}
   [s]

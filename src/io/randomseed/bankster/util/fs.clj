@@ -58,7 +58,7 @@
 
 (defn home-dir-pathname
   "For the given pathnames creates a pathname expressed as a string by prefixing them
-  with user's home directory obtained from the Java property `user.dir` with all parts
+  with user's home directory obtained from the Java property `user.home` with all parts
   joined using current path name separator."
   ([]        (prop-pathname "user.home"))
   ([& paths] (prop-pathname "user.home" paths)))
@@ -67,7 +67,7 @@
   "For the given pathnames creates a pathname expressed as a string that resides within
   one of the Java resource directories. The path must exist to be returned. WARNING:
   it will only work for resources on a filesystem, giving you the regular pathname,
-  not URI."
+  not a URI."
   ([]        (some-> (io/resource "") io/file str))
   ([& paths] (some->> paths (remove nil?) seq
                       (apply io/file) str
@@ -94,7 +94,7 @@
    pname))
 
 (defn ^Boolean integer-string?
-  "Returns true if string contains valid integer number."
+  "Returns true if the string contains a valid integer."
   [^String s]
   (try
     (boolean (and (some? s) (Integer/parseInt s)))
