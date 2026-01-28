@@ -97,8 +97,9 @@ Registry is implemented as a record of maps keeping the following associations:
 * currency ID to a set of country IDs;
 * currency numeric ID to currency object;
 * country ID to currency object;
-* locale ID to localized properties map;
-* currency code to a sorted set of currency objects.
+* currency ID to localized properties map;
+* currency code to a sorted set of currency objects (weighted);
+* currency numeric ID to a sorted set of currency objects (weighted).
 
 In most cases you won't have to worry about the internals of a registry. However,
 when working with multiple data sources or data processing engines (like currency
@@ -136,7 +137,8 @@ conflicting attribute, therefore the mapping of currency codes to sets of curren
 objects exists in a registry. It allows to get currencies using their codes (and not
 add namespace, especially when interacting with some external API) and still maintain
 uniqueness of identifiers. If custom currency is created with the same code as
-already existing currency, it is possible to give it a **weight** which will decide
+already existing currency, it is possible to give it a **weight** (lower weight wins)
+which will decide
 whether its code will have priority during resolution (and getting from a registry).
 
 **Currency domain** is by default the same as a namespace of currency ID (if it is
@@ -160,7 +162,7 @@ automatic scale will be used on monetary amounts using such a currency.
 
 Registry-related functions are accepting currency representations based on their
 **identifiers**. Other functions and macros will usually accept **currency
-codes**. In case of conflict the currency with higher **currency weight** will be
+codes**. In case of conflict the currency with lower **currency weight** will be
 picked up.
 
 Currencies can also have **additional**, external properties, like relations to
