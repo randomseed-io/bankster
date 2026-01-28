@@ -19,7 +19,9 @@
             [expound.alpha                   :as           expound]
             [io.randomseed.bankster.registry :as          registry]
             [io.randomseed.bankster.money    :as                 m]
-            [io.randomseed.bankster.currency :as                 c]))
+            [io.randomseed.bankster.currency :as                 c])
+
+  (:import (io.randomseed.bankster Registry)))
 
 (s/check-asserts true)
 
@@ -239,20 +241,20 @@
     (is (= (c/possible? :LALALA) true))
     (is (= (c/possible? 123123) false))
     (is (= (c/possible? nil) false)))
-	  (testing "when it's possible to validate definitive currency representations"
-	    (is (= (c/definitive? #currency EUR) true))
-	    (is (= (c/definitive? (java.util.Currency/getInstance "EUR")) true))
-	    (is (= (c/definitive? :EUR) false))
-	    (is (= (c/definitive? "EUR") false))
-	    (is (= (c/definitive? 978) false))
-	    (is (= (c/definitive? {:id :EUR}) false))
-	    (is (= (c/definitive? {:id :EUR :domain :ISO-4217 :numeric 978 :scale 2}) true))
-	    (is (= (c/definitive? {:id :EUR :domain :ISO-4217 :numeric 978 :scale 2 :kind :FIAT}) true))
-	    (is (= (c/definitive? {:id :EUR :do :ISO-4217 :nr 978 :sc 2 :ki :FIAT}) true))
-	    (is (= (c/definitive? {:id :EUR :domain nil :numeric nil :scale "2" :kind nil}) true))
-	    (is (= (c/definitive? {:id :EUR :domain nil :numeric nil :scale nil :kind nil}) true))
-	    (is (= (c/definitive? {:id :EUR :scale 2}) false))
-	    (is (= (c/definitive? {:id :PLN :domain nil :numeric nil :scale c/auto-scaled :kind nil}) true)))
+  (testing "when it's possible to validate definitive currency representations"
+    (is (= (c/definitive? #currency EUR) true))
+    (is (= (c/definitive? (java.util.Currency/getInstance "EUR")) true))
+    (is (= (c/definitive? :EUR) false))
+    (is (= (c/definitive? "EUR") false))
+    (is (= (c/definitive? 978) false))
+    (is (= (c/definitive? {:id :EUR}) false))
+    (is (= (c/definitive? {:id :EUR :domain :ISO-4217 :numeric 978 :scale 2}) true))
+    (is (= (c/definitive? {:id :EUR :domain :ISO-4217 :numeric 978 :scale 2 :kind :FIAT}) true))
+    (is (= (c/definitive? {:id :EUR :do :ISO-4217 :nr 978 :sc 2 :ki :FIAT}) true))
+    (is (= (c/definitive? {:id :EUR :domain nil :numeric nil :scale "2" :kind nil}) true))
+    (is (= (c/definitive? {:id :EUR :domain nil :numeric nil :scale nil :kind nil}) true))
+    (is (= (c/definitive? {:id :EUR :scale 2}) false))
+    (is (= (c/definitive? {:id :PLN :domain nil :numeric nil :scale c/auto-scaled :kind nil}) true)))
   (testing "when it's possible to check if a currency has numeric ID"
     (is (= (c/has-numeric-id? #currency EUR) true))
     (is (= (c/has-numeric-id? #currency crypto/ETH) false))
@@ -306,3 +308,23 @@
     (is (= (c/symbol :PLN :pl) "zł"))
     (is (thrown? clojure.lang.ExceptionInfo
                  (c/localized-property :name #currency{:id :PPPP} :pl)))))
+
+(deftest unregister-removes-code-mapping
+  (testing "unregister removes entries from :cur-code->curs for namespaced currency IDs"
+    (let [r0  (registry/new)
+          cur (c/new :crypto/AAA c/no-numeric-id 2 nil :CRYPTO 0)
+      r1  (c/register r0 cur)
+      r2  (c/unregister r1 cur)]
+      ;; A plain code lookup should work after register...
+      (is (= :crypto/AAA (.id (c/resolve :AAA r1))))
+      ;; ...and must not work after unregister (regression for stale :cur-code->curs entry).
+      (is (= nil (c/resolve :AAA r2)))
+      (is (= nil (get (registry/currency-code->currencies* r2) :AAA))))))
+
+(deftest formatter-extended-max-fraction-digits
+  (testing "formatter-extended sets max-fraction-digits without throwing"
+    (let [^java.text.DecimalFormat f (c/formatter-extended :EUR :en_US {:max-fraction-digits 1})]
+      (is (instance? java.text.DecimalFormat f))
+      (is (= 1 (.getMaximumFractionDigits f)))
+      ;; Use BigDecimal to avoid binary floating-point surprises with UNNECESSARY rounding.
+      (is (string? (.format f 12.3M))))))

@@ -557,6 +557,18 @@
     (is (= (m/is-neg-or-zero? #money[-10 EUR]) true))
     (is (= (m/is-neg-or-zero? #money[0 PLN]) true))))
 
+(deftest same-currencies-ignores-weight
+  (testing "currency weight is ignored in Money operations"
+    (let [c1  (c/new :PLN 978 2 :FIAT :ISO-4217 0)
+          c2  (c/new :PLN 978 2 :FIAT :ISO-4217 10)
+          m1  (m/value c1 1)
+          m2  (m/value c2 2)
+          sum (m/add m1 m2)]
+      (is (= 3.00M (scale/amount sum)))
+      (is (identical? :PLN (.id ^Currency (.currency ^Money sum))))
+      (is (true?  (m/eq? (m/value c1 1) (m/value c2 1))))
+      (is (false? (m/eq? (m/value c1 1) (m/value c2 2)))))))
+
 (deftest allocate-basic-weighted-pln
   (let [m     (m/of "1.00 PLN")
         parts (m/allocate m [1 2 3])]

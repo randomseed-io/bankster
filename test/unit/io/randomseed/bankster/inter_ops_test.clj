@@ -106,6 +106,17 @@
       (is (false? (i/<= 0M a))))))
 
 (deftest arithmetic-operators
+  (testing "core-like behavior on non-Money values"
+    (is (= (+) (i/+)))
+    (is (= (*) (i/*)))
+    (is (= (+ 1) (i/+ 1)))
+    (is (= (* 2) (i/* 2)))
+    (is (= (+ 1 2 3) (i/+ 1 2 3)))
+    (is (= (* 2 3 4) (i/* 2 3 4)))
+    (is (instance? Long (i/+)))
+    (is (instance? Long (i/*))))
+  (testing "unary + rejects non-numeric values like clojure.core/+"
+    (is (thrown? ClassCastException (i/+ :foo))))
   (testing "+ on Money (same currency)"
     (assert-money (i/+ (m 1M) (m 2M)) :PLN 3M)
     (assert-money (i/+ (m 1.10M) (m 2.20M)) :PLN 3.30M)
