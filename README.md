@@ -9,8 +9,8 @@ your own currencies, with precision-first arithmetic and an expressive DSL layer
 [![Bankster on cljdoc](https://cljdoc.org/badge/io.randomseed/bankster)](https://cljdoc.org/d/io.randomseed/bankster/CURRENT)
 [![CircleCI](https://circleci.com/gh/randomseed-io/bankster.svg?style=svg)](https://circleci.com/gh/randomseed-io/bankster)
 
-This is Clojure library to operate on monetary units with cryptocurrencies and custom
-currencies support.
+This is a Clojure library for operating on monetary units with cryptocurrency and
+custom currency support.
 
 ## Who is this for?
 
@@ -111,7 +111,7 @@ way to use different registry is to set a dynamic variable
 `io.randomseed.bankster.currency/with-registry`).
 
 When the library loads, its predefined configuration is read from a default EDN file
-and its contents populates the default, global registry. This registry can be
+and its contents populate the default, global registry. This registry can be
 modified too.
 
 ### Currency
@@ -195,7 +195,7 @@ currency.
 
 ;; global registry lookup with a string (incl. namespace a.k.a domain)
 (currency/of "crypto/BTC")
-#currency{:id :crypto/BTC, :domain :CRYPTO, :kind :DECENTRALIZED, :scale 8, weight 5}
+#currency{:id :crypto/BTC, :domain :CRYPTO, :kind :DECENTRALIZED, :scale 8, :weight 5}
 
 ;; global registry lookup with a currency code
 ;; (weight solves potential conflicts when two currencies have the same currency code)
@@ -433,7 +433,7 @@ It allows to perform **math operations** on monetary amounts:
 
 ;; adding to minor part
 (money/add-minor #money[1.23 PLN] 77)
-#Money[2.00 PLN]
+#money[2.00 PLN]
 
 ;; converting
 (money/convert #money/crypto[1.5 ETH] :crypto/USDT 1646.75)
@@ -572,7 +572,7 @@ Some of them will have fixed precision when there is a decimal separator
 present, yet they will not be big decimals before entering monetary functions of
 Bankster.
 
-Putting a decimal number having more than 16–17 digits will often effect in
+Putting a decimal number having more than 16–17 digits will often result in
 **accidental approximation** and casting it to a double value. This value may
 become the amount of money which probably is not what you want:
 
