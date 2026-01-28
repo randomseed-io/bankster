@@ -682,3 +682,5 @@ bin/repl
 Starts REPL (and optionally nREPL server with port number is stored in `.nrepl-port`).
 
 [LICENSE]:    https://github.com/randomseed-io/bankster/blob/master/LICENSE
+[Bankster Contracts]: https://github.com/randomseed-io/bankster/blob/master/CONTRACTS.md
+
