@@ -61,7 +61,7 @@ representing currency + amount and doing safe operations around that.
 
 ## Contracts
 
-See [Bankster Contracts][CONTRACTS.md] for practical contracts (what is guaranteed,
+See [Bankster Contracts][CONTRACTS] for practical contracts (what is guaranteed,
 what is "soft" vs "strict", how the default registry is chosen, when exceptions are
 thrown, how the protocols behave) for Bankster's core axis: `Currency`, `Money`,
 `Registry` records and the `Monetary`, `Scalable` and `Accountable` protocols.
@@ -682,3 +682,5 @@ bin/repl
 Starts REPL (and optionally nREPL server with port number is stored in `.nrepl-port`).
 
 [LICENSE]:    https://github.com/randomseed-io/bankster/blob/master/LICENSE
+[CONTRACTS]:  https://github.com/randomseed-io/bankster/blob/master/CONTRACTS.md
+
