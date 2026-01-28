@@ -872,8 +872,13 @@
   Note: currency weight is ignored."
   {:tag Boolean :added "1.0.0"}
   [^Money a ^Money b]
-  (clojure.core/= ^Currency (.currency ^Money a)
-                  ^Currency (.currency ^Money b)))
+  (let [^Currency ca (.currency ^Money a)
+        ^Currency cb (.currency ^Money b)]
+    (and (identical? (.id     ^Currency ca) (.id     ^Currency cb))
+         (clojure.core/== (long   (.numeric ^Currency ca)) (long   (.numeric ^Currency cb)))
+         (clojure.core/== (int    (.scale   ^Currency ca)) (int    (.scale   ^Currency cb)))
+         (identical? (.domain ^Currency ca) (.domain ^Currency cb))
+         (identical? (.kind   ^Currency ca) (.kind   ^Currency cb)))))
 
 (defn same-currency-ids?
   "Returns `true` if both currencies have the same IDs for the given money objects."
