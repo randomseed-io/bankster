@@ -563,9 +563,13 @@
           c2  (c/new :PLN 978 2 :FIAT :ISO-4217 10)
           m1  (m/value c1 1)
           m2  (m/value c2 2)
+          m3  (m/value c2 3)
           sum (m/add m1 m2)]
       (is (= 3.00M (scale/amount sum)))
       (is (identical? :PLN (.id ^Currency (.currency ^Money sum))))
+      ;; Regression: varargs add/sub used to compare Currency objects with clojure.core/= (weight-sensitive).
+      (is (= 6.00M (scale/amount (m/add m1 m2 m3))))
+      (is (= 5.00M (scale/amount (m/sub (m/value c1 10) m2 m3))))
       (is (true?  (m/eq? (m/value c1 1) (m/value c2 1))))
       (is (false? (m/eq? (m/value c1 1) (m/value c2 2))))
       ;; Regression: division/remainder use currency equality too, so they must ignore weight.

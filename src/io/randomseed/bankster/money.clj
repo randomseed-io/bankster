@@ -850,6 +850,22 @@
 ;; Predicates.
 ;;
 
+(defn- same-currency-objs?
+  "Returns true if both Currency objects are the same for Money operations.
+
+  Currency weight is ignored."
+  {:tag Boolean :private true :added "2.0.0"}
+  [^Currency ca ^Currency cb]
+  (or (clojure.core/identical? ca cb)
+      ;; Fast path for exactly equal currencies (includes :weight, extmap, etc.).
+      ;; Safe because it implies sameness; mismatch just falls through.
+      (clojure.core/= ca cb)
+      (and (clojure.core/identical? (.id      ^Currency  ca)        (.id      ^Currency cb))
+           (clojure.core/== (long   (.numeric ^Currency  ca)) (long (.numeric ^Currency cb)))
+           (clojure.core/== (int    (.scale   ^Currency  ca)) (int  (.scale   ^Currency cb)))
+           (clojure.core/identical? (.domain  ^Currency  ca)        (.domain  ^Currency cb))
+           (clojure.core/identical? (.kind    ^Currency  ca)        (.kind    ^Currency cb)))))
+
 (defn money?
   "Returns true if the given value is a kind of Money."
   {:tag Boolean :added "1.0.0"}
@@ -867,18 +883,14 @@
       (not (clojure.core/== csc (.scale ^BigDecimal (.amount ^Money a)))))))
 
 (defn same-currencies?
-  "Returns true if both currencies are the same for the given money objects.
+  "Returns `true` if both currencies are the same for the given money objects.
 
   Note: currency weight is ignored."
   {:tag Boolean :added "1.0.0"}
   [^Money a ^Money b]
   (let [^Currency ca (.currency ^Money a)
         ^Currency cb (.currency ^Money b)]
-    (and (identical? (.id     ^Currency ca) (.id     ^Currency cb))
-         (clojure.core/== (long   (.numeric ^Currency ca)) (long   (.numeric ^Currency cb)))
-         (clojure.core/== (int    (.scale   ^Currency ca)) (int    (.scale   ^Currency cb)))
-         (identical? (.domain ^Currency ca) (.domain ^Currency cb))
-         (identical? (.kind   ^Currency ca) (.kind   ^Currency cb)))))
+    (same-currency-objs? ca cb)))
 
 (defn same-currency-ids?
   "Returns `true` if both currencies have the same IDs for the given money objects."
@@ -1194,7 +1206,7 @@
                  (throw (ex-info
                          "Cannot add a regular number to the monetary amount."
                          {:augend a :addend b})))
-               (when-not (clojure.core/= cur-a (.currency ^Money b))
+               (when-not (same-currency-objs? cur-a (.currency ^Money b))
                  (throw (ex-info
                          "Cannot add amounts of two different currencies."
                          {:augend a :addend b})))
@@ -1251,7 +1263,7 @@
                  (throw (ex-info
                          "Cannot subtract a regular number from the monetary amount."
                          {:minuend a :subtrahend b})))
-               (when-not (clojure.core/= cur-a (.currency ^Money b))
+               (when-not (same-currency-objs? cur-a (.currency ^Money b))
                  (throw (ex-info
                          "Cannot subtract amounts of two different currencies."
                          {:minuend a :subtrahend b})))
