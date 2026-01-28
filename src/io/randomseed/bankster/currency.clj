@@ -3356,7 +3356,7 @@
      (when min-integer-digits  (.setMinimumIntegerDigits  ^DecimalFormat f (int min-integer-digits)))
      (when max-integer-digits  (.setMaximumIntegerDigits  ^DecimalFormat f (int max-integer-digits)))
      (when min-fraction-digits (.setMinimumFractionDigits ^DecimalFormat f (int min-fraction-digits)))
-     (when max-fraction-digits (.setMaximumFractionDigits ^DecimalFormat f (max-fraction-digits)))
+     (when max-fraction-digits (.setMaximumFractionDigits ^DecimalFormat f (int max-fraction-digits)))
      f)))
 
 ;;
