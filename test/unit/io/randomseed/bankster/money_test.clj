@@ -567,7 +567,10 @@
       (is (= 3.00M (scale/amount sum)))
       (is (identical? :PLN (.id ^Currency (.currency ^Money sum))))
       (is (true?  (m/eq? (m/value c1 1) (m/value c2 1))))
-      (is (false? (m/eq? (m/value c1 1) (m/value c2 2)))))))
+      (is (false? (m/eq? (m/value c1 1) (m/value c2 2))))
+      ;; Regression: division/remainder use currency equality too, so they must ignore weight.
+      (is (= 0.5M (m/div m1 m2)))
+      (is (= 1M   (m/rem m1 m2))))))
 
 (deftest allocate-basic-weighted-pln
   (let [m     (m/of "1.00 PLN")

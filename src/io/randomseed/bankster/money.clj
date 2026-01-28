@@ -1673,16 +1673,16 @@
                                       (int (.scale ^BigDecimal am)) ^RoundingMode rm))))
      (div 1M a)))
   ([a b]
-   (let [am? (instance? Money a)
-         bm? (instance? Money b)
+   (let [am?              (instance? Money a)
+         bm?              (instance? Money b)
          ^RoundingMode rm (or scale/*rounding-mode* scale/ROUND_UNNECESSARY)
-         ^BigDecimal am (if am? (.amount ^Money a) (scale/apply a))
-         bm (if bm? (.amount ^Money b) b)]
+         ^BigDecimal am   (if am? (.amount ^Money a) (scale/apply a))
+         bm               (if bm? (.amount ^Money b) b)]
      (if am?
        (let [^Currency c (.currency ^Money a)]
          (if bm?
            ;; money, money
-           (if-not (clojure.core/= ^Currency c ^Currency (.currency ^Money b))
+           (if-not (same-currencies? a b)
              (throw (ex-info "Cannot divide by the amount of a different currency."
                              {:dividend a :divisor b}))
              (div-core ^BigDecimal am ^BigDecimal bm ^RoundingMode rm))
@@ -1717,10 +1717,10 @@
          (let [^RoundingMode rm (or rm scale/ROUND_UNNECESSARY)
                ^Currency      c (.currency ^Money a)
                ^BigDecimal   am (.amount   ^Money a)
-               bm? (instance? Money b)
+               bm?              (instance? Money b)
                ^BigDecimal   bm (if bm? (.amount ^Money b) b)]
            (loop [^BigDecimal x (div-core ^BigDecimal am bm ^RoundingMode rm)
-                  more more]
+                  more          more]
              (if-some [y (first more)]
                (if (instance? Money y)
                  (if bm?
@@ -1728,7 +1728,7 @@
                    (throw (ex-info "Cannot divide a regular number by the monetary amount."
                                    {:dividend x :divisor y}))
                    ;; money, money
-                   (if (clojure.core/= ^Currency c ^Currency (.currency ^Money y))
+                   (if (same-currencies? a y)
                      (reduce
                       (fn ^BigDecimal [^BigDecimal a b]
                         (div-core ^BigDecimal a b ^RoundingMode rm))
@@ -1744,7 +1744,7 @@
                              ^BigDecimal x
                              ^BigDecimal (scale/apply x (.scale ^BigDecimal am)))))))))))))
 
-(def ^{:tag Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0"
        :arglists '([a]
                    [a b]
                    [a b & more])}
@@ -1896,7 +1896,7 @@
        (let [^Currency c (.currency ^Money a)]
          (if bm?
            ;; money, money
-           (if-not (clojure.core/= ^Currency c ^Currency (.currency ^Money b))
+           (if-not (same-currencies? a b)
              (throw (ex-info "Cannot divide by the amount of a different currency."
                              {:dividend a :divisor b}))
              (rem-core ^BigDecimal am ^BigDecimal bm ^RoundingMode rounding-mode))
@@ -1917,7 +1917,8 @@
            (rem-core   ^BigDecimal am bm ^RoundingMode rounding-mode)
            (.remainder ^BigDecimal am ^BigDecimal (scale/apply bm))))))))
 
-(def ^{:tag Money :added "1.1.0"
+(def ^{:tag      Money
+       :added    "1.1.0"
        :arglists '([^Money a b])}
   div-rem
   "Alias for rem."
