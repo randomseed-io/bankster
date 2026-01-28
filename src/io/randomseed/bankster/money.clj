@@ -42,18 +42,18 @@
   (^{:tag io.randomseed.bankster.Money :added "1.0.0"}
    value
    [num] [currency num] [currency num rounding-mode]
-   "Creates new Money object for the given value which will become an amount. If the
-  currency is not given it will try to use the default one, taken from the
-  `io.randomseed.bankster.currency/*default*` dynamic variable. Optional
-  rounding-mode should be a rounding mode used when the conversion to a scaled
+   "Creates new `Money` object for the given value `num` which will become an
+  amount. If the `currency` is not given it will try to use the default one, taken
+  from the `io.randomseed.bankster.currency/*default*` dynamic variable. Optional
+  `rounding-mode` should be a rounding mode used when the conversion to a scaled
   monetary amount requires rounding.
 
   In its unary form, when the argument is not numeric, it will try to get the
   currency object (identified by a string, a symbol or a keyword) from the default,
   global registry of currencies.
 
-  For simple money creation the following macros may be convenient way to go: of,
-  of-major, of-minor.
+  For simple money creation the following macros may be convenient way to go: `of`,
+  `of-major`, `of-minor`.
 
   Be careful about using number literals for big-scale amounts (16–17 digits). Use
   either big decimal literals, e.g. 1234.45689101112M, or strings.")
@@ -72,7 +72,7 @@
 ;;
 
 (defn monetary-scale
-  "Rescales the given number n using `io.randomseed.bankster.scale/apply` on the
+  "Rescales the given number `n` using `io.randomseed.bankster.scale/apply` on the
   sc unless the scale is set to auto-scaled."
   {:tag BigDecimal :private true :added "1.0.7"}
   ([n]
@@ -263,24 +263,24 @@
 (defmacro of
   "Returns the amount of money as a Money object consisting of a currency and a
   value. Currency can be a currency object and for registered currencies: a keyword,
-  a symbol or a string (e.g. EUR, `:EUR`, \"PLN\" or crypto/ETH), or even a number (for
-  ISO-compliant currencies).
+  a symbol or a string (e.g. `EUR`, `:EUR`, \"PLN\" or crypto/ETH), or even a
+  number (for ISO-compliant currencies).
 
   The given amount can be any numeric value or a string that can be converted to
-  java.math.BigDecimal.
+  `java.math.BigDecimal`.
 
   When a number must be downscaled to fulfill the number of decimal places for a
   currency, rounding mode must be given, which may be a symbol, a keyword or a string
   of the following:
 
-  * CEILING     - rounds towards positive infinity.
-  * DOWN        - rounds towards zero.
-  * FLOOR       - rounds towards negative infinity.
-  * HALF_DOWN   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
-  * HALF_EVEN   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
-  * HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
-  * UP          – rounds away from zero
-  * UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary.
+  * `CEILING`     - rounds towards positive infinity.
+  * `DOWN`        - rounds towards zero.
+  * `FLOOR`       - rounds towards negative infinity.
+  * `HALF_DOWN`   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
+  * `HALF_EVEN`   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
+  * `HALF_UP`     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
+  * `UP`          – rounds away from zero
+  * `UNNECESSARY` - asserts that the requested operation has an exact result, hence no rounding is necessary.
 
   To create a monetary object using function, call `io.randomseed.bankster.money/value`.
 
@@ -449,7 +449,7 @@
     (^Money [a c r] (cast (parse a) c r))))
 
 (defn major-value
-  "Creates new Money object for the given value which will become a major part of the
+  "Creates new `Money` object for the given value which will become a major part of the
   amount. If the given number has fractional part it will be truncated. If the
   currency is not given it should try to use the default one, taken from the
   `io.randomseed.bankster.currency/*default*` dynamic variable. Optional
@@ -463,7 +463,7 @@
   (^Money [currency amount rounding-mode] (value currency (scale/integer amount) rounding-mode)))
 
 (defn minor-value
-  "Creates new Money object for the given value which will become a minor part of the
+  "Creates new `Money` object for the given value which will become a minor part of the
   amount. If the given number has fractional part it will be truncated. If the
   currency is not given it should try to use the default one, taken from the
   `io.randomseed.bankster.currency/*default*` dynamic variable. Optional
@@ -488,8 +488,8 @@
   currency from a registry has lower number of decimal places than the amount of
   money).
 
-  Money can be expressed as a Money object or any other object that will create Money
-  when passed to the `value` function. Returns money."
+  Money can be expressed as a `Money` object or any other object that will create
+  `Money` when passed to the `value` function. Returns money."
   {:tag Money :added "1.1.2"}
   (^Money [money]
    (of-registry (registry/get) money))
@@ -514,11 +514,11 @@
 ;;
 
 (defn on-amount
-  "Performs an operation expressed with a function f on an amount of the given
-  money. Additional arguments will be passed to the f. Returns the money with the
-  amount updated. The function f must return a number. Short-circuits on nil as an
-  argument. Rescales the result to the existing scale of an amount, not the nominal
-  scale of a currency."
+  "Performs an operation expressed with a function `f` on an amount of the given
+  money. Additional arguments will be passed to the `f`. Returns the money with the
+  amount updated. The function `f` must return a number. Short-circuits on `nil` as
+  an argument. Rescales the result to the existing scale of an amount, not the
+  nominal scale of a currency."
   {:tag Money :added "1.1.2"}
   (^Money [money f]
    (when-some [money (value money)]
@@ -555,8 +555,8 @@
   on-amount)
 
 (defn set-amount
-  "Sets the amount of the given monetary object. Rescales value to a scale of the given
-  monetary object, not the nominal scale of its currency."
+  "Sets the amount of the given monetary object. Rescales value `v` to a scale of the
+  given monetary object, not the nominal scale of its currency."
   {:tag Money :added "1.2.7"}
   (^Money [money v]
    (when-some [money (value money)]
@@ -867,7 +867,9 @@
       (not (clojure.core/== csc (.scale ^BigDecimal (.amount ^Money a)))))))
 
 (defn same-currencies?
-  "Returns true if both currencies are the same for the given money objects."
+  "Returns true if both currencies are the same for the given money objects.
+
+  Note: currency weight is ignored."
   {:tag Boolean :added "1.0.0"}
   [^Money a ^Money b]
   (clojure.core/= ^Currency (.currency ^Money a)

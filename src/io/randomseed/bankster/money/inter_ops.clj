@@ -19,8 +19,8 @@
                                     RoundingMode)))
 
 (defn +
-  "Calls `io.randomseed.bankster.money/add` for Money argument, `clojure.core/+` for other
-  data types."
+  "Calls `io.randomseed.bankster.money/add` when any argument is a kind of Money,
+  otherwise delegates to `clojure.core/+`."
   {:added "1.0.0"}
   ([]            (money/add))
   ([a]           a)
@@ -28,16 +28,16 @@
   ([a b  & more] (if (money? a) (apply money/add a b more) (apply clojure.core/+ a b more))))
 
 (defn -
-  "Calls `io.randomseed.bankster.money/sub` for Money argument, `clojure.core/-` for other
-  data types."
+  "Calls `io.randomseed.bankster.money/sub` when any argument is a kind of Money,
+  otherwise delegates to `clojure.core/-`."
   {:added "1.0.0"}
   ([a]           (if (money? a) (money/sub a) (clojure.core/- a)))
   ([a b]         (if (money? a) (money/sub a b) (clojure.core/- a b)))
   ([a b & more]  (if (money? a) (apply money/sub a b more) (apply clojure.core/- a b more))))
 
 (defn *
-  "Calls `io.randomseed.bankster.money/mul` for Money argument, `clojure.core/*` for other
-  data types."
+  "Calls `io.randomseed.bankster.money/mul` when any argument is a kind of Money,
+  otherwise delegates to `clojure.core/*`."
   {:added "1.0.0"}
   ([]            (money/mul))
   ([a]           (if (money? a) (money/mul a) (num a)))
@@ -45,8 +45,8 @@
   ([a b & more]  (apply money/mul a b more)))
 
 (defn /
-  "Calls `io.randomseed.bankster.money/div` for Money argument, `clojure.core//` for other
-  data types."
+  "Calls `io.randomseed.bankster.money/div` when any argument is a kind of Money,
+  otherwise delegates to `clojure.core//`."
   {:added "1.0.0"}
   ([a]           (if (money? a) (money/div a) (clojure.core// a)))
   ([a b]         (if (money? a) (money/div a b) (clojure.core// a b)))
