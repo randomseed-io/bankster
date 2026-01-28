@@ -2211,8 +2211,8 @@
   (let [code (if (namespace cid) (keyword (core-name cid)) cid)]
     (if-some [currencies-set (get m code)]
       (if-some [new-currencies (remove-currency-by-id-from-set currencies-set cid)]
-        (assoc  m cid new-currencies)
-        (dissoc m cid))
+        (assoc  m code new-currencies)
+        (dissoc m code))
       m)))
 
 (defn register-numeric
