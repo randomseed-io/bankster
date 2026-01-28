@@ -451,12 +451,12 @@
 (defn major-value
   "Creates new `Money` object for the given value which will become a major part of the
   amount. If the given number has fractional part it will be truncated. If the
-  currency is not given it should try to use the default one, taken from the
+  currency is not given, it will try to use the default one, taken from the
   `io.randomseed.bankster.currency/*default*` dynamic variable. Optional
   rounding-mode should be a rounding mode used when the conversion to a scaled
   monetary amount requires rounding.
 
-  For simple money creation the following macros may be convenient way to go: of,
+  For simple money creation the following macros may be a convenient way to go: of,
   of-major, of-minor."
   (^Money [a]     (when-some [v (value a)] (major-value (.currency ^Money v) (.amount ^Money v))))
   (^Money [currency amount]   (value currency (scale/integer amount)))
@@ -465,12 +465,12 @@
 (defn minor-value
   "Creates new `Money` object for the given value which will become a minor part of the
   amount. If the given number has fractional part it will be truncated. If the
-  currency is not given it should try to use the default one, taken from the
+  currency is not given, it will try to use the default one, taken from the
   `io.randomseed.bankster.currency/*default*` dynamic variable. Optional
   rounding-mode should be a rounding mode used when the conversion to a scaled
   monetary amount requires rounding.
 
-  For simple money creation the following macros may be convenient way to go: of,
+  For simple money creation the following macros may be a convenient way to go: of,
   of-major, of-minor."
   (^Money [a]     (when-some [v (value a)] (minor-value (.currency ^Money v) (.amount ^Money v))))
   (^Money [currency amount]   (value currency (scale/fractional amount)))
@@ -888,7 +888,7 @@
                            (.id ^Currency (.currency ^Money b))))
 
 (defn eq?
-  "Return true if the money amounts and their currencies are equal. Note that
+  "Returns true if the money amounts and their currencies are equal. Note that
   currencies with different scales or other properties are considered different. Use
   eq-am? (aliased as ==) to compare amounts regardless of their scales."
   {:tag Boolean :added "1.0.0"}
@@ -912,7 +912,7 @@
   eq?)
 
 (defn eq-am?
-  "Return true if the monetary amounts and their currencies are equal, regardless of
+  "Returns true if the monetary amounts and their currencies are equal, regardless of
   their scales."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money _] true)
@@ -1879,10 +1879,10 @@
                                 ^BigDecimal (scale/apply b#))))))
 
 (defn rem
-  "Returns the remainder of dividing an mount of money by the given number. For two
-  money objects the result is BigDecimal. When only the first one is a kind of Money
-  the result will also be a Money. In the last case the result will be rescaled to
-  the scale of the monetary amount. When rounding mode is not give
+  "Returns the remainder of dividing an amount of money by the given number. For two
+  Money objects the result is a BigDecimal. When only the first argument is a kind
+  of Money, the result will also be a Money, rescaled to the scale of the monetary
+  amount. When the rounding mode is not given,
   `io.randomseed.bankster.scale/*rounding-mode*` will be used when set."
   {:added "1.2.0"}
   ([a b]
@@ -1925,8 +1925,8 @@
   rem)
 
 (defn neg
-  "Returns the negated amount of the given money. For negative amount it will reverse
-  their sign. Same as (sub x)."
+  "Returns the negated amount of the given money. For a negative amount it will reverse
+  its sign. Same as `(sub a)`."
   {:tag Money :added "1.0.0"}
   ^Money [^Money a]
   (sub a))
@@ -1938,7 +1938,7 @@
   a)
 
 (defn abs
-  "Returns the absolute amount of the given money."
+  "Returns the absolute value of the given money."
   {:tag BigDecimal :added "1.2.0"}
   [^Money a]
   (if (is-pos-or-zero? a) a

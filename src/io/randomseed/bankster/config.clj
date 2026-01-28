@@ -34,7 +34,7 @@
 
 (defn load
   "Loads data structures from an EDN file. The given path should reside in one of the
-  resource directories. If it is not given the default-resource-path will be used."
+  resource directories. If it is not given, the default-resource-path will be used."
   {:tag clojure.lang.PersistentHashMap :added "1.0.0"}
   (^clojure.lang.PersistentHashMap []
    (load default-resource-path))

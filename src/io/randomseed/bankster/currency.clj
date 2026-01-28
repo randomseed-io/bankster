@@ -88,7 +88,7 @@
 (def ^{:tag clojure.lang.PersistentHashSet :added "2.0.0"}
   java-all-set
   "A set of Java currencies (instances of `java.util.Currency`, including obsolete
-  currencies."
+  currencies)."
   (set (java.util.Currency/getAvailableCurrencies)))
 
 ;;
@@ -545,7 +545,7 @@
 (declare weighted-currencies)
 
 (defn- compare-currency-ids
-  "Compares if two `Currency` objects share the same numeric identifier, scale,
+  "Compares whether two `Currency` objects share the same numeric identifier, scale,
   identifier, domain, and kind. Arguments are not commutative. Currency
   `compared-currency` is compared to currency `registered-currency`. It is not
   considered a mismatch when currency `compared-currency` has `:domain` and/or
@@ -2175,7 +2175,7 @@
   (map/map-vals prep-localized-props p))
 
 (defn weighted-currencies
-  "Constructor for numeric-ID buckets: smallest weight wins.
+  "Constructor for weighted currency buckets: smallest weight wins.
   Total order: (weight asc) then (id asc)."
   {:tag clojure.lang.PersistentTreeSet :private true :added "2.0.0"}
   ([]
@@ -2500,7 +2500,7 @@
    (if (nil? currency) @registry/R (swap! registry/R register currency country-id localized-properties update?))))
 
 (defn unregister!
-  "Removes currency from the global registry. Automatically removes country constrains
+  "Removes currency from the global registry. Automatically removes country constraints
   when necessary and localized properties associated with a currency. Returns updated
   registry.
 
@@ -2527,7 +2527,7 @@
 
 (defn remove-countries!
   "Removes country (a keyword) or countries (seqable collection of keywords) from the
-  global registry. Automatically removes currency constrains when necessary. Returns
+  global registry. Automatically removes currency constraints when necessary. Returns
   updated registry.
 
   If the country-ids is nil, returns current state of a global registry (but not a
@@ -3230,9 +3230,9 @@
 
 (def ^{:no-doc true :tag DecimalFormat :added "1.0.0"}
   formatter-instance
-  "For the specified locale and currency, returns a vector of mutable instance of a
-  currency text-formatter, currency object and locale. If no locale is given, uses
-  the default one. If no registry is given, uses dynamic or global registry. Due to
+  "For the specified locale and currency, returns a cached, mutable currency
+  text-formatter (`java.text.DecimalFormat`). If no locale is given, uses the
+  default one. If no registry is given, uses dynamic or global registry. Due to
   caching strategy it is advised to express locale with a keyword.
 
   Do not use this function directly since operating on the returned object may
@@ -3313,7 +3313,7 @@
   - `:min-integer-digits` - integer, the minimum number of digits allowed in the integer portion of an amount
   - `:max-fraction-digits` - integer, the maximum number of digits allowed in the fraction portion of an amount
   - `:max-integer-digits`  - integer, the maximum number of digits allowed in the integer portion of an amount
-  - `:scale`               - sets both `:min-fraction-digits` and `:max-fraction` digits to the same value.
+  - `:scale`               - sets both `:min-fraction-digits` and `:max-fraction-digits` to the same value.
 
   When choosing different currency, all parameters of a formatter are initially set
   to that currency. Additionally re-scaling may take place for the amount if scales

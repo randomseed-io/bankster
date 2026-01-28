@@ -95,7 +95,7 @@
   (fn [ex-message ex-data] (log/warn ex-message ex-data)))
 
 (defmacro inconsistency-warning
-  "Wrapper that displays inconsistency warning when
+  "Wrapper that displays an inconsistency warning when
   `io.randomseed.bankster.registry/*warn-on-inconsistency*` is truthy. Uses
   `io.randomseed.bankster.registry/*warnings-logger*` function and passes message and
   data to it. Always evaluates body in an implicit do."
@@ -325,7 +325,7 @@
   ([id registry] `(clojure.core/get (.cur-id->ctr-ids ^io.randomseed.bankster.Registry ~registry) ~id)))
 
 (defmacro currency-id->localized*
-  "Returns the currency ID to localized propertied map from a registry. If the registry
+  "Returns the currency ID to localized properties map from a registry. If the registry
   is not given the dynamic variable `io.randomseed.bankster.registry/*default*` is
   tried. If it is not set, current state of a global registry is used instead."
   {:added "1.0.0"}
@@ -334,7 +334,7 @@
   ([id registry] `(clojure.core/get (.cur-id->localized ^io.randomseed.bankster.Registry ~registry) ~id)))
 
 (defmacro ext*
-  "Returns extra data map of a registry.  If the registry is not given the dynamic
+  "Returns extra data map of a registry. If the registry is not given the dynamic
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
   current state of a global registry is used instead."
   {:added "2.0.0"}
@@ -405,7 +405,7 @@
   (^clojure.lang.PersistentHashMap [id ^Registry registry] (currency-id->country-ids* id registry)))
 
 (defn currency-id->localized
-  "Returns the currency ID to localized propertied map from a registry. If the registry
+  "Returns the currency ID to localized properties map from a registry. If the registry
   is not given the dynamic variable `io.randomseed.bankster.registry/*default*` is
   tried. If it is not set, current state of a global registry is used instead."
   {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
@@ -422,7 +422,7 @@
   (^String [^Registry registry] (version* registry)))
 
 (defn ext
-  "Returns extra data map of a registry.  If the registry is not given the dynamic
+  "Returns extra data map of a registry. If the registry is not given the dynamic
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
   current state of a global registry is used instead."
   {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
