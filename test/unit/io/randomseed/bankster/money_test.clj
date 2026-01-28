@@ -312,6 +312,22 @@
     (is (= (m/div 1 8 0.125)       1M))
     (is (= (m/div 1 8)             0.125M))
     (is (= (m/div 1 8 1)           0.125M))
+    (testing "regressions: disallow dividing a regular number by Money after currency cancels out"
+      ;; Previously this could throw a ClassCastException due to passing Money into div-core.
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (m/div #money[10 PLN] 2 #money[2 PLN] #money[1 PLN])))
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (m/div-scaled #money[10 PLN] 2 #money[2 PLN] #money[1 PLN]))))
+    (testing "regressions: error data should point to the actual mismatched divisor"
+      (let [a #money[1 PLN]
+            y #money[1 EUR]
+            ex (try
+                 (m/div a 2 y)
+                 (catch clojure.lang.ExceptionInfo e e))]
+        (is (instance? clojure.lang.ExceptionInfo ex))
+        (is (identical? a (:dividend (ex-data ex))))
+        (is (identical? y (:divisor (ex-data ex))))
+      ))
     (is (thrown? ArithmeticException (m/div 1 3 0.333334)))
     (is (thrown? ArithmeticException (m/div #money[1 PLN] 8)))
     (is (thrown? ArithmeticException (m/div 1 3)))

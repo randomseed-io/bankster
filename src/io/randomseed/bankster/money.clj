@@ -1608,11 +1608,14 @@
                  ;; next is money
                  (if-not (same-currency-objs? a y)
                    (throw (ex-info "Cannot divide by the amount of a different currency."
-                                   {:dividend a :divisor b}))
+                                   {:dividend a :divisor y}))
                    ;; first 2 are money - treat like a regular decimals
                    ;; stop iteration and reduce since we don't expect money
                    (reduce
                     (fn ^BigDecimal [^BigDecimal a b]
+                      (when (instance? Money b)
+                        (throw (ex-info "Cannot divide a regular number by the monetary amount."
+                                        {:dividend a :divisor b})))
                       (div-core ^BigDecimal a b ^RoundingMode rm))
                     (div-core ^BigDecimal x ^BigDecimal (.amount ^Money y) ^RoundingMode rm)
                     (rest more)))
@@ -1635,12 +1638,15 @@
                  ;; next is money
                  (if-not (same-currency-objs? a y)
                    (throw (ex-info "Cannot divide by the amount of a different currency."
-                                   {:dividend a :divisor b}))
+                                   {:dividend a :divisor y}))
                    ;; first 2 are money - treat like a regular decimals
                    ;; but scale each time to match the scale of first encountered money
                    ;; stop iteration and reduce since we don't expect money
                    (reduce
                     (fn ^BigDecimal [^BigDecimal a b]
+                      (when (instance? Money b)
+                        (throw (ex-info "Cannot divide a regular number by the monetary amount."
+                                        {:dividend a :divisor b})))
                       (div-core ^BigDecimal a b (int am-scale) ^RoundingMode rm))
                     (div-core ^BigDecimal x ^BigDecimal
                               (.amount ^Money y) (int am-scale) ^RoundingMode rm)
@@ -1773,12 +1779,15 @@
                    (if (same-currency-objs? a y)
                      (reduce
                       (fn ^BigDecimal [^BigDecimal a b]
+                        (when (instance? Money b)
+                          (throw (ex-info "Cannot divide a regular number by the monetary amount."
+                                          {:dividend a :divisor b})))
                         (div-core ^BigDecimal a b ^RoundingMode rm))
                       (div-core ^BigDecimal x
                                 ^BigDecimal (.amount ^Money y) ^RoundingMode rm)
                       (rest more))
                      (throw (ex-info "Cannot divide by the amount of a different currency."
-                                     {:dividend a :divisor b}))))
+                                     {:dividend a :divisor y}))))
                  (recur (div-core ^BigDecimal x y ^RoundingMode rm) (rest more)))
                (if bm? x
                    (Money. ^Currency   c
