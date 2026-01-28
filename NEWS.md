@@ -1,5 +1,34 @@
 # History of Bankster releases
 
+## 2.0.0 (unreleased)
+
+**BREAKING CHANGES**:
+
+- Registry record changed (added `ext`, added weighted numeric-ID buckets).
+- Macro-based registry accessors renamed to `*` variants.
+- Monetary protocol refactored/extended (new coercions, stricter contractual behavior).
+
+Currency / registry:
+
+- Fixed a bug that caused currency ID to be used instead of currency code during code-bucket cleanup
+  (stale entries in `:cur-code->curs` after unregister).
+- Currency constructor improved (nil handling, automatic `:ISO-4217` domain inference); ISO helpers tightened.
+- Registry diagnostics added (`*warn-on-inconsistency*` + `inconsistency-warning`).
+
+Money:
+
+- Money currency comparisons/equality ignore currency `:weight` (weight is for code resolution only).
+- Varargs `money/add` and `money/sub` now also treat `:weight` as non-semantic (regression test added).
+- `io.randomseed.bankster.money.inter-ops` now mirrors `clojure.core` behavior when no `Money` is involved;
+  any `Money` argument switches to Bankster arithmetic/comparators.
+- Assertions replaced with `ExceptionInfo` (exception data added/normalized).
+
+Tooling / DX:
+
+- Added `CONTRACTS.md` (practical contracts for Currency/Money/Registry + protocols).
+- nREPL support improved; piggieback removed; Logback added for `:dev` and `:test`.
+- Coverage/CI fixes and initial perf benchmarks added.
+
 ## 1.2.19 (2025-01-19)
 
 - Performance improvements in `money/allocate`.
@@ -260,4 +289,3 @@
 ## 1.0.0 (2021-03-15)
 
 - Initial release.
-

@@ -9,8 +9,8 @@ your own currencies, with precision-first arithmetic and an expressive DSL layer
 [![Bankster on cljdoc](https://cljdoc.org/badge/io.randomseed/bankster)](https://cljdoc.org/d/io.randomseed/bankster/CURRENT)
 [![CircleCI](https://circleci.com/gh/randomseed-io/bankster.svg?style=svg)](https://circleci.com/gh/randomseed-io/bankster)
 
-This is Clojure library to operate on monetary units with cryptocurrencies and custom
-currencies support.
+This is a Clojure library for operating on monetary units with cryptocurrency and
+custom currency support.
 
 ## Who is this for?
 
@@ -59,6 +59,13 @@ representing currency + amount and doing safe operations around that.
 * **Data readers** for currencies and monetary amounts expressed with EDN.
 * Customizable currency and money **formatting** with **locale support**.
 
+## Contracts
+
+See [Bankster Contracts][CONTRACTS.md] for practical contracts (what is guaranteed,
+what is "soft" vs "strict", how the default registry is chosen, when exceptions are
+thrown, how the protocols behave) for Bankster's core axis: `Currency`, `Money`,
+`Registry` records and the `Monetary`, `Scalable` and `Accountable` protocols.
+
 ## Installation
 
 To use Bankster in your project, add the following to dependencies section of
@@ -76,8 +83,6 @@ io.randomseed/bankster {:mvn/version "1.2.19"}
 ```
 
 You can also download JAR from [Clojars](https://clojars.org/io.randomseed/bankster).
-
----
 
 ## Design
 
@@ -99,8 +104,9 @@ Registry is implemented as a record of maps keeping the following associations:
 * currency ID to a set of country IDs;
 * currency numeric ID to currency object;
 * country ID to currency object;
-* locale ID to localized properties map;
-* currency code to a sorted set of currency objects.
+* currency ID to localized properties map;
+* currency code to a sorted set of currency objects (weighted);
+* currency numeric ID to a sorted set of currency objects (weighted).
 
 In most cases you won't have to worry about the internals of a registry. However,
 when working with multiple data sources or data processing engines (like currency
@@ -113,7 +119,7 @@ way to use different registry is to set a dynamic variable
 `io.randomseed.bankster.currency/with-registry`).
 
 When the library loads, its predefined configuration is read from a default EDN file
-and its contents populates the default, global registry. This registry can be
+and its contents populate the default, global registry. This registry can be
 modified too.
 
 ### Currency
@@ -138,7 +144,8 @@ conflicting attribute, therefore the mapping of currency codes to sets of curren
 objects exists in a registry. It allows to get currencies using their codes (and not
 add namespace, especially when interacting with some external API) and still maintain
 uniqueness of identifiers. If custom currency is created with the same code as
-already existing currency, it is possible to give it a **weight** which will decide
+already existing currency, it is possible to give it a **weight** (lower weight wins)
+which will decide
 whether its code will have priority during resolution (and getting from a registry).
 
 **Currency domain** is by default the same as a namespace of currency ID (if it is
@@ -162,7 +169,7 @@ automatic scale will be used on monetary amounts using such a currency.
 
 Registry-related functions are accepting currency representations based on their
 **identifiers**. Other functions and macros will usually accept **currency
-codes**. In case of conflict the currency with higher **currency weight** will be
+codes**. In case of conflict the currency with lower **currency weight** will be
 picked up.
 
 Currencies can also have **additional**, external properties, like relations to
@@ -182,8 +189,6 @@ calculations and preserve it. In rare cases it is possible to rescale the amount
 check whether the monetary object is rescaled and scale it back to a scale of the
 currency.
 
----
-
 ## Sneak peeks
 
 * It **shows information** about a currency:
@@ -199,7 +204,7 @@ currency.
 
 ;; global registry lookup with a string (incl. namespace a.k.a domain)
 (currency/of "crypto/BTC")
-#currency{:id :crypto/BTC, :domain :CRYPTO, :kind :DECENTRALIZED, :scale 8, weight 5}
+#currency{:id :crypto/BTC, :domain :CRYPTO, :kind :DECENTRALIZED, :scale 8, :weight 5}
 
 ;; global registry lookup with a currency code
 ;; (weight solves potential conflicts when two currencies have the same currency code)
@@ -245,6 +250,14 @@ currency.
 ;; registering new currency expressed as a tagged literal
 (currency/register! #currency{:id :crypto/AAA :scale 8})
 #Registry[{:currencies 221, :countries 249, :version "2021022121170359"} 0x7eaf7a70]
+
+;; creating an ISO currency (must have: a simple 3-letter code w/o ns and a numeric ID)
+(currency/new :XOX 999 2 :COMBANK)
+#currency{:id :XOX, :domain :ISO-4217, :kind :COMBANK, :numeric 999, :scale 2}
+
+;; creating a strange ISO currency (forced by a namespace but w/o a numerical ID)
+(currency/new :ISO-4217/XOX nil 2 :COMBANK)
+#currency{:id :XOX, :domain :ISO-4217, :kind :COMBANK, :scale 2}
 ```
 
 * It allows to create **monetary amounts**:
@@ -429,7 +442,7 @@ It allows to perform **math operations** on monetary amounts:
 
 ;; adding to minor part
 (money/add-minor #money[1.23 PLN] 77)
-#Money[2.00 PLN]
+#money[2.00 PLN]
 
 ;; converting
 (money/convert #money/crypto[1.5 ETH] :crypto/USDT 1646.75)
@@ -568,7 +581,7 @@ Some of them will have fixed precision when there is a decimal separator
 present, yet they will not be big decimals before entering monetary functions of
 Bankster.
 
-Putting a decimal number having more than 16–17 digits will often effect in
+Putting a decimal number having more than 16–17 digits will often result in
 **accidental approximation** and casting it to a double value. This value may
 become the amount of money which probably is not what you want:
 
@@ -666,6 +679,6 @@ make deploy
 bin/repl
 ```
 
-Starts REPL and nREPL server (port number is stored in `.nrepl-port`).
+Starts REPL (and optionally nREPL server with port number is stored in `.nrepl-port`).
 
 [LICENSE]:    https://github.com/randomseed-io/bankster/blob/master/LICENSE
