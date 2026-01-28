@@ -328,3 +328,20 @@
       (is (= 1 (.getMaximumFractionDigits f)))
       ;; Use BigDecimal to avoid binary floating-point surprises with UNNECESSARY rounding.
       (is (string? (.format f 12.3M))))))
+
+(deftest currency-to-map-parses-string-hints
+  (testing "to-map parses :numeric/:scale/:weight from strings (regression)"
+    (is (= (c/to-map {:id     :EUR
+                      :numeric "978"
+                      :scale   "2"
+                      :weight  "5"
+                      :domain  "iso-4217"
+                      :kind    "fiat"})
+           {:id :EUR
+            :nr 978
+            :sc 2
+            :ki :FIAT
+            :do :ISO-4217
+            :we 5}))
+    (is (= (c/to-map {:id :EUR :scale "not-a-number"})
+           {:id :EUR}))))

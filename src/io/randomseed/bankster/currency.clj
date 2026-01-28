@@ -1626,12 +1626,12 @@
           we (or (get m :we) (get m :weight))
           do (or (get m :do) (get m :domain))
           r  {}
-          r  (if id (assoc r :id (to-id id))         r)
-          r  (if nr (assoc r :nr (to-numeric-id nr)) r)
-          r  (if sc (assoc r :sc (long sc))          r)
-          r  (if ki (assoc r :ki (keyword ki))       r)
-          r  (if we (assoc r :we (long we))          r)
-          r  (if do (assoc r :do (keyword do))       r)]
+          r  (if id (assoc r :id (to-id id)) r)
+          r  (if nr (let [nr (to-numeric-id nr)]         (if nr (assoc r :nr (long nr)) r)) r)
+          r  (if sc (let [sc (normalize-scale-hint sc)]  (if (identical? sc invalid-map-hint) r (assoc r :sc (int sc)))) r)
+          r  (if ki (let [ki (normalize-kind-hint ki)]   (if ki (assoc r :ki ki) r)) r)
+          r  (if we (let [we (normalize-weight-hint we)] (if (identical? we invalid-map-hint) r (assoc r :we (int we)))) r)
+          r  (if do (let [do (normalize-domain-hint do)] (if do (assoc r :do do) r)) r)]
       r))
 
   (definitive?
