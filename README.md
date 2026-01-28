@@ -59,6 +59,13 @@ representing currency + amount and doing safe operations around that.
 * **Data readers** for currencies and monetary amounts expressed with EDN.
 * Customizable currency and money **formatting** with **locale support**.
 
+## Contracts
+
+See [Bankster Contracts][CONTRACTS.md] for practical contracts (what is guaranteed,
+what is "soft" vs "strict", how the default registry is chosen, when exceptions are
+thrown, how the protocols behave) for Bankster's core axis: `Currency`, `Money`,
+`Registry` records and the `Monetary`, `Scalable` and `Accountable` protocols.
+
 ## Installation
 
 To use Bankster in your project, add the following to dependencies section of
