@@ -97,6 +97,41 @@
   [^Money m] (currency-auto-scaled? ^Currency (.currency ^Money m)))
 
 ;;
+;; Predicate helpers
+;;
+
+(defmacro same-currency-objs-native?
+  "Returns true if both Currency objects are the same for Money operations.
+
+  Currency weight is ignored."
+  {:private true :added "2.0.0"}
+  [ca cb]
+  `(let [^Currency ca# ~ca
+         ^Currency cb# ~cb]
+     (or (clojure.core/identical? ca# cb#)
+         (and (clojure.core/identical? (.id      ^Currency  ca#)        (.id      ^Currency cb#))
+              (clojure.core/== (int    (.scale   ^Currency  ca#)) (int  (.scale   ^Currency cb#)))
+              (clojure.core/== (long   (.numeric ^Currency  ca#)) (long (.numeric ^Currency cb#)))
+              (clojure.core/identical? (.domain  ^Currency  ca#)        (.domain  ^Currency cb#))
+              (clojure.core/identical? (.kind    ^Currency  ca#)        (.kind    ^Currency cb#))))))
+
+(defmacro same-currency-objs?
+  "Returns true if both Currency objects get from .currency field of Money objects are
+  the same for Money operations.
+
+  Currency weight is ignored."
+  {:private true :added "2.0.0"}
+  [ma mb]
+  `(let [^Currency ca# (.currency ^Money ~ma)
+         ^Currency cb# (.currency ^Money ~mb)]
+     (or (clojure.core/identical? ^Currency ca# ^Currency cb#)
+         (and (clojure.core/identical? (.id      ^Currency  ca#)        (.id      ^Currency cb#))
+              (clojure.core/== (int    (.scale   ^Currency  ca#)) (int  (.scale   ^Currency cb#)))
+              (clojure.core/== (long   (.numeric ^Currency  ca#)) (long (.numeric ^Currency cb#)))
+              (clojure.core/identical? (.domain  ^Currency  ca#)        (.domain  ^Currency cb#))
+              (clojure.core/identical? (.kind    ^Currency  ca#)        (.kind    ^Currency cb#))))))
+
+;;
 ;; Money generation macros.
 ;;
 
@@ -797,7 +832,7 @@
   (^long [^Money a ^Money b]
    (let [nila (nil? a)
          nilb (nil? b)]
-     (when-not (or nila nilb (same-currencies? ^Money a ^Money b))
+     (when-not (or nila nilb (same-currency-objs? ^Money a ^Money b))
        (throw
         (ex-info
          (str "Can only compare amounts of the same currency and/or nil values: "
@@ -820,7 +855,7 @@
   (^long [^Money a ^Money b]
    (let [nila (nil? a)
          nilb (nil? b)]
-     (when-not (or nila nilb (same-currencies? ^Money a ^Money b))
+     (when-not (or nila nilb (same-currency-objs? ^Money a ^Money b))
        (throw
         (ex-info
          (str "Can only compare amounts of the same currency and/or nil values: "
@@ -850,22 +885,6 @@
 ;; Predicates.
 ;;
 
-(defn- same-currency-objs?
-  "Returns true if both Currency objects are the same for Money operations.
-
-  Currency weight is ignored."
-  {:tag Boolean :private true :added "2.0.0"}
-  [^Currency ca ^Currency cb]
-  (or (clojure.core/identical? ca cb)
-      ;; Fast path for exactly equal currencies (includes :weight, extmap, etc.).
-      ;; Safe because it implies sameness; mismatch just falls through.
-      (clojure.core/= ca cb)
-      (and (clojure.core/identical? (.id      ^Currency  ca)        (.id      ^Currency cb))
-           (clojure.core/== (long   (.numeric ^Currency  ca)) (long (.numeric ^Currency cb)))
-           (clojure.core/== (int    (.scale   ^Currency  ca)) (int  (.scale   ^Currency cb)))
-           (clojure.core/identical? (.domain  ^Currency  ca)        (.domain  ^Currency cb))
-           (clojure.core/identical? (.kind    ^Currency  ca)        (.kind    ^Currency cb)))))
-
 (defn money?
   "Returns true if the given value is a kind of Money."
   {:tag Boolean :added "1.0.0"}
@@ -888,9 +907,7 @@
   Note: currency weight is ignored."
   {:tag Boolean :added "1.0.0"}
   [^Money a ^Money b]
-  (let [^Currency ca (.currency ^Money a)
-        ^Currency cb (.currency ^Money b)]
-    (same-currency-objs? ca cb)))
+  (same-currency-objs? a b))
 
 (defn same-currency-ids?
   "Returns `true` if both currencies have the same IDs for the given money objects."
@@ -907,7 +924,7 @@
   (^Boolean [^Money _] true)
   (^Boolean [^Money a ^Money b]
    (and (.equals ^BigDecimal (.amount ^Money a) ^BigDecimal (.amount ^Money b))
-        (same-currencies? a b)))
+        (same-currency-objs? a b)))
   (^Boolean [^Money a ^Money b & more]
    (if (eq? a b)
      (if (next more)
@@ -929,7 +946,7 @@
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^Money _] true)
   (^Boolean [^Money a ^Money b]
-   (if-not (same-currencies? a b)
+   (if-not (same-currency-objs? a b)
      false
      (let [^BigDecimal am-a (.amount ^Money a)
            ^BigDecimal am-b (.amount ^Money b)
@@ -1189,7 +1206,7 @@
    (when-not (and (instance? Money a) (instance? Money b))
      (throw (ex-info "Both arguments must be a kind of Money."
                      {:augend a :addend b})))
-   (if (same-currencies? a b)
+   (if (same-currency-objs? a b)
      (Money. ^Currency   (.currency ^Money a)
              ^BigDecimal (.add  ^BigDecimal (.amount ^Money a)
                                 ^BigDecimal (.amount ^Money b)))
@@ -1201,16 +1218,16 @@
      (throw (ex-info "Both arguments must be a kind of Money."
                      {:augend a :addend b})))
    (let [^Currency cur-a (.currency ^Money a)
-         fun (fn [^BigDecimal a b]
-               (when-not (instance? Money b)
-                 (throw (ex-info
-                         "Cannot add a regular number to the monetary amount."
-                         {:augend a :addend b})))
-               (when-not (same-currency-objs? cur-a (.currency ^Money b))
-                 (throw (ex-info
-                         "Cannot add amounts of two different currencies."
-                         {:augend a :addend b})))
-               (.add ^BigDecimal a ^BigDecimal (.amount ^Money b)))]
+         fun             (fn [^BigDecimal a b]
+                           (when-not (instance? Money b)
+                             (throw (ex-info
+                                     "Cannot add a regular number to the monetary amount."
+                                     {:augend a :addend b})))
+                           (when-not (same-currency-objs-native? cur-a (.currency ^Money b))
+                             (throw (ex-info
+                                     "Cannot add amounts of two different currencies."
+                                     {:augend a :addend b})))
+                           (.add ^BigDecimal a ^BigDecimal (.amount ^Money b)))]
      (Money. ^Currency   (.currency ^Money a)
              ^BigDecimal (reduce fun (fun (.amount ^Money a) b) more)))))
 
@@ -1246,7 +1263,7 @@
    (when-not (and (instance? Money a) (instance? Money b))
      (throw (ex-info "Both arguments must be a kind of Money."
                      {:augend a :addend b})))
-   (if (same-currencies? a b)
+   (if (same-currency-objs? a b)
      (Money. ^Currency   (.currency ^Money a)
              ^BigDecimal (.subtract  ^BigDecimal (.amount ^Money a)
                                      ^BigDecimal (.amount ^Money b)))
@@ -1258,16 +1275,16 @@
      (throw (ex-info "Both arguments must be a kind of Money."
                      {:augend a :addend b})))
    (let [^Currency cur-a (.currency ^Money a)
-         fun (fn [^BigDecimal a b]
-               (when-not (instance? Money b)
-                 (throw (ex-info
-                         "Cannot subtract a regular number from the monetary amount."
-                         {:minuend a :subtrahend b})))
-               (when-not (same-currency-objs? cur-a (.currency ^Money b))
-                 (throw (ex-info
-                         "Cannot subtract amounts of two different currencies."
-                         {:minuend a :subtrahend b})))
-               (.subtract ^BigDecimal a ^BigDecimal (.amount ^Money b)))]
+         fun             (fn [^BigDecimal a b]
+                           (when-not (instance? Money b)
+                             (throw (ex-info
+                                     "Cannot subtract a regular number from the monetary amount."
+                                     {:minuend a :subtrahend b})))
+                           (when-not (same-currency-objs-native? cur-a (.currency ^Money b))
+                             (throw (ex-info
+                                     "Cannot subtract amounts of two different currencies."
+                                     {:minuend a :subtrahend b})))
+                           (.subtract ^BigDecimal a ^BigDecimal (.amount ^Money b)))]
      (Money. ^Currency   (.currency ^Money a)
              ^BigDecimal (reduce fun (fun (.amount ^Money a) b) more)))))
 
@@ -1576,20 +1593,20 @@
        (let [^RoundingMode rm (or rm scale/ROUND_UNNECESSARY)
              ^BigDecimal   am (.amount   ^Money a)
              ^Currency      c (.currency ^Money a)
-             am-scale (int (.scale ^BigDecimal am))
-             bm?      (instance? Money b)
-             bm       (if bm? ^BigDecimal (.amount ^Money b) b)]
+             am-scale         (int (.scale ^BigDecimal am))
+             bm?              (instance? Money b)
+             bm               (if bm? ^BigDecimal (.amount ^Money b) b)]
          (if (currency-auto-scaled? ^Currency c)
            ;;
            ;; currency is auto-scaled
            ;;
            (loop [^BigDecimal x (div-core ^BigDecimal am bm  ^RoundingMode rm)
-                  more more]
+                  more          more]
              (if-some [y (first more)]
                ;; there is next element
                (if (instance? Money y)
                  ;; next is money
-                 (if-not (same-currencies? a y)
+                 (if-not (same-currency-objs? a y)
                    (throw (ex-info "Cannot divide by the amount of a different currency."
                                    {:dividend a :divisor b}))
                    ;; first 2 are money - treat like a regular decimals
@@ -1611,12 +1628,12 @@
            (loop [^BigDecimal x (div-core ^BigDecimal am bm
                                           (int (.scale ^BigDecimal am))
                                           ^RoundingMode rm)
-                  more more]
+                  more          more]
              (if-some [y (first more)]
                ;; there is next element
                (if (instance? Money y)
                  ;; next is money
-                 (if-not (same-currencies? a y)
+                 (if-not (same-currency-objs? a y)
                    (throw (ex-info "Cannot divide by the amount of a different currency."
                                    {:dividend a :divisor b}))
                    ;; first 2 are money - treat like a regular decimals
@@ -1694,7 +1711,7 @@
        (let [^Currency c (.currency ^Money a)]
          (if bm?
            ;; money, money
-           (if-not (same-currencies? a b)
+           (if-not (same-currency-objs? a b)
              (throw (ex-info "Cannot divide by the amount of a different currency."
                              {:dividend a :divisor b}))
              (div-core ^BigDecimal am ^BigDecimal bm ^RoundingMode rm))
@@ -1702,10 +1719,23 @@
            (if (currency-auto-scaled? ^Currency c)
              (Money. ^Currency c
                      (div-core ^BigDecimal am ^BigDecimal bm ^RoundingMode rm))
-             (Money. ^Currency c
-                     (div-core ^BigDecimal am bm
-                               (int (.scale am))
-                               ^RoundingMode rm)))))
+             (let [^BigDecimal d (cond
+                                   ;; Fast path: integral divisor preserves dividend scale, so we
+                                   ;; can use BigDecimal.divide(divisor, roundingMode) which is
+                                   ;; cheaper than the scale+rounding overload.
+                                   (instance? Long bm)             (BigDecimal/valueOf (long bm))
+                                   (instance? Integer bm)          (BigDecimal/valueOf (long (.intValue ^Integer bm)))
+                                   (and (instance? BigDecimal bm)
+                                        (clojure.core/==
+                                         0
+                                         (.scale ^BigDecimal bm))) ^BigDecimal bm
+                                   :else                           nil)]
+               (Money. ^Currency c
+                       (if (some? d)
+                         ^BigDecimal (.divide ^BigDecimal am ^BigDecimal d ^RoundingMode rm)
+                         (div-core ^BigDecimal am bm
+                                   (int (.scale ^BigDecimal am))
+                                   ^RoundingMode rm)))))))
        (if bm?
          ;; number, money
          (throw (ex-info "Cannot divide a regular number by the monetary amount."
@@ -1740,7 +1770,7 @@
                    (throw (ex-info "Cannot divide a regular number by the monetary amount."
                                    {:dividend x :divisor y}))
                    ;; money, money
-                   (if (same-currencies? a y)
+                   (if (same-currency-objs? a y)
                      (reduce
                       (fn ^BigDecimal [^BigDecimal a b]
                         (div-core ^BigDecimal a b ^RoundingMode rm))
@@ -1769,7 +1799,7 @@
   {:tag Money :added "1.0.0"}
   (^Money [^Money a] a)
   (^Money [^Money a ^Money b]
-   (when-not (same-currencies? a b)
+   (when-not (same-currency-objs? a b)
      (throw (ex-info "Cannot compare amounts of different currencies."
                      {:money-1 a :money-2 b})))
    (if (lt? a b) a b))
@@ -1789,7 +1819,7 @@
   {:tag Money :added "1.0.0"}
   (^Money [^Money a] a)
   (^Money [^Money a ^Money b]
-   (when-not (same-currencies? a b)
+   (when-not (same-currency-objs? a b)
      (throw (ex-info "Cannot compare amounts of different currencies."
                      {:money-1 a :money-2 b})))
    (if (gt? a b) a b))
@@ -1908,7 +1938,7 @@
        (let [^Currency c (.currency ^Money a)]
          (if bm?
            ;; money, money
-           (if-not (same-currencies? a b)
+           (if-not (same-currency-objs? a b)
              (throw (ex-info "Cannot divide by the amount of a different currency."
                              {:dividend a :divisor b}))
              (rem-core ^BigDecimal am ^BigDecimal bm ^RoundingMode rounding-mode))
@@ -1994,7 +2024,7 @@
    (let [^BigDecimal am-s (scale/amount i)]
      (if (or (nil? am-s) (clojure.core/not= 1 (.compareTo ^BigDecimal am-s BigDecimal/ZERO)))
        money
-       (do  (when (and (instance? Money i) (not (same-currencies? money i)))
+       (do  (when (and (instance? Money i) (not (same-currency-objs? money i)))
               (throw
                (ex-info
                 (str "Money and interval should be of the same currency: " money ", " i ".")

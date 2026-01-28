@@ -3,7 +3,8 @@
   (:require [criterium.core :refer [bench quick-bench]]
             [clojurewerkz.money.amounts    :as joda]
             [clojurewerkz.money.currencies :as joda-curr]
-            [io.randomseed.bankster.money  :as bankster-money])
+            [io.randomseed.bankster.money  :as bankster-money]
+            [io.randomseed.bankster.scale  :as scale])
 
   (:import  [io.randomseed.bankster Currency Registry Money]
             [java.math BigDecimal BigInteger MathContext RoundingMode]
@@ -38,6 +39,33 @@
 
 (def ratios-3 [1 1 1])                        ;; simple
 (def ratios-6 [1 2 3])                        ;; uneven
+
+;;
+;; Microbench: old vs new Money/long division path (fixed-scale currency)
+;;
+
+(defn bankster-div-old-fixed
+  "Simulates the old fixed-scale Money/number division path:
+  scale/apply(divisor) + BigDecimal.divide(divisor, scale, rounding-mode)."
+  [^Money x d]
+  (let [^BigDecimal am (.amount ^Money x)
+        ^RoundingMode rm (or scale/*rounding-mode* scale/ROUND_UNNECESSARY)]
+    (Money. (.currency ^Money x)
+            (.divide ^BigDecimal am
+                     ^BigDecimal (scale/apply d)
+                     (int (.scale ^BigDecimal am))
+                     ^RoundingMode rm))))
+
+(defn bankster-div-new-fixed
+  "Simulates the new fixed-scale Money/integral division fast-path:
+  BigDecimal.divide(divisor, rounding-mode) (scale taken from dividend)."
+  [^Money x ^long d]
+  (let [^BigDecimal am (.amount ^Money x)
+        ^RoundingMode rm (or scale/*rounding-mode* scale/ROUND_UNNECESSARY)]
+    (Money. (.currency ^Money x)
+            (.divide ^BigDecimal am
+                     ^BigDecimal (BigDecimal/valueOf d)
+                     ^RoundingMode rm))))
 
 (defn -main [& _]
   ;; ----------------------------
@@ -84,4 +112,19 @@
      (reduce (fn [acc x]
                (bankster-money/add acc (bankster-money/div x 3)))
              bankster-zero
-             bankster-vector))))
+             bankster-vector)))
+
+  ;; ------------------------------------------------------------
+  ;; Microbench: Money/long division path (old vs new)
+  ;; ------------------------------------------------------------
+
+  (println "\nBankster microbench: Money/long division path (fixed scale).")
+  (binding [scale/*rounding-mode* RoundingMode/HALF_UP]
+    (println "\n--- 1. Bankster money/div (current) ---")
+    (quick-bench (bankster-money/div bankster-item div-by-long))
+
+    (println "\n--- 2. Simulated old path (divide scale+RM) ---")
+    (quick-bench (bankster-div-old-fixed bankster-item div-by-long))
+
+    (println "\n--- 3. Simulated new path (divide RM only) ---")
+    (quick-bench (bankster-div-new-fixed bankster-item div-by-long))))
