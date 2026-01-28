@@ -1168,8 +1168,6 @@
   the nominal scale of a currency – which is important in rescaled amount or
   auto-scaled currencies).
 
-  Auto-scaled monetary values are returned unchanged.
-
   Use with caution since it can make money object no longer compliant with a scale of
   the currency."
   {:added "1.0.0"}
@@ -1537,6 +1535,10 @@
   is a kind of Money and the second is a number, the result will be a Money. If the
   first argument is a number and the second argument is a monetary amount, an
   exception will be thrown.
+
+  For more than 2 arguments, if currency cancels out (Money divided by Money), the
+  intermediate result becomes a regular number, so all consequent divisors must also
+  be regular numbers.
 
   For a single value it returns a division of 1 by the given number or monetary
   value.

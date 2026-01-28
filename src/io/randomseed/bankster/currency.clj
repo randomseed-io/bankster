@@ -878,19 +878,19 @@
             registered-currency)))))
 
 (defn- map-registry-op!
-  "Throws when a currency map is used in a registry-oriented operation.
+  "Throws when a currency map is used in a strict, identifier-oriented registry operation.
 
-  Bankster treats maps as currency specifications (constructors), not registry
-  references. Use a scalar identifier (keyword/string/number) to reference a
-  registered currency."
+  Bankster treats maps as currency specifications/constraints. They can be used with
+  `resolve`, `resolve-all` and `unit` (as lookup specs), but not with operations like
+  `id`, `of-id`, `defined?` or `present?` which expect a concrete identifier."
   [op m registry]
   (throw
    (ex-info
-    "Currency maps are currency specifications and cannot be used for registry lookups."
+    "Currency maps cannot be used as strict registry references."
     {:op       op
      :value    m
      :registry registry
-     :hint     "Use a keyword/string/number identifier (or create an explicit registry reference type)."})))
+     :hint     "Use resolve/resolve-all/unit for map-based lookup, or a keyword/string/number identifier to reference a registered currency."})))
 
 (defn- merge-candidates
   "Ensures that merged structures are sorted sets."
