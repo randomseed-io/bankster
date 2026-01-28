@@ -151,7 +151,7 @@
   (^Money [^clojure.lang.IFn mod-fn amount]
    (when (some? amount)
      (if (instance? Money amount)
-       (parse-int mod-fn ^Currency (.currency ^Money amount) (long (.amount ^Money amount)))
+       (parse-int mod-fn ^Currency (.currency ^Money amount) ^BigDecimal (.amount ^Money amount))
        (if-some [^Currency cur (currency-unit-strict amount)]
          (parse-int mod-fn cur 0M)
          (let [[cur am] (currency+amount amount)]

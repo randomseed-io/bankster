@@ -120,6 +120,7 @@
     (m/with-currency EUR (is (map= (m/of 1000) {:amount 1000M :currency #currency EUR})))
     (is (map= (m/of crypto/ETH) {:amount 0M :currency #currency crypto/ETH}))
     (let [mv #money[10 PLN]] (is (map= (m/of mv) {:amount 10M :currency #currency PLN})))
+    (let [mv #money[10.12 PLN]] (is (map= (m/of mv) {:amount 10.12M :currency #currency PLN})))
     (is (map= (m/of #currency{:id :KIKI :scale 1} 5) {:amount 5M :currency #currency{:id KIKI :scale 1 :weight 0}}))
     (is (map= (m/of #currency{:id :KIKI :scale 1})   {:amount 0M :currency #currency{:id KIKI :scale 1 :weight 0}}))
     (let [mv (m/of #currency{:id :KIKI :scale 1} 123)]
@@ -454,6 +455,12 @@
     (is (= (m/scale (m/scale #money[10 PLN] 4)) 4))
     (is (= (m/eq? #money[10 PLN] (m/scale #money[10 PLN] 4)) false))
     (is (= (m/eq-am? #money[10 PLN] (m/scale #money[10 PLN] 4)) true))
+    (let [down (scale/apply #money[10.12 EUR] 1 scale/ROUND_DOWN)
+          up   (scale/apply #money[10.12 EUR] 1 scale/ROUND_UP)]
+      (is (= (m/amount down) 10.1M))
+      (is (= (m/scale down) 1))
+      (is (= (m/amount up) 10.2M))
+      (is (= (m/scale up) 1)))
     (is (= (m/major-minor (m/add-minor (m/scale #money[10 PLN] 4) 1234)) [10M 1234M]))
     (is (= (m/strip #money/crypto[12.2345 ETH]) #money/crypto[12.2345 ETH]))
     (is (= (scale/of (m/strip #money/crypto[12.2345 ETH])) 4))
