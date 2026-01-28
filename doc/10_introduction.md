@@ -61,7 +61,7 @@ representing currency + amount and doing safe operations around that.
 
 ## Contracts
 
-See [Bankster Contracts][CONTRACTS.md] for practical contracts (what is guaranteed,
+See [Bankster Contracts][CONTRACTS] for practical contracts (what is guaranteed,
 what is "soft" vs "strict", how the default registry is chosen, when exceptions are
 thrown, how the protocols behave) for Bankster's core axis: `Currency`, `Money`,
 `Registry` records and the `Monetary`, `Scalable` and `Accountable` protocols.
@@ -72,14 +72,14 @@ To use Bankster in your project, add the following to dependencies section of
 `project.clj` or `build.boot`:
 
 ```clojure
-[io.randomseed/bankster "1.2.19"]
+[io.randomseed/bankster "2.0.0"]
 ```
 
 For `deps.edn` add the following as an element of a map under `:deps` or
 `:extra-deps` key:
 
 ```clojure
-io.randomseed/bankster {:mvn/version "1.2.19"}
+io.randomseed/bankster {:mvn/version "2.0.0"}
 ```
 
 You can also download JAR from [Clojars](https://clojars.org/io.randomseed/bankster).
@@ -682,3 +682,5 @@ bin/repl
 Starts REPL (and optionally nREPL server with port number is stored in `.nrepl-port`).
 
 [LICENSE]:    https://github.com/randomseed-io/bankster/blob/master/LICENSE
+[CONTRACTS]:  https://github.com/randomseed-io/bankster/blob/master/CONTRACTS.md
+
