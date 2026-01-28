@@ -154,15 +154,15 @@
        (parse-int mod-fn ^Currency (.currency ^Money amount) ^BigDecimal (.amount ^Money amount))
        (if-some [^Currency cur (currency-unit-strict amount)]
          (parse-int mod-fn cur 0M)
-         (let [[cur am] (currency+amount amount)]
-           (let [am (or am 0M)]
-             (if (nil? cur)
-               (if-some [d currency/*default*]
-                 (parse-int mod-fn d am)
-                 ;; Preserve the existing exception shape thrown by the 2-arity
-                 ;; variant (strict: explicit currency `nil` is not allowed).
-                 (parse-int mod-fn nil am))
-               (parse-int mod-fn cur am))))))))
+         (let [[cur am] (currency+amount amount)
+               am       (or am 0M)]
+           (if (nil? cur)
+             (if-some [d currency/*default*]
+               (parse-int mod-fn d am)
+               ;; Preserve the existing exception shape thrown by the 2-arity
+               ;; variant (strict: explicit currency `nil` is not allowed).
+               (parse-int mod-fn nil am))
+             (parse-int mod-fn cur am)))))))
   (^Money [mod-fn currency amount]
    (when (some? amount)
      (if-some [^Currency c (currency-unit-strict currency)]
@@ -768,7 +768,7 @@
               ^BigDecimal (.setScale ^BigDecimal (.amount ^Money m) (int scale)))))
    (^Money [m ^long scale ^RoundingMode rounding-mode]
     (Money. ^Currency   (.currency ^Money m)
-            ^BigDecimal (.setScale ^BigDecimal (.amount^Money m)
+            ^BigDecimal (.setScale ^BigDecimal (.amount ^Money m)
                                    (int scale)
                                    ^RoundingMode rounding-mode))))
 
@@ -795,9 +795,12 @@
   (^long [^Money a ^Money b]
    (let [nila (nil? a)
          nilb (nil? b)]
-     (assert (or nila nilb (same-currencies? ^Money a ^Money b))
-             (str "Can only compare amounts of the same currency and/or nil values: "
-                  a ", " b))
+     (when-not (or nila nilb (same-currencies? ^Money a ^Money b))
+       (throw
+        (ex-info
+         (str "Can only compare amounts of the same currency and/or nil values: "
+              a ", " b)
+         {:money-1 a :money-2 b})))
      (if nila
        (if nilb
          (unchecked-long 0)
@@ -815,9 +818,12 @@
   (^long [^Money a ^Money b]
    (let [nila (nil? a)
          nilb (nil? b)]
-     (assert (or nila nilb (same-currencies? ^Money a ^Money b))
-             (str "Can only compare amounts of the same currency and/or nil values: "
-                  a ", " b))
+     (when-not (or nila nilb (same-currencies? ^Money a ^Money b))
+       (throw
+        (ex-info
+         (str "Can only compare amounts of the same currency and/or nil values: "
+              a ", " b)
+         {:money-1 a :money-2 b})))
      (if nila
        (if nilb
          (unchecked-long 0)
@@ -826,10 +832,16 @@
          (unchecked-long 1)
          (let [^BigDecimal am-a (.amount ^Money a)
                ^BigDecimal am-b (.amount ^Money b)]
-           (assert (clojure.core/== (.scale ^BigDecimal am-a) (.scale ^BigDecimal am-b))
-                   (str "Cannot compare monetary amounts having different decimal scales: "
-                        a " (" (.scale ^BigDecimal am-a) "), "
-                        b " (" (.scale ^BigDecimal am-b) ")."))
+           (when-not (clojure.core/== (.scale ^BigDecimal am-a) (.scale ^BigDecimal am-b))
+             (throw
+              (ex-info
+               (str "Cannot compare monetary amounts having different decimal scales: "
+                    a " (" (.scale ^BigDecimal am-a) "), "
+                    b " (" (.scale ^BigDecimal am-b) ").")
+               {:money-1 a
+                :money-2 b
+                :scale-1 (.scale ^BigDecimal am-a)
+                :scale-2 (.scale ^BigDecimal am-b)})))
            (unchecked-long (.compareTo ^BigDecimal am-a ^BigDecimal am-b))))))))
 
 ;;
@@ -1952,12 +1964,20 @@
   (^Money [^Money money] money)
   (^Money [^Money money ^Scalable i] (round-to money i nil))
   (^Money [^Money money ^Scalable i ^RoundingMode rounding-mode]
-   (assert (or (nil? i) (scale/scalable? i)) (str "Interval must be scalable or nil: " i))
+   (when-not (or (nil? i) (scale/scalable? i))
+     (throw
+      (ex-info
+       (str "Interval must be scalable or nil: " i)
+       {:interval i})))
    (let [^BigDecimal am-s (scale/amount i)]
      (if (or (nil? am-s) (clojure.core/not= 1 (.compareTo ^BigDecimal am-s BigDecimal/ZERO)))
        money
-       (do  (assert (or (not (instance? Money i)) (same-currencies? money i))
-                    (str "Money and interval should be of the same currency: " money ", " i "."))
+       (do  (when (and (instance? Money i) (not (same-currencies? money i)))
+              (throw
+               (ex-info
+                (str "Money and interval should be of the same currency: " money ", " i ".")
+                {:money    money
+                 :interval i})))
             (let [sn               (long (scale/of money))
                   ^Money an        (scale/apply money)
                   ^RoundingMode rm (or rounding-mode scale/*rounding-mode* scale/ROUND_HALF_EVEN)]
