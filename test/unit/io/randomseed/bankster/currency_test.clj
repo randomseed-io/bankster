@@ -345,3 +345,26 @@
             :we 5}))
     (is (= (c/to-map {:id :EUR :scale "not-a-number"})
            {:id :EUR}))))
+
+(deftest register-allows-shared-numeric-id
+  (testing "register allows multiple currencies for the same numeric ID; resolve picks the lowest weight"
+    (let [r0 (registry/new)
+          a  (c/new :AAA 999 2 nil :ISO-4217 10)
+          b  (c/new :BBB 999 2 nil :ISO-4217 0)
+          r1 (-> r0 (c/register a) (c/register b))]
+      (is (= :BBB (.id (c/resolve 999 r1))))
+      (is (= #{:AAA :BBB} (set (map c/id (c/resolve-all 999 r1))))))))
+
+(deftest unregister-updates-canonical-shared-numeric-id
+  (testing "unregister updates canonical mapping for shared numeric IDs"
+    (let [r0 (registry/new)
+          a  (c/new :AAA 999 2 nil :ISO-4217 10)
+          b  (c/new :BBB 999 2 nil :ISO-4217 0)
+          r1 (-> r0 (c/register a) (c/register b))
+          r2 (c/unregister r1 b)]
+      (is (= :AAA (.id (c/resolve 999 r2))))
+      (is (= #{:AAA} (set (map c/id (c/resolve-all 999 r2)))))
+      (let [r3 (c/unregister r2 a)]
+        (is (= nil (c/resolve 999 r3)))
+        (is (= nil (get (registry/currency-nr->currencies* r3) 999)))
+        (is (= nil (get (registry/currency-nr->currency* r3) 999)))))))

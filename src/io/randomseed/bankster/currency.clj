@@ -2434,17 +2434,11 @@
    (when (some? registry)
      (let [^Currency c (if (instance? Currency currency) currency (of-id currency registry))
            cid         (.id ^Currency c)
-           cnr         (int (.numeric ^Currency c))
-           cid-to-cur  (registry/currency-id->currency* registry)
-           cnr-to-cur  (registry/currency-nr->currency* registry)]
+           cid-to-cur  (registry/currency-id->currency* registry)]
        (when-not update?
          (when-some [^Currency p (get cid-to-cur cid)]
            (throw (ex-info
                    (str "Currency " cid " already exists in a registry.")
-                   {:currency c, :existing-currency p})))
-         (when-some [^Currency p (get cnr-to-cur cnr)]
-           (throw (ex-info
-                   (str "Currency with numeric ID of " cnr " already exists in a registry.")
                    {:currency c, :existing-currency p}))))
        (let [^Registry registry (unregister registry c)
              cid-to-cur         (registry/currency-id->currency* registry)
