@@ -12,12 +12,11 @@
             [trptr.java-wrapper.locale       :as        l]
             [puget.printer                   :as    puget]
             [io.randomseed.bankster          :as bankster]
-            [io.randomseed.bankster.scale    :as    scale]
             [io.randomseed.bankster.registry :as registry]
             [io.randomseed.bankster.currency :as currency]
             [io.randomseed.bankster.util.fs  :as       fs]
             [io.randomseed.bankster.util.map :as      map]
-            [io.randomseed.bankster.util     :refer  :all])
+            [io.randomseed.bankster.util     :as       bu])
 
   (:import  (io.randomseed.bankster Currency Registry)
             (java.time              LocalDateTime)
@@ -36,6 +35,12 @@
   default-resource-must-exist-file
   "Filename in a default resource container that must exist."
   "config.edn")
+
+(def ^{:const true :tag String :added "2.0.0"}
+  import-seed
+  "Filename in a default resource container which is a static seed for data when
+  importing."
+  "seed.edn")
 
 (def ^{:const true :tag String :added "1.0.0"}
   default-dump-filename
@@ -77,6 +82,11 @@
   "Default CSV file with currencies database."
   "org/joda/money/CurrencyData.csv")
 
+(def ^{:const true :tag String :added "2.0.0"}
+  default-legacy-weight
+  "Default weight of legacy currencies."
+  (long 10000))
+
 ;;
 ;; Transformation rules.
 ;;
@@ -87,7 +97,7 @@
   {:USN :FIDUCIARY
    :XSU :FIDUCIARY
    :CLF :FIDUCIARY
-   :XUA :COMBANK
+   :XUA :FUNDS
    :XTS :EXPERIMENTAL
    :XPT :COMMODITY
    :XPD :COMMODITY
@@ -106,15 +116,18 @@
   "Shapes an ISO-standardized currency entry. Gets a sequence of linear collections
   describing currency and returns a currency object."
   {:private true :added "1.0.0"}
-  [[id numeric scale domain]]
+  [[id numeric scale comment]]
   (when (some? id)
-    (let [id      (keyword id)
-          numeric (or (try-parse-long numeric) currency/no-numeric-id)
+    (let [comment (some-> comment str/triml)
+          old?    (and (some? comment) (str/starts-with? comment "Old, now"))
+          code    (keyword id)
+          id      (if old? (keyword "iso-4217-legacy" id) (keyword id))
+          numeric (or (bu/try-parse-long numeric) currency/no-numeric-id)
           numeric (if (< numeric 0) currency/no-numeric-id numeric)
-          scale   (or (try-parse-int scale) currency/auto-scaled)
+          scale   (or (bu/try-parse-int scale) currency/auto-scaled)
           scale   (if (< scale 0) currency/auto-scaled scale)
-          kind    (get special-kinds id :FIAT)
-          domain  :ISO-4217
+          kind    (get special-kinds code :FIAT)
+          domain  (when-not old? :ISO-4217)
           weight  0]
       (currency/new-currency id (long numeric) (int scale) kind domain (int weight)))))
 
@@ -145,7 +158,20 @@
    (currencies-load nil))
   ([^String pathname]
    (when-some [f (fs/paths->resource (or pathname default-currencies-csv))]
-     (->> f fs/read-csv (map make-currency)))))
+     (let [split-comment
+           (fn [row]
+             (let [row (vec row)
+                   l   (peek row)]
+               (if (and (string? l) (str/includes? l "#"))
+                 (let [i (str/index-of l "#")
+                       v (str/trimr (subs l 0 i))
+                       c (str/triml (subs l (inc i)))
+                       c (when-not (str/blank? c) c)]
+                   (conj (pop row) v c))
+                 (conj row nil))))]
+       (->> (fs/read-csv f true)
+            (map split-comment)
+            (map make-currency))))))
 
 (defn joda-import
   "Reads CSV files with countries and currencies definitions (Joda Money format) and
@@ -161,6 +187,12 @@
      (reduce (fn ^Registry [^Registry r, ^Currency c]
                (currency/register r c (get countries (currency/id c))))
              registry currencies))))
+
+(defn edn-import
+  "Alias for `io.randomseed.bankster.registry/global`."
+  {:tag clojure.lang.Atom :added "2.0.0"}
+  []
+  (registry/global))
 
 ;;
 ;; EDN dumper and exporter.
@@ -195,10 +227,11 @@
    (when (some? registry)
      (sorted-map-by
       #(compare %2 %1)
-      :version    (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "yyyyMMddHHmmssSS"))
-      :localized  (into (sorted-map) (map/map-vals localized->map (:cur-id->localized registry)))
-      :currencies (into (sorted-map) (map/map-vals currency->map  (:cur-id->cur registry)))
-      :countries  (into (sorted-map) (map/map-vals :id (:ctr-id->cur registry)))))))
+      :version     (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "yyyyMMddHHmmssSS"))
+      :localized   (into (sorted-map) (map/map-vals localized->map (:cur-id->localized registry)))
+      :currencies  (into (sorted-map) (map/map-vals currency->map  (:cur-id->cur registry)))
+      :countries   (into (sorted-map) (map/map-vals :id (:ctr-id->cur registry)))
+      :hierarchies (into (sorted-map) (map/map-vals parents (:hierarchies registry)))))))
 
 (defn dump
   "For the given filename (defaults to default-dump-filename) and a registry (defaults
@@ -235,7 +268,7 @@
    (when-some [rdir (fs/resource-pathname default-resource-name
                                           default-resource-must-exist-file)]
      (let [pathname (io/file (.getParent ^java.io.File (io/file rdir)) filename)]
-       (println "Exporting configuration to" (str pathname))
+       ;; (println "Exporting configuration to" (str pathname))
        (spit pathname (puget/pprint-str (registry->map registry)))))))
 
 ;;
@@ -367,16 +400,270 @@
 ;; High-level operations.
 ;;
 
+(def ^{:const true :tag String :private true :added "2.0.0"}
+  default-seed-resource-path
+  "Default seed data resource file – relative path."
+  (str default-resource-name "/" import-seed))
+
+(defn seed-import
+  "Loads seed data from an EDN resource file (defaults to `seed.edn`) and returns a
+  registry."
+  {:tag Registry :added "2.0.0"}
+  (^Registry []
+   (seed-import nil))
+  (^Registry [^String resource-path]
+   (currency/config->registry (or resource-path default-seed-resource-path)
+                              (registry/new-registry))))
+
+(defn- localized->register-input
+  "Converts internal registry representation of localized properties (Locale keys)
+  into the form accepted by currency/register (keyword/string locale IDs)."
+  {:tag clojure.lang.IPersistentMap :added "2.0.0" :private true}
+  [m]
+  (when (and (map? m) (pos? (count m)))
+    (map/map-keys (fn [k]
+                    (if (identical? :* k)
+                      :*
+                      (keyword (str (l/locale k)))))
+                  m)))
+
+(defn- hierarchy-map?
+  "Returns `true` if `x` looks like a hierarchy map produced by `make-hierarchy`."
+  {:tag Boolean :added "2.0.0" :private true}
+  [x]
+  (and (map? x)
+       (contains? x :parents)
+       (contains? x :ancestors)
+       (contains? x :descendants)
+       (map? (clojure.core/get x :parents))
+       (map? (clojure.core/get x :ancestors))
+       (map? (clojure.core/get x :descendants))))
+
+(defn- parent-map->hierarchy
+  "Builds a hierarchy map out of a \"parent map\" (child -> parent/parents).
+
+  The map value may be:
+  - a single parent (keyword/symbol/class), or
+  - a set/vector/list/seq of parents (multiple inheritance)."
+  {:tag clojure.lang.IPersistentMap :added "2.0.0" :private true}
+  [^clojure.lang.IPersistentMap rels]
+  (reduce (fn [h [child parent]]
+            (let [parents (cond
+                            (set? parent)        (sort-by str parent)
+                            (sequential? parent) parent
+                            :else               (list parent))]
+              (reduce (fn [h p] (derive h child p)) h parents)))
+          (make-hierarchy)
+          ;; Stable order makes failures deterministic (cycles, invalid derives, etc.).
+          (sort-by (fn [[child parent]]
+                     (let [parent (cond
+                                    (set? parent)        (sort-by str parent)
+                                    (sequential? parent) parent
+                                    :else               parent)]
+                       (str child "->" parent)))
+                   rels)))
+
+(defn- ->hierarchy
+  {:tag clojure.lang.IPersistentMap :added "2.0.0" :private true}
+  [spec hierarchy-type]
+  (cond
+    (nil? spec)
+    (make-hierarchy)
+
+    (hierarchy-map? spec)
+    spec
+
+    (map? spec)
+    (parent-map->hierarchy spec)
+
+    :else
+    (throw
+     (ex-info
+      "Invalid currency hierarchy specification."
+      {:type  hierarchy-type
+       :value spec}))))
+
+(defn- merge-hierarchy
+  {:tag clojure.lang.IPersistentMap :added "2.0.0" :private true}
+  [dst-h src-h hierarchy-type]
+  (let [dst-h   (->hierarchy dst-h hierarchy-type)
+        src-h   (->hierarchy src-h hierarchy-type)
+        dst-rel (clojure.core/get dst-h :parents)
+        src-rel (clojure.core/get src-h :parents)
+        rels    (merge-with into dst-rel src-rel)]
+    (parent-map->hierarchy rels)))
+
+(defn- merge-hierarchies
+  {:tag io.randomseed.bankster.CurrencyHierarchies :added "2.0.0" :private true}
+  [dst-h src-h]
+  (let [dst-h (or dst-h {})
+        src-h (or src-h {})
+        ks    (into (set (keys dst-h)) (keys src-h))]
+    (bankster/map->CurrencyHierarchies
+     (reduce (fn [m k]
+               (assoc m k (merge-hierarchy (clojure.core/get dst-h k)
+                                           (clojure.core/get src-h k)
+                                           k)))
+             {}
+             ks))))
+
+(defn merge-registry
+  "Merges two registries by registering currencies from `src` into `dst`.
+
+  Hierarchies (stored in `:hierarchies`) and extension data (stored in `:ext`) are
+  merged as well.
+
+  When `verbose?` is truthy it prints a message for each currency which is present in
+  `src` but not in `dst`.
+
+  When `preserve-fields` is given (a sequence of currency record keys, e.g.
+  `[:domain :kind]`) and a currency is being replaced in `dst`, the values of these
+  fields are preserved from the original currency in `dst`.
+
+  Special sentinel keywords may be included in `preserve-fields`:
+
+  - `::localized`  preserve localized properties from `dst`,
+  - `::countries`  preserve assigned countries from `dst`.
+
+  When `iso-like?` is truthy and the source currency is ISO-like (domain
+  `:ISO-4217` or `:ISO-4217-LEGACY`) then the currency identity is treated as its
+  ISO code (name part of the ID). If the source currency is a legacy ISO currency
+  then its destination ID is normalized to `:iso-4217-legacy/CODE` and it replaces
+  a previously existing `:CODE` entry (including migration of attached country
+  mappings and localized properties).
+
+  Note: in ISO-like mode `:domain` is never preserved from `dst` for ISO-like
+  currencies (even if present in `preserve-fields`), to allow aligning ISO vs
+  legacy ISO classification based on the source."
+  {:tag Registry :added "2.0.0"}
+  (^Registry [^Registry dst ^Registry src]
+   (merge-registry dst src false nil false))
+  (^Registry [^Registry dst ^Registry src verbose?]
+   (merge-registry dst src verbose? nil false))
+  (^Registry [^Registry dst ^Registry src verbose? preserve-fields]
+   (merge-registry dst src verbose? preserve-fields false))
+  (^Registry [^Registry dst ^Registry src verbose? preserve-fields iso-like?]
+   (let [preserve-fields       (set preserve-fields)
+         preserve-localized?   (contains? preserve-fields ::localized)
+         preserve-countries?   (contains? preserve-fields ::countries)
+         preserve-fields       (disj preserve-fields ::localized ::countries :id)
+         ^Registry dst         (or dst (registry/new-registry))
+         ^Registry src         (or src (registry/new-registry))
+         merged-hierarchies    (merge-hierarchies (:hierarchies dst) (:hierarchies src))
+         merged-ext            (merge (:ext dst) (:ext src))
+         ^Registry dst         (assoc dst :hierarchies merged-hierarchies :ext merged-ext)
+         src-cur-id->cur       (:cur-id->cur src)
+         src-cur-id->ctr-ids   (:cur-id->ctr-ids src)
+         src-cur-id->localized (:cur-id->localized src)]
+     (reduce (fn ^Registry [^Registry r [cid ^Currency c]]
+               (let [d            (.domain ^Currency c)
+                     iso-like?     (boolean
+                                    (and iso-like?
+                                         (or (identical? d :ISO-4217)
+                                             (identical? d :ISO-4217-LEGACY))))
+                     src-id        (.id ^Currency c)
+                     iso-code-id   (when iso-like? (keyword (name src-id)))
+                     iso-legacy-id (when iso-like? (keyword "iso-4217-legacy" (name src-id)))
+                     legacy?       (and iso-like? (identical? d :ISO-4217-LEGACY))
+                     legacy-domain? (identical? d :ISO-4217-LEGACY)
+                     dst-id        (if legacy? iso-legacy-id (or iso-code-id src-id))
+                     alt-id        (when iso-like? (if legacy? iso-code-id iso-legacy-id))
+                     ^Currency c   (if (and iso-like? (not= src-id dst-id))
+                                     (assoc c :id dst-id)
+                                     c)
+                     existing      (get (:cur-id->cur r) dst-id)
+                     existing      (if (or existing (not iso-like?))
+                                     existing
+                                     (get (:cur-id->cur r) alt-id))
+                     existing-id   (when existing (.id ^Currency existing))
+                     rename?       (and iso-like?
+                                        (some? existing)
+                                        (not= existing-id dst-id))
+                     src-countries (or (clojure.core/get src-cur-id->ctr-ids dst-id)
+                                       (when iso-like? (clojure.core/get src-cur-id->ctr-ids iso-code-id)))
+                     src-localized (or (clojure.core/get src-cur-id->localized dst-id)
+                                       (when iso-like? (clojure.core/get src-cur-id->localized iso-code-id)))]
+                 (if existing
+                   (let [existing-id        (or existing-id dst-id)
+                         existing-countries (clojure.core/get (:cur-id->ctr-ids r) existing-id)
+                         existing-localized (clojure.core/get (:cur-id->localized r) existing-id)
+                         preserve-fields    (if iso-like? (disj preserve-fields :domain) preserve-fields)
+                         preserve-fields    (filter #(contains? existing %) preserve-fields)
+                         ^Currency c        (if (seq preserve-fields)
+                                              (apply assoc c
+                                                     (mapcat (fn [k] [k (clojure.core/get existing k)])
+                                                             preserve-fields))
+                                              c)
+                         countries          (if rename?
+                                              (when (or (seq existing-countries) (seq src-countries))
+                                                (into (or existing-countries #{}) src-countries))
+                                              (if preserve-countries?
+                                                existing-countries
+                                                src-countries))
+                         localized          (if rename?
+                                              (merge-with merge existing-localized src-localized)
+                                              (if preserve-localized?
+                                                existing-localized
+                                                src-localized))
+                         localized-input    (localized->register-input localized)
+                         ^Currency c        (if legacy-domain?
+                                              (let [w  (int (.weight ^Currency c))
+                                                    ew (int (.weight ^Currency existing))]
+                                                (cond
+                                                  ;; Source explicitly set a non-zero weight: keep it.
+                                                  (not (zero? w))
+                                                  c
+
+                                                  ;; Destination had a manual weight: preserve it.
+                                                  (not (zero? ew))
+                                                  (assoc c :weight ew)
+
+                                                  ;; Default for legacy currency.
+                                                  :else
+                                                  (assoc c :weight (int default-legacy-weight))))
+                                              c)
+                         updated?           (or rename?
+                                                (not= c existing)
+                                                (not= countries existing-countries)
+                                                (not= localized existing-localized))]
+                     (if updated?
+                       (do (when verbose?
+                             (println "Updated currency:" (str c)))
+                           (let [^Registry r (if rename?
+                                               (currency/unregister r existing)
+                                               r)]
+                             (currency/register r c countries localized-input (not rename?))))
+                       r))
+                   (do (when (and verbose? (some? c))
+                         (println "New currency:" (str c)))
+                       (let [^Currency c (if legacy-domain?
+                                           (let [w (int (.weight ^Currency c))]
+                                             (if (zero? w)
+                                               (assoc c :weight (int default-legacy-weight))
+                                               c))
+                                           c)]
+                         (currency/register r
+                                            c
+                                            src-countries
+                                            (localized->register-input src-localized)
+                                            false))))))
+             dst
+             src-cur-id->cur))))
+
 (defn joda->bankster-dump
   "Reads Joda Money CSV files and creates a registry dump named
   resources/io/randomseed/bankster/registry-dump.edn."
   {:added "1.0.0"}
   []
-  (println (time (dump (joda-import)))))
+  (let [dst (seed-import)
+        jda (joda-import)]
+    (dump (merge-registry dst jda true [:domain :kind ::localized] true))))
 
 (defn joda->bankster-export
   "Reads Joda Money CSV files and creates a configuration file named
   resources/io/randomseed/bankster/registry-export.edn."
   {:added "1.0.0"}
   []
-  (println (time (export (joda-import)))))
+  (let [dst (seed-import)
+        jda (joda-import)]
+    (export (merge-registry dst jda true [:domain :kind ::localized] true))))
