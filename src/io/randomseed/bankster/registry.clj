@@ -581,6 +581,34 @@
   ([k] (hierarchy* k))
   ([k registry] (hierarchy* k (get registry))))
 
+(defn- hierarchy-derive*
+  {:tag Registry :added "2.0.0" :private true}
+  [^Registry registry hierarchy-name tag parent]
+  (let [parents (cond
+                  (set? parent)        (sort-by str parent)
+                  (sequential? parent) parent
+                  :else               (list parent))]
+    (update-in registry
+               [:hierarchies hierarchy-name]
+               (fn [h]
+                 (reduce (fn [h p]
+                           (derive (or h (make-hierarchy)) tag p))
+                         h
+                         parents)))))
+
+(defn hierarchy-derive
+  "Returns `registry` updated by deriving `tag` from `parent` inside a hierarchy
+  identified by `hierarchy-name`."
+  {:tag Registry :added "2.0.0"}
+  [hierarchy-name tag parent registry]
+  (update (get registry) hierarchy-derive* hierarchy-name tag parent))
+
+(defn hierarchy-derive!
+  "Updates global registry by deriving `tag` from `parent` inside a hierarchy
+  identified by `hierarchy-name`."
+  {:tag Registry :added "2.0.0"}
+  [hierarchy-name tag parent]
+  (update! hierarchy-derive* hierarchy-name tag parent))
 
 (defn ext
   "Returns extra data map of a registry. If the registry is not given the dynamic

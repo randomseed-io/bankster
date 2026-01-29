@@ -81,3 +81,22 @@
       (is (= (:kind hs) (registry/hierarchy :kind nil)))
       ;; Custom axes may live in extmap; missing axis should still be safe.
       (is (nil? (registry/hierarchy :traits nil))))))
+
+(deftest hierarchy-derive-updates-selected-hierarchy
+  (testing "hierarchy-derive returns a new registry with derived relationship"
+    (let [r0 (registry/new)
+          r1 (registry/hierarchy-derive :kind :iso/funds :iso/money r0)
+          h0 (registry/hierarchy :kind r0)
+          h1 (registry/hierarchy :kind r1)]
+      (is (not (isa? h0 :iso/funds :iso/money)))
+      (is (isa? h1 :iso/funds :iso/money))))
+
+  (testing "hierarchy-derive! updates the global registry"
+    (let [orig (registry/state)]
+      (try
+        (registry/set! (registry/new))
+        (registry/hierarchy-derive! :domain :ISO-4217-LEGACY :ISO-4217)
+        (let [h (registry/hierarchy :domain (registry/state))]
+          (is (isa? h :ISO-4217-LEGACY :ISO-4217)))
+        (finally
+          (registry/set! orig))))))
