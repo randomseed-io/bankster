@@ -69,3 +69,15 @@
           hs  (:hierarchies r)]
       (is (isa? (:domain hs) :ISO-4217-LEGACY :ISO-4217))
       (is (map? (:kind hs))))))
+
+(deftest registry-get-and-hierarchy-nil-safe
+  (testing "registry/get treats literal true as a sentinel meaning: use the default registry"
+    (let [r (registry/get)]
+      (is (= r (registry/get true)))))
+
+  (testing "hierarchies/hierarchy accept nil registry and fall back to the default registry"
+    (let [hs (registry/hierarchies)]
+      (is (= hs (registry/hierarchies nil)))
+      (is (= (:kind hs) (registry/hierarchy :kind nil)))
+      ;; Custom axes may live in extmap; missing axis should still be safe.
+      (is (nil? (registry/hierarchy :traits nil))))))

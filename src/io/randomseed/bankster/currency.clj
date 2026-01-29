@@ -1987,25 +1987,24 @@
 
 (defn kind
   "Returns currency kind. It is a keyword which describes origin of its value. Currently
-  known kinds are:
+  known top-level kinds are:
 
-  - `:FIAT`          – legal tender issued by government or other authority,
-  - `:FIDUCIARY`     - accepted medium of exchange issued by a fiduciary or fiduciaries,
-  - `:DECENTRALIZED` - accepted medium of exchange issued by a distributed ledger,
-  - `:FUNDS`         - funds, settlement units, units of account,
-  - `:COMMODITY`     - accepted medium of exchange based on commodities,
-  - `:EXPERIMENTAL`  - pseudo-currency used for testing purposes,
-  - `:NULL`          - used to mark no currency.
+  - `:iso`       - ISO-4217 currencies, funds, commodities, special markers.
+  - `:virtual`   - Virtual units (stable tokens, credits, native tokens, special).
+  - `:currency`  - Meta: currency-like units; parent for `:fiduciary` money.
+  - `:asset`     - Meta: value-bearing units (`:assets`, `:claims`, `:stable`, reference-based).
+  - `:fiat`      - Meta umbrella: fiat-related tags (issuer fiats vs fiat-as-anchor).
+  - `:funds`     - Meta: funds, settlement units, units of account.
+  - `:commodity` - Meta: commodity-based units and commodity anchoring.
+  - `:special`   - Meta: special-purpose markers (`:experimental`, `:test`, `:null`).
 
-  The function may return nil if the currency is a no-currency. Locale argument is
-  ignored."
+  The function may return `nil` if the currency is a no-currency. Locale argument is
+  ignored. To list all known kinds use `kinds`."
   {:tag clojure.lang.Keyword :added "1.0.0"}
   (^clojure.lang.Keyword [c]
    (when-some [c (unit c)] (.kind ^Currency c)))
   (^clojure.lang.Keyword [c ^Registry registry]
-   (when-some [^Currency c (if (instance? Currency c)
-                             c
-                             (unit c (unit-registry registry)))]
+   (when-some [^Currency c (if (instance? Currency c) c (unit c (unit-registry registry)))]
      (.kind ^Currency c)))
   (^clojure.lang.Keyword [c _locale ^Registry registry]
    (kind c registry)))

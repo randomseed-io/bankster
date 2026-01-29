@@ -447,6 +447,39 @@
   ([registry] `(.cur-id->localized ^io.randomseed.bankster.Registry ~registry))
   ([id registry] `(clojure.core/get (.cur-id->localized ^io.randomseed.bankster.Registry ~registry) ~id)))
 
+(defmacro hierarchies*
+  "Returns hierarchies map of a registry. If the registry is not given the dynamic
+  variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
+  current state of a global registry is used instead.
+
+  When `k` is given the macro will extract a specific hierarchy from a record
+  field. it should be a simple keyword. If it is a constant form of a keyword
+  field-access byte code will be generated."
+  {:added "2.0.0"}
+  ([]
+   `^CurrencyHierarchies (.hierarchies ^io.randomseed.bankster.Registry (get)))
+  ([registry]
+   `^CurrencyHierarchies (.hierarchies ^io.randomseed.bankster.Registry ~registry))
+  ([k registry]
+   (if (and (simple-keyword? k)
+            (contains? (set (keys (bankster/map->CurrencyHierarchies {}))) k))
+     (let [k' (symbol (str "." (clojure.lang.Compiler/munge (name k))))]
+       `(~k'
+         ^io.randomseed.bankster.CurrencyHierarchies
+         (.hierarchies ^io.randomseed.bankster.Registry ~registry)))
+     `(clojure.core/get (.hierarchies ^io.randomseed.bankster.Registry ~registry) ~k))))
+
+(defmacro hierarchy*
+  "Returns a hierarchy identified by the given key `k` in a `registry`. If the registry
+  is not given the dynamic variable `io.randomseed.bankster.registry/*default*` is
+  tried. If it is not set, current state of a global registry is used instead.
+
+  When `k` is given it should be a simple keyword. If it is a constant form of a
+  keyword field-access byte code will be generated."
+  {:added "2.0.0"}
+  ([k] `(hierarchies* ~k (get)))
+  ([k registry] `(hierarchies* ~k ~registry)))
+
 (defmacro ext*
   "Returns extra data map of a registry. If the registry is not given the dynamic
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
@@ -527,13 +560,27 @@
   (^clojure.lang.PersistentHashMap [^Registry registry] (currency-id->localized* registry))
   (^clojure.lang.PersistentHashMap [id ^Registry registry] (currency-id->localized* id registry)))
 
-(defn version
-  "Returns a version string of a registry. If the registry is not given the dynamic
+(defn hierarchies
+  "Returns hierarchies map of a registry. If the registry is not given the dynamic
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
   current state of a global registry is used instead."
-  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
-  (^String [] (version*))
-  (^String [^Registry registry] (version* registry)))
+  {:tag CurrencyHierarchies :added "2.0.0"}
+  (^CurrencyHierarchies [] (hierarchies*))
+  (^CurrencyHierarchies [registry] (hierarchies* (get registry)))
+  (^CurrencyHierarchies [k registry] (hierarchies* k (get registry))))
+
+(defn hierarchy
+  "Returns a hierarchy identified by the given key `k` in a `registry`. The key should
+  be a keyword. If the registry is not given the dynamic variable
+  `io.randomseed.bankster.registry/*default*` is tried. If it is not set, current
+  state of a global registry is used instead.
+
+  For static keywords it is advised to use `hierarchy*` macro whenever possible as it
+  compiles to a field-access byte code."
+  {:tag clojure.lang.Associative :added "2.0.0"}
+  ([k] (hierarchy* k))
+  ([k registry] (hierarchy* k (get registry))))
+
 
 (defn ext
   "Returns extra data map of a registry. If the registry is not given the dynamic
@@ -543,6 +590,14 @@
   (^clojure.lang.PersistentHashMap [] (ext*))
   (^clojure.lang.PersistentHashMap [^Registry registry] (ext* registry))
   (^clojure.lang.PersistentHashMap [k ^Registry registry] (ext* k registry)))
+
+(defn version
+  "Returns a version string of a registry. If the registry is not given the dynamic
+  variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
+  current state of a global registry is used instead."
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
+  (^String [] (version*))
+  (^String [^Registry registry] (version* registry)))
 
 ;;
 ;; Printing.
