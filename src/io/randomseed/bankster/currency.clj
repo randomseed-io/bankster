@@ -1979,12 +1979,13 @@
   "Returns currency kind. It is a keyword which describes origin of its value. Currently
   known kinds are:
 
-  - `:FIAT`          – legal tender issued by government or other authority
-  - `:FIDUCIARY`     - accepted medium of exchange issued by a fiduciary or fiduciaries
-  - `:DECENTRALIZED` - accepted medium of exchange issued by a distributed ledger
-  - `:COMBANK`       - commercial bank money
-  - `:COMMODITY`     - accepted medium of exchange based on commodities
-  - `:EXPERIMENTAL`  - pseudo-currency used for testing purposes.
+  - `:FIAT`          – legal tender issued by government or other authority,
+  - `:FIDUCIARY`     - accepted medium of exchange issued by a fiduciary or fiduciaries,
+  - `:DECENTRALIZED` - accepted medium of exchange issued by a distributed ledger,
+  - `:FUNDS`         - funds, settlement units, units of account,
+  - `:COMMODITY`     - accepted medium of exchange based on commodities,
+  - `:EXPERIMENTAL`  - pseudo-currency used for testing purposes,
+  - `:NULL`          - used to mark no currency.
 
   The function may return nil if the currency is a no-currency. Locale argument is
   ignored."
@@ -2566,7 +2567,7 @@
      (let [regi (or regi (registry/new-registry))
            curs (prep-currencies          (config/currencies cfg))
            ctrs (prep-cur->ctr            (config/countries  cfg))
-           lpro (config/localized  cfg)
+           lpro (config/localized                            cfg)
            vers (str                      (config/version    cfg))
            regi (if (nil? vers) regi (assoc regi :version vers))]
        (reduce (fn ^Registry [^Registry r ^Currency c]
@@ -2784,13 +2785,17 @@
    (with-attempt c registry [c] (some? (.kind ^Currency c)))))
 
 (defn kind-of?
-  "Returns a kind of the given currency equals to the one given as a second
-  argument."
+  "Checks if a kind of the given currency `c` equals to the one given as a second
+  argument `kind` or if it belongs to a `kind` (checked with `clojure.core/isa?`)."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^clojure.lang.Keyword kind c]
-   (with-attempt c nil [c] (identical? kind (.kind ^Currency c))))
+   (with-attempt c nil [c]
+     (or (identical? kind (.kind ^Currency c))
+         (isa? (.kind ^Currency c) kind))))
   (^Boolean [^clojure.lang.Keyword kind c ^Registry registry]
-   (with-attempt c registry [c] (identical? kind (.kind ^Currency c)))))
+   (with-attempt c registry [c]
+     (or (identical? kind (.kind ^Currency c))
+         (isa? (.kind ^Currency c) kind)))))
 
 (defn fiat?
   "Returns `true` if the given currency is a kind of `:FIAT`. Registry argument is
@@ -2806,12 +2811,12 @@
   (^Boolean [c] (kind-of? :FIDUCIARY c))
   (^Boolean [c ^Registry registry] (kind-of? :FIDUCIARY c registry)))
 
-(defn combank?
-  "Returns `true` if the given currency is a kind of `:COMBANK`. Registry argument is
+(defn funds?
+  "Returns `true` if the given currency is a kind of `:FUNDS`. Registry argument is
   ignored."
-  {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (kind-of? :COMBANK c))
-  (^Boolean [c ^Registry registry] (kind-of? :COMBANK c registry)))
+  {:tag Boolean :added "2.0.0"}
+  (^Boolean [c] (kind-of? :FUNDS c))
+  (^Boolean [c ^Registry registry] (kind-of? :FUNDS c registry)))
 
 (defn commodity?
   "Returns `true` if the given currency is a kind of `:COMMODITY`. Registry argument is

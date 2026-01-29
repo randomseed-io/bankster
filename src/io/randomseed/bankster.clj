@@ -21,19 +21,28 @@
   (toString [^Currency c] (name (.id ^Currency c))))
 
 ;;
+;; CurrencyHierarchies record.
+;;
+
+(defrecord CurrencyHierarchies
+    [^clojure.lang.Associative domain
+     ^clojure.lang.Associative kind])
+
+;;
 ;; Registry record.
 ;;
 
 (defrecord Registry
-    [^clojure.lang.PersistentHashMap cur-id->cur       ; currency ID to currency record
-     ^clojure.lang.PersistentHashMap cur-nr->cur       ; currency numeric ID to currency record
-     ^clojure.lang.PersistentHashMap ctr-id->cur       ; country ID to currency record
-     ^clojure.lang.PersistentHashMap cur-id->ctr-ids   ; currency ID to set of country IDs
-     ^clojure.lang.PersistentHashMap cur-id->localized ; locale ID to localized properties
-     ^clojure.lang.PersistentHashMap cur-code->curs    ; currency code to currencies (weighted)
-     ^clojure.lang.PersistentHashMap cur-nr->curs      ; currency numeric ID to currencies (weighted)
-     ^String version                                   ; version string
-     ^clojure.lang.PersistentHashMap ext]              ; extra data
+    [^clojure.lang.PersistentHashMap cur-id->cur        ; currency ID to currency record
+     ^clojure.lang.PersistentHashMap cur-nr->cur        ; currency numeric ID to currency record
+     ^clojure.lang.PersistentHashMap ctr-id->cur        ; country ID to currency record
+     ^clojure.lang.PersistentHashMap cur-id->ctr-ids    ; currency ID to set of country IDs
+     ^clojure.lang.PersistentHashMap cur-id->localized  ; locale ID to localized properties
+     ^clojure.lang.PersistentHashMap cur-code->curs     ; currency code to currencies (weighted)
+     ^clojure.lang.PersistentHashMap cur-nr->curs       ; currency numeric ID to currencies (weighted)
+     ^CurrencyHierarchies hierarchies                   ; currency property hierarchies
+     ^String version                                    ; version string
+     ^clojure.lang.PersistentHashMap ext]               ; extra data
 
   Object
   (toString [^Registry r] (pr-str r)))

@@ -12,7 +12,7 @@
             [io.randomseed.bankster.util.map :as      map]
             [clojure.tools.logging           :as      log])
 
-  (:import  (io.randomseed.bankster Registry)
+  (:import  (io.randomseed.bankster Registry CurrencyHierarchies)
             (java.time              LocalDateTime)
             (java.time.format       DateTimeFormatter)))
 
@@ -24,6 +24,92 @@
   {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
   ^clojure.lang.PersistentHashMap []
   (dissoc (hash-map nil nil) nil))
+
+;;
+;; Empty hierarchy record
+;;
+
+(defn- h-r
+  {:tag CurrencyHierarchies :added "2.0.0"}
+  ^CurrencyHierarchies []
+  (CurrencyHierarchies. (make-hierarchy) (make-hierarchy)))
+
+(defn- hierarchy-map?
+  "Returns `true` if `x` looks like a hierarchy map produced by `make-hierarchy`."
+  {:tag Boolean :added "2.0.0" :private true}
+  [x]
+  (and (map? x)
+       (contains? x :parents)
+       (contains? x :ancestors)
+       (contains? x :descendants)
+       (map? (clojure.core/get x :parents))
+       (map? (clojure.core/get x :ancestors))
+       (map? (clojure.core/get x :descendants))))
+
+(defn- parent-map->hierarchy
+  "Builds a hierarchy map out of a \"parent map\" (child -> parent/parents).
+
+  The map value may be:
+  - a single parent (keyword/symbol/class), or
+  - a set/vector/list/seq of parents (multiple inheritance)."
+  {:tag clojure.lang.IPersistentMap :added "2.0.0" :private true}
+  [^clojure.lang.IPersistentMap rels]
+  (reduce (fn [h [child parent]]
+            (let [parents (cond
+                            (set? parent)        (sort-by str parent)
+                            (sequential? parent) parent
+                            :else               (list parent))]
+              (reduce (fn [h p] (derive h child p)) h parents)))
+          (make-hierarchy)
+          ;; Stable order makes failures deterministic (cycles, invalid derives, etc.).
+          (sort-by (fn [[child parent]]
+                     (let [parent (cond
+                                    (set? parent)        (sort-by str parent)
+                                    (sequential? parent) parent
+                                    :else               parent)]
+                       (str child "->" parent)))
+                   rels)))
+
+(defn- ->hierarchy
+  {:tag clojure.lang.IPersistentMap :added "2.0.0" :private true}
+  [spec hierarchy-type]
+  (cond
+    (nil? spec)
+    (make-hierarchy)
+
+    (hierarchy-map? spec)
+    spec
+
+    (map? spec)
+    (parent-map->hierarchy spec)
+
+    :else
+    (throw
+     (ex-info
+      "Invalid currency hierarchy specification."
+      {:type  hierarchy-type
+       :value spec}))))
+
+(defn- ->currency-hierarchies
+  {:tag CurrencyHierarchies :added "2.0.0" :private true}
+  [spec]
+  (cond
+    (nil? spec)
+    (h-r)
+
+    (instance? CurrencyHierarchies spec)
+    (CurrencyHierarchies. (->hierarchy (.domain ^CurrencyHierarchies spec) :domain)
+                          (->hierarchy (.kind   ^CurrencyHierarchies spec) :kind))
+
+    (map? spec)
+    (CurrencyHierarchies. (->hierarchy (clojure.core/get spec :domain) :domain)
+                          (->hierarchy (clojure.core/get spec :kind)   :kind))
+
+    :else
+    (throw
+     (ex-info
+      "Invalid currency hierarchies specification."
+      {:value spec}))))
 
 ;;
 ;; Registry version generator.
@@ -41,7 +127,7 @@
 (def ^{:tag clojure.lang.Atom :added "1.0.0"}
   R
   "Global registry object based on an Atom."
-  (atom (Registry. (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (default-version) (h-m))))
+  (atom (Registry. (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-r) (default-version) (h-m))))
 
 (defn global
   "Returns global registry object."
@@ -119,7 +205,7 @@
   "Creates a new registry."
   {:tag Registry :added "1.0.0"}
   (^Registry []
-   (bankster/->Registry (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (default-version) (h-m)))
+   (bankster/->Registry (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-r) (default-version) (h-m)))
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
               ^clojure.lang.PersistentHashMap cur-nr->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur
@@ -127,23 +213,27 @@
               ^clojure.lang.PersistentHashMap cur-id->localized
               ^clojure.lang.PersistentHashMap cur-code->curs
               ^clojure.lang.PersistentHashMap cur-nr->curs
+              cur-hierarchies
               ^String version]
-   (bankster/->Registry cur-id->cur
-                        cur-nr->cur
-                        ctr-id->cur
-                        cur-id->ctr-ids
-                        cur-id->localized
-                        cur-code->curs
-                        cur-nr->curs
-                        version
-                        (h-m)))
+   (let [^CurrencyHierarchies cur-hierarchies (->currency-hierarchies cur-hierarchies)]
+     (bankster/->Registry cur-id->cur
+                          cur-nr->cur
+                          ctr-id->cur
+                          cur-id->ctr-ids
+                          cur-id->localized
+                          cur-code->curs
+                          cur-nr->curs
+                          cur-hierarchies
+                          version
+                          (h-m))))
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
               ^clojure.lang.PersistentHashMap cur-nr->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->ctr-ids
               ^clojure.lang.PersistentHashMap cur-id->localized
               ^clojure.lang.PersistentHashMap cur-code->curs
-              ^clojure.lang.PersistentHashMap cur-nr->curs]
+              ^clojure.lang.PersistentHashMap cur-nr->curs
+              cur-hierarchies]
    (new-registry cur-id->cur
                  cur-nr->cur
                  ctr-id->cur
@@ -151,22 +241,26 @@
                  cur-id->localized
                  cur-code->curs
                  cur-nr->curs
+                 cur-hierarchies
                  (default-version)))
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->localized
               ^clojure.lang.PersistentHashMap cur-code->curs
               ^clojure.lang.PersistentHashMap cur-nr->curs
+              cur-hierarchies
               ^String version]
-   (bankster/->Registry cur-id->cur
-                        (map/map-keys-by-v :nr cur-id->cur)
-                        ctr-id->cur
-                        (map/invert-in-sets ctr-id->cur)
-                        cur-id->localized
-                        cur-code->curs
-                        cur-nr->curs
-                        version
-                        (h-m)))
+   (let [^CurrencyHierarchies cur-hierarchies (->currency-hierarchies cur-hierarchies)]
+     (bankster/->Registry cur-id->cur
+                          (map/map-keys-by-v :nr cur-id->cur)
+                          ctr-id->cur
+                          (map/invert-in-sets ctr-id->cur)
+                          cur-id->localized
+                          cur-code->curs
+                          cur-nr->curs
+                          cur-hierarchies
+                          version
+                          (h-m))))
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->localized
@@ -177,9 +271,11 @@
                  cur-id->localized
                  cur-code->curs
                  cur-nr->curs
+                 (h-r)
                  (default-version)))
   (^Registry [^clojure.lang.PersistentHashMap m]
-   (bankster/map->Registry m)))
+   (let [r (bankster/map->Registry m)]
+     (assoc r :hierarchies (->currency-hierarchies (clojure.core/get m :hierarchies))))))
 
 (def ^{:tag      Registry
        :added    "1.0.0"
@@ -191,6 +287,7 @@
                               ^clojure.lang.PersistentHashMap cur-id->localized
                               ^clojure.lang.PersistentHashMap cur-code->curs
                               ^clojure.lang.PersistentHashMap cur-nr->curs
+                              ^CurrencyHierarchies            cur-hierarchies
                               ^String version]
                    ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
                               ^clojure.lang.PersistentHashMap cur-nr->cur
@@ -198,12 +295,14 @@
                               ^clojure.lang.PersistentHashMap cur-id->ctr-ids
                               ^clojure.lang.PersistentHashMap cur-id->localized
                               ^clojure.lang.PersistentHashMap cur-code->curs
-                              ^clojure.lang.PersistentHashMap cur-nr->curs]
+                              ^clojure.lang.PersistentHashMap cur-nr->curs
+                              ^CurrencyHierarchies            cur-hierarchies]
                    ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
                               ^clojure.lang.PersistentHashMap ctr-id->cur
                               ^clojure.lang.PersistentHashMap cur-id->localized
                               ^clojure.lang.PersistentHashMap cur-code->curs
                               ^clojure.lang.PersistentHashMap cur-nr->curs
+                              ^CurrencyHierarchies            cur-hierarchies
                               ^String version]
                    ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
                               ^clojure.lang.PersistentHashMap ctr-id->cur
