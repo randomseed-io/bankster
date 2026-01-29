@@ -127,18 +127,54 @@
    (str/join
     (first (take 1 (partition-by #{\#} s))))))
 
-(defn ^clojure.lang.LazySeq read-csv
-  "Reads CSV file and returns a lazy sequence of rows."
-  [resource]
-  (let [stream   (io/input-stream resource)
-        bstream  (BOMInputStream. stream true ^longs bom-utf-ary)
-        bomenc   (.getBOM bstream)
-        encoding (if (some? bomenc) (.getCharsetName bomenc) default-encoding)]
-    (with-open [reader (io/reader bstream :encoding encoding)]
-      (doall
-       (->> reader line-seq
-            (map rtrim-comments)
-            (remove (comp #{\#} first))
-            (remove empty?)
-            (str/join "\n")
-            csv/read-csv)))))
+(defn- comment-line?
+  {:tag Boolean :private true :added "2.0.0"}
+  [^String s]
+  (let [s (str/triml (str s))]
+    (and (pos? (count s))
+         (identical? \# (first s)))))
+
+(defn- quote-last-field
+  "If the last CSV field contains a # comment then quote the whole field, so commas in
+  the comment do not create extra columns. Keeps the comment (including the #)."
+  {:tag String :private true :added "2.0.0"}
+  [^String s]
+  (let [s (str s)
+        h (.indexOf s "#")
+        i (if (neg? h)
+            (.lastIndexOf s ",")
+            (.lastIndexOf (subs s 0 h) ","))]
+    (if (neg? i)
+      s
+      (let [p (subs s 0 (inc i))
+            v (subs s (inc i))]
+        (if (and (not (str/blank? v))
+                 (not (and (str/starts-with? (str/triml v) "\"")
+                           (str/ends-with? (str/trimr v) "\"")))
+                 (<= 0 (.indexOf v "#")))
+          (let [v (str/replace v "\"" "\"\"")]
+            (str p "\"" v "\""))
+          s)))))
+
+(defn read-csv
+  "Reads CSV file and returns a sequence of rows.
+
+  When `comments?` is truthy, lines beginning with # are ignored, but inline comments
+  (after #) are preserved and treated as part of the last column."
+  (^clojure.lang.LazySeq [resource]
+   (read-csv resource false))
+  (^clojure.lang.LazySeq [resource comments?]
+   (let [stream   (io/input-stream resource)
+         bstream  (BOMInputStream. stream true ^longs bom-utf-ary)
+         bomenc   (.getBOM bstream)
+         encoding (if (some? bomenc) (.getCharsetName bomenc) default-encoding)]
+     (with-open [reader (io/reader bstream :encoding encoding)]
+       (doall
+        (->> reader
+             line-seq
+             (remove comment-line?)
+             (remove (comp str/blank? str))
+             (map (if comments? quote-last-field rtrim-comments))
+             (remove (comp str/blank? str))
+             (str/join "\n")
+             csv/read-csv))))))
