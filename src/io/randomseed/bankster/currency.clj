@@ -1985,6 +1985,18 @@
   "Alias for domain."
   domain)
 
+(defn kinds
+  "Returns a map of all registered currency kinds as keys and their ancestors as
+  sets. It will not contain ad-hoc kinds that wasn't added to a registry's
+  hierarchy. Uses the given `registry` or a global one."
+  {:added "2.0.0" :tag clojure.lang.IPersistentMap}
+  ([]
+   (kinds nil))
+  ([^Registry registry]
+   (let [^Registry registry (registry/get registry)]
+     (when-some [h (registry/hierarchy* :kind registry)]
+       (get h :parents)))))
+
 (defn kind
   "Returns currency kind. It is a keyword which describes origin of its value. Currently
   known top-level kinds are:
