@@ -162,13 +162,22 @@
 ;;
 
 (defmacro get
-  "Gets a current state of a global registry. If the dynamic variable
-  `io.randomseed.bankster.registry/*default*` is set to a truthy value, it will be
-  used instead."
+  "Without arguments it gets a current state of a global registry. If the dynamic
+  variable `io.randomseed.bankster.registry/*default*` is set to a truthy value, it
+  will be used instead.
+
+  When a `registry` argument is provided it will be tried before using a dynamic or a
+  global registry, unless its value is `nil` or `false`.
+
+  When the literal `true` is provided, it acts as a sentinel meaning: use the default
+  registry. Caution: this works only on syntactic level."
   {:added "1.0.0"}
-  []
-  `(let [d# ^Registry *default*]
-     (or d# ^Registry (deref R))))
+  ([]
+   `^Registry (or *default* (deref R)))
+  ([registry]
+   (if (true? registry)
+     `^Registry (or *default* (deref R))
+     `^Registry (or ~registry *default* (deref R)))))
 
 ;;
 ;; Diagnostics.
