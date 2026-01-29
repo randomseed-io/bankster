@@ -20,6 +20,14 @@
       (is (= :iso-4217-legacy/ADP (:id c)))
       (is (= :ISO-4217-LEGACY (:domain c))))))
 
+(deftest make-currency-funds-kind-from-comment
+  (testing "comment \"FundsCode\" causes currency kind to be set to :iso/funds"
+    (let [c (#'io.randomseed.bankster.util.importer/make-currency
+             ["XUA" "965" "0" "FundsCode"])]
+      (is (= :XUA (:id c)))
+      (is (= :ISO-4217 (:domain c)))
+      (is (= :iso/funds (:kind c))))))
+
 (deftest merge-registry-merges-hierarchies-and-ext
   (testing "merges :hierarchies and :ext while keeping existing currency data"
     (let [dst (-> (registry/new-registry)
@@ -194,3 +202,20 @@
       (is (isa? foo-h :X :Y))
       (is (isa? foo-h :X :Z))
       (is (isa? bar-h :A :B)))))
+
+(deftest config->registry-loads-hierarchies
+  (testing "config->registry loads :hierarchies from EDN config"
+    (let [r  (currency/config->registry "io/randomseed/bankster/test_config_with_hierarchies.edn")
+          hs (:hierarchies r)]
+      (is (isa? (:domain hs) :ISO-4217-LEGACY :ISO-4217))
+      (is (isa? (:kind hs) :child :parent))
+      (is (isa? (get hs :traits) :stable :asset))
+      (is (isa? (get hs :traits) :stable :fiat)))))
+
+(deftest registry->map-exports-hierarchies-as-parent-maps
+  (testing "registry->map exports currency hierarchies as parent-maps"
+    (let [r (currency/config->registry "io/randomseed/bankster/test_config_with_hierarchies.edn")
+          m (importer/registry->map r)]
+      (is (= :ISO-4217 (get-in m [:hierarchies :domain :ISO-4217-LEGACY])))
+      (is (= :parent (get-in m [:hierarchies :kind :child])))
+      (is (= [:asset :fiat] (get-in m [:hierarchies :traits :stable]))))))

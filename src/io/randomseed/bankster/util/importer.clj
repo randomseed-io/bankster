@@ -120,13 +120,14 @@
   (when (some? id)
     (let [comment (some-> comment str/triml)
           old?    (and (some? comment) (str/starts-with? comment "Old, now"))
+          funds?  (and (some? comment) (str/starts-with? comment "FundsCode"))
           code    (keyword id)
           id      (if old? (keyword "iso-4217-legacy" id) (keyword id))
           numeric (or (bu/try-parse-long numeric) currency/no-numeric-id)
           numeric (if (< numeric 0) currency/no-numeric-id numeric)
           scale   (or (bu/try-parse-int scale) currency/auto-scaled)
           scale   (if (< scale 0) currency/auto-scaled scale)
-          kind    (get special-kinds code :FIAT)
+          kind    (if funds? :iso/funds (get special-kinds code :FIAT))
           domain  (when-not old? :ISO-4217)
           weight  0]
       (currency/new-currency id (long numeric) (int scale) kind domain (int weight)))))
@@ -225,13 +226,23 @@
    (registry->map (registry/state)))
   ([^Registry registry]
    (when (some? registry)
-     (sorted-map-by
-      #(compare %2 %1)
-      :version     (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "yyyyMMddHHmmssSS"))
-      :localized   (into (sorted-map) (map/map-vals localized->map (:cur-id->localized registry)))
-      :currencies  (into (sorted-map) (map/map-vals currency->map  (:cur-id->cur registry)))
-      :countries   (into (sorted-map) (map/map-vals :id (:ctr-id->cur registry)))
-      :hierarchies (into (sorted-map) (map/map-vals parents (:hierarchies registry)))))))
+     (letfn [(hierarchy->parent-map [h]
+               (let [rels (or (clojure.core/get h :parents) {})]
+                 (into (sorted-map)
+                       (map (fn [[child ps]]
+                              (let [ps (cond
+                                         (nil? ps) nil
+                                         (= 1 (count ps)) (first ps)
+                                         :else (vec (sort-by str ps)))]
+                                (vector child ps))))
+                       rels)))]
+       (sorted-map-by
+        #(compare %2 %1)
+        :version     (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "yyyyMMddHHmmssSS"))
+        :localized   (into (sorted-map) (map/map-vals localized->map (:cur-id->localized registry)))
+        :currencies  (into (sorted-map) (map/map-vals currency->map  (:cur-id->cur registry)))
+        :countries   (into (sorted-map) (map/map-vals :id (:ctr-id->cur registry)))
+        :hierarchies (into (sorted-map) (map/map-vals hierarchy->parent-map (:hierarchies registry))))))))
 
 (defn dump
   "For the given filename (defaults to default-dump-filename) and a registry (defaults
