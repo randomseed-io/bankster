@@ -274,7 +274,16 @@
   (testing "when it's possible to check if a currency has assigned the given domain"
     (is (= (c/in-domain? :ISO-4217 #currency EUR) true))
     (is (= (c/in-domain? nil #currency crypto/ETH) false))
-    (is (= (c/in-domain? nil #currency{:id :PLN :scale 1}) true)))
+    (is (= (c/in-domain? nil #currency{:id :PLN :scale 1}) true))
+    (is (= (c/of-domain? :ISO-4217 #currency EUR) true))
+    (is (= (c/of-domain? nil #currency crypto/ETH) false))
+    (is (= (c/of-domain? nil #currency{:id :PLN :scale 1}) true))
+    (let [dom (derive (make-hierarchy) :ISO-4217-LEGACY :ISO-4217)
+          r   (assoc (registry/new)
+                     :hierarchies
+                     (bankster/->CurrencyHierarchies dom (make-hierarchy)))]
+      (is (= (c/of-domain? :ISO-4217 {:id :OLD :domain :ISO-4217-LEGACY :numeric 1 :scale 2} r) true))
+      (is (= (c/of-domain? :ISO-4217 {:id :CRY :domain :CRYPTO :numeric 1 :scale 2} r) false))))
   (testing "when it's possible to check if a currency is auto-scaled"
     (is (= (c/big? #currency EUR) false))
     (is (= (c/big? #currency crypto/ETH) false))
