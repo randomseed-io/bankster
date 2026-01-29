@@ -2699,6 +2699,25 @@
   (^Boolean [ns c ^Registry registry]
    (with-attempt c registry [c] (identical? ns (.domain ^Currency c)))))
 
+(defn of-domain?
+  "Checks if a domain of the given currency `c` equals to the one given as a first
+  argument `domain` or if it belongs to a `domain` (checked with `clojure.core/isa?`)."
+  {:tag Boolean :added "2.0.0"}
+  (^Boolean [^clojure.lang.Keyword domain c]
+   (let [^Registry registry (registry/get)
+         h                 (some-> registry .hierarchies :domain)]
+     (with-attempt c registry [c]
+       (let [d (.domain ^Currency c)]
+         (or (identical? domain d)
+             (if h (isa? h d domain) (isa? d domain)))))))
+  (^Boolean [^clojure.lang.Keyword domain c ^Registry registry]
+   (let [^Registry registry (or registry (registry/get))
+         h                 (some-> registry .hierarchies :domain)]
+     (with-attempt c registry [c]
+       (let [d (.domain ^Currency c)]
+         (or (identical? domain d)
+             (if h (isa? h d domain) (isa? d domain))))))))
+
 (defn big?
   "Returns `true` if the given currency has an automatic scale (decimal places)."
   {:tag Boolean :added "1.0.0"}
