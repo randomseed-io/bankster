@@ -764,14 +764,24 @@
       (keyword (str/upper-case s)))))
 
 (defn- normalize-kind-hint
-  "Normalizes a currency kind hint to an upper-cased keyword."
+  "Normalizes a currency kind hint to a keyword.
+
+  Kind is treated as case-sensitive and may be namespaced."
   {:tag clojure.lang.Keyword :private true :added "3.0.0"}
   [x]
   (when-not (nil? x)
-    (when-some [s (if (ident? x)
-                    (not-empty (core-name x))
-                    (not-empty (str x)))]
-      (keyword (bu/try-upper-case s)))))
+    (cond
+      (keyword? x)
+      x
+
+      (symbol? x)
+      (keyword (namespace x) (core-name x))
+
+      :else
+      (let [s (not-empty (str x))]
+        (when s
+          ;; `keyword` parses "ns/name" automatically, preserving case.
+          (keyword s))))))
 
 (defn- normalize-weight-hint
   "Normalizes a currency weight hint.
@@ -2575,6 +2585,10 @@
   (^Registry [^String resource-path ^Registry regi]
    (if-some [cfg (config/load resource-path)]
      (let [regi (or regi (registry/new-registry))
+           hier (clojure.core/get cfg :hierarchies)
+           regi (if (some? hier)
+                  (registry/new-registry (assoc (into {} regi) :hierarchies hier))
+                  regi)
            curs (prep-currencies          (config/currencies cfg))
            ctrs (prep-cur->ctr            (config/countries  cfg))
            lpro (config/localized                            cfg)
@@ -2818,48 +2832,54 @@
   argument `kind` or if it belongs to a `kind` (checked with `clojure.core/isa?`)."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^clojure.lang.Keyword kind c]
-   (with-attempt c nil [c]
-     (or (identical? kind (.kind ^Currency c))
-         (isa? (.kind ^Currency c) kind))))
+   (kind-of? kind c (registry/get)))
   (^Boolean [^clojure.lang.Keyword kind c ^Registry registry]
-   (with-attempt c registry [c]
-     (or (identical? kind (.kind ^Currency c))
-         (isa? (.kind ^Currency c) kind)))))
+   (let [^Registry registry (or registry (registry/get))
+         h                 (some-> registry .hierarchies :kind)]
+     (with-attempt c registry [c]
+       (let [k (.kind ^Currency c)]
+         (or (identical? kind k)
+             (if h (isa? h k kind) (isa? k kind))))))))
 
 (defn fiat?
-  "Returns `true` if the given currency is a kind of `:FIAT`. Registry argument is
-  ignored."
+  "Returns `true` if the given currency is a kind of fiat currency."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (kind-of? :FIAT c))
-  (^Boolean [c ^Registry registry] (kind-of? :FIAT c registry)))
+  (^Boolean [c] (or (kind-of? :FIAT c)
+                    (kind-of? :fiat c)))
+  (^Boolean [c ^Registry registry] (or (kind-of? :FIAT c registry)
+                                       (kind-of? :fiat c registry))))
 
 (defn fiduciary?
-  "Returns `true` if the given currency is a kind of `:FIDUCIARY`. Registry argument is
-  ignored."
+  "Returns `true` if the given currency is a kind of fiduciary currency."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (kind-of? :FIDUCIARY c))
-  (^Boolean [c ^Registry registry] (kind-of? :FIDUCIARY c registry)))
+  (^Boolean [c] (or (kind-of? :FIDUCIARY c)
+                    (kind-of? :fiduciary c)))
+  (^Boolean [c ^Registry registry] (or (kind-of? :FIDUCIARY c registry)
+                                       (kind-of? :fiduciary c registry))))
 
 (defn funds?
-  "Returns `true` if the given currency is a kind of `:FUNDS`. Registry argument is
-  ignored."
+  "Returns `true` if the given currency is a kind of funds/settlement currency."
   {:tag Boolean :added "2.0.0"}
-  (^Boolean [c] (kind-of? :FUNDS c))
-  (^Boolean [c ^Registry registry] (kind-of? :FUNDS c registry)))
+  (^Boolean [c] (or (kind-of? :FUNDS c)
+                    (kind-of? :funds c)))
+  (^Boolean [c ^Registry registry] (or (kind-of? :FUNDS c registry)
+                                       (kind-of? :funds c registry))))
 
 (defn commodity?
-  "Returns `true` if the given currency is a kind of `:COMMODITY`. Registry argument is
-  ignored."
+  "Returns `true` if the given currency is a kind of commodity currency."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (kind-of? :COMMODITY c))
-  (^Boolean [c ^Registry registry] (kind-of? :COMMODITY c registry)))
+  (^Boolean [c] (or (kind-of? :COMMODITY c)
+                    (kind-of? :commodity c)))
+  (^Boolean [c ^Registry registry] (or (kind-of? :COMMODITY c registry)
+                                       (kind-of? :commodity c registry))))
 
 (defn decentralized?
-  "Returns `true` if the given currency is a kind of `:DECENTRALIZED`. Registry argument
-  is ignored."
+  "Returns `true` if the given currency is a kind of decentralized currency."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (kind-of? :DECENTRALIZED c))
-  (^Boolean [c ^Registry registry] (kind-of? :DECENTRALIZED c registry)))
+  (^Boolean [c] (or (kind-of? :DECENTRALIZED c)
+                    (kind-of? :decentralized c)))
+  (^Boolean [c ^Registry registry] (or (kind-of? :DECENTRALIZED c registry)
+                                       (kind-of? :decentralized c registry))))
 
 (def ^{:tag Boolean
        :arglists '([c] [c ^Registry registry])}
@@ -2868,18 +2888,20 @@
   decentralized?)
 
 (defn experimental?
-  "Returns `true` if the given currency is a kind of `:EXPERIMENTAL`. Registry argument
-  is ignored."
+  "Returns `true` if the given currency is a kind of experimental currency."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (kind-of? :EXPERIMENTAL c))
-  (^Boolean [c ^Registry registry] (kind-of? :EXPERIMENTAL c registry)))
+  (^Boolean [c] (or (kind-of? :EXPERIMENTAL c)
+                    (kind-of? :experimental c)))
+  (^Boolean [c ^Registry registry] (or (kind-of? :EXPERIMENTAL c registry)
+                                       (kind-of? :experimental c registry))))
 
 (defn null?
-  "Returns `true` if the given currency is a kind of `:NULL`. Registry argument
-  is ignored."
+  "Returns `true` if the given currency is a kind of null currency."
   {:tag Boolean :added "2.0.0"}
-  (^Boolean [c] (kind-of? :NULL c))
-  (^Boolean [c ^Registry registry] (kind-of? :NULL c registry)))
+  (^Boolean [c] (or (kind-of? :NULL c)
+                    (kind-of? :null c)))
+  (^Boolean [c ^Registry registry] (or (kind-of? :NULL c registry)
+                                       (kind-of? :null c registry))))
 
 (defn none?
   "Returns `true` if the given currency does not exist, or there is no currency (value

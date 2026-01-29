@@ -349,11 +349,30 @@
            {:id :EUR
             :nr 978
             :sc 2
-            :ki :FIAT
+            :ki :fiat
             :do :ISO-4217
             :we 5}))
     (is (= (c/to-map {:id :EUR :scale "not-a-number"})
            {:id :EUR}))))
+
+(deftest unit-map-kind-is-case-sensitive-and-may-be-namespaced
+  (testing "unit resolves currencies using case-sensitive, namespaced :kind hints"
+    (let [r (-> (registry/new)
+                (c/register (c/new :XUA 965 0 :iso/funds :ISO-4217)))]
+      (is (= :iso/funds (:kind (c/unit {:id :XUA :kind :iso/funds} r))))
+      (is (= :iso/funds (:kind (c/unit {:id :XUA :kind "iso/funds"} r))))
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (c/unit {:id :XUA :kind "ISO/FUNDS"} r))))))
+
+(deftest kind-of-uses-registry-hierarchy
+  (testing "kind-of? consults registry :kind hierarchy (derived kinds)"
+    (let [k  (derive (make-hierarchy) :iso/funds :funds)
+          hs (bankster/->CurrencyHierarchies (make-hierarchy) k)
+          r  (-> (registry/new)
+                 (assoc :hierarchies hs)
+                 (c/register (c/new :XUA 965 0 :iso/funds :ISO-4217)))]
+      (is (= true (c/kind-of? :funds :XUA r)))
+      (is (= true (c/funds? :XUA r))))))
 
 (deftest register-allows-shared-numeric-id
   (testing "register allows multiple currencies for the same numeric ID; resolve picks the lowest weight"
