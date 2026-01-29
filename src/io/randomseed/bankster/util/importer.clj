@@ -82,7 +82,7 @@
   "Default CSV file with currencies database."
   "org/joda/money/CurrencyData.csv")
 
-(def ^{:const true :tag String :added "2.0.0"}
+(def ^{:const true :tag long :added "2.0.0"}
   default-legacy-weight
   "Default weight of legacy currencies."
   (long 10000))
@@ -427,6 +427,22 @@
                       (keyword (str (l/locale k)))))
                   m)))
 
+(defn- weight-explicit?
+  "Returns `true` if a currency's weight was explicitly present in its source map
+  (currently propagated only from EDN config loading via Currency metadata)."
+  {:tag Boolean :private true :added "2.0.0"}
+  [^Currency c]
+  (let [missing (clojure.core/get (meta c) ::currency/missing-fields)]
+    (boolean (and (set? missing)
+                  (not (contains? missing :weight))))))
+
+(defn- copy-missing-fields-meta
+  {:tag Currency :private true :added "2.0.0"}
+  [^Currency dst ^Currency src]
+  (if-some [missing (clojure.core/get (meta src) ::currency/missing-fields)]
+    (with-meta dst (assoc (or (meta dst) {}) ::currency/missing-fields missing))
+    dst))
+
 (defn- hierarchy-map?
   "Returns `true` if `x` looks like a hierarchy map produced by `make-hierarchy`."
   {:tag Boolean :added "2.0.0" :private true}
@@ -534,7 +550,11 @@
 
   Note: in ISO-like mode `:domain` is never preserved from `dst` for ISO-like
   currencies (even if present in `preserve-fields`), to allow aligning ISO vs
-  legacy ISO classification based on the source."
+  legacy ISO classification based on the source.
+
+  Legacy currency weight: when a legacy currency has weight 0 and the weight was not
+  explicitly set in its source data, it is set to `default-legacy-weight`. Explicit
+  weight 0 means \"legacy should be canonical\" and is preserved."
   {:tag Registry :added "2.0.0"}
   (^Registry [^Registry dst ^Registry src]
    (merge-registry dst src false nil false))
@@ -555,7 +575,7 @@
          src-cur-id->cur       (:cur-id->cur src)
          src-cur-id->ctr-ids   (:cur-id->ctr-ids src)
          src-cur-id->localized (:cur-id->localized src)]
-     (reduce (fn ^Registry [^Registry r [cid ^Currency c]]
+     (reduce (fn ^Registry [^Registry r [_cid ^Currency c]]
                (let [d            (.domain ^Currency c)
                      iso-like?     (boolean
                                     (and iso-like?
@@ -607,16 +627,26 @@
                                                 src-localized))
                          localized-input    (localized->register-input localized)
                          ^Currency c        (if legacy-domain?
-                                              (let [w  (int (.weight ^Currency c))
-                                                    ew (int (.weight ^Currency existing))]
+                                              (let [w      (int (.weight ^Currency c))
+                                                    w-exp? (weight-explicit? c)
+                                                    ew     (int (.weight ^Currency existing))
+                                                    ew-exp? (weight-explicit? existing)]
                                                 (cond
                                                   ;; Source explicitly set a non-zero weight: keep it.
                                                   (not (zero? w))
                                                   c
 
+                                                  ;; Source explicitly set 0: keep it (legacy is canonical by choice).
+                                                  w-exp?
+                                                  c
+
                                                   ;; Destination had a manual weight: preserve it.
                                                   (not (zero? ew))
                                                   (assoc c :weight ew)
+
+                                                  ;; Destination explicitly set 0: keep it and preserve explicitness.
+                                                  ew-exp?
+                                                  (copy-missing-fields-meta (assoc c :weight ew) existing)
 
                                                   ;; Default for legacy currency.
                                                   :else
@@ -628,19 +658,26 @@
                                                 (not= localized existing-localized))]
                      (if updated?
                        (do (when verbose?
-                             (println "Updated currency:" (str c)))
+                             (println "Updated currency:" (symbol (:id c))))
                            (let [^Registry r (if rename?
                                                (currency/unregister r existing)
                                                r)]
                              (currency/register r c countries localized-input (not rename?))))
                        r))
                    (do (when (and verbose? (some? c))
-                         (println "New currency:" (str c)))
+                         (println "New currency:" (symbol (:id c))))
                        (let [^Currency c (if legacy-domain?
-                                           (let [w (int (.weight ^Currency c))]
-                                             (if (zero? w)
-                                               (assoc c :weight (int default-legacy-weight))
-                                               c))
+                                           (let [w      (int (.weight ^Currency c))
+                                                 w-exp? (weight-explicit? c)]
+                                             (cond
+                                               (not (zero? w))
+                                               c
+
+                                               w-exp?
+                                               c
+
+                                               :else
+                                               (assoc c :weight (int default-legacy-weight))))
                                            c)]
                          (currency/register r
                                             c

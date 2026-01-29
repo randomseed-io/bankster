@@ -148,6 +148,34 @@
       (is (= :ISO-4217-LEGACY (:domain aaa)))
       (is (= (int importer/default-legacy-weight) (:weight aaa))))))
 
+(deftest merge-registry-legacy-weight-explicit-zero-preserved-from-dst
+  (testing "explicit weight 0 in dst means legacy should stay canonical (do not bump to default)"
+    (let [dst-cur (with-meta (currency/new :ADP 20 0 :FIAT :ISO-4217 0)
+                             {::currency/missing-fields #{}})
+          dst     (-> (registry/new-registry)
+                      (currency/register dst-cur [:AD] {:en {:name "Andorran peseta"}}))
+          src     (-> (registry/new-registry)
+                      (currency/register (currency/new :iso-4217-legacy/ADP 20 0 :FIAT)))
+          preserve [:domain :kind ::importer/localized ::importer/countries]
+          merged  (importer/merge-registry dst src false preserve true)
+          adp     (get (:cur-id->cur merged) :iso-4217-legacy/ADP)]
+      (is (some? adp))
+      (is (= 0 (:weight adp)))
+      (is (= #{} (get (meta adp) ::currency/missing-fields))))))
+
+(deftest merge-registry-legacy-weight-explicit-zero-preserved-from-src
+  (testing "explicit weight 0 in src means legacy should stay canonical (do not bump to default)"
+    (let [src-cur (with-meta (currency/new :iso-4217-legacy/AAA 999 2 :FIAT)
+                             {::currency/missing-fields #{}})
+          src     (-> (registry/new-registry)
+                      (currency/register src-cur))
+          merged  (importer/merge-registry (registry/new-registry) src)
+          aaa     (get (:cur-id->cur merged) :iso-4217-legacy/AAA)]
+      (is (some? aaa))
+      (is (= :ISO-4217-LEGACY (:domain aaa)))
+      (is (= 0 (:weight aaa)))
+      (is (= #{} (get (meta aaa) ::currency/missing-fields))))))
+
 (deftest merge-registry-merges-extra-hierarchy-keys
   (testing "merges hierarchy values for any keys present in :hierarchies (record may grow)"
     (let [dst (-> (registry/new-registry)

@@ -2110,14 +2110,24 @@
 ;; Parsing and structuring helpers.
 ;;
 
+(def ^{:tag clojure.lang.PersistentHashSet :const true :private true :added "2.0.0"}
+  currency-attr-keys
+  "Currency record keys that may be present in a config map (excluding :id)."
+  #{:numeric :kind :scale :domain :weight})
+
 (defn prep-currency
   "Prepares currency attributes which may come from an external data source. Returns a
   currency."
   {:tag Currency :added "1.0.0" :private true}
-  (^Currency [[id {:keys [numeric kind scale domain weight]}]]
-   (prep-currency id numeric kind scale domain weight))
-  (^Currency [id {:keys [numeric kind scale domain weight]}]
-   (prep-currency id numeric kind scale domain weight))
+  (^Currency [[id attrs]]
+   (prep-currency id attrs))
+  (^Currency [id {:keys [numeric kind scale domain weight] :as attrs}]
+   (let [missing (reduce (fn [s k] (if (contains? attrs k) s (conj s k)))
+                         #{}
+                         currency-attr-keys)
+         c       (prep-currency id numeric kind scale domain weight)]
+     (when (some? c)
+       (with-meta c (assoc (or (meta c) {}) ::missing-fields missing)))))
   (^Currency [id numeric kind scale]
    (prep-currency id numeric kind scale nil 0))
   (^Currency [id numeric kind scale domain weight]
