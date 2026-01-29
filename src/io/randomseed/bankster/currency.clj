@@ -2864,6 +2864,27 @@
   (^Boolean [c] (kind-of? :EXPERIMENTAL c))
   (^Boolean [c ^Registry registry] (kind-of? :EXPERIMENTAL c registry)))
 
+(defn null?
+  "Returns `true` if the given currency is a kind of `:NULL`. Registry argument
+  is ignored."
+  {:tag Boolean :added "2.0.0"}
+  (^Boolean [c] (kind-of? :NULL c))
+  (^Boolean [c ^Registry registry] (kind-of? :NULL c registry)))
+
+(defn none?
+  "Returns `true` if the given currency does not exist, or there is no currency (value
+  is `nil`, `false`, an empty collection), or it is a pseudo-currency with its kind
+  set to `:NULL`."
+  {:tag Boolean :added "2.0.0"}
+  (^Boolean [c]
+   (none? c nil))
+  (^Boolean [c ^Registry registry]
+   (or (not c)
+       (and (seqable? c) (empty? c))
+       (null? c registry)
+       (and (not  (instance? Currency c))
+            (nil? (resolve c registry))))))
+
 ;;
 ;; Localized properties.
 ;;
