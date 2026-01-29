@@ -28,6 +28,17 @@
       (is (isa? (:domain hs) :ISO-4217-LEGACY :ISO-4217))
       (is (isa? (:kind hs)   :COMBANK         :FIAT))))
 
+  (testing "hierarchies can include custom axes (additional keys)"
+    (let [r (registry/new {} {} {} {} {} {} {}
+                          {:domain {:ISO-4217-LEGACY :ISO-4217}
+                           :kind   {:COMBANK :FIAT}
+                           :traits {:stablecoin :stable
+                                    :fiat-backed :stable}}
+                          "test")
+          hs (:hierarchies r)]
+      (is (isa? (:traits hs) :stablecoin :stable))
+      (is (isa? (:traits hs) :fiat-backed :stable))))
+
   (testing "parent-map supports multiple parents via set/vector values"
     (let [r (registry/new {} {} {} {} {} {} {}
                           {:domain {:ISO-4217-LEGACY #{:ISO-4217 :MONEY}

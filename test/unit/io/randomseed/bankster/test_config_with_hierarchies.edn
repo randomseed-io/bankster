@@ -1,0 +1,8 @@
+{:version "test"
+ :currencies {}
+ :countries {}
+ :localized {}
+ :hierarchies {:domain {:ISO-4217-LEGACY :ISO-4217}
+               :kind   {:child :parent}
+               ;; Additional axes are allowed (either as record fields or in extmap).
+               :traits {:stable [:asset :fiat]}}}

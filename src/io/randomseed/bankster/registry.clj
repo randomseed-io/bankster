@@ -32,7 +32,12 @@
 (defn- h-r
   {:tag CurrencyHierarchies :added "2.0.0"}
   ^CurrencyHierarchies []
-  (CurrencyHierarchies. (make-hierarchy) (make-hierarchy)))
+  (let [h (bankster/map->CurrencyHierarchies {})]
+    ;; Initialize all declared hierarchy axes (record fields) with empty hierarchies.
+    (reduce (fn [^CurrencyHierarchies h k]
+              (assoc h k (make-hierarchy)))
+            h
+            (keys h))))
 
 (defn- hierarchy-map?
   "Returns `true` if `x` looks like a hierarchy map produced by `make-hierarchy`."
@@ -93,23 +98,24 @@
 (defn- ->currency-hierarchies
   {:tag CurrencyHierarchies :added "2.0.0" :private true}
   [spec]
-  (cond
-    (nil? spec)
-    (h-r)
-
-    (instance? CurrencyHierarchies spec)
-    (CurrencyHierarchies. (->hierarchy (.domain ^CurrencyHierarchies spec) :domain)
-                          (->hierarchy (.kind   ^CurrencyHierarchies spec) :kind))
-
-    (map? spec)
-    (CurrencyHierarchies. (->hierarchy (clojure.core/get spec :domain) :domain)
-                          (->hierarchy (clojure.core/get spec :kind)   :kind))
-
-    :else
-    (throw
-     (ex-info
-      "Invalid currency hierarchies specification."
-      {:value spec}))))
+  (let [m (cond
+            (nil? spec) {}
+            (instance? CurrencyHierarchies spec) (into {} spec)
+            (map? spec) spec
+            :else
+            (throw
+             (ex-info
+              "Invalid currency hierarchies specification."
+              {:value spec})))
+        h (h-r)
+        h (assoc h
+                 :domain (->hierarchy (clojure.core/get m :domain) :domain)
+                 :kind   (->hierarchy (clojure.core/get m :kind)   :kind))]
+    ;; Any additional keys are treated as separate hierarchy axes.
+    (reduce (fn [^CurrencyHierarchies h [k v]]
+              (assoc h k (->hierarchy v k)))
+            h
+            (dissoc m :domain :kind))))
 
 ;;
 ;; Registry version generator.
