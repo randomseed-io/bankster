@@ -31,7 +31,12 @@
 
 (defmacro map=
   [a b]
-  `(= (into {} ~a) ~b))
+  `(let [v# ~a
+         m# (into {} v#)
+         m# (if (instance? Currency v#)
+              (assoc m# :weight (c/weight v#))
+              m#)]
+     (= m# ~b)))
 
 (defn- bd-sum
   "Sum of Money amounts as BigDecimal."

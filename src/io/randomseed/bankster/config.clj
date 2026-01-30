@@ -70,6 +70,11 @@
   {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
   ^clojure.lang.PersistentHashMap [cfg] (get cfg :traits {}))
 
+(defn weights
+  "Returns currency weights map of the given configuration map."
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
+  ^clojure.lang.PersistentHashMap [cfg] (get cfg :weights {}))
+
 (defn propagate-keys
   "Returns a collection of currency-map keys that should be propagated into Currency
   records as extension fields when loading the configuration."
@@ -127,7 +132,8 @@
   Supported inline keys under each currency entry in `:currencies`:
   - `:countries`  seqable of country IDs (expanded into the top-level `:countries` map),
   - `:localized`  map of localized properties (deep-merged into top-level `:localized`),
-  - `:traits`     seqable of traits (merged into top-level `:traits`).
+  - `:traits`     seqable of traits (merged into top-level `:traits`),
+  - `:weight`     a scalar weight value (overrides entry in top-level `:weights`).
 
   The currency entry itself is left intact (inline keys are not removed)."
   {:tag clojure.lang.IPersistentMap :added "2.0.0" :private true}
@@ -137,14 +143,17 @@
       cfg
       (let [cfg (update cfg :countries #(or % {}))
             cfg (update cfg :localized #(or % {}))
-            cfg (update cfg :traits #(or % {}))]
+            cfg (update cfg :traits    #(or % {}))
+            cfg (update cfg :weights   #(or % {}))]
         (reduce (fn [cfg [cid attrs]]
                   (let [cid       (keyword cid)
                         attrs     (or attrs {})
                         countries (when-some [xs (seqable-coll (clojure.core/get attrs :countries))]
                                     (seq (remove nil? xs)))
                         localized (clojure.core/get attrs :localized)
-                        traits    (seqable-coll (clojure.core/get attrs :traits))]
+                        traits    (seqable-coll (clojure.core/get attrs :traits))
+                        weight    (or (clojure.core/get attrs :weight)
+                                      (clojure.core/get attrs :we))]
                     (cond-> cfg
                       (seq countries)
                       (update :countries
@@ -158,6 +167,9 @@
                       (update-in [:localized cid] merge-localized-entry localized)
 
                       (seq traits)
-                      (update-in [:traits cid] merge-traits-values traits))))
+                      (update-in [:traits cid] merge-traits-values traits)
+
+                      (some? weight)
+                      (assoc-in [:weights cid] weight))))
                 cfg
                 cur-id->attrs)))))

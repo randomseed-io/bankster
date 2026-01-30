@@ -21,6 +21,7 @@
 
   (testing "hierarchies can be passed as a parent-map in a map spec"
     (let [r (registry/new {} {} {} {} {} {} {} {}
+                          {}
                           {:domain {:ISO-4217-LEGACY :ISO-4217}
                            :kind   {:COMBANK :FIAT}}
                           "test")
@@ -30,6 +31,7 @@
 
   (testing "hierarchies can include custom axes (additional keys)"
     (let [r (registry/new {} {} {} {} {} {} {} {}
+                          {}
                           {:domain {:ISO-4217-LEGACY :ISO-4217}
                            :kind   {:COMBANK :FIAT}
                            :traits {:stablecoin :stable
@@ -41,6 +43,7 @@
 
   (testing "parent-map supports multiple parents via set/vector values"
     (let [r (registry/new {} {} {} {} {} {} {} {}
+                          {}
                           {:domain {:ISO-4217-LEGACY #{:ISO-4217 :MONEY}
                                     :ISO-4217-LEGACY2 [:ISO-4217 :MONEY]}
                            :kind   {:COMBANK #{:FIAT :FUNDS}}}
@@ -55,6 +58,7 @@
 
   (testing "hierarchies can be passed as a record with parent-maps"
     (let [r (registry/new {} {} {} {} {} {} {} {}
+                          {}
                           (bankster/->CurrencyHierarchies {:ISO-4217-LEGACY :ISO-4217} nil nil)
                           "test")
           hs (:hierarchies r)]
@@ -64,6 +68,7 @@
   (testing "hierarchies can be passed as already constructed hierarchy maps"
     (let [dom (derive (make-hierarchy) :ISO-4217-LEGACY :ISO-4217)
           r   (registry/new {} {} {} {} {} {} {} {}
+                            {}
                             {:domain dom}
                             "test")
           hs  (:hierarchies r)]

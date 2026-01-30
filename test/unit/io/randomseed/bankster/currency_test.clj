@@ -27,7 +27,12 @@
 
 (defmacro map=
   [a b]
-  `(= (into {} ~a) ~b))
+  `(let [v# ~a
+         m# (into {} v#)
+         m# (if (instance? io.randomseed.bankster.Currency v#)
+              (assoc m# :weight (c/weight v#))
+              m#)]
+     (= m# ~b)))
 
 (deftest new-currency
   (testing "when it returns nil for nil or empty map"
@@ -74,6 +79,15 @@
     (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :scale c/auto-scaled :kind :iso/fiat}) {:id :EUR :domain nil :kind :iso/fiat :numeric -1 :scale -1 :weight 0}))
     (is (map= (c/new {:id :EUR :numeric 1000 :scale c/auto-scaled :kind :iso/fiat}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 1000 :scale -1 :weight 0}))
     (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :scale 2 :kind :iso/fiat}) {:id :EUR :domain nil :kind :iso/fiat :numeric -1 :scale 2 :weight 0}))))
+
+(deftest currency-equality-ignores-weight
+  (testing "core = / hash do not include weight"
+    (let [a (c/new :X 10 2 :iso/fiat :ISO-4217 0)
+          b (c/new :X 10 2 :iso/fiat :ISO-4217 7)]
+      (is (= 0 (c/weight a)))
+      (is (= 7 (c/weight b)))
+      (is (= a b))
+      (is (= (hash a) (hash b))))))
 
 (deftest currency-tagged-literal
   (testing "when it returns nil for nil or empty map"

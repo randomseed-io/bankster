@@ -128,7 +128,7 @@
       (is (nil? (get (:cur-id->cur merged) :ADP)))
       (is (some? adp))
       (is (= :ISO-4217-LEGACY (:domain adp)))
-      (is (= (int importer/default-legacy-weight) (:weight adp)))
+      (is (= (int importer/default-legacy-weight) (currency/weight adp)))
       (is (= #{:AD} (currency/countries :iso-4217-legacy/ADP merged)))
       (is (= "Andorran peseta"
              (currency/localized-property :name :iso-4217-legacy/ADP :en merged))))))
@@ -145,7 +145,7 @@
           merged (importer/merge-registry dst src false preserve true)
           adp    (get (:cur-id->cur merged) :iso-4217-legacy/ADP)]
       (is (some? adp))
-      (is (= 7 (:weight adp))))))
+      (is (= 7 (currency/weight adp))))))
 
 (deftest merge-registry-legacy-weight-defaults-for-new-currency
   (testing "a newly merged legacy currency gets the default high weight when its weight is 0"
@@ -156,7 +156,7 @@
           aaa    (get (:cur-id->cur merged) :iso-4217-legacy/AAA)]
       (is (some? aaa))
       (is (= :ISO-4217-LEGACY (:domain aaa)))
-      (is (= (int importer/default-legacy-weight) (:weight aaa))))))
+      (is (= (int importer/default-legacy-weight) (currency/weight aaa))))))
 
 (deftest merge-registry-legacy-weight-explicit-zero-preserved-from-dst
   (testing "explicit weight 0 in dst means legacy should stay canonical (do not bump to default)"
@@ -170,13 +170,12 @@
           merged  (importer/merge-registry dst src false preserve true)
           adp     (get (:cur-id->cur merged) :iso-4217-legacy/ADP)]
       (is (some? adp))
-      (is (= 0 (:weight adp)))
-      (is (= #{} (get (meta adp) ::currency/missing-fields))))))
+      (is (= 0 (currency/weight adp)))
+      (is (= true (contains? (:cur-id->weight merged) :iso-4217-legacy/ADP))))))
 
 (deftest merge-registry-legacy-weight-explicit-zero-preserved-from-src
   (testing "explicit weight 0 in src means legacy should stay canonical (do not bump to default)"
-    (let [src-cur (with-meta (currency/new :iso-4217-legacy/AAA 999 2 :FIAT)
-                             {::currency/missing-fields #{}})
+    (let [src-cur (currency/with-weight (currency/new :iso-4217-legacy/AAA 999 2 :FIAT) 0)
           src     (-> (registry/new-registry)
                       (currency/register src-cur))
           merged  (importer/merge-registry (registry/new-registry) src)
@@ -231,6 +230,18 @@
     (let [r (currency/config->registry "io/randomseed/bankster/test_config_propagate_keys.edn")
           m (importer/registry->map r)]
       (is (= [:comment] (:propagate-keys m))))))
+
+(deftest registry->map-exports-explicit-weight-zero
+  (testing "registry->map exports :weight 0 only when it was explicitly present in source"
+    (let [cur-exp0  (currency/with-weight (currency/new :AAA 1 2 :FIAT :ISO-4217 0) 0)
+          cur-impl0 (currency/new :BBB 2 2 :FIAT :ISO-4217 0)
+          r   (-> (registry/new-registry)
+                  (currency/register cur-exp0)
+                  (currency/register cur-impl0))
+          m   (importer/registry->map r)
+          ws  (:weights m)]
+      (is (= 0 (get ws :AAA)))
+      (is (= false (contains? ws :BBB))))))
 
 (deftest map->currency-oriented-embeds-properties-and-keeps-orphans
   (testing "map->currency-oriented embeds per-currency properties and keeps only orphaned top-level entries"

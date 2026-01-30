@@ -56,6 +56,15 @@
   and suppress inference)."
   ::nil)
 
+(def ^{:tag clojure.lang.Keyword :const true :private true :added "3.0.0"}
+  ^clojure.lang.Keyword weight-meta-key
+  "Metadata key used to store currency weight.
+
+  Weight is treated as non-inherent currency attribute: it influences conflict
+  resolution (canonical selection), but it must not participate in `=` / `hash`
+  semantics of `Currency`."
+  ::weight)
+
 ;;
 ;; Default currency.
 ;;
@@ -117,6 +126,33 @@
   ^Boolean [^long nr]
   (and (not (== (int nr) no-numeric-id))
        (pos? nr)))
+
+(defn- currency-weight
+  "Returns currency weight stored in metadata, defaulting to 0.
+
+  This is a low-level helper for hot paths (sorting/indexing). For public API use
+  `weight` which also supports non-`Currency` inputs."
+  {:tag long :private true :added "3.0.0"}
+  ^long [^Currency c]
+  (let [m (meta c)]
+    (unchecked-long
+     (if (and (some? m) (contains? m weight-meta-key))
+       (long (clojure.core/get m weight-meta-key))
+       0))))
+
+(defn- with-weight*
+  "Attaches a weight hint to a currency using metadata.
+
+  Weight of 0 is treated as default and is not stored."
+  {:tag Currency :private true :added "3.0.0"}
+  ^Currency [^Currency c weight]
+  (let [w (unchecked-int (or weight 0))
+        m (meta c)]
+    (if (zero? w)
+      (if (and (some? m) (contains? m weight-meta-key))
+        (with-meta c (dissoc m weight-meta-key))
+        c)
+      (with-meta c (assoc (or m {}) weight-meta-key w)))))
 
 (defn iso-strict-currency?
   {:tag Boolean :private true :added "2.0.0"}
@@ -279,12 +315,13 @@
          (throw (ex-info
                  "Currency domain should reflect its namespace (upper-cased) if a namespace is set."
                  {:id kid :domain domain :namespace (namespace kid)})))
-       (Currency. kid
-                  (unchecked-long numeric-id)
-                  (unchecked-int  scale)
-                  (keyword        kind)
-                  (keyword        domain)
-                  (unchecked-int  weight))))))
+       (with-weight*
+         (Currency. kid
+                    (unchecked-long numeric-id)
+                    (unchecked-int  scale)
+                    (keyword        kind)
+                    (keyword        domain))
+         weight)))))
 
 (defn map->new
   "Creates a new currency record from a map."
@@ -883,7 +920,7 @@
                  (or (not code?) (identical? code-val       (to-code  registered-currency)))
                  (or (not nr?)   (== (long nr-val)    (long (.numeric registered-currency))))
                  (or (not sc?)   (== (int  sc-val)    (int  (.scale   registered-currency))))
-                 (or (not we?)   (== (int  we-val)    (int  (.weight  registered-currency))))
+                 (or (not we?)   (== (int  we-val)    (currency-weight registered-currency)))
                  (or (not do?)   (identical? do-val         (.domain  registered-currency)))
                  (or (not ki?)   (identical? ki-val         (.kind    registered-currency))))
             registered-currency)))))
@@ -967,7 +1004,7 @@
      :sc (.scale   ^Currency c)
      :do (.domain  ^Currency c)
      :ki (.kind    ^Currency c)
-     :we (.weight  ^Currency c)})
+     :we (currency-weight c)})
 
   (definitive?
     (^Boolean [c]
@@ -2054,21 +2091,37 @@
   currencies having conflicting currency codes). Returned type should be int but may
   cast to long."
   {:tag 'int :added "1.0.2"}
-  ([c] (when-some [c (unit c)] (int (.weight ^Currency c))))
+  ([c] (when-some [^Currency c (unit c)] (currency-weight c)))
   ([c ^Registry registry]
    (when-some [^Currency c (if (instance? Currency c)
                              c
                              (unit c (unit-registry registry)))]
-     (int (.weight ^Currency c))))
+     (currency-weight c)))
   ([c _locale ^Registry registry]
    (weight c registry)))
+
+(defn with-weight
+  "Returns a currency with `weight` set.
+
+  Weight is stored in currency metadata and does not participate in `=` / `hash`
+  semantics of `Currency`.
+
+  NOTE: Unlike currency constructors (which treat weight as an optional hint),
+  `with-weight` is an explicit setter: it records the weight even when it is 0."
+  {:tag Currency :added "3.0.0"}
+  ^Currency [^Currency c weight]
+  (when (some? c)
+    (let [w (unchecked-int (or weight 0))
+          m (meta c)]
+      (with-meta c (assoc (or m {}) weight-meta-key w)))))
 
 (defn info
   "Returns a map describing the given currency, including registry-associated
   properties when available.
 
-  Base fields come from the Monetary `to-map` representation. When a registry can be
-  consulted (default or explicitly passed), this function also adds:
+  Base fields come from the currency's map representation (via `into {}`) and include
+  any extension fields. When a registry can be consulted (default or explicitly
+  passed), this function also adds:
 
   - `:countries` - a set of associated country IDs,
   - `:localized` - a localized properties map (locale keywords, including `:*`),
@@ -2098,6 +2151,7 @@
                           (contains? m0 :do) (assoc :domain  (get m0 :do))
                           (contains? m0 :ki) (assoc :kind    (get m0 :ki))
                           true               (dissoc :sc :nr :do :ki :we))
+                   m    (assoc m :weight (currency-weight cur))
                    trts0 (get m :traits)
                    m     (dissoc m :traits)
                    trts0 (when (some? trts0)
@@ -2342,6 +2396,27 @@
                   (vector (keyword cid) ts))))
         p))
 
+(defn prep-weights
+  "Prepares a currency weights map (currency ID -> int weight).
+
+  Keeps explicit 0 entries (presence in the map is meaningful)."
+  {:tag clojure.lang.IPersistentMap :added "3.0.0" :private true}
+  [^clojure.lang.IPersistentMap p]
+  (when (and (map? p) (pos? (count p)))
+    (into {}
+          (keep (fn [[cid w0]]
+                  (when (some? cid)
+                    (let [cid (keyword cid)
+                          w   (normalize-weight-hint w0)]
+                      (when (identical? w invalid-map-hint)
+                        (throw
+                         (ex-info
+                          "Invalid currency weight in EDN configuration."
+                          {:currency-id cid
+                           :weight      w0})))
+                      (vector cid (int w))))))
+          p)))
+
 (defn weighted-currencies
   "Constructor for weighted currency buckets: smallest weight wins.
   Total order: (weight asc) then (id asc)."
@@ -2349,11 +2424,16 @@
   ([]
    (sorted-set-by
     (fn [^Currency a ^Currency b]
-      (let [wa (int (.weight a))
-            wb (int (.weight b))]
-        (if (== wa wb)
-          (compare (.id a) (.id b))
-          (compare wa wb))))))
+      ;; Comparator must be consistent with `Currency` equality which ignores weight.
+      (let [ida (.id a)
+            idb (.id b)]
+        (if (identical? ida idb)
+          0
+          (let [wa (currency-weight a)
+                wb (currency-weight b)]
+            (if (== wa wb)
+              (compare ida idb)
+              (compare wa wb))))))))
   (^clojure.lang.PersistentTreeSet [^clojure.lang.PersistentTreeSet s]
    (or s (weighted-currencies))))
 
@@ -2463,6 +2543,7 @@
                                  (map/dissoc-in [:cur-id->cur       cid])
                                  (map/dissoc-in [:cur-id->localized cid])
                                  (map/dissoc-in [:cur-id->ctr-ids   cid])
+                                 (map/dissoc-in [:cur-id->weight    cid])
                                  (core-update   :cur-code->curs remove-weighted-currency cid))]
 
       ;; remove country -> currency entries
@@ -2533,11 +2614,11 @@
 
 (defn add-weighted-code
   "Associates the existing currency code with the currency object in the given registry
-  using a value of the .weight field. The given currency-id may be expressed with any
-  object that can be used to get the currency from a registry (internally the unit
-  function is used). Therefore, passing the currency object having a different weight
-  will not cause the weight to be updated since it will be used for identification
-  only.
+  using the currency weight attribute. The given currency-id may be expressed with
+  any object that can be used to get the currency from a registry (internally the
+  unit function is used). Therefore, passing the currency object having a different
+  weight will not cause the weight to be updated since it will be used for
+  identification only.
 
   Currency must exist in the cur-id->cur database of the registry. This function will
   add an association to the cur-code->curs database. If both, the weight and code are
@@ -2600,17 +2681,36 @@
      (register registry currency country-ids localized-or-update false)))
   (^Registry [^Registry registry currency country-ids localized-properties ^Boolean update?]
    (when (some? registry)
-     (let [^Currency c (if (instance? Currency currency) currency (of-id currency registry))
-           cid         (.id ^Currency c)
-           cid-to-cur  (registry/currency-id->currency* registry)]
+     (let [^Currency c0  (if (instance? Currency currency) currency (of-id currency registry))
+           cid           (.id ^Currency c0)
+           cid-to-cur    (registry/currency-id->currency* registry)
+           ^Currency old (get cid-to-cur cid)
+           id->weight    (registry/currency-id->weight* registry)
+           old-w?        (contains? id->weight cid)
+           old-w         (int (or (get id->weight cid) 0))
+           meta0         (meta c0)
+           w-hint?       (boolean (and (some? meta0) (contains? meta0 weight-meta-key)))
+           w-hint        (int (currency-weight c0))
+           ;; Weight is a registry attribute (base map). Preserve old weight on update
+           ;; unless an explicit (non-zero) hint is provided on the new currency.
+           w-final       (if (and update? (not w-hint?) old-w?)
+                           old-w
+                           w-hint)
+           store-w?      (boolean (or w-hint?
+                                      (and update? (not w-hint?) old-w?)
+                                      (not (zero? w-final))))
+           ^Currency c   (with-weight* c0 w-final)]
        (when-not update?
-         (when-some [^Currency p (get cid-to-cur cid)]
+         (when-some [^Currency p old]
            (throw (ex-info
                    (str "Currency " cid " already exists in a registry.")
                    {:currency c, :existing-currency p}))))
        (let [^Registry registry (unregister registry c)
              cid-to-cur         (registry/currency-id->currency* registry)
              ^Registry registry (assoc registry :cur-id->cur (assoc cid-to-cur cid c))
+             ^Registry registry (if store-w?
+                                 (assoc-in registry [:cur-id->weight cid] w-final)
+                                 (map/dissoc-in registry [:cur-id->weight cid]))
              ^Registry registry (register-numeric registry c)]
          (-> registry
              (add-weighted-code        currency)
@@ -2743,15 +2843,20 @@
              ctrs (prep-cur->ctr            (config/countries  cfg))
              lpro (config/localized                            cfg)
              trts (prep-all-traits          (config/traits     cfg))
+             wts  (or (prep-weights         (config/weights    cfg)) {})
              vers (str                      (config/version    cfg))
              regi (if (nil? vers) regi (assoc regi :version vers))
            ^Registry regi
            (reduce (fn ^Registry [^Registry r ^Currency c]
                      (let [cid (.id ^Currency c)]
-                       (register r c (get ctrs cid) (get lpro cid) false)))
+                       (if (contains? wts cid)
+                         (register r (with-weight c (get wts cid)) (get ctrs cid) (get lpro cid) false)
+                         (register r c                         (get ctrs cid) (get lpro cid) false))))
                    regi
                    curs)]
-       (assoc regi :cur-id->traits trts))
+       (assoc regi
+              :cur-id->traits trts
+              :cur-id->weight wts))
      regi)))
 
 ;;
@@ -3744,7 +3849,7 @@
   [c w]
   (let [sc  (int  (.scale   ^Currency c))
         nr  (long (.numeric ^Currency c))
-        wei (int  (.weight  ^Currency c))
+        wei (currency-weight ^Currency c)
         ki  (.kind          ^Currency c)
         dom (.domain        ^Currency c)]
     (print-simple
