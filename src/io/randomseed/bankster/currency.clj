@@ -974,17 +974,17 @@
 
   (resolve
     (^Currency [c]
-     (resolve ^Currency c nil))
+     (resolve c (registry/get)))
     (^Currency [c ^Registry registry]
-     (let [^Registry registry (or registry (registry/get))]
+     (let [^Registry registry (registry/get registry)]
        (or (compare-currency-ids (registry/currency-id->currency* (.id ^Currency c) registry) c)
            (some #(compare-currency-ids ^Currency % c) (resolve-all (.numeric ^Currency c) registry))))))
 
   (resolve-all
     (^clojure.lang.IPersistentSet [c]
-     (resolve-all c nil))
+     (resolve-all c (registry/get)))
     (^clojure.lang.IPersistentSet [c ^Registry registry]
-     (let [^Registry registry (or registry (registry/get))
+     (let [^Registry registry (registry/get registry)
            by-id              (registry/currency-id->currency*   (.id      ^Currency c) registry)
            by-num             (registry/currency-nr->currencies* (.numeric ^Currency c) registry)
            ^Currency fhit     (when by-id  (compare-currency-ids by-id c))
@@ -1029,7 +1029,7 @@
 
   (present?
     (^Boolean [^Currency currency]
-     (boolean (resolve currency nil)))
+     (boolean (resolve currency (registry/get))))
     (^Boolean [^Currency currency ^Registry registry]
      (boolean (resolve currency registry))))
 
@@ -1076,16 +1076,16 @@
 
   (resolve
     (^Currency [c]
-     (resolve ^java.util.Currency c nil))
+     (resolve ^java.util.Currency c (registry/get)))
     (^Currency [c ^Registry registry]
      (let [^Registry registry (or registry (registry/get))]
        (resolve ^Currency (to-currency ^java.util.Currency c) ^Registry registry))))
 
   (resolve-all
     (^clojure.lang.IPersistentSet [c]
-     (resolve-all c nil))
+     (resolve-all c (registry/get)))
     (^clojure.lang.IPersistentSet [c ^Registry registry]
-     (let [^Registry registry (or registry (registry/get))]
+     (let [^Registry registry (registry/get registry)]
        (resolve-all ^Currency (to-currency ^java.util.Currency c) ^Registry registry))))
 
   (of-id
@@ -1171,7 +1171,7 @@
     (^Currency [num]
      (resolve num nil))
     (^Currency [num ^Registry registry]
-     (let [^Registry registry (or registry (registry/get))
+     (let [^Registry registry (registry/get registry)
            nr                 (long num)]
        (or (registry/currency-nr->currency* nr registry)
            (when-some [curs (not-empty (registry/currency-nr->currencies* nr registry))]
@@ -1184,9 +1184,9 @@
 
   (resolve-all
     (^clojure.lang.IPersistentSet [num]
-     (resolve-all num nil))
+     (resolve-all num (registry/get)))
     (^clojure.lang.IPersistentSet [num ^Registry registry]
-     (let [^Registry registry (or registry (registry/get))
+     (let [^Registry registry (registry/get registry)
            nr                 (long num)]
        (or (not-empty (registry/currency-nr->currencies* nr registry))
            (some-> (registry/currency-nr->currency* nr registry) hash-set)))))
@@ -1293,9 +1293,9 @@
 
   (resolve
     (^Currency [id]
-     (resolve id nil))
+     (resolve id (registry/get)))
     (^Currency [id ^Registry registry]
-     (let [^Registry registry (or registry (registry/get))
+     (let [^Registry registry (registry/get registry)
            ^String nspace     (.getNamespace ^clojure.lang.Keyword id)]
        (if (nil? nspace)
          (let [ids (lookup-id-keys id)]
@@ -1313,9 +1313,9 @@
 
   (resolve-all
     (^clojure.lang.IPersistentSet [id]
-     (resolve-all id nil))
+     (resolve-all id (registry/get)))
     (^clojure.lang.IPersistentSet [id ^Registry registry]
-     (let [^Registry registry (or registry (registry/get))
+     (let [^Registry registry (registry/get registry)
            ^String nspace     (.getNamespace ^clojure.lang.Keyword id)]
        (if (nil? nspace)
          (let [ids (lookup-id-keys id)]
@@ -1456,9 +1456,9 @@
 
   (resolve
     (^Currency [id]
-     (resolve id nil))
+     (resolve id (registry/get)))
     (^Currency [id ^Registry registry]
-     (let [^Registry registry (or registry (registry/get))]
+     (let [^Registry registry (registry/get registry)]
        (when (pos? (unchecked-int (.length ^String id)))
          (let [[^String ns ^String nm] (bu/split-on-first-slash id)]
            (if (nil? nm)
@@ -1477,9 +1477,9 @@
 
   (resolve-all
     (^clojure.lang.IPersistentSet [id]
-     (resolve-all id nil))
+     (resolve-all id (registry/get)))
     (^clojure.lang.IPersistentSet [id ^Registry registry]
-     (let [^Registry registry (or registry (registry/get))]
+     (let [^Registry registry (registry/get registry)]
        (when (pos? (unchecked-int (.length ^String id)))
          (let [[^String ns ^String nm] (bu/split-on-first-slash id)]
            (if (nil? nm)
@@ -1561,13 +1561,13 @@
 
   (resolve
     (^Currency [id]
-     (resolve (keyword id) nil))
+     (resolve (keyword id) (registry/get)))
     (^Currency [id ^Registry registry]
      (resolve (keyword id) registry)))
 
   (resolve-all
     (^clojure.lang.IPersistentSet [id]
-     (resolve-all (keyword id) nil))
+     (resolve-all (keyword id) (registry/get)))
     (^clojure.lang.IPersistentSet [id ^Registry registry]
      (resolve-all (keyword id) registry)))
 
@@ -1654,15 +1654,15 @@
 
   (resolve
     (^Currency [m]
-     (resolve m nil))
+     (resolve m (registry/get)))
     (^Currency [m ^Registry registry]
      (some-> (resolve-all m registry) first)))
 
   (resolve-all
     (^clojure.lang.IPersistentSet [m]
-     (resolve-all m nil))
+     (resolve-all m (registry/get)))
     (^clojure.lang.IPersistentSet [m ^Registry registry]
-     (let [^Registry registry (or registry (registry/get))
+     (let [^Registry registry (registry/get registry)
            id                 (when (contains? m :id)      (to-id   (get m :id)))
            code               (when (contains? m :code)    (to-code (get m :code)))
            nr-raw             (cond (contains? m :nr)      (get m :nr)
@@ -1815,8 +1815,8 @@
    `(let [c# ~c]
       (cond (instance? Currency c#) c#
             (map? c#)               (to-currency c#)
-            (definitive? c#)        (or (to-currency c#) (resolve c# nil))
-            :else                   (resolve c# nil))))
+            (definitive? c#)        (or (to-currency c#) (resolve c# (registry/get)))
+            :else                   (resolve c# (registry/get)))))
   ([c registry]
    `(let [c#        ~c
           registry# ^io.randomseed.bankster.Registry ~registry]
@@ -1842,14 +1842,14 @@
    (cond
      (instance? Currency c) c
      (map? c)               (to-currency c)
-     (definitive? c)        (or (to-currency c) (resolve c nil))
-     :else                  (resolve c nil)))
+     (definitive? c)        (or (to-currency c) (resolve c (registry/get)))
+     :else                  (resolve c (registry/get))))
   ([c ^Registry registry]
    (cond
-     (instance? Currency c)   c
-     (map? c)                 (to-currency c)
-     (definitive? c)          (or (to-currency c) (resolve c registry))
-     :else                    (resolve c registry))))
+     (instance? Currency c) c
+     (map? c)               (to-currency c)
+     (definitive? c)        (or (to-currency c) (resolve c registry))
+     :else                  (resolve c registry))))
 
 (defmacro with-attempt
   "Evaluates `c` and tries to coerce it to a `Currency`.
@@ -2752,7 +2752,7 @@
      (with-attempt c registry [c]
        (contains? (registry/currency-id->country-ids* registry) (.id ^Currency c)))))
   (^Boolean [c ^Registry registry]
-   (let [^Registry registry (or registry (registry/get))]
+   (let [^Registry registry (registry/get registry)]
      (with-attempt c registry [c]
        (contains? (registry/currency-id->country-ids* registry) (.id ^Currency c))))))
 
@@ -2776,8 +2776,8 @@
          (or (identical? domain d)
              (if h (isa? h d domain) (isa? d domain)))))))
   (^Boolean [^clojure.lang.Keyword domain c ^Registry registry]
-   (let [^Registry registry (or registry (registry/get))
-         h                 (some-> registry .hierarchies :domain)]
+   (let [^Registry registry (registry/get registry)
+         h                  (some-> registry .hierarchies :domain)]
      (with-attempt c registry [c]
        (let [d (.domain ^Currency c)]
          (or (identical? domain d)
@@ -2875,8 +2875,8 @@
   (^Boolean [^clojure.lang.Keyword kind c]
    (kind-of? kind c (registry/get)))
   (^Boolean [^clojure.lang.Keyword kind c ^Registry registry]
-   (let [^Registry registry (or registry (registry/get))
-         h                 (some-> registry .hierarchies :kind)]
+   (let [^Registry registry (registry/get registry)
+         h                  (some-> registry .hierarchies :kind)]
      (with-attempt c registry [c]
        (let [k (.kind ^Currency c)]
          (or (identical? kind k)
