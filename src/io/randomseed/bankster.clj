@@ -7,6 +7,7 @@
     io.randomseed.bankster)
 
 ;;
+;;
 ;; Currency record.
 ;;
 

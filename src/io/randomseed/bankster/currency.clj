@@ -3739,4 +3739,5 @@
 ;; Populating registry with defaults.
 ;;
 
-(set-default-registry!)
+(when io.randomseed.bankster/*initialize-registry*
+  (set-default-registry!))

@@ -452,3 +452,15 @@
         (is (= nil (c/resolve 999 r3)))
         (is (= nil (get (registry/currency-nr->currencies* r3) 999)))
         (is (= nil (get (registry/currency-nr->currency* r3) 999)))))))
+
+(deftest currency-auto-initialization-can-be-disabled
+  (testing "binding bankster/*initialize-registry* to false prevents side-effectful registry init on ns reload"
+    (let [orig  (registry/state)
+          empty (registry/new)]
+      (try
+        (registry/set! empty)
+        (binding [bankster/*initialize-registry* false]
+          (require 'io.randomseed.bankster.currency :reload))
+        (is (identical? empty (registry/state)))
+        (finally
+          (registry/set! orig))))))
