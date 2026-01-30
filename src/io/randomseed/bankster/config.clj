@@ -70,6 +70,12 @@
   {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
   ^clojure.lang.PersistentHashMap [cfg] (get cfg :traits {}))
 
+(defn propagate-keys
+  "Returns a collection of currency-map keys that should be propagated into Currency
+  records as extension fields when loading the configuration."
+  {:tag clojure.lang.IPersistentCollection :added "2.0.0"}
+  [cfg] (get cfg :propagate-keys))
+
 (defn version
   "Returns version string of the given configuration map."
   {:tag String :added "1.0.0"}

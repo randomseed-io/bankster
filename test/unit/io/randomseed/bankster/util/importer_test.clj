@@ -238,3 +238,17 @@
         (is (= false (contains? (into {} cur) :countries)))
         (is (= false (contains? (into {} cur) :localized)))
         (is (= false (contains? (into {} cur) :traits)))))))
+
+(deftest config->registry-propagates-selected-extra-currency-keys
+  (testing ":propagate-keys controls which extra keys from currency maps are preserved on Currency"
+    (let [r (currency/config->registry "io/randomseed/bankster/test_config_propagate_keys.edn")
+          a (currency/unit :AAA r)
+          b (currency/unit :BBB r)]
+      ;; Global propagate-keys allowlist for :AAA: propagate :comment, but not :foo.
+      (is (= "A" (get (into {} a) :comment)))
+      (is (= false (contains? (into {} a) :foo)))
+      ;; Per-currency override for :BBB: propagate :foo, but not :comment.
+      (is (= 2 (get (into {} b) :foo)))
+      (is (= false (contains? (into {} b) :comment)))
+      ;; Directive key never propagates.
+      (is (= false (contains? (into {} b) :propagate-keys))))))

@@ -2139,17 +2139,62 @@
   "Currency record keys that may be present in a config map (excluding :id)."
   #{:numeric :kind :scale :domain :weight})
 
+(def ^{:tag clojure.lang.PersistentHashSet :const true :private true :added "2.0.0"}
+  currency-map-non-propagatable-keys
+  "Keys reserved by currency construction and/or config loading and not eligible for
+  propagation into a Currency extension map."
+  #{:id :code
+    :nr :numeric
+    :sc :scale
+    :ki :kind
+    :do :domain
+    :we :weight
+    :propagate-keys})
+
+(defn- prep-propagate-keys
+  "Prepares a propagate-keys value by converting it into a set of keywords.
+
+  This helper is used when loading currencies from config maps. Keys that overlap
+  with currency constructor keys (e.g. :kind, :numeric) are ignored, so that config
+  cannot accidentally corrupt Currency fields via extension merges."
+  {:tag clojure.lang.PersistentHashSet :added "2.0.0" :private true}
+  [ks]
+  (when (some? ks)
+    (let [ks (cond
+               (set? ks)        ks
+               (sequential? ks) ks
+               (and (seqable? ks) (not (string? ks)))
+               (seq ks)
+               :else
+               (list ks))
+          ks (remove nil? ks)
+          ks (into #{}
+                   (comp (map keyword)
+                         (remove currency-map-non-propagatable-keys))
+                   ks)]
+      (when (seq ks) ks))))
+
 (defn prep-currency
   "Prepares currency attributes which may come from an external data source. Returns a
   currency."
   {:tag Currency :added "1.0.0" :private true}
   (^Currency [[id attrs]]
-   (prep-currency id attrs))
-  (^Currency [id {:keys [numeric kind scale domain weight] :as attrs}]
+   (prep-currency id attrs nil))
+  (^Currency [id attrs]
+   (prep-currency id attrs nil))
+  (^Currency [id {:keys [numeric kind scale domain weight] :as attrs} propagate-keys]
    (let [missing (reduce (fn [s k] (if (contains? attrs k) s (conj s k)))
                          #{}
                          currency-attr-keys)
-         c       (prep-currency id numeric kind scale domain weight)]
+         pk-spec (if (contains? attrs :propagate-keys)
+                   (clojure.core/get attrs :propagate-keys)
+                   propagate-keys)
+         pk      (prep-propagate-keys pk-spec)
+         extra   (when (seq pk)
+                   (let [m (select-keys attrs pk)]
+                     (when (pos? (count m)) m)))
+         c       (prep-currency id numeric kind scale domain weight)
+         c       (if extra (merge c extra) c)]
      (when (some? c)
        (with-meta c (assoc (or (meta c) {}) ::missing-fields missing)))))
   (^Currency [id numeric kind scale]
@@ -2168,8 +2213,11 @@
   "Prepares a map of currency ID to currency based on a configuration map of currency
   ID to currency attributes."
   {:tag clojure.lang.IPersistentMap :added "1.0.0" :private true}
-  [^clojure.lang.IPersistentMap m]
-  (pmap prep-currency m))
+  ([^clojure.lang.IPersistentMap m]
+   (prep-currencies m nil))
+  ([^clojure.lang.IPersistentMap m propagate-keys]
+   (let [propagate-keys (prep-propagate-keys propagate-keys)]
+     (pmap (fn [[id attrs]] (prep-currency id attrs propagate-keys)) m))))
 
 (defn prep-cur->ctr
   "Prepares countries map which may come from an external data source. Expects a map of
@@ -2629,7 +2677,8 @@
            regi (if (some? hier)
                   (registry/new-registry (assoc (into {} regi) :hierarchies hier))
                   regi)
-           curs (prep-currencies          (config/currencies cfg))
+           pks  (config/propagate-keys                       cfg)
+           curs (prep-currencies          (config/currencies cfg) pks)
            ctrs (prep-cur->ctr            (config/countries  cfg))
            lpro (config/localized                            cfg)
            trts (prep-all-traits          (config/traits     cfg))

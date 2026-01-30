@@ -1,0 +1,11 @@
+{:version         "test-propagate-keys"
+ :propagate-keys  [:comment]
+ :currencies      {:AAA {:kind :iso/test
+                         :scale 2
+                         :comment "A"
+                         :foo 1}
+                   :BBB {:kind :iso/test
+                         :scale 2
+                         :comment "B"
+                         :foo 2
+                         :propagate-keys [:foo]}}}
