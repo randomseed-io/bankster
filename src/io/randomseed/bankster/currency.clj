@@ -24,6 +24,7 @@
             [io.randomseed.bankster.util     :as       bu])
 
   (:import  (io.randomseed.bankster Currency
+                                    CurrencyHierarchies
                                     Registry)
             (java.math              RoundingMode)
             (java.text              NumberFormat
@@ -1078,7 +1079,7 @@
     (^Currency [c]
      (resolve ^java.util.Currency c (registry/get)))
     (^Currency [c ^Registry registry]
-     (let [^Registry registry (or registry (registry/get))]
+     (let [^Registry registry (registry/get registry)]
        (resolve ^Currency (to-currency ^java.util.Currency c) ^Registry registry))))
 
   (resolve-all
@@ -1818,13 +1819,15 @@
             (definitive? c#)        (or (to-currency c#) (resolve c# (registry/get)))
             :else                   (resolve c# (registry/get)))))
   ([c registry]
-   `(let [c#        ~c
-          registry# ^io.randomseed.bankster.Registry ~registry]
-      (cond
-        (instance? Currency c#)    c#
-        (map? c#)                  (to-currency c#)
-        (definitive? c#)           (or (to-currency c#) (resolve c# registry#))
-        :else                      (resolve c# registry#)))))
+   (if (or (nil? registry) (identical? 'nil registry))
+     `(attempt* ~c)
+     `(let [c#        ~c
+            registry# ^io.randomseed.bankster.Registry ~registry]
+        (cond
+          (instance? Currency c#) c#
+          (map? c#)               (to-currency c#)
+          (definitive? c#)        (or (to-currency c#) (resolve c# registry#))
+          :else                   (resolve c# registry#))))))
 
 (defn attempt
   "Soft currency coercion function.
@@ -2764,13 +2767,32 @@
   (^Boolean [ns c ^Registry registry]
    (with-attempt c registry [c] (identical? ns (.domain ^Currency c)))))
 
+(defn has-domain?
+  "Returns `true` if the given currency `c` has its domain defined (when only currency
+  and optional registry is given). If `ns` is given it returns `true` if the currency
+  has its domain set to be the exact keyword given."
+  {:tag      Boolean
+   :added    "2.0.0"
+   :arglists '([c] [c ^Registry registry] [c ns] [c ns ^Registry registry])}
+  (^Boolean [c]
+   (with-attempt c nil [c] (some? (.domain ^Currency c))))
+  (^Boolean [c registry-or-ns]
+   (if (nil? registry-or-ns)
+     (has-domain? c)
+     (if (instance? Registry registry-or-ns)
+     (with-attempt c ^Registry registry-or-ns [c] (some? (.domain ^Currency c)))
+     (with-attempt c nil [c] (identical? registry-or-ns (.domain ^Currency c))))))
+  (^Boolean [c ns ^Registry registry]
+   (with-attempt c registry [c]
+     (identical? ns (.domain ^Currency c)))))
+
 (defn of-domain?
   "Checks if a domain of the given currency `c` equals to the one given as a first
   argument `domain` or if it belongs to a `domain` (checked with `clojure.core/isa?`)."
   {:tag Boolean :added "2.0.0"}
   (^Boolean [^clojure.lang.Keyword domain c]
    (let [^Registry registry (registry/get)
-         h                 (some-> registry .hierarchies :domain)]
+         h                  (some-> registry .hierarchies :domain)]
      (with-attempt c registry [c]
        (let [d (.domain ^Currency c)]
          (or (identical? domain d)
@@ -2805,15 +2827,6 @@
   {:tag Boolean :added "1.0.0"}
   (^Boolean [c] (in-domain? :CRYPTO c))
   (^Boolean [c ^Registry registry] (in-domain? :CRYPTO c registry)))
-
-(defn iso?
-  "Returns `true` if the given currency is classified as ISO because its domain is set
-  to `:ISO-4217`, regardless of other properties. It is just a helper which checks if
-  the `:domain` field of a currency equals to `:ISO-4217`. See also
-  `io.randomseed.bankster.currency/iso-strict?`."
-  {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (in-domain? :ISO-4217 c))
-  (^Boolean [c ^Registry registry] (in-domain? :ISO-4217 c registry)))
 
 (defn iso-strict?
   "Returns `true` if the given currency is an official currency which is currently in
@@ -2861,26 +2874,47 @@
   iso-legacy?)
 
 (defn has-kind?
-  "Returns `true` if the given currency has its kind defined."
-  {:tag Boolean :added "1.0.0"}
+  "Returns `true` if the given currency `c` has its kind defined (when only currency
+  and optional registry is given). If `tag` is given it returns `true` if the
+  currency has its kind set to be the exact keyword given."
+  {:tag      Boolean
+   :added    "2.0.0"
+   :arglists '([c] [c ^Registry registry] [c tag ^Registry registry])}
   (^Boolean [c]
    (with-attempt c nil [c] (some? (.kind ^Currency c))))
-  (^Boolean [c ^Registry registry]
-   (with-attempt c registry [c] (some? (.kind ^Currency c)))))
+  (^Boolean [c registry-or-tag]
+   (cond
+     (nil? registry-or-tag)
+     (has-kind? c)
 
-(defn kind-of?
+     (instance? Registry registry-or-tag)
+     (with-attempt c ^Registry registry-or-tag [c]
+       (some? (.kind ^Currency c)))
+
+     :else
+     (with-attempt c nil [c]
+       (identical? registry-or-tag (.kind ^Currency c)))))
+  (^Boolean [c tag ^Registry registry]
+   (with-attempt c registry [c]
+     (identical? tag (.kind ^Currency c)))))
+
+(defn of-kind?
   "Checks if a kind of the given currency `c` equals to the one given as a second
   argument `kind` or if it belongs to a `kind` (checked with `clojure.core/isa?`)."
   {:tag Boolean :added "1.0.0"}
   (^Boolean [^clojure.lang.Keyword kind c]
-   (kind-of? kind c (registry/get)))
+   (of-kind? kind c (registry/get)))
   (^Boolean [^clojure.lang.Keyword kind c ^Registry registry]
    (let [^Registry registry (registry/get registry)
          h                  (some-> registry .hierarchies :kind)]
      (with-attempt c registry [c]
-       (let [k (.kind ^Currency c)]
+       (if-some [k (.kind ^Currency c)]
          (or (identical? kind k)
-             (if h (isa? h k kind) (isa? k kind))))))))
+             (if h
+               (isa? h k kind)
+               (isa? k kind)))
+         false)))))
+
 (defn has-trait?
   "Returns `true` if the given currency `c` has any trait defined (when only currency
   and optional registry is given). If `tag` is given it returns `true` if the
@@ -2928,73 +2962,133 @@
            (contains? t tag))
          false)))))
 
+(defn iso?
+  "Returns `true` if the given currency is classified as ISO because its kind is set to
+  `:iso` or its descendants. It may include not just current ISO currencies but also
+  legacy ones. See also `io.randomseed.bankster.currency/iso-strict?`."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [c] (of-kind? :iso c))
+  (^Boolean [c ^Registry registry] (of-kind? :iso c registry)))
+
+(defn virtual?
+  "Returns `true` if the given currency is a kind of virtual currency."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [c] (of-kind? :virtual c))
+  (^Boolean [c ^Registry registry] (of-kind? :virtual c registry)))
+
+(defn asset?
+  "Returns `true` if the given currency is a kind of asset."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [c] (of-kind? :asset c))
+  (^Boolean [c ^Registry registry] (of-kind? :asset c registry)))
+
+(defn claim?
+  "Returns `true` if the given currency is a kind of claim."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [c] (of-kind? :claim c))
+  (^Boolean [c ^Registry registry] (of-kind? :claim c registry)))
+
+(defn credit?
+  "Returns `true` if the given currency is a kind of credit."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [c] (of-kind? :credit c))
+  (^Boolean [c ^Registry registry] (of-kind? :credit c registry)))
 
 (defn fiat?
   "Returns `true` if the given currency is a kind of fiat currency."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (or (kind-of? :FIAT c)
-                    (kind-of? :fiat c)))
-  (^Boolean [c ^Registry registry] (or (kind-of? :FIAT c registry)
-                                       (kind-of? :fiat c registry))))
+  (^Boolean [c] (of-kind? :fiat c))
+  (^Boolean [c ^Registry registry] (of-kind? :fiat c registry)))
+
+(defn real?
+  "Returns `true` if the given currency is a kind of real currency (has its `:kind` set
+  to `:currency` or its descendants."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [c] (of-kind? :currency c))
+  (^Boolean [c ^Registry registry] (of-kind? :currency c registry)))
 
 (defn fiduciary?
   "Returns `true` if the given currency is a kind of fiduciary currency."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (or (kind-of? :FIDUCIARY c)
-                    (kind-of? :fiduciary c)))
-  (^Boolean [c ^Registry registry] (or (kind-of? :FIDUCIARY c registry)
-                                       (kind-of? :fiduciary c registry))))
+  (^Boolean [c] (of-kind? :fiduciary c))
+  (^Boolean [c ^Registry registry] (of-kind? :fiduciary c registry)))
 
 (defn funds?
   "Returns `true` if the given currency is a kind of funds/settlement currency."
   {:tag Boolean :added "2.0.0"}
-  (^Boolean [c] (or (kind-of? :FUNDS c)
-                    (kind-of? :funds c)))
-  (^Boolean [c ^Registry registry] (or (kind-of? :FUNDS c registry)
-                                       (kind-of? :funds c registry))))
+  (^Boolean [c] (of-kind? :funds c))
+  (^Boolean [c ^Registry registry] (of-kind? :funds c registry)))
+
+(defn metal?
+  "Returns `true` if the given currency is a kind of precious metal."
+  {:tag Boolean :added "2.0.0"}
+  (^Boolean [c] (of-kind? :metal c))
+  (^Boolean [c ^Registry registry] (of-kind? :metal c registry)))
 
 (defn commodity?
   "Returns `true` if the given currency is a kind of commodity currency."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (or (kind-of? :COMMODITY c)
-                    (kind-of? :commodity c)))
-  (^Boolean [c ^Registry registry] (or (kind-of? :COMMODITY c registry)
-                                       (kind-of? :commodity c registry))))
+  (^Boolean [c] (of-kind? :commodity c))
+  (^Boolean [c ^Registry registry] (of-kind? :commodity c registry)))
 
-(defn decentralized?
-  "Returns `true` if the given currency is a kind of decentralized currency."
+(defn peg?
+  "Returns `true` if the given currency is a kind of PEG currency."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (or (kind-of? :DECENTRALIZED c)
-                    (kind-of? :decentralized c)))
-  (^Boolean [c ^Registry registry] (or (kind-of? :DECENTRALIZED c registry)
-                                       (kind-of? :decentralized c registry))))
+  (^Boolean [c] (of-kind? :peg c))
+  (^Boolean [c ^Registry registry] (of-kind? :peg c registry)))
 
-(def ^{:tag Boolean
-       :arglists '([c] [c ^Registry registry])}
-  decentralised?
-  "Alias for decentralized?"
-  decentralized?)
+(defn stable?
+  "Returns `true` if the given currency is a kind of stable currency."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [c] (of-kind? :stable c))
+  (^Boolean [c ^Registry registry] (of-kind? :stable c registry)))
+
+(defn staked?
+  "Returns `true` if the given currency is a kind of staked currency."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [c] (of-kind? :staked c))
+  (^Boolean [c ^Registry registry] (of-kind? :staked c registry)))
+
+(defn wrapped?
+  "Returns `true` if the given currency is a kind of wrapped currency."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [c] (of-kind? :wrapped c))
+  (^Boolean [c ^Registry registry] (of-kind? :wrapped c registry)))
+
+(defn referenced?
+  "Returns `true` if the given currency is a kind of referenced currency."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [c] (of-kind? :referenced c))
+  (^Boolean [c ^Registry registry] (of-kind? :referenced c registry)))
 
 (defn experimental?
   "Returns `true` if the given currency is a kind of experimental currency."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [c] (or (kind-of? :EXPERIMENTAL c)
-                    (kind-of? :experimental c)))
-  (^Boolean [c ^Registry registry] (or (kind-of? :EXPERIMENTAL c registry)
-                                       (kind-of? :experimental c registry))))
+  (^Boolean [c] (of-kind? :experimental c))
+  (^Boolean [c ^Registry registry] (of-kind? :experimental c registry)))
+
+(defn special?
+  "Returns `true` if the given currency is a kind of special currency."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [c] (of-kind? :special c))
+  (^Boolean [c ^Registry registry] (of-kind? :special c registry)))
+
+(defn test?
+  "Returns `true` if the given currency is a kind of test currency."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [c] (of-kind? :test c))
+  (^Boolean [c ^Registry registry] (of-kind? :test c registry)))
 
 (defn null?
   "Returns `true` if the given currency is a kind of null currency."
   {:tag Boolean :added "2.0.0"}
-  (^Boolean [c] (or (kind-of? :NULL c)
-                    (kind-of? :null c)))
-  (^Boolean [c ^Registry registry] (or (kind-of? :NULL c registry)
-                                       (kind-of? :null c registry))))
+  (^Boolean [c] (of-kind? :NULL c))
+  (^Boolean [c ^Registry registry] (of-kind? :NULL c registry)))
 
 (defn none?
   "Returns `true` if the given currency does not exist, or there is no currency (value
   is `nil`, `false`, an empty collection), or it is a pseudo-currency with its kind
-  set to `:NULL`."
+  set to `:NULL` or its descendants."
   {:tag Boolean :added "2.0.0"}
   (^Boolean [c]
    (none? c nil))
@@ -3004,6 +3098,20 @@
        (null? c registry)
        (and (not  (instance? Currency c))
             (nil? (resolve c registry))))))
+
+(defn decentralized?
+  "Returns `true` if the given currency is a kind of decentralized currency. It uses
+  currency traits database in a registry to find a trait named
+  `:control/decentralized`."
+  {:tag Boolean :added "2.0.0"}
+  (^Boolean [c] (of-trait? :decentralized c))
+  (^Boolean [c ^Registry registry] (of-trait? :decentralized c registry)))
+
+(def ^{:tag      Boolean
+       :arglists '([c] [c ^Registry registry])}
+  decentralised?
+  "Alias for decentralized?"
+  decentralized?)
 
 ;;
 ;; Localized properties.
