@@ -351,6 +351,15 @@
     (is (= (c/of-trait? :privacy :crypto/XMR) true))
     (is (= (c/of-trait? :privacy :crypto/USDT) false))))
 
+(deftest currency-decentralized-predicate
+  (testing "decentralized? checks :control/decentralized trait"
+    (let [r0 (registry/new)
+          r1 (c/register r0 (c/new :AAA 1 2 :iso/fiat :ISO-4217))
+          r2 (assoc-in r1 [:cur-id->traits :AAA] #{:control/decentralized})]
+      (is (= true (c/decentralized?  :AAA r2)))
+      (is (= true (c/decentralised? :AAA r2)))
+      (is (= false (c/decentralized? :BBB r2))))))
+
 (deftest currency-properties-localized
   (testing "when it's possible to get a localized property"
     (is (= (c/localized-property :name :crypto/ETH :pl) "Ether"))
