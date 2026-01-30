@@ -221,3 +221,20 @@
       (is (= :ISO-4217 (get-in m [:hierarchies :domain :ISO-4217-LEGACY])))
       (is (= :parent (get-in m [:hierarchies :kind :child])))
       (is (= [:asset :fiat] (get-in m [:hierarchies :traits :stable]))))))
+
+(deftest config->registry-populates-inline-currency-properties
+  (testing "currency entries can carry inline :countries/:localized/:traits that are merged into top-level branches"
+    (let [r (currency/config->registry "io/randomseed/bankster/test_config_inline_currency_props.edn")]
+      ;; countries: from top-level (:DE, :PL) plus inline (:PL, :AD)
+      (is (= #{:AD :DE :PL} (currency/countries :crypto/AMLT r)))
+      ;; localized: deep merge of locale keys
+      (is (= "Token AML" (currency/name :crypto/AMLT :pl r)))
+      (is (= "AML Token" (currency/name :crypto/AMLT :en r)))
+      ;; traits: merged (not replaced)
+      (is (= true (currency/has-trait? :crypto/AMLT :token/costam r)))
+      (is (= true (currency/has-trait? :crypto/AMLT :token/erc20 r)))
+      ;; Regression: inline keys should not leak into Currency extmap when loading from config.
+      (let [cur (currency/unit :crypto/AMLT r)]
+        (is (= false (contains? (into {} cur) :countries)))
+        (is (= false (contains? (into {} cur) :localized)))
+        (is (= false (contains? (into {} cur) :traits)))))))
