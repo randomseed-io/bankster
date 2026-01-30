@@ -3336,8 +3336,8 @@
   currency traits database in a registry to find a trait named
   `:control/decentralized`."
   {:tag Boolean :added "2.0.0"}
-  (^Boolean [c] (of-trait? :decentralized c))
-  (^Boolean [c ^Registry registry] (of-trait? :decentralized c registry)))
+  (^Boolean [c] (of-trait? :control/decentralized c))
+  (^Boolean [c ^Registry registry] (of-trait? :control/decentralized c registry)))
 
 (def ^{:tag      Boolean
        :arglists '([c] [c ^Registry registry])}
