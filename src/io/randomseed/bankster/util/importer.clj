@@ -301,18 +301,20 @@
                                          :else            (vec (sort-by str ps)))]
                                 (vector child ps))))
                        rels)))]
-       (sorted-map-by
-        #(compare %2 %1)
-        :version     (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "yyyyMMddHHmmssSS"))
-        :localized   (into (sorted-map) (map/map-vals localized->map (:cur-id->localized registry)))
-        :traits      (into (sorted-map)
-                           (keep (fn [[cid ts]]
-                                   (when-some [ts (traits->map ts)]
-                                     (vector cid ts))))
-                           (or (:cur-id->traits registry) {}))
-        :currencies  (into (sorted-map) (map/map-vals currency->map  (:cur-id->cur registry)))
-        :countries   (into (sorted-map) (map/map-vals :id (:ctr-id->cur registry)))
-        :hierarchies (into (sorted-map) (map/map-vals hierarchy->parent-map (:hierarchies registry))))))))
+       (let [pks (or (sort-kw-vec (get-in registry [:ext :propagate-keys])) [])]
+         (sorted-map-by
+          #(compare %2 %1)
+          :version     (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "yyyyMMddHHmmssSS"))
+          :propagate-keys pks
+          :localized   (into (sorted-map) (map/map-vals localized->map (:cur-id->localized registry)))
+          :traits      (into (sorted-map)
+                             (keep (fn [[cid ts]]
+                                     (when-some [ts (traits->map ts)]
+                                       (vector cid ts))))
+                             (or (:cur-id->traits registry) {}))
+          :currencies  (into (sorted-map) (map/map-vals currency->map  (:cur-id->cur registry)))
+          :countries   (into (sorted-map) (map/map-vals :id (:ctr-id->cur registry)))
+          :hierarchies (into (sorted-map) (map/map-vals hierarchy->parent-map (:hierarchies registry)))))))))
 
 (defn registry->map-currency-oriented
   "Like `registry->map`, but produces a currency-oriented configuration map by
@@ -808,4 +810,4 @@
   []
   (let [dst (seed-import)
         jda (joda-import)]
-    (export (merge-registry dst jda true [:domain :kind ::localized] true))))
+    (export-currency-oriented (merge-registry dst jda true [:domain :kind ::localized] true))))

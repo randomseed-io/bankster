@@ -218,9 +218,19 @@
   (testing "registry->map exports currency hierarchies as parent-maps"
     (let [r (currency/config->registry "io/randomseed/bankster/test_config_with_hierarchies.edn")
           m (importer/registry->map r)]
+      (is (= [] (:propagate-keys m)))
       (is (= :ISO-4217 (get-in m [:hierarchies :domain :ISO-4217-LEGACY])))
       (is (= :parent (get-in m [:hierarchies :kind :child])))
       (is (= [:asset :fiat] (get-in m [:hierarchies :traits :stable]))))))
+
+(deftest registry->map-always-exports-propagate-keys
+  (testing "registry->map always exports :propagate-keys (as a vector)"
+    (let [m (importer/registry->map (registry/new-registry))]
+      (is (= [] (:propagate-keys m))))
+
+    (let [r (currency/config->registry "io/randomseed/bankster/test_config_propagate_keys.edn")
+          m (importer/registry->map r)]
+      (is (= [:comment] (:propagate-keys m))))))
 
 (deftest map->currency-oriented-embeds-properties-and-keeps-orphans
   (testing "map->currency-oriented embeds per-currency properties and keeps only orphaned top-level entries"
