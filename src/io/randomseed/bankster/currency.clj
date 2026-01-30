@@ -2767,6 +2767,9 @@
            cid           (.id ^Currency c0)
            cid-to-cur    (registry/currency-id->currency* registry)
            ^Currency old (get cid-to-cur cid)
+           ;; Traits are registry attributes (base map). Updating a currency should not
+           ;; drop them (unregister removes the entry), so we capture and restore.
+           old-traits    (registry/currency-id->traits* cid registry)
            id->weight    (registry/currency-id->weight* registry)
            old-w?        (contains? id->weight cid)
            old-w         (int (or (get id->weight cid) 0))
@@ -2793,7 +2796,11 @@
              ^Registry registry (if store-w?
                                  (assoc-in registry [:cur-id->weight cid] w-final)
                                  (map/dissoc-in registry [:cur-id->weight cid]))
-             ^Registry registry (register-numeric registry c)]
+             ^Registry registry (register-numeric registry c)
+             ;; Restore registry attributes that should survive currency replacement.
+             ^Registry registry (if (and update? (seq old-traits))
+                                  (assoc-in registry [:cur-id->traits cid] old-traits)
+                                  registry)]
          (-> registry
              (add-weighted-code        currency)
              (add-countries            currency country-ids)
@@ -2811,12 +2818,17 @@
   ([^Registry registry currency country-ids]
    (update registry currency country-ids nil))
   ([^Registry registry currency country-ids localized-properties-map]
-   (let [present (if (instance? Currency currency) currency (of-id currency registry))]
-     (register registry
-               present
-               (or country-ids (countries present))
-               (or localized-properties-map (localized-properties present))
-               true))))
+   (when (some? registry)
+     (if (nil? currency)
+       registry
+       (let [^Currency present (if (instance? Currency currency) currency (of-id currency registry))
+             cid              (.id ^Currency present)
+             exists?          (registry/currency-id->currency* cid registry)]
+         (register registry
+                   present
+                   (or country-ids (when exists? (registry/currency-id->country-ids* cid registry)))
+                   (or localized-properties-map (when exists? (localized-properties present registry)))
+                   true))))))
 
 (defn update!
   "Replaces a currency in the global, shared registry by a new one, preserving

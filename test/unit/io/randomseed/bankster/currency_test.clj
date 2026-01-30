@@ -106,6 +106,16 @@
     (let [r (c/update (registry/get) #currency{:id PLN :scale 10})]
       (is (map= (c/with-registry r #currency PLN) {:id :PLN :scale 10 :numeric -1 :weight 0 :kind nil :domain nil})))))
 
+(deftest currency-update-preserves-registry-traits
+  (testing "updating a currency does not drop registry-level traits"
+    (let [r0 (registry/new-registry)
+          r1 (c/register r0 (c/new :AAA 1 2 :iso/fiat :ISO-4217))
+          r1 (c/set-traits r1 :AAA #{:control/decentralized})
+          r2 (c/update r1 (c/new :AAA 1 3 :iso/fiat :ISO-4217))]
+      (is (= #{:control/decentralized}
+             (registry/currency-id->traits* :AAA r2)))
+      (is (true? (c/decentralized? :AAA r2))))))
+
 (deftest currency-registering
   (testing "when it returns nil for nil or empty map"
     (is (= #currency nil nil))
