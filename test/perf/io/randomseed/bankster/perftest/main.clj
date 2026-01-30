@@ -67,6 +67,84 @@
                      ^BigDecimal (BigDecimal/valueOf d)
                      ^RoundingMode rm))))
 
+;;
+;; Microbench: try/catch placement overhead (BigDecimal loops)
+;;
+
+(def ^:private bd-loop-n
+  "Iteration count used by BigDecimal loop microbenches."
+  (int n))
+
+(def ^:private ^BigDecimal bd-loop-start
+  (BigDecimal. "123456.78"))
+
+(def ^:private ^BigDecimal bd-loop-divisor
+  (BigDecimal. "3"))
+
+(def ^:private ^RoundingMode bd-loop-rm
+  RoundingMode/HALF_UP)
+
+(defn bd-div-loop-inner-try
+  "Divides a BigDecimal in a tight loop with try/catch inside the loop body.
+
+  No exception is expected in this benchmark (scale+rounding is provided)."
+  []
+  (loop [i  (int 0)
+         ^BigDecimal acc bd-loop-start]
+    (if (== i bd-loop-n)
+      acc
+      (recur (unchecked-inc-int i)
+             (try
+               (.divide ^BigDecimal acc
+                        ^BigDecimal bd-loop-divisor
+                        2
+                        ^RoundingMode bd-loop-rm)
+               (catch ArithmeticException e
+                 (throw e)))))))
+
+(defn bd-div-loop-outer-try
+  "Divides a BigDecimal in a tight loop with a single try/catch outside the loop.
+
+  This simulates an approach where the last operands are tracked (via a volatile)
+  to be available for error reporting in the catch block."
+  []
+  (let [last-dividend (volatile! nil)]
+    (try
+      (loop [i  (int 0)
+             ^BigDecimal acc bd-loop-start]
+        (if (== i bd-loop-n)
+          acc
+          (do
+            (vreset! last-dividend acc)
+            (recur (unchecked-inc-int i)
+                   (.divide ^BigDecimal acc
+                            ^BigDecimal bd-loop-divisor
+                            2
+                            ^RoundingMode bd-loop-rm)))))
+      (catch ArithmeticException e
+        ;; ArithmeticException does not carry operands; if you need them, you must
+        ;; capture them yourself (e.g. via `last-dividend`).
+        (throw e)))))
+
+(defn bd-div-loop-outer-try-no-context
+  "Divides a BigDecimal in a tight loop with a single try/catch outside the loop,
+  without capturing operands for error reporting.
+
+  No exception is expected in this benchmark (scale+rounding is provided)."
+  []
+  (try
+    (loop [i  (int 0)
+           ^BigDecimal acc bd-loop-start]
+      (if (== i bd-loop-n)
+        acc
+        (recur (unchecked-inc-int i)
+               (.divide ^BigDecimal acc
+                        ^BigDecimal bd-loop-divisor
+                        2
+                        ^RoundingMode bd-loop-rm))))
+    (catch ArithmeticException e
+      (throw e))))
+
 (defn -main [& _]
   ;; ----------------------------
   ;; 1) SUM
@@ -127,4 +205,19 @@
     (quick-bench (bankster-div-old-fixed bankster-item div-by-long))
 
     (println "\n--- 3. Simulated new path (divide RM only) ---")
-    (quick-bench (bankster-div-new-fixed bankster-item div-by-long))))
+    (quick-bench (bankster-div-new-fixed bankster-item div-by-long)))
+
+  ;; ------------------------------------------------------------
+  ;; Microbench: BigDecimal loops, try/catch placement overhead
+  ;; ------------------------------------------------------------
+
+  (println "\nBigDecimal microbench: try/catch placement (no exception expected).")
+
+  (println "\n--- 1. Inner try/catch per iteration ---")
+  (quick-bench (bd-div-loop-inner-try))
+
+  (println "\n--- 2. Outer try/catch (no context capture) ---")
+  (quick-bench (bd-div-loop-outer-try-no-context))
+
+  (println "\n--- 3. Outer try/catch + per-iteration volatile context ---")
+  (quick-bench (bd-div-loop-outer-try)))

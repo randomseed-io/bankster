@@ -339,11 +339,19 @@
         (is (identical? a (:dividend (ex-data ex))))
         (is (identical? y (:divisor (ex-data ex))))
       ))
-    (is (thrown? ArithmeticException (m/div 1 3 0.333334)))
-    (is (thrown? ArithmeticException (m/div #money[1 PLN] 8)))
-    (is (thrown? ArithmeticException (m/div 1 3)))
-    (is (thrown? ArithmeticException (m/div 1 3 1)))
-    (is (thrown? ArithmeticException (m/div #money[1 PLN] 3)))
+    (testing "BigDecimal arithmetic errors are wrapped as ExceptionInfo (with ArithmeticException cause)"
+      (doseq [f [(fn [] (m/div 1 3 0.333334))
+                 (fn [] (m/div #money[1 PLN] 8))
+                 (fn [] (m/div 1 3))
+                 (fn [] (m/div 1 3 1))
+                 (fn [] (m/div #money[1 PLN] 3))]]
+        (let [ex (try (f) (catch clojure.lang.ExceptionInfo e e))]
+          (is (instance? clojure.lang.ExceptionInfo ex))
+          (is (instance? ArithmeticException (.getCause ^clojure.lang.ExceptionInfo ex)))
+          (is (true? (:arithmetic-exception (ex-data ex))))
+          (is (instance? ArithmeticException (:arithmetic-exception/cause (ex-data ex))))
+          (is (identical? (:arithmetic-exception/cause (ex-data ex))
+                          (.getCause ^clojure.lang.ExceptionInfo ex)))))))
     (scale/with-rounding UP
       (is (= (m/div 1 8 0.125)         1M))
       (is (= (m/div 1 3 0.333334)      1.000017999964000071999857M))
@@ -368,7 +376,10 @@
     (is (= (m/div-scaled #money[1 PLN] 4M) #money[0.25 PLN]))
     (is (= (m/div-scaled #money[10 PLN] 2 2) #money[2.50 PLN]))
     (is (= (m/div-scaled #money[10 PLN] #money[2 PLN] 1) 5M))
-    (is (thrown? ArithmeticException (m/div-scaled (m/value :EUR 1) 8 0.125)))
+    (let [ex (try (m/div-scaled (m/value :EUR 1) 8 0.125)
+                  (catch clojure.lang.ExceptionInfo e e))]
+      (is (instance? clojure.lang.ExceptionInfo ex))
+      (is (instance? ArithmeticException (.getCause ^clojure.lang.ExceptionInfo ex))))
     (scale/with-rounding UP
       (is (= (m/div-scaled 1 1 4 2 0.125) 1M))
       (is (= (m/div-scaled #money[1 PLN] 1 1 #money[3 PLN]) 0.34M))
@@ -408,9 +419,17 @@
     (is (= (m/mul-scaled 2 0.5 #money[10 PLN]) #money[10 PLN]))
     (is (= (m/mul-scaled 2 0.5 2 #money[10 PLN]) #money[20 PLN]))
     (is (= (m/mul-scaled 2 0.5 2 #money[10 PLN] 2.5) #money[50 PLN]))
-    (is (thrown? ArithmeticException (m/mul-scaled 1 0.5 0.5 0.5 #money[1 PLN] 2)))
-    (is (thrown? ArithmeticException (m/mul-scaled 1 0.5 0.5 0.5 #money[1 PLN])))
-    (is (thrown? ArithmeticException (m/mul-scaled #money[1 PLN] 0.5 0.5 0.5 2))))
+    (testing "mul-scaled BigDecimal arithmetic errors are wrapped as ExceptionInfo"
+      (doseq [f [(fn [] (m/mul-scaled 1 0.5 0.5 0.5 #money[1 PLN] 2))
+                 (fn [] (m/mul-scaled 1 0.5 0.5 0.5 #money[1 PLN]))
+                 (fn [] (m/mul-scaled #money[1 PLN] 0.5 0.5 0.5 2))]]
+        (let [ex (try (f) (catch clojure.lang.ExceptionInfo e e))]
+          (is (instance? clojure.lang.ExceptionInfo ex))
+          (is (instance? ArithmeticException (.getCause ^clojure.lang.ExceptionInfo ex)))
+          (is (true? (:arithmetic-exception (ex-data ex))))
+          (is (instance? ArithmeticException (:arithmetic-exception/cause (ex-data ex))))
+          (is (identical? (:arithmetic-exception/cause (ex-data ex))
+                          (.getCause ^clojure.lang.ExceptionInfo ex)))))))
   (testing "when it's possible to add monetary values"
     (is (= (m/add) 0M))
     (is (= (m/add #money[1.25 PLN]) #money[1.25 PLN]))
@@ -493,7 +512,7 @@
     (is (= (scale/of (m/strip #money/crypto[12.2345 ETH])) 4))
     (is (= (scale/of (m/currency (m/strip #money/crypto[12.2345 ETH]))) 18))
     (is (= (scale/of (m/amount (m/strip #money/crypto[12.2345 ETH]))) 4))
-    (is (= (m/rescaled? (m/strip #money/crypto[12.2345 ETH])) true))))
+    (is (= (m/rescaled? (m/strip #money/crypto[12.2345 ETH])) true)))
 
 (deftest monetary-values-logical-operations
   (testing "when it's possible to check if a value is Money"
