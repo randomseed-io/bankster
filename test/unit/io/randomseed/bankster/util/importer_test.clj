@@ -18,7 +18,8 @@
     (let [c (#'io.randomseed.bankster.util.importer/make-currency
              ["ADP" "20" "0" "Old, now EUR"])]
       (is (= :iso-4217-legacy/ADP (:id c)))
-      (is (= :ISO-4217-LEGACY (:domain c))))))
+      (is (= :ISO-4217-LEGACY (:domain c)))
+      (is (= true (currency/has-trait? c :legacy))))))
 
 (deftest make-currency-funds-kind-from-comment
   (testing "comment \"FundsCode\" causes currency kind to be set to :iso/funds"
@@ -160,8 +161,7 @@
 
 (deftest merge-registry-legacy-weight-explicit-zero-preserved-from-dst
   (testing "explicit weight 0 in dst means legacy should stay canonical (do not bump to default)"
-    (let [dst-cur (with-meta (currency/new :ADP 20 0 :FIAT :ISO-4217 0)
-                             {::currency/missing-fields #{}})
+    (let [dst-cur (currency/with-weight (currency/new :ADP 20 0 :FIAT :ISO-4217 0) 0)
           dst     (-> (registry/new-registry)
                       (currency/register dst-cur [:AD] {:en {:name "Andorran peseta"}}))
           src     (-> (registry/new-registry)
@@ -182,8 +182,8 @@
           aaa     (get (:cur-id->cur merged) :iso-4217-legacy/AAA)]
       (is (some? aaa))
       (is (= :ISO-4217-LEGACY (:domain aaa)))
-      (is (= 0 (:weight aaa)))
-      (is (= #{} (get (meta aaa) ::currency/missing-fields))))))
+      (is (= 0 (currency/weight aaa)))
+      (is (= true (contains? (:cur-id->weight merged) :iso-4217-legacy/AAA))))))
 
 (deftest merge-registry-merges-extra-hierarchy-keys
   (testing "merges hierarchy values for any keys present in :hierarchies (record may grow)"
@@ -208,8 +208,8 @@
   (testing "config->registry loads :hierarchies from EDN config"
     (let [r  (currency/config->registry "io/randomseed/bankster/test_config_with_hierarchies.edn")
           hs (:hierarchies r)]
-      (is (isa? (:domain hs) :ISO-4217-LEGACY :ISO-4217))
-      (is (isa? (:kind hs) :child :parent))
+      (is (isa? (:domain hs)     :ISO-4217-LEGACY :ISO-4217))
+      (is (isa? (:kind hs)       :child :parent))
       (is (isa? (get hs :traits) :stable :asset))
       (is (isa? (get hs :traits) :stable :fiat)))))
 
@@ -218,8 +218,8 @@
     (let [r (currency/config->registry "io/randomseed/bankster/test_config_with_hierarchies.edn")
           m (importer/registry->map r)]
       (is (= [] (:propagate-keys m)))
-      (is (= :ISO-4217 (get-in m [:hierarchies :domain :ISO-4217-LEGACY])))
-      (is (= :parent (get-in m [:hierarchies :kind :child])))
+      (is (= :ISO-4217      (get-in m [:hierarchies :domain :ISO-4217-LEGACY])))
+      (is (= :parent        (get-in m [:hierarchies :kind :child])))
       (is (= [:asset :fiat] (get-in m [:hierarchies :traits :stable]))))))
 
 (deftest registry->map-always-exports-propagate-keys

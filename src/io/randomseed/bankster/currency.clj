@@ -3140,26 +3140,36 @@
   (^Boolean [c]
    (let [^Registry registry (registry/get)]
      (with-attempt c registry [c]
-       (some?
-        (not-empty
-         (registry/currency-id->traits* (.id ^Currency c) registry))))))
+       (let [reg-traits   (registry/currency-id->traits* (.id ^Currency c) registry)
+             adhoc-traits (prep-traits (clojure.core/get c :traits))
+             reg?         (boolean (seq reg-traits))
+             adhoc?       (boolean (seq adhoc-traits))]
+         (or reg? adhoc?)))))
   (^Boolean [c registry-or-tag]
    (if (nil? registry-or-tag)
      (has-trait? c)
      (if (instance? Registry registry-or-tag)
        (let [^Registry registry registry-or-tag]
          (with-attempt c registry [c]
-           (some?
-            (not-empty
-             (registry/currency-id->traits* (.id ^Currency c) registry)))))
+           (let [reg-traits   (registry/currency-id->traits* (.id ^Currency c) registry)
+                 adhoc-traits (prep-traits (clojure.core/get c :traits))
+                 reg?         (boolean (seq reg-traits))
+                 adhoc?       (boolean (seq adhoc-traits))]
+             (or reg? adhoc?))))
        (let [tag               registry-or-tag
              ^Registry registry (registry/get)]
          (with-attempt c registry [c]
-           (contains? (registry/currency-id->traits* (.id ^Currency c) registry) tag))))))
+           (let [reg-traits   (registry/currency-id->traits* (.id ^Currency c) registry)
+                 adhoc-traits (prep-traits (clojure.core/get c :traits))]
+             (or (and (seq adhoc-traits) (contains? adhoc-traits tag))
+                 (and (seq reg-traits)   (contains? reg-traits tag)))))))))
   (^Boolean [c tag registry]
    (let [^Registry registry (registry/get registry)]
      (with-attempt c registry [c]
-       (contains? (registry/currency-id->traits* (.id ^Currency c) registry) tag)))))
+       (let [reg-traits   (registry/currency-id->traits* (.id ^Currency c) registry)
+             adhoc-traits (prep-traits (clojure.core/get c :traits))]
+         (or (and (seq adhoc-traits) (contains? adhoc-traits tag))
+             (and (seq reg-traits)   (contains? reg-traits tag))))))))
 
 (defn of-trait?
   "Checks if any trait of the given currency `c` equals to the one given as a second
@@ -3171,11 +3181,15 @@
    (let [^Registry registry (registry/get registry)
          h                  (some-> registry .hierarchies :traits)]
      (with-attempt c registry [c]
-       (if-let [t (registry/currency-id->traits* (.id ^Currency c) registry)]
+       (let [reg-traits   (registry/currency-id->traits* (.id ^Currency c) registry)
+             adhoc-traits (prep-traits (clojure.core/get c :traits))]
          (if h
-           (boolean (some #(isa? h % tag) t))
-           (contains? t tag))
-         false)))))
+           (boolean
+            (or (and (seq adhoc-traits) (some #(isa? h % tag) adhoc-traits))
+                (and (seq reg-traits)   (some #(isa? h % tag) reg-traits))))
+           (boolean
+            (or (and (seq adhoc-traits) (contains? adhoc-traits tag))
+                (and (seq reg-traits)   (contains? reg-traits tag))))))))))
 
 (defn iso?
   "Returns `true` if the given currency is classified as ISO because its kind is set to

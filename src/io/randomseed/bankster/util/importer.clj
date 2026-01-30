@@ -135,7 +135,8 @@
           kind    (if funds? :iso/funds (get special-kinds code :FIAT))
           domain  (when-not old? :ISO-4217)
           weight  0]
-      (currency/new-currency id (long numeric) (int scale) kind domain (int weight)))))
+      (cond-> (currency/new-currency id (long numeric) (int scale) kind domain (int weight))
+        old? (assoc :traits #{:legacy})))))
 
 ;;
 ;; Joda Money CSV importer.
@@ -209,12 +210,10 @@
   file. Extension fields are ignored."
   {:added "1.0.0"}
   [{:keys [:numeric :scale :kind] :as c}]
-  (let [weight (currency/weight c)]
-    (as-> (sorted-map) m
-      (if (and (number? numeric) (pos? numeric))      (assoc m :numeric numeric) m)
-      (if-not (and (some? scale) (neg? scale))        (assoc m :scale   scale)   m)
-      (if (some? kind)                                (assoc m :kind    kind)    m)
-      (if (and (number? weight) (not (zero? weight))) (assoc m :weight  weight)  m))))
+  (as-> (sorted-map) m
+    (if (and (number? numeric) (pos? numeric))      (assoc m :numeric numeric) m)
+    (if-not (and (some? scale) (neg? scale))        (assoc m :scale   scale)   m)
+    (if (some? kind)                                (assoc m :kind    kind)    m)))
 
 (defn localized->map
   "Takes a localized map entry (1st level) and returns a map suitable for putting into
@@ -249,10 +248,12 @@
   Per-currency properties are embedded into each currency map under `:currencies`:
   - `:countries` (vector of country IDs),
   - `:localized` (localized properties map),
-  - `:traits`    (vector of traits).
+  - `:traits`    (vector of traits),
+  - `:weight`    (currency weight).
 
-  Top-level branches `:countries`, `:localized` and `:traits` are reduced to contain
-  only orphaned entries (i.e. those not associated with any known currency IDs)."
+  Top-level branches `:countries`, `:localized`, `:traits` and `:weights` are reduced
+  to contain only orphaned entries (i.e. those not associated with any known currency
+  IDs)."
   {:tag clojure.lang.IPersistentMap :added "2.0.0"}
   [m]
   (let [cur-id->attrs (or (:currencies m) {})
@@ -261,27 +262,33 @@
         cur->ctrs     (map/invert-in-sets ctr->cur)
         localized     (or (:localized m) {})
         traits        (or (:traits m) {})
+        weights       (or (:weights m) {})
         currencies'   (reduce-kv (fn [out cid attrs]
                                    (let [ctrs (sort-kw-vec (get cur->ctrs cid))
                                          lcl  (get localized cid)
-                                         trts (get traits cid)]
+                                         trts (get traits cid)
+                                         w?   (contains? weights cid)
+                                         w    (get weights cid)]
                                      (assoc out cid
                                             (cond-> attrs
                                               (seq ctrs)                 (assoc :countries ctrs)
                                               (and (map? lcl) (seq lcl)) (assoc :localized lcl)
-                                              (seq trts)                 (assoc :traits trts)))))
+                                              (seq trts)                 (assoc :traits trts)
+                                              w?                         (assoc :weight w)))))
                                  (sorted-map)
                                  cur-id->attrs)
         countries'    (into (sorted-map)
                             (remove (fn [[_ cid]] (contains? cur-ids cid)))
                             ctr->cur)
         localized'    (reduce dissoc localized cur-ids)
-        traits'       (reduce dissoc traits cur-ids)]
+        traits'       (reduce dissoc traits cur-ids)
+        weights'      (reduce dissoc weights cur-ids)]
     (assoc m
            :currencies currencies'
            :countries  countries'
            :localized  localized'
-           :traits     traits')))
+           :traits     traits'
+           :weights    weights')))
 
 (defn registry->map
   "Takes a registry and returns a map suitable for putting into a configuration
@@ -308,10 +315,9 @@
           :version     (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "yyyyMMddHHmmssSS"))
           :propagate-keys pks
           :localized   (into (sorted-map) (map/map-vals localized->map (:cur-id->localized registry)))
+          :weights     (into (sorted-map) (or (:cur-id->weight registry) {}))
           :traits      (into (sorted-map)
-                             (keep (fn [[cid ts]]
-                                     (when-some [ts (traits->map ts)]
-                                       (vector cid ts))))
+                             (keep (fn [[cid ts]] (when-some [ts (traits->map ts)] (vector cid ts))))
                              (or (:cur-id->traits registry) {}))
           :currencies  (into (sorted-map) (map/map-vals currency->map  (:cur-id->cur registry)))
           :countries   (into (sorted-map) (map/map-vals :id (:ctr-id->cur registry)))
@@ -541,21 +547,9 @@
                       (keyword (str (l/locale k)))))
                   m)))
 
-(defn- weight-explicit?
-  "Returns `true` if a currency's weight was explicitly present in its source map
-  (currently propagated only from EDN config loading via Currency metadata)."
-  {:tag Boolean :private true :added "2.0.0"}
-  [^Currency c]
-  (let [missing (clojure.core/get (meta c) ::currency/missing-fields)]
-    (boolean (and (set? missing)
-                  (not (contains? missing :weight))))))
-
-(defn- copy-missing-fields-meta
-  {:tag Currency :private true :added "2.0.0"}
-  [^Currency dst ^Currency src]
-  (if-some [missing (clojure.core/get (meta src) ::currency/missing-fields)]
-    (with-meta dst (assoc (or (meta dst) {}) ::currency/missing-fields missing))
-    dst))
+;; Weight is now a registry base (`:cur-id->weight`) and explicitness is represented
+;; by key presence (including 0 values). There is no need to track explicitness via
+;; Currency metadata for importer-level decisions.
 
 (defn- hierarchy-map?
   "Returns `true` if `x` looks like a hierarchy map produced by `make-hierarchy`."
@@ -710,11 +704,44 @@
                      src-countries  (or (clojure.core/get src-cur-id->ctr-ids dst-id)
                                         (when iso-like? (clojure.core/get src-cur-id->ctr-ids iso-code-id)))
                      src-localized  (or (clojure.core/get src-cur-id->localized dst-id)
-                                        (when iso-like? (clojure.core/get src-cur-id->localized iso-code-id)))]
+                                        (when iso-like? (clojure.core/get src-cur-id->localized iso-code-id)))
+                     src-traits     (or (clojure.core/get src-cur-id->traits dst-id)
+                                        (when iso-like? (clojure.core/get src-cur-id->traits iso-code-id)))]
                  (if existing
                    (let [existing-id        (or existing-id dst-id)
                          existing-countries (clojure.core/get (:cur-id->ctr-ids r) existing-id)
                          existing-localized (clojure.core/get (:cur-id->localized r) existing-id)
+                         existing-traits    (clojure.core/get (:cur-id->traits r) existing-id)
+                         ;; Weight base (source of truth): currency ID -> int weight.
+                         src-id->weight      (or (:cur-id->weight src) {})
+                         dst-id->weight      (or (:cur-id->weight r) {})
+                         src-w?              (or (contains? src-id->weight dst-id)
+                                                 (and iso-like? (contains? src-id->weight iso-code-id)))
+                         src-w               (int (or (clojure.core/get src-id->weight dst-id)
+                                                     (when iso-like? (clojure.core/get src-id->weight iso-code-id))
+                                                     0))
+                         ;; Transitional fallback: treat non-zero currency meta weight as explicit.
+                         src-w-hint          (int (currency/weight c))
+                         src-exp?            (or src-w? (not (zero? src-w-hint)))
+                         src-wv              (if src-w? src-w src-w-hint)
+
+                         dst-w?              (contains? dst-id->weight existing-id)
+                         dst-w               (int (or (clojure.core/get dst-id->weight existing-id) 0))
+                         dst-w-hint          (int (currency/weight existing))
+                         dst-exp?            (or dst-w? (not (zero? dst-w-hint)))
+                         dst-wv              (if dst-w? dst-w dst-w-hint)
+
+                         base-w              (cond src-exp? src-wv
+                                                   dst-exp? dst-wv
+                                                   :else    0)
+                         base-exp?           (or src-exp? dst-exp?)
+                         final-w             (if (and legacy-domain? (zero? base-w) (not base-exp?))
+                                               (int default-legacy-weight)
+                                               (int base-w))
+                         final-exp?          (or base-exp? (not (zero? final-w)))
+                         weight-changed?     (or rename?
+                                                 (not= final-w (int dst-wv))
+                                                 (not= final-exp? (boolean dst-exp?)))
                          preserve-fields    (if iso-like? (disj preserve-fields :domain) preserve-fields)
                          preserve-fields    (filter #(contains? existing %) preserve-fields)
                          ^Currency c        (if (seq preserve-fields)
@@ -722,6 +749,7 @@
                                                      (mapcat (fn [k] [k (clojure.core/get existing k)])
                                                              preserve-fields))
                                               c)
+                         ^Currency c        (if final-exp? (currency/with-weight c final-w) c)
                          countries          (if rename?
                                               (when (or (seq existing-countries) (seq src-countries))
                                                 (into (or existing-countries #{}) src-countries))
@@ -733,65 +761,58 @@
                                               (if preserve-localized?
                                                 existing-localized
                                                 src-localized))
+                         ;; Traits are merged additively (union), to avoid wiping dst metadata
+                         ;; when src has no trait information (e.g. Joda importer).
+                         traits             (let [ts (into (or existing-traits #{}) src-traits)]
+                                              (cond-> ts legacy-domain? (conj :legacy)))
                          localized-input    (localized->register-input localized)
-                         ^Currency c        (if legacy-domain?
-                                              (let [w       (int (.weight ^Currency c))
-                                                    w-exp?  (weight-explicit? c)
-                                                    ew      (int (.weight ^Currency existing))
-                                                    ew-exp? (weight-explicit? existing)]
-                                                (cond
-                                                  ;; Source explicitly set a non-zero weight: keep it.
-                                                  (not (zero? w))
-                                                  c
-
-                                                  ;; Source explicitly set 0: keep it (legacy is canonical by choice).
-                                                  w-exp?
-                                                  c
-
-                                                  ;; Destination had a manual weight: preserve it.
-                                                  (not (zero? ew))
-                                                  (assoc c :weight ew)
-
-                                                  ;; Destination explicitly set 0: keep it and preserve explicitness.
-                                                  ew-exp?
-                                                  (copy-missing-fields-meta (assoc c :weight ew) existing)
-
-                                                  ;; Default for legacy currency.
-                                                  :else
-                                                  (assoc c :weight (int default-legacy-weight))))
-                                              c)
                          updated? (or rename?
                                       (not= c existing)
+                                      weight-changed?
                                       (not= countries existing-countries)
-                                      (not= localized existing-localized))]
-                     (if updated?
-                       (do (when verbose?
-                             (println "Updated currency:" (symbol (:id c))))
-                           (let [^Registry r (if rename?
-                                               (currency/unregister r existing)
-                                               r)]
-                             (currency/register r c countries localized-input (not rename?))))
+                                      (not= localized existing-localized))
+                         ^Registry r (if updated?
+                                      (do (when verbose?
+                                            (println "Updated currency:" (symbol (:id c))))
+                                          (let [^Registry r (if rename?
+                                                              (currency/unregister r existing)
+                                                              r)]
+                                            (currency/register r c countries localized-input (not rename?))))
+                                      r)
+                         ^Registry r (if rename?
+                                      (clojure.core/update r :cur-id->traits dissoc existing-id)
+                                      r)]
+                     (if (seq traits)
+                       (assoc-in r [:cur-id->traits dst-id] traits)
                        r))
                    (do (when (and verbose? (some? c))
                          (println "New currency:" (symbol (:id c))))
-                       (let [^Currency c (if legacy-domain?
-                                           (let [w      (int (.weight ^Currency c))
-                                                 w-exp? (weight-explicit? c)]
-                                             (cond
-                                               (not (zero? w))
-                                               c
-
-                                               w-exp?
-                                               c
-
-                                               :else
-                                               (assoc c :weight (int default-legacy-weight))))
-                                           c)]
-                         (currency/register r
-                                            c
-                                            src-countries
-                                            (localized->register-input src-localized)
-                                            false))))))
+                      (let [src-id->weight (or (:cur-id->weight src) {})
+                            src-w?         (or (contains? src-id->weight dst-id)
+                                               (and iso-like? (contains? src-id->weight iso-code-id)))
+                            src-w          (int (or (clojure.core/get src-id->weight dst-id)
+                                                   (when iso-like? (clojure.core/get src-id->weight iso-code-id))
+                                                   0))
+                            src-w-hint     (int (currency/weight c))
+                            src-exp?       (or src-w? (not (zero? src-w-hint)))
+                            src-wv         (if src-w? src-w src-w-hint)
+                            base-w         (if src-exp? src-wv 0)
+                            base-exp?      (boolean src-exp?)
+                            final-w        (if (and legacy-domain? (zero? base-w) (not base-exp?))
+                                             (int default-legacy-weight)
+                                             (int base-w))
+                            final-exp?     (or base-exp? (not (zero? final-w)))
+                            ^Currency c    (if final-exp? (currency/with-weight c final-w) c)
+                            traits         (let [ts (into #{} src-traits)]
+                                             (cond-> ts legacy-domain? (conj :legacy)))
+                            ^Registry r    (currency/register r
+                                                              c
+                                                              src-countries
+                                                              (localized->register-input src-localized)
+                                                              false)]
+                        (if (seq traits)
+                          (assoc-in r [:cur-id->traits dst-id] traits)
+                          r))))))
              dst
              src-cur-id->cur))))
 
