@@ -661,8 +661,8 @@
   legacy ISO classification based on the source.
 
   Legacy currency weight: when a legacy currency has weight 0 and the weight was not
-  explicitly set in its source data, it is set to `default-legacy-weight`. Explicit
-  weight 0 means \"legacy should be canonical\" and is preserved."
+  explicitly set (presence in `:cur-id->weight`) in either source or destination,
+  it is set to `default-legacy-weight`. Explicit weight 0 is preserved."
   {:tag Registry :added "2.0.0"}
   (^Registry [^Registry dst ^Registry src]
    (merge-registry dst src false nil false))
@@ -679,10 +679,12 @@
          ^Registry src         (or src (registry/new-registry))
          merged-hierarchies    (merge-hierarchies (:hierarchies dst) (:hierarchies src))
          merged-ext            (merge (:ext dst) (:ext src))
-         ^Registry dst         (assoc dst :hierarchies merged-hierarchies :ext merged-ext)
+         merged-weights        (merge (:cur-id->weight dst) (:cur-id->weight src))
+         ^Registry dst         (assoc dst :hierarchies merged-hierarchies :ext merged-ext :cur-id->weight merged-weights)
          src-cur-id->cur       (:cur-id->cur src)
          src-cur-id->ctr-ids   (:cur-id->ctr-ids src)
-         src-cur-id->localized (:cur-id->localized src)]
+         src-cur-id->localized (:cur-id->localized src)
+         src-cur-id->traits    (:cur-id->traits src)]
      (reduce (fn ^Registry [^Registry r [_cid ^Currency c]]
                (let [d              (.domain ^Currency c)
                      iso-like?      (boolean
