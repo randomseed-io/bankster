@@ -266,9 +266,9 @@
                                          trts (get traits cid)]
                                      (assoc out cid
                                             (cond-> attrs
-                                              (seq ctrs)          (assoc :countries ctrs)
+                                              (seq ctrs)                 (assoc :countries ctrs)
                                               (and (map? lcl) (seq lcl)) (assoc :localized lcl)
-                                              (seq trts)          (assoc :traits trts)))))
+                                              (seq trts)                 (assoc :traits trts)))))
                                  (sorted-map)
                                  cur-id->attrs)
         countries'    (into (sorted-map)
@@ -296,9 +296,9 @@
                  (into (sorted-map)
                        (map (fn [[child ps]]
                               (let [ps (cond
-                                         (nil? ps) nil
+                                         (nil? ps)        nil
                                          (= 1 (count ps)) (first ps)
-                                         :else (vec (sort-by str ps)))]
+                                         :else            (vec (sort-by str ps)))]
                                 (vector child ps))))
                        rels)))]
        (sorted-map-by
@@ -578,7 +578,7 @@
             (let [parents (cond
                             (set? parent)        (sort-by str parent)
                             (sequential? parent) parent
-                            :else               (list parent))]
+                            :else                (list parent))]
               (reduce (fn [h p] (derive h child p)) h parents)))
           (make-hierarchy)
           ;; Stable order makes failures deterministic (cycles, invalid derives, etc.).
@@ -586,7 +586,7 @@
                      (let [parent (cond
                                     (set? parent)        (sort-by str parent)
                                     (sequential? parent) parent
-                                    :else               parent)]
+                                    :else                parent)]
                        (str child "->" parent)))
                    rels)))
 
@@ -687,33 +687,27 @@
          src-cur-id->ctr-ids   (:cur-id->ctr-ids src)
          src-cur-id->localized (:cur-id->localized src)]
      (reduce (fn ^Registry [^Registry r [_cid ^Currency c]]
-               (let [d            (.domain ^Currency c)
-                     iso-like?     (boolean
-                                    (and iso-like?
-                                         (or (identical? d :ISO-4217)
-                                             (identical? d :ISO-4217-LEGACY))))
-                     src-id        (.id ^Currency c)
-                     iso-code-id   (when iso-like? (keyword (name src-id)))
-                     iso-legacy-id (when iso-like? (keyword "iso-4217-legacy" (name src-id)))
-                     legacy?       (and iso-like? (identical? d :ISO-4217-LEGACY))
+               (let [d              (.domain ^Currency c)
+                     iso-like?      (boolean
+                                     (and iso-like?
+                                          (or (identical? d :ISO-4217)
+                                              (identical? d :ISO-4217-LEGACY))))
+                     src-id         (.id ^Currency c)
+                     iso-code-id    (when iso-like? (keyword (name src-id)))
+                     iso-legacy-id  (when iso-like? (keyword "iso-4217-legacy" (name src-id)))
+                     legacy?        (and iso-like? (identical? d :ISO-4217-LEGACY))
                      legacy-domain? (identical? d :ISO-4217-LEGACY)
-                     dst-id        (if legacy? iso-legacy-id (or iso-code-id src-id))
-                     alt-id        (when iso-like? (if legacy? iso-code-id iso-legacy-id))
-                     ^Currency c   (if (and iso-like? (not= src-id dst-id))
-                                     (assoc c :id dst-id)
-                                     c)
-                     existing      (get (:cur-id->cur r) dst-id)
-                     existing      (if (or existing (not iso-like?))
-                                     existing
-                                     (get (:cur-id->cur r) alt-id))
-                     existing-id   (when existing (.id ^Currency existing))
-                     rename?       (and iso-like?
-                                        (some? existing)
-                                        (not= existing-id dst-id))
-                     src-countries (or (clojure.core/get src-cur-id->ctr-ids dst-id)
-                                       (when iso-like? (clojure.core/get src-cur-id->ctr-ids iso-code-id)))
-                     src-localized (or (clojure.core/get src-cur-id->localized dst-id)
-                                       (when iso-like? (clojure.core/get src-cur-id->localized iso-code-id)))]
+                     dst-id         (if legacy? iso-legacy-id (or iso-code-id src-id))
+                     alt-id         (when iso-like? (if legacy? iso-code-id iso-legacy-id))
+                     ^Currency c    (if (and iso-like? (not= src-id dst-id)) (assoc c :id dst-id) c)
+                     existing       (get (:cur-id->cur r) dst-id)
+                     existing       (if (or existing (not iso-like?)) existing (get (:cur-id->cur r) alt-id))
+                     existing-id    (when existing (.id ^Currency existing))
+                     rename?        (and iso-like? (some? existing) (not= existing-id dst-id))
+                     src-countries  (or (clojure.core/get src-cur-id->ctr-ids dst-id)
+                                        (when iso-like? (clojure.core/get src-cur-id->ctr-ids iso-code-id)))
+                     src-localized  (or (clojure.core/get src-cur-id->localized dst-id)
+                                        (when iso-like? (clojure.core/get src-cur-id->localized iso-code-id)))]
                  (if existing
                    (let [existing-id        (or existing-id dst-id)
                          existing-countries (clojure.core/get (:cur-id->ctr-ids r) existing-id)
@@ -738,9 +732,9 @@
                                                 src-localized))
                          localized-input    (localized->register-input localized)
                          ^Currency c        (if legacy-domain?
-                                              (let [w      (int (.weight ^Currency c))
-                                                    w-exp? (weight-explicit? c)
-                                                    ew     (int (.weight ^Currency existing))
+                                              (let [w       (int (.weight ^Currency c))
+                                                    w-exp?  (weight-explicit? c)
+                                                    ew      (int (.weight ^Currency existing))
                                                     ew-exp? (weight-explicit? existing)]
                                                 (cond
                                                   ;; Source explicitly set a non-zero weight: keep it.
@@ -763,10 +757,10 @@
                                                   :else
                                                   (assoc c :weight (int default-legacy-weight))))
                                               c)
-                         updated?           (or rename?
-                                                (not= c existing)
-                                                (not= countries existing-countries)
-                                                (not= localized existing-localized))]
+                         updated? (or rename?
+                                      (not= c existing)
+                                      (not= countries existing-countries)
+                                      (not= localized existing-localized))]
                      (if updated?
                        (do (when verbose?
                              (println "Updated currency:" (symbol (:id c))))
