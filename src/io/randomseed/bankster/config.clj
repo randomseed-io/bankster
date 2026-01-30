@@ -63,6 +63,11 @@
   {:tag clojure.lang.PersistentHashMap :added "1.0.0"}
   ^clojure.lang.PersistentHashMap [cfg] (get cfg :localized {}))
 
+(defn traits
+  "Returns currency traits map of the given configuration map."
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
+  ^clojure.lang.PersistentHashMap [cfg] (get cfg :traits {}))
+
 (defn version
   "Returns version string of the given configuration map."
   {:tag String :added "1.0.0"}

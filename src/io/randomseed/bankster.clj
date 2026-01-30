@@ -26,7 +26,8 @@
 
 (defrecord CurrencyHierarchies
     [^clojure.lang.Associative domain
-     ^clojure.lang.Associative kind])
+     ^clojure.lang.Associative kind
+     ^clojure.lang.Associative traits])
 
 ;;
 ;; Registry record.
@@ -38,6 +39,7 @@
      ^clojure.lang.PersistentHashMap ctr-id->cur        ; country ID to currency record
      ^clojure.lang.PersistentHashMap cur-id->ctr-ids    ; currency ID to set of country IDs
      ^clojure.lang.PersistentHashMap cur-id->localized  ; locale ID to localized properties
+     ^clojure.lang.PersistentHashMap cur-id->traits     ; currency traits
      ^clojure.lang.PersistentHashMap cur-code->curs     ; currency code to currencies (weighted)
      ^clojure.lang.PersistentHashMap cur-nr->curs       ; currency numeric ID to currencies (weighted)
      ^CurrencyHierarchies hierarchies                   ; currency property hierarchies

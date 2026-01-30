@@ -133,7 +133,7 @@
 (def ^{:tag clojure.lang.Atom :added "1.0.0"}
   R
   "Global registry object based on an Atom."
-  (atom (Registry. (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-r) (default-version) (h-m))))
+  (atom (Registry. (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-r) (default-version) (h-m))))
 
 (defn global
   "Returns global registry object."
@@ -220,12 +220,13 @@
   "Creates a new registry."
   {:tag Registry :added "1.0.0"}
   (^Registry []
-   (bankster/->Registry (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-r) (default-version) (h-m)))
+   (bankster/->Registry (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-r) (default-version) (h-m)))
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
               ^clojure.lang.PersistentHashMap cur-nr->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->ctr-ids
               ^clojure.lang.PersistentHashMap cur-id->localized
+              ^clojure.lang.PersistentHashMap cur-id->traits
               ^clojure.lang.PersistentHashMap cur-code->curs
               ^clojure.lang.PersistentHashMap cur-nr->curs
               cur-hierarchies
@@ -236,6 +237,7 @@
                           ctr-id->cur
                           cur-id->ctr-ids
                           cur-id->localized
+                          cur-id->traits
                           cur-code->curs
                           cur-nr->curs
                           cur-hierarchies
@@ -246,6 +248,7 @@
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->ctr-ids
               ^clojure.lang.PersistentHashMap cur-id->localized
+              ^clojure.lang.PersistentHashMap cur-id->traits
               ^clojure.lang.PersistentHashMap cur-code->curs
               ^clojure.lang.PersistentHashMap cur-nr->curs
               cur-hierarchies]
@@ -254,6 +257,7 @@
                  ctr-id->cur
                  cur-id->ctr-ids
                  cur-id->localized
+                 cur-id->traits
                  cur-code->curs
                  cur-nr->curs
                  cur-hierarchies
@@ -261,6 +265,7 @@
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->localized
+              ^clojure.lang.PersistentHashMap cur-id->traits
               ^clojure.lang.PersistentHashMap cur-code->curs
               ^clojure.lang.PersistentHashMap cur-nr->curs
               cur-hierarchies
@@ -271,6 +276,7 @@
                           ctr-id->cur
                           (map/invert-in-sets ctr-id->cur)
                           cur-id->localized
+                          cur-id->traits
                           cur-code->curs
                           cur-nr->curs
                           cur-hierarchies
@@ -279,18 +285,31 @@
   (^Registry [^clojure.lang.PersistentHashMap cur-id->cur
               ^clojure.lang.PersistentHashMap ctr-id->cur
               ^clojure.lang.PersistentHashMap cur-id->localized
+              ^clojure.lang.PersistentHashMap cur-id->traits
               ^clojure.lang.PersistentHashMap cur-code->curs
               ^clojure.lang.PersistentHashMap cur-nr->curs]
    (new-registry cur-id->cur
                  ctr-id->cur
                  cur-id->localized
+                 cur-id->traits
                  cur-code->curs
                  cur-nr->curs
                  (h-r)
                  (default-version)))
   (^Registry [^clojure.lang.PersistentHashMap m]
    (let [r (bankster/map->Registry m)]
-     (assoc r :hierarchies (->currency-hierarchies (clojure.core/get m :hierarchies))))))
+     (-> r
+         (clojure.core/update :cur-id->cur       #(or % (h-m)))
+         (clojure.core/update :cur-nr->cur       #(or % (h-m)))
+         (clojure.core/update :ctr-id->cur       #(or % (h-m)))
+         (clojure.core/update :cur-id->ctr-ids   #(or % (h-m)))
+         (clojure.core/update :cur-id->localized #(or % (h-m)))
+         (clojure.core/update :cur-id->traits    #(or % (h-m)))
+         (clojure.core/update :cur-code->curs    #(or % (h-m)))
+         (clojure.core/update :cur-nr->curs      #(or % (h-m)))
+         (assoc  :hierarchies       (->currency-hierarchies (clojure.core/get m :hierarchies)))
+         (clojure.core/update :version           #(or % (default-version)))
+         (clojure.core/update :ext               #(or % (h-m)))))))
 
 (def ^{:tag      Registry
        :added    "1.0.0"
@@ -300,6 +319,7 @@
                               ^clojure.lang.PersistentHashMap ctr-id->cur
                               ^clojure.lang.PersistentHashMap cur-id->ctr-ids
                               ^clojure.lang.PersistentHashMap cur-id->localized
+                              ^clojure.lang.PersistentHashMap cur-id->traits
                               ^clojure.lang.PersistentHashMap cur-code->curs
                               ^clojure.lang.PersistentHashMap cur-nr->curs
                               ^CurrencyHierarchies            cur-hierarchies
@@ -309,12 +329,14 @@
                               ^clojure.lang.PersistentHashMap ctr-id->cur
                               ^clojure.lang.PersistentHashMap cur-id->ctr-ids
                               ^clojure.lang.PersistentHashMap cur-id->localized
+                              ^clojure.lang.PersistentHashMap cur-id->traits
                               ^clojure.lang.PersistentHashMap cur-code->curs
                               ^clojure.lang.PersistentHashMap cur-nr->curs
                               ^CurrencyHierarchies            cur-hierarchies]
                    ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
                               ^clojure.lang.PersistentHashMap ctr-id->cur
                               ^clojure.lang.PersistentHashMap cur-id->localized
+                              ^clojure.lang.PersistentHashMap cur-id->traits
                               ^clojure.lang.PersistentHashMap cur-code->curs
                               ^clojure.lang.PersistentHashMap cur-nr->curs
                               ^CurrencyHierarchies            cur-hierarchies
@@ -322,6 +344,7 @@
                    ^Registry [^clojure.lang.PersistentHashMap cur-id->cur
                               ^clojure.lang.PersistentHashMap ctr-id->cur
                               ^clojure.lang.PersistentHashMap cur-id->localized
+                              ^clojure.lang.PersistentHashMap cur-id->traits
                               ^clojure.lang.PersistentHashMap cur-code->curs
                               ^clojure.lang.PersistentHashMap cur-nr->curs]
                    ^Registry [^clojure.lang.PersistentHashMap m])}
@@ -447,6 +470,15 @@
   ([registry] `(.cur-id->localized ^io.randomseed.bankster.Registry ~registry))
   ([id registry] `(clojure.core/get (.cur-id->localized ^io.randomseed.bankster.Registry ~registry) ~id)))
 
+(defmacro currency-id->traits*
+  "Returns the currency ID to traits map from a registry. If the registry is not given
+  the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If it is
+  not set, current state of a global registry is used instead."
+  {:added "2.0.0"}
+  ([] `(.cur-id->traits ^io.randomseed.bankster.Registry (get)))
+  ([registry] `(.cur-id->traits ^io.randomseed.bankster.Registry ~registry))
+  ([id registry] `(clojure.core/get (.cur-id->traits ^io.randomseed.bankster.Registry ~registry) ~id)))
+
 (defmacro hierarchies*
   "Returns hierarchies map of a registry. If the registry is not given the dynamic
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
@@ -559,6 +591,15 @@
   (^clojure.lang.PersistentHashMap [] (currency-id->localized*))
   (^clojure.lang.PersistentHashMap [^Registry registry] (currency-id->localized* registry))
   (^clojure.lang.PersistentHashMap [id ^Registry registry] (currency-id->localized* id registry)))
+
+(defn currency-id->traits
+  "Returns the currency ID to traits map from a registry. If the registry is not given
+  the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If it is
+  not set, current state of a global registry is used instead."
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
+  (^clojure.lang.PersistentHashMap [] (currency-id->traits*))
+  (^clojure.lang.PersistentHashMap [^Registry registry] (currency-id->traits* registry))
+  (^clojure.lang.PersistentHashMap [id ^Registry registry] (currency-id->traits* id registry)))
 
 (defn hierarchies
   "Returns hierarchies map of a registry. If the registry is not given the dynamic

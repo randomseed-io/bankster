@@ -2206,6 +2206,32 @@
   [^clojure.lang.IPersistentMap p]
   (map/map-vals prep-localized-props p))
 
+(defn prep-traits
+  "Prepares currency traits by converting the given object into a set of keywords."
+  {:tag clojure.lang.PersistentHashSet :added "2.0.0" :private true}
+  [traits]
+  (when traits
+    (let [ts (cond
+               (set? traits)        traits
+               (sequential? traits) traits
+               (and (seqable? traits) (not (string? traits)))
+               (seq traits)
+               :else
+               (list traits))
+          ts (map keyword ts)
+          ts (remove nil? ts)]
+      (when (seq ts) (set ts)))))
+
+(defn prep-all-traits
+  "Prepares traits map for all currencies in a map."
+  {:tag clojure.lang.IPersistentMap :added "2.0.0" :private true}
+  [^clojure.lang.IPersistentMap p]
+  (into {}
+        (keep (fn [[cid traits]]
+                (when-some [ts (prep-traits traits)]
+                  (vector (keyword cid) ts))))
+        p))
+
 (defn weighted-currencies
   "Constructor for weighted currency buckets: smallest weight wins.
   Total order: (weight asc) then (id asc)."
@@ -2603,12 +2629,16 @@
            curs (prep-currencies          (config/currencies cfg))
            ctrs (prep-cur->ctr            (config/countries  cfg))
            lpro (config/localized                            cfg)
+           trts (prep-all-traits          (config/traits     cfg))
            vers (str                      (config/version    cfg))
-           regi (if (nil? vers) regi (assoc regi :version vers))]
-       (reduce (fn ^Registry [^Registry r ^Currency c]
-                 (let [cid (.id ^Currency c)]
-                   (register r c (get ctrs cid) (get lpro cid) false)))
-               regi curs))
+           regi (if (nil? vers) regi (assoc regi :version vers))
+           ^Registry regi
+           (reduce (fn ^Registry [^Registry r ^Currency c]
+                     (let [cid (.id ^Currency c)]
+                       (register r c (get ctrs cid) (get lpro cid) false)))
+                   regi
+                   curs)]
+       (assoc regi :cur-id->traits trts))
      regi)))
 
 ;;
@@ -2851,6 +2881,53 @@
        (let [k (.kind ^Currency c)]
          (or (identical? kind k)
              (if h (isa? h k kind) (isa? k kind))))))))
+(defn has-trait?
+  "Returns `true` if the given currency `c` has any trait defined (when only currency
+  and optional registry is given). If `tag` is given it returns `true` if the
+  currency has one of its traits set to be the exact keyword given."
+  {:tag      Boolean
+   :added    "2.0.0"
+   :arglists '(^Boolean [c] [c registry] [c tag] [c tag registry])}
+  (^Boolean [c]
+   (let [^Registry registry (registry/get)]
+     (with-attempt c registry [c]
+       (some?
+        (not-empty
+         (registry/currency-id->traits* (.id ^Currency c) registry))))))
+  (^Boolean [c registry-or-tag]
+   (if (nil? registry-or-tag)
+     (has-trait? c)
+     (if (instance? Registry registry-or-tag)
+       (let [^Registry registry registry-or-tag]
+         (with-attempt c registry [c]
+           (some?
+            (not-empty
+             (registry/currency-id->traits* (.id ^Currency c) registry)))))
+       (let [tag               registry-or-tag
+             ^Registry registry (registry/get)]
+         (with-attempt c registry [c]
+           (contains? (registry/currency-id->traits* (.id ^Currency c) registry) tag))))))
+  (^Boolean [c tag registry]
+   (let [^Registry registry (registry/get registry)]
+     (with-attempt c registry [c]
+       (contains? (registry/currency-id->traits* (.id ^Currency c) registry) tag)))))
+
+(defn of-trait?
+  "Checks if any trait of the given currency `c` equals to the one given as a second
+  argument `tag`, or if it belongs to a `tag` (checked with `clojure.core/isa?`)."
+  {:tag Boolean :added "1.0.0"}
+  (^Boolean [^clojure.lang.Keyword tag c]
+   (of-trait? tag c (registry/get)))
+  (^Boolean [^clojure.lang.Keyword tag c ^Registry registry]
+   (let [^Registry registry (registry/get registry)
+         h                  (some-> registry .hierarchies :traits)]
+     (with-attempt c registry [c]
+       (if-let [t (registry/currency-id->traits* (.id ^Currency c) registry)]
+         (if h
+           (boolean (some #(isa? h % tag) t))
+           (contains? t tag))
+         false)))))
+
 
 (defn fiat?
   "Returns `true` if the given currency is a kind of fiat currency."

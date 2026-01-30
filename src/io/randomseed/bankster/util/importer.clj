@@ -217,6 +217,14 @@
   [m]
   (map/map-keys (comp keyword str l/locale) m))
 
+(defn traits->map
+  "Takes a traits set/vector and returns a representation suitable for putting into a
+  configuration file."
+  {:added "2.0.0"}
+  [traits]
+  (when (seq traits)
+    (vec (sort-by str traits))))
+
 (defn registry->map
   "Takes a registry and returns a map suitable for putting into a configuration
   file. Extension fields are ignored. When registry is not given it uses the global
@@ -240,6 +248,11 @@
         #(compare %2 %1)
         :version     (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "yyyyMMddHHmmssSS"))
         :localized   (into (sorted-map) (map/map-vals localized->map (:cur-id->localized registry)))
+        :traits      (into (sorted-map)
+                           (keep (fn [[cid ts]]
+                                   (when-some [ts (traits->map ts)]
+                                     (vector cid ts))))
+                           (or (:cur-id->traits registry) {}))
         :currencies  (into (sorted-map) (map/map-vals currency->map  (:cur-id->cur registry)))
         :countries   (into (sorted-map) (map/map-vals :id (:ctr-id->cur registry)))
         :hierarchies (into (sorted-map) (map/map-vals hierarchy->parent-map (:hierarchies registry))))))))
