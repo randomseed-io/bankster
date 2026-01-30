@@ -478,6 +478,52 @@
         (is (= nil (get (registry/currency-nr->currencies* r3) 999)))
         (is (= nil (get (registry/currency-nr->currency* r3) 999)))))))
 
+(deftest registry-weight-bases-are-synchronized
+  (testing "weight base map and weighted buckets stay in sync when updating weights"
+    (let [r0     (registry/new)
+          a      (c/new :AAA        999 2 nil :ISO-4217 10)
+          b      (c/new :crypto/AAA 999 2 nil :CRYPTO   0)
+          r1     (-> r0
+                     (c/register a [:PL])
+                     (c/register b [:US]))
+          id->w1 (registry/currency-id->weight* r1)]
+      (is (= 10 (get id->w1 :AAA)))
+      (is (false? (contains? id->w1 :crypto/AAA)))
+
+      ;; Buckets must reflect base weights (missing entry == 0).
+      (doseq [bucket [(get (registry/currency-code->currencies* r1) :AAA)
+                      (get (registry/currency-nr->currencies*   r1) 999)]
+              cur    bucket]
+        (let [cid  (c/id cur)
+              base (long (get id->w1 cid 0))]
+          (is (= base (long (c/weight cur))))))
+
+      (let [code-bucket (get (registry/currency-code->currencies* r1) :AAA)]
+        (is (= :crypto/AAA (c/id (first code-bucket)))))
+      (is (= :crypto/AAA (c/id (c/resolve 999 r1))))
+
+      (let [r2     (c/set-weight r1 :AAA 0)
+            r3     (c/set-weight r2 :crypto/AAA 20)
+            id->w3 (registry/currency-id->weight* r3)]
+        (is (contains? id->w3 :AAA))
+        (is (= 0  (get id->w3 :AAA)))
+        (is (= 20 (get id->w3 :crypto/AAA)))
+
+        (let [code-bucket (get (registry/currency-code->currencies* r3) :AAA)]
+          (is (= :AAA (c/id (first code-bucket)))))
+        (is (= :AAA (c/id (c/resolve 999 r3))))
+
+        ;; Country -> currency mapping should point to the same instance as cur-id->cur.
+        (let [cur-aaa (registry/currency-id->currency* :AAA r3)]
+          (is (identical? cur-aaa (registry/country-id->currency* :PL r3))))
+
+        ;; Clearing explicit weight drops the base map entry (default still 0).
+        (let [r4     (c/clear-weight r3 :AAA)
+              id->w4 (registry/currency-id->weight* r4)]
+          (is (false? (contains? id->w4 :AAA)))
+          (let [code-bucket (get (registry/currency-code->currencies* r4) :AAA)]
+            (is (= :AAA (c/id (first code-bucket))))))))))
+
 (deftest currency-auto-initialization-can-be-disabled
   (testing "binding bankster/*initialize-registry* to false prevents side-effectful registry init on ns reload"
     (let [orig  (registry/state)

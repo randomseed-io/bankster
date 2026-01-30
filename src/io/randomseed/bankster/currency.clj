@@ -2118,6 +2118,93 @@
           m (meta c)]
       (with-meta c (assoc (or m {}) weight-meta-key w)))))
 
+(declare weighted-currencies remove-currency-by-id-from-set register-numeric)
+
+(defn set-weight
+  "Sets currency weight in the given registry and updates all weight-dependent indexes.
+
+  Weight is stored as a registry attribute under `Registry/:cur-id->weight` (currency
+  ID -> int weight). Setting weight to 0 keeps an explicit 0 entry (presence in the
+  map is meaningful). Use `clear-weight` to remove the explicit entry (default 0).
+
+  Throws when the currency cannot be resolved in the registry."
+  {:tag Registry :added "3.0.0"}
+  [^Registry registry currency-id weight]
+  (when (some? registry)
+    (when-not (defined? currency-id registry)
+      (throw
+       (ex-info (str "Currency "
+                     (if (instance? Currency currency-id) (.id ^Currency currency-id) currency-id)
+                     " does not exist in a registry.")
+                {:currency-id currency-id})))
+    (let [^Currency c0 (of-id currency-id registry)
+          cid         (.id ^Currency c0)
+          w           (normalize-weight-hint weight)]
+      (when (identical? w invalid-map-hint)
+        (throw
+         (ex-info "Invalid currency weight."
+                  {:currency-id cid
+                   :weight      weight})))
+      (let [w  (int w)
+            ^Currency c (with-weight* c0 w)
+            cids       (registry/currency-id->country-ids* cid registry)
+            code       (if (namespace cid) (keyword (core-name cid)) cid)]
+        (as-> registry r
+          ;; Base map: source of truth (explicit entries, including 0).
+          (assoc-in r [:cur-id->weight cid] w)
+          ;; Keep currency object references consistent across all indexes.
+          (assoc-in r [:cur-id->cur cid] c)
+          (if (seq cids)
+            (core-update r :ctr-id->cur (partial apply assoc) (interleave cids (repeat c)))
+            r)
+          ;; Weighted buckets (code/numeric) store currencies with weight hints in metadata.
+          (update-in r [:cur-code->curs code]
+                     (fn [^clojure.lang.PersistentTreeSet s]
+                       (conj (weighted-currencies (remove-currency-by-id-from-set s cid)) c)))
+          (register-numeric r c))))))
+
+(defn set-weight!
+  "Sets currency weight in the global registry. See `set-weight`."
+  {:tag Registry :added "3.0.0"}
+  [currency-id weight]
+  (swap! registry/R set-weight currency-id weight))
+
+(defn clear-weight
+  "Removes an explicit weight entry for the given currency from the registry (defaults
+  to weight 0) and updates all weight-dependent indexes.
+
+  Throws when the currency cannot be resolved in the registry."
+  {:tag Registry :added "3.0.0"}
+  [^Registry registry currency-id]
+  (when (some? registry)
+    (when-not (defined? currency-id registry)
+      (throw
+       (ex-info (str "Currency "
+                     (if (instance? Currency currency-id) (.id ^Currency currency-id) currency-id)
+                     " does not exist in a registry.")
+                {:currency-id currency-id})))
+    (let [^Currency c0 (of-id currency-id registry)
+          cid         (.id ^Currency c0)
+          ^Currency c (with-weight* c0 0)
+          cids        (registry/currency-id->country-ids* cid registry)
+          code        (if (namespace cid) (keyword (core-name cid)) cid)]
+      (as-> registry r
+        (map/dissoc-in r [:cur-id->weight cid])
+        (assoc-in r [:cur-id->cur cid] c)
+        (if (seq cids)
+          (core-update r :ctr-id->cur (partial apply assoc) (interleave cids (repeat c)))
+          r)
+        (update-in r [:cur-code->curs code]
+                   (fn [^clojure.lang.PersistentTreeSet s]
+                     (conj (weighted-currencies (remove-currency-by-id-from-set s cid)) c)))
+        (register-numeric r c)))))
+
+(defn clear-weight!
+  "Clears an explicit currency weight entry in the global registry. See `clear-weight`."
+  {:tag Registry :added "3.0.0"}
+  [currency-id]
+  (swap! registry/R clear-weight currency-id))
+
 (defn info
   "Returns a map describing the given currency, including registry-associated
   properties when available.
@@ -2147,30 +2234,18 @@
                             (comp keyword str l/locale)
                             lcl)))
                    trts (registry/currency-id->traits* cid registry)
-                   m0   (into {} cur)
-                   m    (cond-> m0
-                          (contains? m0 :sc) (assoc :scale   (get m0 :sc))
-                          (contains? m0 :nr) (assoc :numeric (get m0 :nr))
-                          (contains? m0 :do) (assoc :domain  (get m0 :do))
-                          (contains? m0 :ki) (assoc :kind    (get m0 :ki))
-                          true               (dissoc :sc :nr :do :ki :we))
-                   m    (assoc m :weight (currency-weight cur))
-                   trts0 (get m :traits)
-                   m     (dissoc m :traits)
-                   trts0 (when (some? trts0)
-                           (let [ts (cond
-                                      (set? trts0)        trts0
-                                      (sequential? trts0) trts0
-                                      (and (seqable? trts0) (not (string? trts0)))
-                                      (seq trts0)
-                                      :else
-                                      (list trts0))
-                                 ts (remove nil? (map keyword ts))]
-                             (when (seq ts) (set ts))))
-                   trts  (cond
-                           (and (seq trts0) (seq trts)) (into trts trts0)
-                           (seq trts0)                  trts0
-                           :else                        trts)]
+                 m0   (into {} cur)
+                 m    (cond-> m0
+                        (contains? m0 :sc) (assoc :scale   (get m0 :sc))
+                        (contains? m0 :nr) (assoc :numeric (get m0 :nr))
+                        (contains? m0 :do) (assoc :domain  (get m0 :do))
+                        (contains? m0 :ki) (assoc :kind    (get m0 :ki))
+                        true               (dissoc :sc :nr :do :ki :we :traits))
+                   id->w (registry/currency-id->weight* registry)
+                   w     (if (contains? id->w cid)
+                           (long (clojure.core/get id->w cid))
+                           (currency-weight cur))
+                   m     (assoc m :weight (long w))]
                (cond-> m
                  (seq ctrs) (assoc :countries ctrs)
                  (seq lcl)  (assoc :localized lcl)
@@ -2265,6 +2340,9 @@
     :ki :kind
     :do :domain
     :we :weight
+    :countries
+    :localized
+    :traits
     :propagate-keys})
 
 (defn- prep-propagate-keys
@@ -2545,6 +2623,7 @@
           ^Registry registry (-> registry
                                  (map/dissoc-in [:cur-id->cur       cid])
                                  (map/dissoc-in [:cur-id->localized cid])
+                                 (map/dissoc-in [:cur-id->traits    cid])
                                  (map/dissoc-in [:cur-id->ctr-ids   cid])
                                  (map/dissoc-in [:cur-id->weight    cid])
                                  (core-update   :cur-code->curs remove-weighted-currency cid))]
@@ -3136,43 +3215,38 @@
 (defn has-trait?
   "Returns `true` if the given currency `c` has any trait defined (when only currency
   and optional registry is given). If `tag` is given it returns `true` if the
-  currency has one of its traits set to be the exact keyword given."
+  currency has one of its traits set to be the exact keyword given.
+
+  Traits are registry attributes (stored in `Registry/:cur-id->traits`). Any `:traits`
+  extension field present on ad-hoc `Currency` values is ignored."
   {:tag      Boolean
    :added    "2.0.0"
    :arglists '(^Boolean [c] [c registry] [c tag] [c tag registry])}
   (^Boolean [c]
    (let [^Registry registry (registry/get)]
      (with-attempt c registry [c]
-       (let [reg-traits   (registry/currency-id->traits* (.id ^Currency c) registry)
-             adhoc-traits (prep-traits (clojure.core/get c :traits))
-             reg?         (boolean (seq reg-traits))
-             adhoc?       (boolean (seq adhoc-traits))]
-         (or reg? adhoc?)))))
+       (boolean (seq (registry/currency-id->traits* (.id ^Currency c) registry))))))
   (^Boolean [c registry-or-tag]
-   (if (nil? registry-or-tag)
+   (cond
+     (nil? registry-or-tag)
      (has-trait? c)
-     (if (instance? Registry registry-or-tag)
-       (let [^Registry registry registry-or-tag]
-         (with-attempt c registry [c]
-           (let [reg-traits   (registry/currency-id->traits* (.id ^Currency c) registry)
-                 adhoc-traits (prep-traits (clojure.core/get c :traits))
-                 reg?         (boolean (seq reg-traits))
-                 adhoc?       (boolean (seq adhoc-traits))]
-             (or reg? adhoc?))))
-       (let [tag               registry-or-tag
-             ^Registry registry (registry/get)]
-         (with-attempt c registry [c]
-           (let [reg-traits   (registry/currency-id->traits* (.id ^Currency c) registry)
-                 adhoc-traits (prep-traits (clojure.core/get c :traits))]
-             (or (and (seq adhoc-traits) (contains? adhoc-traits tag))
-                 (and (seq reg-traits)   (contains? reg-traits tag)))))))))
+
+     (instance? Registry registry-or-tag)
+     (let [^Registry registry registry-or-tag]
+       (with-attempt c registry [c]
+         (boolean (seq (registry/currency-id->traits* (.id ^Currency c) registry)))))
+
+     :else
+     (let [tag               registry-or-tag
+           ^Registry registry (registry/get)]
+       (with-attempt c registry [c]
+         (let [reg-traits (registry/currency-id->traits* (.id ^Currency c) registry)]
+           (and (seq reg-traits) (contains? reg-traits tag)))))))
   (^Boolean [c tag registry]
    (let [^Registry registry (registry/get registry)]
      (with-attempt c registry [c]
-       (let [reg-traits   (registry/currency-id->traits* (.id ^Currency c) registry)
-             adhoc-traits (prep-traits (clojure.core/get c :traits))]
-         (or (and (seq adhoc-traits) (contains? adhoc-traits tag))
-             (and (seq reg-traits)   (contains? reg-traits tag))))))))
+       (let [reg-traits (registry/currency-id->traits* (.id ^Currency c) registry)]
+         (and (seq reg-traits) (contains? reg-traits tag)))))))
 
 (defn of-trait?
   "Checks if any trait of the given currency `c` equals to the one given as a second
@@ -3184,15 +3258,101 @@
    (let [^Registry registry (registry/get registry)
          h                  (some-> registry .hierarchies :traits)]
      (with-attempt c registry [c]
-       (let [reg-traits   (registry/currency-id->traits* (.id ^Currency c) registry)
-             adhoc-traits (prep-traits (clojure.core/get c :traits))]
+       (let [reg-traits (registry/currency-id->traits* (.id ^Currency c) registry)]
          (if h
-           (boolean
-            (or (and (seq adhoc-traits) (some #(isa? h % tag) adhoc-traits))
-                (and (seq reg-traits)   (some #(isa? h % tag) reg-traits))))
-           (boolean
-            (or (and (seq adhoc-traits) (contains? adhoc-traits tag))
-                (and (seq reg-traits)   (contains? reg-traits tag))))))))))
+           (boolean (and (seq reg-traits) (some #(isa? h % tag) reg-traits)))
+           (boolean (and (seq reg-traits) (contains? reg-traits tag)))))))))
+
+(defn set-traits
+  "Sets traits for the given currency in the registry.
+
+  Traits are stored as a registry attribute under `Registry/:cur-id->traits`
+  (currency ID -> set of keywords). Passing `nil` or an empty collection removes the
+  traits entry.
+
+  Throws when the currency cannot be resolved in the registry."
+  {:tag Registry :added "3.0.0"}
+  [^Registry registry currency-id traits]
+  (when (some? registry)
+    (when-not (defined? currency-id registry)
+      (throw
+       (ex-info (str "Currency "
+                     (if (instance? Currency currency-id) (.id ^Currency currency-id) currency-id)
+                     " does not exist in a registry.")
+                {:currency-id currency-id})))
+    (let [^Currency c  (of-id currency-id registry)
+          cid          (.id ^Currency c)
+          traits       (prep-traits traits)]
+      (if (seq traits)
+        (assoc-in registry [:cur-id->traits cid] traits)
+        (map/dissoc-in registry [:cur-id->traits cid])))))
+
+(defn set-traits!
+  "Sets traits for the given currency in the global registry. See `set-traits`."
+  {:tag Registry :added "3.0.0"}
+  [currency-id traits]
+  (swap! registry/R set-traits currency-id traits))
+
+(defn add-traits
+  "Adds traits for the given currency in the registry (union).
+
+  Passing `nil` or an empty collection is a no-op.
+
+  Throws when the currency cannot be resolved in the registry."
+  {:tag Registry :added "3.0.0"}
+  [^Registry registry currency-id traits]
+  (when (some? registry)
+    (when-not (defined? currency-id registry)
+      (throw
+       (ex-info (str "Currency "
+                     (if (instance? Currency currency-id) (.id ^Currency currency-id) currency-id)
+                     " does not exist in a registry.")
+                {:currency-id currency-id})))
+    (let [^Currency c  (of-id currency-id registry)
+          cid          (.id ^Currency c)
+          traits       (prep-traits traits)]
+      (if (seq traits)
+        (update-in registry [:cur-id->traits cid] (fnil into #{}) traits)
+        registry))))
+
+(defn add-traits!
+  "Adds traits for the given currency in the global registry. See `add-traits`."
+  {:tag Registry :added "3.0.0"}
+  [currency-id traits]
+  (swap! registry/R add-traits currency-id traits))
+
+(defn remove-traits
+  "Removes traits for the given currency in the registry.
+
+  Passing `nil` or an empty collection is a no-op. Removes the registry entry if it
+  becomes empty.
+
+  Throws when the currency cannot be resolved in the registry."
+  {:tag Registry :added "3.0.0"}
+  [^Registry registry currency-id traits]
+  (when (some? registry)
+    (when-not (defined? currency-id registry)
+      (throw
+       (ex-info (str "Currency "
+                     (if (instance? Currency currency-id) (.id ^Currency currency-id) currency-id)
+                     " does not exist in a registry.")
+                {:currency-id currency-id})))
+    (let [^Currency c  (of-id currency-id registry)
+          cid          (.id ^Currency c)
+          traits       (prep-traits traits)]
+      (if-not (seq traits)
+        registry
+        (let [ts (registry/currency-id->traits* cid registry)
+              ts (when (seq ts) (reduce disj ts traits))]
+          (if (seq ts)
+            (assoc-in registry [:cur-id->traits cid] ts)
+            (map/dissoc-in registry [:cur-id->traits cid])))))))
+
+(defn remove-traits!
+  "Removes traits for the given currency in the global registry. See `remove-traits`."
+  {:tag Registry :added "3.0.0"}
+  [currency-id traits]
+  (swap! registry/R remove-traits currency-id traits))
 
 (defn iso?
   "Returns `true` if the given currency is classified as ISO because its kind is set to
