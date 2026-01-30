@@ -222,6 +222,27 @@
       (is (= :parent (get-in m [:hierarchies :kind :child])))
       (is (= [:asset :fiat] (get-in m [:hierarchies :traits :stable]))))))
 
+(deftest map->currency-oriented-embeds-properties-and-keeps-orphans
+  (testing "map->currency-oriented embeds per-currency properties and keeps only orphaned top-level entries"
+    (let [m  {:version    "v"
+              :currencies (sorted-map :AAA {:scale 2}
+                                      :BBB {:scale 2})
+              :countries  (sorted-map :PL :AAA
+                                      :DE :CCC)
+              :localized  (sorted-map :AAA {:* {:name "A"}}
+                                      :DDD {:* {:name "D"}})
+              :traits     (sorted-map :BBB [:t/b]
+                                      :EEE [:t/e])
+              :hierarchies (sorted-map)}
+          m2 (importer/map->currency-oriented m)]
+      (is (= [:PL] (get-in m2 [:currencies :AAA :countries])))
+      (is (= false (contains? (get-in m2 [:currencies :BBB]) :countries)))
+      (is (= {:* {:name "A"}} (get-in m2 [:currencies :AAA :localized])))
+      (is (= [:t/b] (get-in m2 [:currencies :BBB :traits])))
+      (is (= {:DE :CCC} (:countries m2)))
+      (is (= {:DDD {:* {:name "D"}}} (:localized m2)))
+      (is (= {:EEE [:t/e]} (:traits m2))))))
+
 (deftest config->registry-populates-inline-currency-properties
   (testing "currency entries can carry inline :countries/:localized/:traits that are merged into top-level branches"
     (let [r (currency/config->registry "io/randomseed/bankster/test_config_inline_currency_props.edn")]

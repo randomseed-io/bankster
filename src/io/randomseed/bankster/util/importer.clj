@@ -52,6 +52,11 @@
   "Default EDN export file."
   "registry-export.edn")
 
+(def ^{:const true :tag String :added "2.0.0"}
+  default-export-currency-oriented-filename
+  "Default EDN export file (currency-oriented)."
+  "registry-export-currency-oriented.edn")
+
 (def ^{:const true :tag String :added "1.0.0"}
   default-reader-filenames
   "Default data reader filenames (Clojure code)."
@@ -225,6 +230,58 @@
   (when (seq traits)
     (vec (sort-by str traits))))
 
+(defn- sort-kw-vec
+  "Returns a sorted vector of keyword-ish values."
+  {:tag clojure.lang.IPersistentVector :added "2.0.0" :private true}
+  [xs]
+  (when (seq xs)
+    (->> xs
+         (remove nil?)
+         (map keyword)
+         (sort-by str)
+         (vec))))
+
+(defn map->currency-oriented
+  "Takes a configuration map in a branch-oriented shape (as produced by `registry->map`)
+  and returns a currency-oriented variant.
+
+  Per-currency properties are embedded into each currency map under `:currencies`:
+  - `:countries` (vector of country IDs),
+  - `:localized` (localized properties map),
+  - `:traits`    (vector of traits).
+
+  Top-level branches `:countries`, `:localized` and `:traits` are reduced to contain
+  only orphaned entries (i.e. those not associated with any known currency IDs)."
+  {:tag clojure.lang.IPersistentMap :added "2.0.0"}
+  [m]
+  (let [cur-id->attrs (or (:currencies m) {})
+        cur-ids       (set (keys cur-id->attrs))
+        ctr->cur      (or (:countries m) {})
+        cur->ctrs     (map/invert-in-sets ctr->cur)
+        localized     (or (:localized m) {})
+        traits        (or (:traits m) {})
+        currencies'   (reduce-kv (fn [out cid attrs]
+                                   (let [ctrs (sort-kw-vec (get cur->ctrs cid))
+                                         lcl  (get localized cid)
+                                         trts (get traits cid)]
+                                     (assoc out cid
+                                            (cond-> attrs
+                                              (seq ctrs)          (assoc :countries ctrs)
+                                              (and (map? lcl) (seq lcl)) (assoc :localized lcl)
+                                              (seq trts)          (assoc :traits trts)))))
+                                 (sorted-map)
+                                 cur-id->attrs)
+        countries'    (into (sorted-map)
+                            (remove (fn [[_ cid]] (contains? cur-ids cid)))
+                            ctr->cur)
+        localized'    (reduce dissoc localized cur-ids)
+        traits'       (reduce dissoc traits cur-ids)]
+    (assoc m
+           :currencies currencies'
+           :countries  countries'
+           :localized  localized'
+           :traits     traits')))
+
 (defn registry->map
   "Takes a registry and returns a map suitable for putting into a configuration
   file. Extension fields are ignored. When registry is not given it uses the global
@@ -256,6 +313,16 @@
         :currencies  (into (sorted-map) (map/map-vals currency->map  (:cur-id->cur registry)))
         :countries   (into (sorted-map) (map/map-vals :id (:ctr-id->cur registry)))
         :hierarchies (into (sorted-map) (map/map-vals hierarchy->parent-map (:hierarchies registry))))))))
+
+(defn registry->map-currency-oriented
+  "Like `registry->map`, but produces a currency-oriented configuration map by
+  embedding per-currency properties (countries, localized properties, traits) into
+  the currency maps. Orphaned top-level entries are kept."
+  {:tag clojure.lang.IPersistentMap :added "2.0.0"}
+  ([]
+   (registry->map-currency-oriented (registry/state)))
+  ([^Registry registry]
+   (map->currency-oriented (registry->map registry))))
 
 (defn dump
   "For the given filename (defaults to default-dump-filename) and a registry (defaults
@@ -294,6 +361,26 @@
      (let [pathname (io/file (.getParent ^java.io.File (io/file rdir)) filename)]
        ;; (println "Exporting configuration to" (str pathname))
        (spit pathname (puget/pprint-str (registry->map registry)))))))
+
+(defn export-currency-oriented
+  "For the given filename (defaults to default-export-currency-oriented-filename) and a
+  registry (defaults to a global registry) creates a currency-oriented configuration
+  file in EDN format.
+
+  Currency-oriented export embeds per-currency properties (countries, localized
+  properties and traits) into the maps under `:currencies`. Top-level branches keep
+  only orphaned entries."
+  {:added "2.0.0"}
+  ([]
+   (export-currency-oriented default-export-currency-oriented-filename (registry/get)))
+  ([^Registry registry]
+   (export-currency-oriented default-export-currency-oriented-filename registry))
+  ([^String   filename
+    ^Registry registry]
+   (when-some [rdir (fs/resource-pathname default-resource-name
+                                          default-resource-must-exist-file)]
+     (let [pathname (io/file (.getParent ^java.io.File (io/file rdir)) filename)]
+       (spit pathname (puget/pprint-str (registry->map-currency-oriented registry)))))))
 
 ;;
 ;; Readers generator.
