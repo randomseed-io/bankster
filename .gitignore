@@ -26,3 +26,7 @@ node_modules/
 /cljs-test-runner-out
 .eastwood
 /dev/resources/org/joda/
+resources/io/randomseed/bankster/registry-export-currency-oriented.edn
+doc/10_introduction.md
+doc/10_introduction.md
+resources/io/randomseed/bankster/registry-export.edn
