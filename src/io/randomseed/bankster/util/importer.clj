@@ -809,5 +809,7 @@
   {:added "1.0.0"}
   []
   (let [dst (seed-import)
-        jda (joda-import)]
-    (export-currency-oriented (merge-registry dst jda true [:domain :kind ::localized] true))))
+        jda (joda-import)
+        reg (merge-registry dst jda true [:domain :kind ::localized] true)]
+    (export reg)
+    (export-currency-oriented reg)))
