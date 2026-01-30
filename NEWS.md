@@ -4,28 +4,72 @@
 
 **BREAKING CHANGES**:
 
-- Registry record changed (added `ext`, added weighted numeric-ID buckets).
+- Registry record changed (added `ext`, added weighted numeric-ID buckets, added `:hierarchies`
+  and currency traits base map).
 - Macro-based registry accessors renamed to `*` variants.
 - Monetary protocol refactored/extended (new coercions, stricter contractual behavior).
+- Currency weight (`:weight`) moved out of the `Currency` record fields into metadata, so it
+  no longer participates in `=` / `hash` semantics.
+  Weight is now treated as a registry attribute stored in `Registry.cur-id->weight`
+  and exported under top-level `:weights` in EDN configs/exports; registry `Currency`
+  instances also carry weight in metadata as an optimization. Use `currency/weight`
+  (and `currency/with-weight`) to work with it.
 
 Currency / registry:
 
+- Registry hierarchies support added (stored in `:hierarchies`), including custom axes and
+  multi-parent relationships. New helpers: `registry/hierarchies`, `registry/hierarchy`,
+  `registry/hierarchy-derive`, `registry/hierarchy-derive!`.
+- Side-effectful global registry initialization performed at
+  `io.randomseed.bankster.currency` namespace load time can now be disabled by binding
+  `io.randomseed.bankster/*initialize-registry*` to `false` around `require` (default is
+  `true`).
+- Currency kind can now be namespaced and case-sensitive (e.g. `:iso/fiat`, `:virtual/token`);
+  `currency/of-kind?` can consult the kind hierarchy (renamed from `currency/kind-of?`).
+- Added `currency/of-domain?` (domain-aware predicate) and `currency/null?` / `currency/none?`.
+- Added `currency/info` (full currency info map: fields + registry metadata).
+- Added currency traits base map (`:traits` in config, `cur-id->traits` in registry) + export/import support.
+- Added `currency/has-trait?` (exact membership) and `currency/of-trait?` (hierarchy-aware) predicates.
+- Added narrow public APIs to mutate registry-level weights and traits:
+  `currency/set-weight`, `currency/clear-weight`, `currency/set-traits`, `currency/add-traits`,
+  `currency/remove-traits` (+ `!` variants).
 - Fixed a bug that caused currency ID to be used instead of currency code during code-bucket cleanup
   (stale entries in `:cur-code->curs` after unregister).
 - Currency constructor improved (nil handling, automatic `:ISO-4217` domain inference); ISO helpers tightened.
 - Registry diagnostics added (`*warn-on-inconsistency*` + `inconsistency-warning`).
 
+Importer / data:
+
+- CSV reader now supports comment lines and inline comments (preserved for post-processing).
+- Joda CSV importer recognizes "Old, now ..." (ISO legacy) and "FundsCode ..." (sets kind to `:iso/funds`).
+- When ISO legacy is inferred ("Old, now ...", ISO-like merges), Bankster also tags the currency with
+  trait `:legacy`.
+- EDN config loader supports inline per-currency `:countries`, `:localized`, and `:traits` keys (merged into
+  the top-level branches) and `:propagate-keys` (allowlist for propagating selected extra currency-map keys
+  into Currency extension fields).
+- Added currency-oriented export helpers: `importer/map->currency-oriented`,
+  `importer/registry->map-currency-oriented`, `importer/export-currency-oriented`.
+- `merge-registry` enhanced: merges `:hierarchies` and `:ext`, supports preserving selected currency fields
+  (including localized properties and countries), adds ISO-like mode for ISO vs legacy alignment, and supports
+  verbose reporting of new/updated currencies.
+
 Money:
 
 - Money currency comparisons/equality ignore currency `:weight` (weight is for code resolution only).
 - Varargs `money/add` and `money/sub` now also treat `:weight` as non-semantic (regression test added).
+- Unary `money/div` no longer allows `Money` arguments (throws like `number / Money`).
 - `io.randomseed.bankster.money.inter-ops` now mirrors `clojure.core` behavior when no `Money` is involved;
   any `Money` argument switches to Bankster arithmetic/comparators.
 - Assertions replaced with `ExceptionInfo` (exception data added/normalized).
+- Rounding-mode lookups optimized: `scale/with-rounding` / `scale/with-rescaling` (and aliases in `money`)
+  now set a thread-local fast path for rounding mode. Prefer these macros over a raw `binding` of
+  `scale/*rounding-mode*` in performance-sensitive code.
 
 Tooling / DX:
 
 - Added `CONTRACTS.md` (practical contracts for Currency/Money/Registry + protocols).
+- Added experimental `io.randomseed.bankster.jsr-354` namespace (Clojure semantic bridge inspired by JSR-354;
+  not a Java interface/implementation; work in progress).
 - nREPL support improved; piggieback removed; Logback added for `:dev` and `:test`.
 - Coverage/CI fixes and initial perf benchmarks added.
 

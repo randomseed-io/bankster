@@ -45,6 +45,7 @@ representing currency + amount and doing safe operations around that.
 * Built-in standard **currencies database**, extendable with EDN file.
 * Ability to create *ad hoc* currencies (with optional registering).
 * Different sources of **currency registries** (dynamic, global or local).
+* Registry **hierarchies** for classification (`:domain`, `:kind`, plus custom axes) and optional per-currency **traits**.
 * **Polymorphic** interfaces (`Scalable`, `Monetary`, `Accountable` protocols)
 * Ability to **cast** and **convert** monetary amounts.
 * Useful **macros** to express currencies and monetary amounts with various forms.
@@ -105,8 +106,15 @@ Registry is implemented as a record of maps keeping the following associations:
 * currency numeric ID to currency object;
 * country ID to currency object;
 * currency ID to localized properties map;
+* currency ID to traits set (advisory tags/features);
+* currency ID to weight (an integer used for conflict resolution);
 * currency code to a sorted set of currency objects (weighted);
 * currency numeric ID to a sorted set of currency objects (weighted).
+
+Registry also carries:
+
+* `:hierarchies` – classification hierarchies (e.g. `:domain`, `:kind`, `:traits`, and any custom axes);
+* `:ext` – a free-form extension map for registry-level metadata.
 
 In most cases you won't have to worry about the internals of a registry. However,
 when working with multiple data sources or data processing engines (like currency
@@ -122,6 +130,60 @@ When the library loads, its predefined configuration is read from a default EDN 
 and its contents populate the default, global registry. This registry can be
 modified too.
 
+Configuration (`config.edn`) is branch-oriented by default (`:currencies`, plus
+top-level indices like `:countries`, `:localized` and `:traits`). For convenience,
+each currency entry may also carry inline `:countries`, `:localized` and `:traits`
+which are merged into the global branches while loading (they do not become currency
+fields). Similarly, a currency entry may include inline `:weight` (or `:we`) which is
+normalized into the top-level `:weights` branch.
+
+If you need selected extra keys from currency maps to be preserved on the constructed
+`Currency` objects (extension fields), use `:propagate-keys` in the config (global
+allowlist) or per-currency `:propagate-keys` (override).
+
+### Hierarchies and traits
+
+Bankster can store classification hierarchies in a registry and use them for semantic
+queries via `clojure.core/isa?`.
+
+Registry key `:hierarchies` is a `CurrencyHierarchies` record that may contain:
+
+* `:domain` – hierarchy of domains (e.g. `:ISO-4217-LEGACY` is a kind of `:ISO-4217`);
+* `:kind` – hierarchy of currency kinds (your taxonomy, including namespaced kinds);
+* `:traits` – optional hierarchy of traits (advisory; useful for tags like token standards).
+
+Hierarchy specs are expressed as a parent-map `{child parent}` and may also use a
+vector/set of parents for multiple inheritance.
+
+Traits are stored separately as a registry map `currency-id -> traits` (sets/vectors
+of keywords). They are intentionally *not* part of currency identity and do not
+affect money equality or arithmetic.
+
+```clojure
+(require '[io.randomseed.bankster.registry :as registry]
+         '[io.randomseed.bankster.currency :as currency])
+
+(def r
+  (assoc (registry/new
+          {:hierarchies {:domain {:ISO-4217-LEGACY :ISO-4217
+                                  :CRYPTO          :VIRTUAL}
+                         :traits {:token/erc20 :token/fungible
+                                  :token/bep20 :token/fungible
+                                  :stable/coin [:stable :token/fungible]}}})
+         :cur-id->traits {:crypto/USDC #{:token/erc20 :stable/coin}}))
+
+;; Domains can be queried using a hierarchy-aware predicate.
+(currency/of-domain? :ISO-4217 (currency/new :iso-4217-legacy/ADP) r)
+;; => true
+
+;; Traits can be queried via the traits hierarchy.
+(currency/of-trait? :token/fungible :crypto/USDC r)
+;; => true
+```
+
+To extend a hierarchy programmatically use `registry/hierarchy-derive` (pure) or
+`registry/hierarchy-derive!` (mutates the global registry).
+
 ### Currency
 
 Each **currency** (`Currency`) is a record having the following fields, reflecting
@@ -131,8 +193,20 @@ its properties:
 * `numeric` – a long value being a **numeric identifier** of ISO-standardized currencies;
 * `scale` – an integer of supported **scale** (decimal places);
 * `kind` – a keyword with currency **kind**;
-* `domain` – a keyword with currency **domain**;
-* `weight` – an integer which helps in case there is a conflict of currency codes.
+* `domain` – a keyword with currency **domain**.
+
+Additionally, currency may carry a non-inherent attribute `:weight` (an integer),
+used only to resolve conflicts when multiple currencies share the same currency code
+or numeric ID (lower weight wins).
+
+The source of truth for weights is the registry base map `:cur-id->weight` (exported
+to EDN under top-level `:weights`). Currency instances stored in registries carry the
+weight in metadata as an optimization (hot-path: weighted buckets), but weight does
+not affect `=` / `hash` semantics. Use `currency/weight` to read it.
+
+To mutate weights and traits (which are registry attributes) use:
+`currency/set-weight`/`currency/clear-weight` and `currency/set-traits`/`currency/add-traits`/`currency/remove-traits`
+(plus `!` variants operating on the global registry).
 
 **Currency ID** is a unique identifier of a currency within a registry. Internally it
 is a keyword and optionally it can have a namespace. By default Bankster identifies
@@ -147,22 +221,43 @@ uniqueness of identifiers. If custom currency is created with the same code as
 already existing currency, it is possible to give it a **weight** (lower weight wins)
 which will decide
 whether its code will have priority during resolution (and getting from a registry).
+Currency `:weight` is a registry resolution mechanism and is treated as non-semantic
+in equality and arithmetic on monetary values.
 
-**Currency domain** is by default the same as a namespace of currency ID (if it is
-namespaced). For non-namespaced identifiers it can be set to anything. The domain of
-`:ISO-4217` informs the library that this is ISO-standardized currency. The purpose
-of domain is to classify currencies into different realms and create a boundary
-preventing naming conflicts when codes are the same.
+**Currency domain** is a keyword which groups currencies into separate "worlds". By
+default it is derived from the namespace of currency ID (upper-cased), e.g.
+`:crypto/ETH` implies `:domain :CRYPTO`. Namespace `ISO-4217` is treated specially:
+it is stripped (case-insensitive) and implies `:domain :ISO-4217`. Additionally,
+ISO-like currencies may get `:ISO-4217` inferred from their code + numeric ID.
 
-**Currency kind** is a keyword that should describe a class of currency. It can be
-set to anything, even nil, but the suggested values are:
+Domains can be organized in a registry hierarchy (`registry/hierarchy :domain`) and
+queried with `currency/of-domain?`.
 
-  - `:FIAT`          – legal tender issued by government or other authority,
-  - `:FIDUCIARY`     - accepted medium of exchange issued by a fiduciary or fiduciaries,
-  - `:DECENTRALIZED` - accepted medium of exchange issued by a distributed ledger,
-  - `:COMBANK`       - commercial bank money,
-  - `:COMMODITY`     - accepted medium of exchange based on commodities,
-  - `:EXPERIMENTAL`  - pseudo-currency used for testing purposes.
+**Currency kind** is a case-sensitive keyword that should describe what the currency
+is. It can be set to anything, even nil. Some common values are:
+
+  - `:iso`       - ISO-4217 currencies, funds, commodities, special markers.
+  - `:virtual`   - Virtual units (stable tokens, credits, native tokens, special).
+  - `:currency`  - Meta: currency-like units; parent for `:fiduciary` money.
+  - `:asset`     - Meta: value-bearing units (`:assets`, `:claims`, `:stable`, reference-based).
+  - `:fiat`      - Meta umbrella: fiat-related tags (issuer fiats vs fiat-as-anchor).
+  - `:funds`     - Meta: funds, settlement units, units of account.
+  - `:commodity` - Meta: commodity-based units and commodity anchoring.
+  - `:special`   - Meta: special-purpose markers (`:experimental`, `:test`, `:null`).
+
+In new code it is recommended to use namespaced kinds (for example: `:iso/fiat`,
+`:iso/funds`, `:virtual/native`, `:virtual/token`, `:virtual.stable.peg/fiat`).
+
+Kinds can be organized in a registry hierarchy (`registry/hierarchy :kind`) and
+queried with `currency/of-kind?`.
+
+Currencies can can be tested against their ancestors in a hierarchy of kinds using
+API functions, so doing `(currency/of-kind :fiat :PLN)` will return `true` since this
+currency has its kind set to `:iso/fiat`.
+
+The default kind taxonomy and its relationships (as shipped in the default
+`config.edn`) are documented in `doc/30_currency-kinds.md`. The default traits
+taxonomy is documented in `doc/32_currency_traits.md`.
 
 **Currency scale** is the nominal scale of a currency. If it is not set, the
 automatic scale will be used on monetary amounts using such a currency.
@@ -174,6 +269,9 @@ picked up.
 
 Currencies can also have **additional**, external properties, like relations to
 countries, localized (l10n) settings etc. They are stored in registries too.
+
+To inspect a currency including registry-associated metadata (countries, localized
+properties, traits) use `currency/info`.
 
 ### Money
 
@@ -189,6 +287,78 @@ calculations and preserve it. In rare cases it is possible to rescale the amount
 check whether the monetary object is rescaled and scale it back to a scale of the
 currency.
 
+#### Rounding mode (performance note)
+
+Rounding in Bankster is controlled by dynamic vars from `io.randomseed.bankster.scale`:
+`scale/*rounding-mode*` (and for some multi-arg operations also `scale/*each*`).
+
+Prefer using Bankster macros:
+
+* `money/with-rounding` (alias for `scale/with-rounding`) to set the rounding mode;
+* `money/with-rescaling` / `scale/with-rescaling` to also rescale after each step.
+
+These macros keep semantics consistent with a plain `binding`, but they also set an
+internal thread-local fast path for rounding-mode lookups. Direct `binding` of
+`scale/*rounding-mode*` is supported, but does not use this fast path and may be
+noticeably slower in tight numeric loops.
+
+### Importing and merging registries
+
+Namespace `io.randomseed.bankster.util.importer` provides practical tooling for
+building and merging currency registries from external sources (most notably: Joda
+Money CSV files).
+
+Highlights:
+
+* CSV loader supports comment lines and inline `# ...` comments (preserved for
+  post-processing).
+* Joda currency comments are used to infer ISO legacy IDs ("Old, now ...") and ISO
+  funds kinds ("FundsCode ...").
+* When ISO legacy is inferred, Bankster also tags the currency with trait `:legacy`.
+* When merging `seed.edn` with Joda CSV imports, a practical default is to treat
+  `seed.edn` as the semantic authority (domain/kind/traits/weights/localized), while
+  refreshing `:numeric` and `:scale` from the CSV. This is expressed via
+  `importer/merge-registry` + `preserve-fields` (and optionally `::importer/countries`
+  if you want to preserve assigned countries from the seed).
+* `importer/merge-registry` merges registries together with `:hierarchies` and
+  `:ext`, supports preserving selected currency fields (and/or localized properties
+  and assigned countries), and can align ISO vs legacy classification in "ISO-like"
+  mode.
+* Export helpers:
+  - `importer/export` writes a branch-oriented config (as produced by `registry->map`),
+  - `importer/export-currency-oriented` writes a currency-oriented config (per-currency
+    `:countries/:localized/:traits` embedded into `:currencies`, top-level branches keep
+    only orphaned entries),
+  - `importer/map->currency-oriented` is the post-process transformer (map -> map).
+
+```clojure
+(require '[io.randomseed.bankster.util.importer :as importer])
+
+;; Generate a Bankster EDN export from Joda Money CSV resources.
+(importer/joda->bankster-export)
+
+;; Merge two registries (verbose + preserve :domain/:kind and localized props, while
+;; letting ISO-like source align ISO vs legacy classification).
+;;
+;; In this setup `seed.edn` stays authoritative for domain/kind and localized props,
+;; while numeric/scale (and countries, unless preserved) are refreshed from CSV.
+(let [dst (importer/seed-import)
+      src (importer/joda-import)]
+  (importer/merge-registry dst src true [:domain :kind ::importer/localized] true))
+
+;; Export a registry in two equivalent shapes.
+(importer/export dst)                    ; branch-oriented
+(importer/export-currency-oriented dst)  ; currency-oriented
+```
+
+### Experimental: JSR-354 semantic bridge
+
+Namespace `io.randomseed.bankster.jsr-354` is an experimental, work-in-progress
+Clojure semantic bridge inspired by JSR-354 (JavaMoney). It is not a Java
+implementation/interface of the standard. The goal is to progressively cover more
+of JSR-354 semantics in future Bankster releases; until then, treat this namespace
+as unstable.
+
 ## Sneak peeks
 
 * It **shows information** about a currency:
@@ -196,36 +366,57 @@ currency.
 ```clojure
 ;; global registry lookup with a keyword
 (currency/of :PLN)
-#currency{:id :PLN, :domain :ISO-4217, :kind :FIAT, :numeric 985, :scale 2}
+#currency{:id :PLN, :domain :ISO-4217, :kind :iso/fiat, :numeric 985, :scale 2}
 
 ;; global registry lookup using namespaced symbol
 (currency/of crypto/ETH)
-#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :scale 18, :weight 5}
+#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :virtual/native, :scale 18, :weight 5}
 
 ;; global registry lookup with a string (incl. namespace a.k.a domain)
 (currency/of "crypto/BTC")
-#currency{:id :crypto/BTC, :domain :CRYPTO, :kind :DECENTRALIZED, :scale 8, :weight 5}
+#currency{:id :crypto/BTC, :domain :CRYPTO, :kind :virtual/native, :scale 8, :weight 5}
 
 ;; global registry lookup with a currency code
 ;; (weight solves potential conflicts when two currencies have the same currency code)
 (currency/of ETH)
-#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :DECENTRALIZED, :scale 18, :weight 5}
+#currency{:id :crypto/ETH, :domain :CRYPTO, :kind :virtual/native, :scale 18, :weight 5}
 
 ;; global registry lookup using ISO currency number
 (currency/of 840)
-#currency{:id :USD, :domain :ISO-4217, :kind :FIAT, :numeric 840, :scale 2}
+#currency{:id :USD, :domain :ISO-4217, :kind :iso/fiat, :numeric 840, :scale 2}
 
 ;; global registry lookup using tagged literal with a currency code
 #currency XLM
-#currency{:id :crypto/XLM, :domain :CRYPTO, :kind :FIDUCIARY, :scale 8}
+#currency{:id :crypto/XLM, :domain :CRYPTO, :kind :virtual/native, :scale 8}
 
 ;; global registry lookup using tagged literal with a namespaced identifier
 #currency crypto/XLM
-#currency{:id :crypto/XLM, :domain :CRYPTO, :kind :FIDUCIARY, :scale 8}
+#currency{:id :crypto/XLM, :domain :CRYPTO, :kind :virtual/native, :scale 8}
 
 ;; global registry lookup using tagged literal with an ISO currency number
 #currency 978
-#currency{:id :EUR, :domain :ISO-4217, :kind :FIAT, :numeric 978, :scale 2}
+#currency{:id :EUR, :domain :ISO-4217, :kind :iso/fiat, :numeric 978, :scale 2}
+
+;; Full currency information (including registry metadata).
+(currency/info :PLN)
+{:id :PLN,
+ :numeric 985,
+ :scale 2,
+ :domain :ISO-4217,
+ :kind :iso/fiat,
+ :weight 0,
+ :countries #{:PL},
+ :localized {:pl {:name "złoty polski", :symbol "zł"}}}
+
+(currency/info :crypto/USDC)
+{:id :crypto/USDC,
+ :numeric -1,
+ :scale 8,
+ :domain :CRYPTO,
+ :kind :virtual.stable.peg/fiat,
+ :weight 4,
+ :localized {:* {:name "USD Coin", :symbol "USDC"}},
+ :traits #{:peg/fiat :stable/coin :token/erc20}}
 ```
 
 * It allows to **create a currency** and **register it**:
@@ -544,7 +735,7 @@ true
 #money[10.00000000 USD]
 
 (scale/apply #currency USD 8)  ;; use with caution
-#currency{:id :USD, :domain :ISO-4217, :kind :FIAT, :numeric 840, :scale 8}
+#currency{:id :USD, :domain :ISO-4217, :kind :iso/fiat, :numeric 840, :scale 8}
 
 (money/rescale #money[10 USD] 8)
 #money[10.00000000 USD]
@@ -683,4 +874,3 @@ Starts REPL (and optionally nREPL server with port number is stored in `.nrepl-p
 
 [LICENSE]:    https://github.com/randomseed-io/bankster/blob/master/LICENSE
 [CONTRACTS]:  https://github.com/randomseed-io/bankster/blob/master/CONTRACTS.md
-
