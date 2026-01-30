@@ -326,7 +326,9 @@
 (deftest currency-traits
   (testing "traits: presence, exact membership and hierarchy-aware checks"
     (is (= (c/has-trait? :crypto/USDT) true))
-    (is (= (c/has-trait? :crypto/ETH) false))
+    ;; In the default config, most crypto assets have at least a native blockchain trait.
+    (is (= (c/has-trait? :crypto/ETH) true))
+    (is (= (c/has-trait? :PLN) false))
     ;; Exact membership only:
     (is (= (c/has-trait? :crypto/USDT :token/erc20) true))
     (is (= (c/has-trait? :crypto/USDT :token) false))
@@ -364,16 +366,16 @@
   (testing "info returns currency fields and registry-associated properties"
     (let [cur (c/new :AAA 123 2 :iso/fiat :ISO-4217 0)
           r0  (registry/new)
-          r1  (-> r0
+      r1  (-> r0
                   (c/register cur [:PL] {:* {:name "A"}})
                   (assoc :cur-id->traits {:AAA #{:token/erc20}}))]
       (is (= (c/info :AAA r1)
              {:id :AAA
-              :nr 123
-              :sc 2
-              :do :ISO-4217
-              :ki :iso/fiat
-              :we 0
+              :numeric 123
+              :scale 2
+              :domain :ISO-4217
+              :kind :iso/fiat
+              :weight 0
               :countries #{:PL}
               :localized {:* {:name "A"}}
               :traits #{:token/erc20}}))

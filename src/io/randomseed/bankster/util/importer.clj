@@ -208,12 +208,13 @@
   "Takes a currency and returns a map suitable for putting into a configuration
   file. Extension fields are ignored."
   {:added "1.0.0"}
-  [{:keys [:numeric :scale :kind :weight]}]
-  (as-> (sorted-map) m
-    (if (and (number? numeric) (pos? numeric))      (assoc m :numeric numeric) m)
-    (if-not (and (some? scale) (neg? scale))        (assoc m :scale   scale)   m)
-    (if (some? kind)                                (assoc m :kind    kind)    m)
-    (if (and (number? weight) (not (zero? weight))) (assoc m :weight  weight)  m)))
+  [{:keys [:numeric :scale :kind] :as c}]
+  (let [weight (currency/weight c)]
+    (as-> (sorted-map) m
+      (if (and (number? numeric) (pos? numeric))      (assoc m :numeric numeric) m)
+      (if-not (and (some? scale) (neg? scale))        (assoc m :scale   scale)   m)
+      (if (some? kind)                                (assoc m :kind    kind)    m)
+      (if (and (number? weight) (not (zero? weight))) (assoc m :weight  weight)  m))))
 
 (defn localized->map
   "Takes a localized map entry (1st level) and returns a map suitable for putting into

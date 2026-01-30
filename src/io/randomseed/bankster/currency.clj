@@ -2090,8 +2090,31 @@
                            (map/map-keys
                             (comp keyword str l/locale)
                             lcl)))
-                   trts (registry/currency-id->traits* cid registry)]
-               (cond-> (to-map cur)
+                   trts (registry/currency-id->traits* cid registry)
+                   m0   (into {} cur)
+                   m    (cond-> m0
+                          (contains? m0 :sc) (assoc :scale   (get m0 :sc))
+                          (contains? m0 :nr) (assoc :numeric (get m0 :nr))
+                          (contains? m0 :do) (assoc :domain  (get m0 :do))
+                          (contains? m0 :ki) (assoc :kind    (get m0 :ki))
+                          true               (dissoc :sc :nr :do :ki :we))
+                   trts0 (get m :traits)
+                   m     (dissoc m :traits)
+                   trts0 (when (some? trts0)
+                           (let [ts (cond
+                                      (set? trts0)        trts0
+                                      (sequential? trts0) trts0
+                                      (and (seqable? trts0) (not (string? trts0)))
+                                      (seq trts0)
+                                      :else
+                                      (list trts0))
+                                 ts (remove nil? (map keyword ts))]
+                             (when (seq ts) (set ts))))
+                   trts  (cond
+                           (and (seq trts0) (seq trts)) (into trts trts0)
+                           (seq trts0)                  trts0
+                           :else                        trts)]
+               (cond-> m
                  (seq ctrs) (assoc :countries ctrs)
                  (seq lcl)  (assoc :localized lcl)
                  (seq trts) (assoc :traits trts))))]
