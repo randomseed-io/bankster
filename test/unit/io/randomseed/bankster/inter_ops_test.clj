@@ -132,6 +132,7 @@
     (assert-money (i/* (m 10M) 2 3) :PLN 60M))
   (testing "/ on Money"
     (assert-money (i// (m 10M) 2) :PLN 5M)
+    (is (thrown? clojure.lang.ExceptionInfo (i// (m 1M))))
     (assert-money (i// (m 1M) 4) :PLN 0.25M)))
 
 (deftest compare-and-sign

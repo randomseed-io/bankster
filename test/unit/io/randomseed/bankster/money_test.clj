@@ -306,6 +306,8 @@
 (deftest monetary-values-calculations
   (testing "when it's possible to divide monetary values"
     (is (= (m/div 2) 0.5M))
+    ;; Unary div on Money would be equivalent to (div 1 Money) which is disallowed.
+    (is (thrown? clojure.lang.ExceptionInfo (m/div #money[1 PLN])))
     (is (= (m/div #money[1 PLN] #money[4 PLN]) 0.25M))
     (is (= (m/div #money[1 PLN] 4M) #money[0.25 PLN]))
     (is (= (m/div #money[10 PLN] 2 2) #money[2.50 PLN]))

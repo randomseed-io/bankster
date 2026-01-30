@@ -1540,8 +1540,8 @@
   intermediate result becomes a regular number, so all consequent divisors must also
   be regular numbers.
 
-  For a single value it returns a division of 1 by the given number or monetary
-  value.
+  For a single value it returns a division of 1 by the given number. For a monetary
+  value it will throw, because dividing a regular number by Money is not allowed.
 
   For more than 2 arguments it repeatedly divides their values as described and
   re-scales each result to match the scale of the first encountered monetary
@@ -1671,8 +1671,8 @@
   amount, an exception will be thrown. The result will always be either a kind of
   Money or a BigDecimal number.
 
-  For a single value it returns a division of 1 by the given number or monetary
-  value.
+  For a single value it returns a division of 1 by the given number. For a monetary
+  value it will throw, because dividing a regular number by Money is not allowed.
 
   For more than 2 arguments it repeatedly divides their values as described. If the
   previous calculations produce a regular number, all consequent divisors must be
@@ -1699,15 +1699,8 @@
   {:added "1.0.0"}
   ([a]
    (if (instance? Money a)
-     (let [^RoundingMode rm (or scale/*rounding-mode* scale/ROUND_UNNECESSARY)
-           ^BigDecimal   am (.amount   ^Money a)
-           ^Currency      c (.currency ^Money a)]
-       (if (currency-auto-scaled? ^Currency c)
-         (Money. ^Currency (.currency ^Money a)
-                 (div-core 1M ^BigDecimal am ^RoundingMode rm))
-         (Money. ^Currency   (.currency ^Money a)
-                 ^BigDecimal (.divide 1M ^BigDecimal am
-                                      (int (.scale ^BigDecimal am)) ^RoundingMode rm))))
+     (throw (ex-info "Cannot divide a regular number by the monetary amount."
+                     {:dividend 1M :divisor a}))
      (div 1M a)))
   ([a b]
    (let [am?              (instance? Money a)
