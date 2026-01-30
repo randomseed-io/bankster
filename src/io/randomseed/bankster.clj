@@ -7,6 +7,20 @@
     io.randomseed.bankster)
 
 ;;
+;; Registry auto-initialization.
+;;
+
+(def ^{:tag Boolean :dynamic true :added "2.0.0"}
+  *initialize-registry*
+  "Controls whether `io.randomseed.bankster.currency` should auto-initialize the
+  global registry at namespace load time (by loading `config.edn`).
+
+  Default is `true` for convenience. When set to `false` (e.g. via `binding` around
+  `require`), the currency namespace will not perform this side-effect and you must
+  initialize the registry explicitly (e.g. by calling
+  `io.randomseed.bankster.currency/set-default-registry!`)."
+  true)
+
 ;;
 ;; Currency record.
 ;;
