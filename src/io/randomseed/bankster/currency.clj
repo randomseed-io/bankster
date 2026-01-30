@@ -2706,20 +2706,22 @@
    (config->registry config/default-resource-path (registry/new-registry)))
   (^Registry [^String resource-path]
    (config->registry resource-path (registry/new-registry)))
-  (^Registry [^String resource-path ^Registry regi]
-   (if-some [cfg (config/load resource-path)]
-     (let [regi (or regi (registry/new-registry))
-           hier (clojure.core/get cfg :hierarchies)
-           regi (if (some? hier)
-                  (registry/new-registry (assoc (into {} regi) :hierarchies hier))
-                  regi)
-           pks  (config/propagate-keys                       cfg)
-           curs (prep-currencies          (config/currencies cfg) pks)
-           ctrs (prep-cur->ctr            (config/countries  cfg))
-           lpro (config/localized                            cfg)
-           trts (prep-all-traits          (config/traits     cfg))
-           vers (str                      (config/version    cfg))
-           regi (if (nil? vers) regi (assoc regi :version vers))
+    (^Registry [^String resource-path ^Registry regi]
+     (if-some [cfg (config/load resource-path)]
+       (let [regi (or regi (registry/new-registry))
+             hier (clojure.core/get cfg :hierarchies)
+             regi (if (some? hier)
+                    (registry/new-registry (assoc (into {} regi) :hierarchies hier))
+                    regi)
+             pks  (let [pks (prep-propagate-keys (config/propagate-keys cfg))]
+                    (if (seq pks) (vec (sort-by str pks)) []))
+             regi (clojure.core/update regi :ext (fnil assoc {}) :propagate-keys pks)
+             curs (prep-currencies          (config/currencies cfg) pks)
+             ctrs (prep-cur->ctr            (config/countries  cfg))
+             lpro (config/localized                            cfg)
+             trts (prep-all-traits          (config/traits     cfg))
+             vers (str                      (config/version    cfg))
+             regi (if (nil? vers) regi (assoc regi :version vers))
            ^Registry regi
            (reduce (fn ^Registry [^Registry r ^Currency c]
                      (let [cid (.id ^Currency c)]
