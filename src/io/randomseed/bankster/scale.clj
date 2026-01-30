@@ -30,6 +30,25 @@
   "Default rounding mode."
   nil)
 
+(def ^{:tag ThreadLocal :no-doc true :added "2.0.0"}
+  thread-rounding-mode
+  "Thread-local cache used by `with-rounding`/`with-rescaling` to avoid dynamic Var
+  lookups in hot paths. Falls back to `*rounding-mode*` when not set."
+  (ThreadLocal.))
+
+(defn rounding-mode
+  "Returns a rounding mode using a thread-local fast path when available.
+
+  Falls back to `*rounding-mode*`."
+  {:tag RoundingMode :no-doc true :added "2.0.0"}
+  (^RoundingMode []
+   (or (.get ^ThreadLocal thread-rounding-mode)
+       *rounding-mode*))
+  (^RoundingMode [^RoundingMode default]
+   (or (.get ^ThreadLocal thread-rounding-mode)
+       *rounding-mode*
+       default)))
+
 ;;
 ;; Re-scaling iterative operations.
 ;;
@@ -104,7 +123,7 @@
   dividing two BigDecimal numbers. Optional rounding mode may be provided."
   (^MathContext [^BigDecimal a ^BigDecimal b]
    (MathContext. (int (div-max-precision ^BigDecimal a ^BigDecimal b))
-                 (or ^RoundingMode *rounding-mode* ^RoundingMode RoundingMode/UNNECESSARY)))
+                 (or ^RoundingMode (rounding-mode) ^RoundingMode RoundingMode/UNNECESSARY)))
   (^MathContext [^BigDecimal a ^BigDecimal b ^RoundingMode rounding-mode]
    (MathContext. (int (div-max-precision ^BigDecimal a ^BigDecimal b))
                  ^RoundingMode rounding-mode)))
@@ -166,7 +185,7 @@
     (let [sc (int scale)]
       (if (== (.scale ^BigDecimal num) sc)
         ^BigDecimal num
-        (let [rm *rounding-mode*]
+        (let [rm (rounding-mode)]
           (try
             (if (some? rm)
               (.setScale ^BigDecimal num sc ^RoundingMode rm)
@@ -215,8 +234,8 @@
     (.toBigDecimal ^clojure.lang.BigInt num))
    (^BigDecimal [num ^long scale]
     (let [sc (int scale)
-          rm *rounding-mode*
-          bd (.toBigDecimal ^clojure.lang.BigInt num)]
+    rm (rounding-mode)
+    bd (.toBigDecimal ^clojure.lang.BigInt num)]
       (try
         (if (some? rm)
           (.setScale ^BigDecimal bd sc ^RoundingMode rm)
@@ -264,8 +283,8 @@
     (BigDecimal. ^BigInteger num))
    (^BigDecimal [num ^long scale]
     (let [sc (int scale)
-          rm *rounding-mode*
-          bd (BigDecimal. ^BigInteger num)]
+    rm (rounding-mode)
+    bd (BigDecimal. ^BigInteger num)]
       (try
         (if (some? rm)
           (.setScale ^BigDecimal bd sc ^RoundingMode rm)
@@ -313,8 +332,8 @@
     (BigDecimal/valueOf num))
    (^BigDecimal [num ^long scale]
     (let [sc (int scale)
-          rm *rounding-mode*
-          bd (BigDecimal/valueOf num)]
+    rm (rounding-mode)
+    bd (BigDecimal/valueOf num)]
       (try
         (if (some? rm)
           (.setScale ^BigDecimal bd sc ^RoundingMode rm)
@@ -362,8 +381,8 @@
     (BigDecimal/valueOf (double num)))
    (^BigDecimal [num ^long scale]
     (let [sc (int scale)
-          rm *rounding-mode*
-          bd (BigDecimal/valueOf (double num))]
+    rm (rounding-mode)
+    bd (BigDecimal/valueOf (double num))]
       (try
         (if (some? rm)
           (.setScale ^BigDecimal bd sc ^RoundingMode rm)
@@ -409,12 +428,12 @@
   (apply
     (^BigDecimal [num]
      (let [^BigDecimal a (apply (.numerator   ^clojure.lang.Ratio num))
-           ^BigDecimal b (apply (.denominator ^clojure.lang.Ratio num))
-           rm            *rounding-mode*]
+     ^BigDecimal b (apply (.denominator ^clojure.lang.Ratio num))
+     rm            (rounding-mode)]
        (try
-         (if (some? rm)
-           (.divide ^BigDecimal a ^BigDecimal b
-                    ^MathContext (div-math-context ^BigDecimal a
+   (if (some? rm)
+     (.divide ^BigDecimal a ^BigDecimal b
+              ^MathContext (div-math-context ^BigDecimal a
                                                    ^BigDecimal b
                                                    ^RoundingMode rm))
            (.divide ^BigDecimal a ^BigDecimal b))
@@ -431,12 +450,12 @@
                      e))))))
     (^BigDecimal [num ^long scale]
      (let [^BigDecimal a (apply (.numerator   ^clojure.lang.Ratio num))
-           ^BigDecimal b (apply (.denominator ^clojure.lang.Ratio num))
-           sc            (int scale)
-           rm            (or *rounding-mode* ROUND_UNNECESSARY)]
+     ^BigDecimal b (apply (.denominator ^clojure.lang.Ratio num))
+     sc            (int scale)
+     rm            (or (rounding-mode) ROUND_UNNECESSARY)]
        (try
-         (.divide ^BigDecimal a ^BigDecimal b sc ^RoundingMode rm)
-         (catch ArithmeticException e
+   (.divide ^BigDecimal a ^BigDecimal b sc ^RoundingMode rm)
+   (catch ArithmeticException e
            (throw
             (ex-info (or (.getMessage e) "Arithmetic error.")
                      {:op                         :scale/apply
@@ -483,8 +502,8 @@
    (^BigDecimal [num] (BigDecimal/valueOf (long num)))
    (^BigDecimal [num ^long scale]
     (let [sc (int scale)
-          rm *rounding-mode*
-          bd (BigDecimal/valueOf (long num))]
+    rm (rounding-mode)
+    bd (BigDecimal/valueOf (long num))]
       (try
         (if (some? rm)
           (.setScale ^BigDecimal bd sc ^RoundingMode rm)
@@ -532,8 +551,8 @@
     (BigDecimal. num ^MathContext unscaled-context))
    (^BigDecimal [num ^long scale]
     (let [sc (int scale)
-          rm *rounding-mode*
-          bd (BigDecimal. num ^MathContext unscaled-context)]
+    rm (rounding-mode)
+    bd (BigDecimal. num ^MathContext unscaled-context)]
       (try
         (if (some? rm)
           (.setScale ^BigDecimal bd sc ^RoundingMode rm)
@@ -598,8 +617,8 @@
     (BigDecimal. (long (num n)) ^MathContext unscaled-context))
    (^BigDecimal [n ^long scale]
     (let [sc (int scale)
-          rm *rounding-mode*
-          bd (BigDecimal. (long (num n)) ^MathContext unscaled-context)]
+    rm (rounding-mode)
+    bd (BigDecimal. (long (num n)) ^MathContext unscaled-context)]
       (try
         (if (some? rm)
           (.setScale ^BigDecimal bd sc ^RoundingMode rm)
@@ -702,7 +721,7 @@
     ^BigDecimal (.round ^BigDecimal (amount n)
                         (MathContext.
                          float-precision
-                         (or ^RoundingMode *rounding-mode*
+                         (or ^RoundingMode (rounding-mode)
                              ^RoundingMode ROUND_UNNECESSARY)))))
   ([n scale-or-rounding]
    (if (instance? RoundingMode scale-or-rounding)
@@ -711,7 +730,7 @@
                           (MathContext.
                            float-precision
                            ^RoundingMode scale-or-rounding)))
-     (let [^RoundingMode rm (or *rounding-mode* ROUND_UNNECESSARY)]
+     (let [^RoundingMode rm (or (rounding-mode) ROUND_UNNECESSARY)]
        (.floatValue
         ^BigDecimal (.round ^BigDecimal (amount n (long scale-or-rounding) rm)
                             (MathContext.
@@ -738,7 +757,7 @@
     ^BigDecimal (.round ^BigDecimal (amount n)
                         (MathContext.
                          double-precision
-                         (or ^RoundingMode *rounding-mode*
+                         (or ^RoundingMode (rounding-mode)
                              ^RoundingMode ROUND_UNNECESSARY)))))
   (^double [n scale-or-rounding]
    (if (instance? RoundingMode scale-or-rounding)
@@ -747,7 +766,7 @@
                           (MathContext.
                            double-precision
                            ^RoundingMode scale-or-rounding)))
-     (let [^RoundingMode rm (or *rounding-mode* ROUND_UNNECESSARY)]
+     (let [^RoundingMode rm (or (rounding-mode) ROUND_UNNECESSARY)]
        (.doubleValue
         ^BigDecimal (.round ^BigDecimal (amount n (long scale-or-rounding) rm)
                             (MathContext.
@@ -846,8 +865,16 @@
   {:added "1.0.0"}
   [rounding-mode & body]
   (let [rms# (parse-rounding rounding-mode)]
-    `(binding [*rounding-mode* (post-parse-rounding ~rms#)]
-       ~@body)))
+    `(let [rm#   (post-parse-rounding ~rms#)
+           prev# (.get ^ThreadLocal thread-rounding-mode)]
+       (.set ^ThreadLocal thread-rounding-mode rm#)
+       (try
+         (binding [*rounding-mode* rm#]
+           ~@body)
+         (finally
+           (if (nil? prev#)
+             (.remove ^ThreadLocal thread-rounding-mode)
+             (.set ^ThreadLocal thread-rounding-mode prev#)))))))
 
 (defmacro with-rescaling
   "Enables re-scaling on some consecutive operations which support it and sets the
@@ -868,9 +895,17 @@
   {:added "1.0.0"}
   ([rounding-mode & body]
    (let [rms# (parse-rounding rounding-mode)]
-     `(binding [*each*          true
-                *rounding-mode* (post-parse-rounding ~rms#)]
-        ~@body))))
+     `(let [rm#   (post-parse-rounding ~rms#)
+            prev# (.get ^ThreadLocal thread-rounding-mode)]
+        (.set ^ThreadLocal thread-rounding-mode rm#)
+        (try
+          (binding [*each*          true
+                    *rounding-mode* rm#]
+            ~@body)
+          (finally
+            (if (nil? prev#)
+              (.remove ^ThreadLocal thread-rounding-mode)
+              (.set ^ThreadLocal thread-rounding-mode prev#))))))))
 
 (defmacro each
   "Enables re-scaling on some consecutive operations which support it and sets the rounding mode for

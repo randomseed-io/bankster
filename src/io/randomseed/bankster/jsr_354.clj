@@ -218,17 +218,25 @@
   values to explicitly clear a binding (e.g. set rounding-mode to nil)."
   [ctx & body]
   {:added "2.0.0"}
-  `(let [ctx# ~ctx
-         b#   (:bankster ctx#)
-         m?#  (map? b#)
-         r?#  (and m?# (contains? b# :registry))
-         rm?# (and m?# (contains? b# :rounding-mode))
-         e?#  (and m?# (contains? b# :rescale-each?))]
-     (binding [registry/*default*    (if r?#  (:registry      b#) registry/*default*)
-               scale/*rounding-mode* (if rm?# (scale/post-parse-rounding (:rounding-mode b#))
-                                         scale/*rounding-mode*)
-               scale/*each*          (if e?#  (boolean (:rescale-each? b#)) scale/*each*)]
-       ~@body)))
+    `(let [ctx# ~ctx
+           b#   (:bankster ctx#)
+           m?#  (map? b#)
+           r?#  (and m?# (contains? b# :registry))
+           rm?# (and m?# (contains? b# :rounding-mode))
+           e?#  (and m?# (contains? b# :rescale-each?))
+           rm#  (if rm?# (scale/post-parse-rounding (:rounding-mode b#))
+                    (scale/rounding-mode))]
+       (binding [registry/*default*    (if r?#  (:registry      b#) registry/*default*)
+                 scale/*rounding-mode* rm#
+                 scale/*each*          (if e?#  (boolean (:rescale-each? b#)) scale/*each*)]
+         (let [prev# (.get ^ThreadLocal scale/thread-rounding-mode)]
+           (.set ^ThreadLocal scale/thread-rounding-mode rm#)
+           (try
+             ~@body
+             (finally
+               (if (nil? prev#)
+                 (.remove ^ThreadLocal scale/thread-rounding-mode)
+                 (.set ^ThreadLocal scale/thread-rounding-mode prev#))))))))
 
 (defmacro withContext
   "Alias for `with-context`."
@@ -272,10 +280,10 @@
   {:added "2.0.0"}
   ^clojure.lang.IFn
   []
-  (fn default-rounding
-    ^Money [^Money amount]
-    (scale/with-rounding (or scale/*rounding-mode* scale/ROUND_HALF_EVEN)
-      (money/rescale amount))))
+    (fn default-rounding
+      ^Money [^Money amount]
+      (scale/with-rounding (or (scale/rounding-mode) scale/ROUND_HALF_EVEN)
+        (money/rescale amount))))
 
 (def getDefaultRounding get-default-rounding)
 
