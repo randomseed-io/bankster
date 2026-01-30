@@ -606,13 +606,16 @@
 (defn- unit-registry
   "Normalizes a registry argument for strict operations.
 
-  `nil` and `true` mean: use the default registry (preferring
-  `io.randomseed.bankster.registry/*default*` when bound)."
+  `nil` means: use the default registry (preferring
+  `io.randomseed.bankster.registry/*default*` when bound).
+
+  NOTE: The literal `true` works as a sentinel only at macro-level via
+  `(registry/get true)`. Passing `true` as a runtime value to functions expecting a
+  registry is not supported."
   {:tag Registry :private true :added "3.0.0"}
   ^Registry [registry]
   (cond
     (nil?  registry) (registry/get)
-    (true? registry) (registry/get)
     :else            registry))
 
 (defn- unit-resolve!
@@ -1039,9 +1042,9 @@
     (^Currency [^Currency currency]
      (of-id (.id ^Currency currency) (registry/get)))
     (^Currency [^Currency currency ^Registry registry]
-     (cond (nil?  registry) currency
-           (true? registry) (of-id ^clojure.lang.Keyword (.id ^Currency currency) (registry/get))
-           :else            (of-id ^clojure.lang.Keyword (.id ^Currency currency) registry))))
+     (if (nil? registry)
+       currency
+       (of-id ^clojure.lang.Keyword (.id ^Currency currency) registry))))
 
   (unit
     (^Currency [^Currency currency]
