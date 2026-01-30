@@ -33,12 +33,14 @@
     (let [dst (-> (registry/new-registry)
                   (assoc :hierarchies (bankster/->CurrencyHierarchies
                                        (derive (make-hierarchy) :ISO-4217-LEGACY :ISO-4217)
-                                       (derive (make-hierarchy) :COMBANK :FIAT)))
+                                       (derive (make-hierarchy) :COMBANK :FIAT)
+                                       (make-hierarchy)))
                   (assoc :ext {:dst 1 :shared :dst}))
           src (-> (registry/new-registry)
                   (assoc :hierarchies (bankster/->CurrencyHierarchies
                                        (derive (make-hierarchy) :ISO-4217-SUPER :ISO-4217)
-                                       (derive (make-hierarchy) :CENTRALBANK :FIAT)))
+                                       (derive (make-hierarchy) :CENTRALBANK :FIAT)
+                                       (make-hierarchy)))
                   (assoc :ext {:src 2 :shared :src}))
           merged (importer/merge-registry dst src)
           hs     (:hierarchies merged)]
@@ -187,11 +189,11 @@
 (deftest merge-registry-merges-extra-hierarchy-keys
   (testing "merges hierarchy values for any keys present in :hierarchies (record may grow)"
     (let [dst (-> (registry/new-registry)
-                  (assoc :hierarchies (-> (bankster/->CurrencyHierarchies (make-hierarchy) (make-hierarchy))
+                  (assoc :hierarchies (-> (bankster/->CurrencyHierarchies (make-hierarchy) (make-hierarchy) (make-hierarchy))
                                           (assoc :foo (derive (make-hierarchy) :X :Y))))
                   (assoc :ext {}))
           src (-> (registry/new-registry)
-                  (assoc :hierarchies (-> (bankster/->CurrencyHierarchies (make-hierarchy) (make-hierarchy))
+                  (assoc :hierarchies (-> (bankster/->CurrencyHierarchies (make-hierarchy) (make-hierarchy) (make-hierarchy))
                                           (assoc :foo (derive (make-hierarchy) :X :Z)
                                                 :bar (derive (make-hierarchy) :A :B))))
                   (assoc :ext {}))

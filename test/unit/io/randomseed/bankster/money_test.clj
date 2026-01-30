@@ -134,7 +134,7 @@
     (is (= #money[19 EUR] (m/of 19 :EUR)))
     (is (map= #money[19 {:id :EUR :domain :ISO-4217}] {:amount 19M :currency (c/of {:id :EUR :domain :ISO-4217 :kind nil :numeric -1 :scale -1 :weight 0})}))
     (is (map= #money[19 EUR]    {:amount 19M :currency #currency EUR}))
-    (is (map= #money[19 EUR]    {:amount 19M :currency #currency {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}}))
+    (is (map= #money[19 EUR]    {:amount 19M :currency #currency {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}}))
     (is (map= #money :19EUR     {:amount 19M :currency #currency EUR}))
     (is (map= #money EUR_19.1   {:amount 19.1M :currency #currency EUR}))
     (is (map= #money "19.1 EUR" {:amount 19.1M :currency #currency EUR}))
@@ -148,7 +148,7 @@
     (is (= (c/id #money[12.12 PLN]) :PLN))
     (is (= (c/id #money/crypto[12.12 ETH]) :crypto/ETH)))
   (testing "when it gets a currency unit from a registry or returns it when given directly"
-    (is (map= (c/unit #money[10 EUR]) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0})))
+    (is (map= (c/unit #money[10 EUR]) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0})))
   (testing "when it checks if a currency is defined"
     (is (= (c/defined? #money[5 EUR]) true))
     (is (= (c/defined? (m/of #currency{:id :KIKI :scale 1} 5)) false))
@@ -189,8 +189,8 @@
     (is (= (c/domain #money[1 crypto/ETH]) :CRYPTO))
     (is (= (c/domain (m/of 10 #currency{:id :PLN :scale 1})) nil)))
   (testing "when it's possible to get the kind of a currency"
-    (is (= (c/kind #money[1 EUR]) :FIAT))
-    (is (= (c/kind #money[1 crypto/ETH]) :DECENTRALIZED))
+    (is (= (c/kind #money[1 EUR]) :iso/fiat))
+    (is (= (c/kind #money[1 crypto/ETH]) :virtual/native))
     (is (= (c/kind (m/of 10 #currency{:id :PLN :scale 1})) nil)))
   (testing "when it's possible to get the namespaced code of a currency"
     (is (= (c/ns-code #money[1 EUR]) "EUR"))
@@ -223,9 +223,12 @@
     (is (= (c/has-kind? #money[1 crypto/ETH]) true))
     (is (= (c/has-kind? (m/of 1 #currency{:id :PLN :scale 1})) false)))
   (testing "when it's possible to check if a currency has particular kind"
-    (is (= (c/kind-of? :FIAT #money[1 EUR]) true))
-    (is (= (c/kind-of? :DECENTRALIZED #money[1 crypto/ETH]) true))
-    (is (= (c/kind-of? :FIAT (m/of 1 #currency{:id :PLN :scale 1})) false)))
+    (is (= (c/of-kind? :iso/fiat #money[1 EUR]) true))
+    (is (= (c/of-kind? :iso #money[1 EUR]) true))
+    (is (= (c/of-kind? :virtual/native #money[1 crypto/ETH]) true))
+    (is (= (c/of-kind? :virtual #money[1 crypto/ETH]) true))
+    (is (= (c/of-kind? :iso #money[1 crypto/ETH]) false))
+    (is (= (c/of-kind? :iso/fiat (m/of 1 #currency{:id :PLN :scale 1})) false)))
   (testing "when it's possible to check if a currency has assigned some country"
     (is (= (c/has-country? #money[1 EUR]) true))
     (is (= (c/has-country? #money[1 crypto/ETH]) false))
@@ -252,8 +255,9 @@
     (is (= (c/iso? #money/crypto[1 ETH]) false))
     (is (= (c/iso? (m/of 1 #currency{:id :PLN :scale 1})) false))
     (is (= (c/iso? (m/of #currency{:id :crypto/PLN :scale 1} 1)) false))
-    (is (= (c/iso? (m/of 1 #currency{:id :ETH :scale 18 :domain :ISO-4217})) true))
-    (is (= (c/iso? (m/of 1 #currency{:id :PLN :scale 1 :domain :ISO-4217})) true)))
+    ;; iso? is based on :kind hierarchy (not only on :domain).
+    (is (= (c/iso? (m/of 1 #currency{:id :PLN :scale 1 :kind :iso/fiat})) true))
+    (is (= (c/iso? (m/of 1 #currency{:id :PLN :scale 1 :domain :ISO-4217})) false)))
   (testing "when it's possible to get a localized property"
     (is (= (c/localized-property :name #money[1 :crypto/ETH] :pl) "Ether"))
     (is (= (c/name #money[2 PLN] :pl) "złoty polski"))
@@ -575,8 +579,8 @@
 
 (deftest same-currencies-ignores-weight
   (testing "currency weight is ignored in Money operations"
-    (let [c1  (c/new :PLN 978 2 :FIAT :ISO-4217 0)
-          c2  (c/new :PLN 978 2 :FIAT :ISO-4217 10)
+    (let [c1  (c/new :PLN 978 2 :iso/fiat :ISO-4217 0)
+          c2  (c/new :PLN 978 2 :iso/fiat :ISO-4217 10)
           m1  (m/value c1 1)
           m2  (m/value c2 2)
           m3  (m/value c2 3)

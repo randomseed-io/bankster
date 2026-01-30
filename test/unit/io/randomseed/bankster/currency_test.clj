@@ -36,10 +36,10 @@
     (is (= (c/map->new {}) nil)))
   (testing "when it returns a currency object"
     (is (map= (c/new :crypto/EUR) {:id :crypto/EUR :domain :CRYPTO :kind nil :numeric -1 :scale -1 :weight 0}))
-    (is (map= (c/new :EUR 1000 2 :FIAT :ISO-4217) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 1000 :scale 2 :weight 0}))
-    (is (map= (c/new :EUR c/no-numeric-id c/auto-scaled :FIAT :ISO-4217) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric -1 :scale -1 :weight 0}))
-    (is (map= (c/new :EUR 1000 c/auto-scaled :FIAT :ISO-4217) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 1000 :scale -1 :weight 0}))
-    (is (map= (c/new :EUR c/no-numeric-id 2 :FIAT :ISO-4217) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric -1 :scale 2 :weight 0}))
+    (is (map= (c/new :EUR 1000 2 :iso/fiat :ISO-4217) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 1000 :scale 2 :weight 0}))
+    (is (map= (c/new :EUR c/no-numeric-id c/auto-scaled :iso/fiat :ISO-4217) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric -1 :scale -1 :weight 0}))
+    (is (map= (c/new :EUR 1000 c/auto-scaled :iso/fiat :ISO-4217) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 1000 :scale -1 :weight 0}))
+    (is (map= (c/new :EUR c/no-numeric-id 2 :iso/fiat :ISO-4217) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric -1 :scale 2 :weight 0}))
     (is (map= (c/new {:id :EUR :domain :ISO-4217}) {:id :EUR :domain :ISO-4217 :kind nil :numeric -1 :scale -1 :weight 0}))
     (is (map= (c/new {:id :crypto/EUR :domain :CRYPTO}) {:id :crypto/EUR :domain :CRYPTO :kind nil :numeric -1 :scale -1 :weight 0}))
     (is (map= (c/new {:id :EUR :numeric 1000 :domain :ISO-4217}) {:id :EUR :domain :ISO-4217 :kind nil :numeric 1000 :scale -1 :weight 0}))
@@ -47,11 +47,11 @@
     (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :domain :ISO-4217 :scale c/auto-scaled}) {:id :EUR :domain :ISO-4217 :kind nil :numeric -1 :scale -1 :weight 0}))
     (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :domain :ISO-4217 :scale 2}) {:id :EUR :domain :ISO-4217 :kind nil :numeric -1 :scale 2 :weight 0}))
     (is (map= (c/new {:id :EUR :numeric 1000 :domain :ISO-4217 :scale c/auto-scaled}) {:id :EUR :domain :ISO-4217 :kind nil :numeric 1000 :scale -1 :weight 0}))
-    (is (map= (c/new {:id :EUR :numeric 1000 :domain :ISO-4217 :scale 2 :kind :FIAT}) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 1000 :scale 2 :weight 0}))
-    (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :domain :ISO-4217 :scale c/auto-scaled :kind :FIAT}) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric -1 :scale -1 :weight 0}))
-    (is (map= (c/new {:id :EUR :numeric 1000 :scale c/auto-scaled :domain :ISO-4217 :kind :FIAT}) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 1000 :scale -1 :weight 0}))
-    (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :domain :ISO-4217 :scale 2 :kind :FIAT}) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric -1 :scale 2 :weight 0}))
-    (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :scale 2 :kind :FIAT}) {:id :EUR :domain nil :kind :FIAT :numeric -1 :scale 2 :weight 0}))
+    (is (map= (c/new {:id :EUR :numeric 1000 :domain :ISO-4217 :scale 2 :kind :iso/fiat}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 1000 :scale 2 :weight 0}))
+    (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :domain :ISO-4217 :scale c/auto-scaled :kind :iso/fiat}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric -1 :scale -1 :weight 0}))
+    (is (map= (c/new {:id :EUR :numeric 1000 :scale c/auto-scaled :domain :ISO-4217 :kind :iso/fiat}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 1000 :scale -1 :weight 0}))
+    (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :domain :ISO-4217 :scale 2 :kind :iso/fiat}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric -1 :scale 2 :weight 0}))
+    (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :scale 2 :kind :iso/fiat}) {:id :EUR :domain nil :kind :iso/fiat :numeric -1 :scale 2 :weight 0}))
     (is (map= (c/new :EUR) {:id :EUR :domain nil :kind nil :numeric -1 :scale -1 :weight 0}))
     (is (map= (c/new :crypto/EUR) {:id :crypto/EUR :domain :CRYPTO :kind nil :numeric -1 :scale -1 :weight 0}))
     (is (map= (c/new :EUR 1000) {:id :EUR :domain :ISO-4217 :kind nil :numeric 1000 :scale -1 :weight 0}))
@@ -59,10 +59,10 @@
     (is (map= (c/new :EUR c/no-numeric-id c/auto-scaled) {:id :EUR :domain nil :kind nil :numeric -1 :scale -1 :weight 0}))
     (is (map= (c/new :EUR c/no-numeric-id 2) {:id :EUR :domain nil :kind nil :numeric -1 :scale 2 :weight 0}))
     (is (map= (c/new :EUR 1000 c/auto-scaled) {:id :EUR :domain :ISO-4217 :kind nil :numeric 1000 :scale -1 :weight 0}))
-    (is (map= (c/new :EUR 1000 2 :FIAT) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 1000 :scale 2 :weight 0}))
-    (is (map= (c/new :EUR c/no-numeric-id c/auto-scaled :FIAT) {:id :EUR :domain nil :kind :FIAT :numeric -1 :scale -1 :weight 0}))
-    (is (map= (c/new :EUR 1000 c/auto-scaled :FIAT) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 1000 :scale -1 :weight 0}))
-    (is (map= (c/new :EUR c/no-numeric-id 2 :FIAT) {:id :EUR :domain nil :kind :FIAT :numeric -1 :scale 2 :weight 0}))
+    (is (map= (c/new :EUR 1000 2 :iso/fiat) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 1000 :scale 2 :weight 0}))
+    (is (map= (c/new :EUR c/no-numeric-id c/auto-scaled :iso/fiat) {:id :EUR :domain nil :kind :iso/fiat :numeric -1 :scale -1 :weight 0}))
+    (is (map= (c/new :EUR 1000 c/auto-scaled :iso/fiat) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 1000 :scale -1 :weight 0}))
+    (is (map= (c/new :EUR c/no-numeric-id 2 :iso/fiat) {:id :EUR :domain nil :kind :iso/fiat :numeric -1 :scale 2 :weight 0}))
     (is (map= (c/new {:id :EUR}) {:id :EUR :domain nil :kind nil :numeric -1 :scale -1 :weight 0}))
     (is (map= (c/new {:id :crypto/EUR}) {:id :crypto/EUR :domain :CRYPTO :kind nil :numeric -1 :scale -1 :weight 0}))
     (is (map= (c/new {:id :EUR :numeric 1000}) {:id :EUR :domain :ISO-4217 :kind nil :numeric 1000 :scale -1 :weight 0}))
@@ -70,10 +70,10 @@
     (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :scale c/auto-scaled}) {:id :EUR :domain nil :kind nil :numeric -1 :scale -1 :weight 0}))
     (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :scale 2}) {:id :EUR :domain nil :kind nil :numeric -1 :scale 2 :weight 0}))
     (is (map= (c/new {:id :EUR :numeric 1000 :scale c/auto-scaled}) {:id :EUR :domain :ISO-4217 :kind nil :numeric 1000 :scale -1 :weight 0}))
-    (is (map= (c/new {:id :EUR :numeric 1000 :scale 2 :kind :FIAT}) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 1000 :scale 2 :weight 0}))
-    (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :scale c/auto-scaled :kind :FIAT}) {:id :EUR :domain nil :kind :FIAT :numeric -1 :scale -1 :weight 0}))
-    (is (map= (c/new {:id :EUR :numeric 1000 :scale c/auto-scaled :kind :FIAT}) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 1000 :scale -1 :weight 0}))
-    (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :scale 2 :kind :FIAT}) {:id :EUR :domain nil :kind :FIAT :numeric -1 :scale 2 :weight 0}))))
+    (is (map= (c/new {:id :EUR :numeric 1000 :scale 2 :kind :iso/fiat}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 1000 :scale 2 :weight 0}))
+    (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :scale c/auto-scaled :kind :iso/fiat}) {:id :EUR :domain nil :kind :iso/fiat :numeric -1 :scale -1 :weight 0}))
+    (is (map= (c/new {:id :EUR :numeric 1000 :scale c/auto-scaled :kind :iso/fiat}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 1000 :scale -1 :weight 0}))
+    (is (map= (c/new {:id :EUR :numeric c/no-numeric-id :scale 2 :kind :iso/fiat}) {:id :EUR :domain nil :kind :iso/fiat :numeric -1 :scale 2 :weight 0}))))
 
 (deftest currency-tagged-literal
   (testing "when it returns nil for nil or empty map"
@@ -84,10 +84,10 @@
     (is (map= #currency {:id :crypto/EUR} {:id :crypto/EUR :domain :CRYPTO :kind nil :numeric -1 :scale -1 :weight 0}))
     (is (map= #currency {:id :EUR :numeric 1000} {:id :EUR :domain :ISO-4217 :kind nil :numeric 1000 :scale -1 :weight 0}))
     (is (map= #currency {:id :EUR :scale 2} {:id :EUR :domain nil :kind nil :numeric -1 :scale 2 :weight 0}))
-    (is (map= #currency {:id :EUR :numeric 1000 :scale 2 :kind :FIAT} {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 1000 :scale 2 :weight 0}))
-    (is (map= #currency {:id :EUR :kind :FIAT} {:id :EUR :domain nil :kind :FIAT :numeric -1 :scale -1 :weight 0}))
-    (is (map= #currency {:id :EUR :numeric 1000 :kind :FIAT} {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 1000 :scale -1 :weight 0}))
-    (is (map= #currency {:id :EUR :scale 2 :kind :FIAT :domain :ISO-4217} {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric -1 :scale 2 :weight 0})))
+    (is (map= #currency {:id :EUR :numeric 1000 :scale 2 :kind :iso/fiat} {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 1000 :scale 2 :weight 0}))
+    (is (map= #currency {:id :EUR :kind :iso/fiat} {:id :EUR :domain nil :kind :iso/fiat :numeric -1 :scale -1 :weight 0}))
+    (is (map= #currency {:id :EUR :numeric 1000 :kind :iso/fiat} {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 1000 :scale -1 :weight 0}))
+    (is (map= #currency {:id :EUR :scale 2 :kind :iso/fiat :domain :ISO-4217} {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric -1 :scale 2 :weight 0})))
   (testing "when it can use different registries"
     (let [r (c/update (registry/get) #currency{:id PLN :scale 10})]
       (is (map= (c/with-registry r #currency PLN) {:id :PLN :scale 10 :numeric -1 :weight 0 :kind nil :domain nil})))))
@@ -97,19 +97,19 @@
     (is (= #currency nil nil))
     (is (= #currency {} nil)))
   (testing "when it gets currency objects from a global registry"
-    (is (map= #currency EUR {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
-    (is (map= #currency :EUR {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
-    (is (map= #currency "EUR" {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0})))
+    (is (map= #currency EUR {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
+    (is (map= #currency :EUR {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
+    (is (map= #currency "EUR" {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0})))
   (testing "when it creates an ad-hoc currency object"
     (is (map= #currency {:id :EUR} {:id :EUR :domain nil :kind nil :numeric -1 :scale -1 :weight 0}))
     (is (map= #currency {:id :crypto/EUR} {:id :crypto/EUR :domain :CRYPTO :kind nil :numeric -1 :scale -1 :weight 0}))
     (is (map= #currency {:id :EUR :numeric 978 :domain nil} {:id :EUR :domain nil :kind nil :numeric 978 :scale -1 :weight 0}))
     (is (map= #currency {:id :EUR :numeric 1000 :domain :ISO-4217} {:id :EUR :domain :ISO-4217 :kind nil :numeric 1000 :scale -1 :weight 0}))
     (is (map= #currency {:id :EUR :scale 2 :domain :ISO-4217} {:id :EUR :domain :ISO-4217 :kind nil :numeric -1 :scale 2 :weight 0}))
-    (is (map= #currency {:id :EUR :numeric 1000 :scale 2 :kind :FIAT :domain :ISO-4217} {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 1000 :scale 2 :weight 0}))
-    (is (map= #currency {:id :EUR :kind :FIAT :domain :ISO-4217} {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric -1 :scale -1 :weight 0}))
-    (is (map= #currency {:id :EUR :numeric 1000 :kind :FIAT :domain :ISO-4217} {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 1000 :scale -1 :weight 0}))
-    (is (map= #currency {:id :EUR :scale 2 :kind :FIAT :domain :ISO-4217} {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric -1 :scale 2 :weight 0}))))
+    (is (map= #currency {:id :EUR :numeric 1000 :scale 2 :kind :iso/fiat :domain :ISO-4217} {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 1000 :scale 2 :weight 0}))
+    (is (map= #currency {:id :EUR :kind :iso/fiat :domain :ISO-4217} {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric -1 :scale -1 :weight 0}))
+    (is (map= #currency {:id :EUR :numeric 1000 :kind :iso/fiat :domain :ISO-4217} {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 1000 :scale -1 :weight 0}))
+    (is (map= #currency {:id :EUR :scale 2 :kind :iso/fiat :domain :ISO-4217} {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric -1 :scale 2 :weight 0}))))
 
 (deftest monetary-protocol
   (testing "when it can get ID of a currency"
@@ -120,13 +120,13 @@
     (is (= (c/id #currency PLN) :PLN))
     (is (= (c/id #currency crypto/ETH) :crypto/ETH)))
   (testing "when it can resolve currency from a map"
-    (is (map= (c/resolve {:id :EUR}) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
-    (is (map= (c/resolve {:code "EUR"}) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
-    (is (map= (c/resolve {:numeric "978"}) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
-    (is (map= (c/resolve {:nr 978 :sc "2"}) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
+    (is (map= (c/resolve {:id :EUR}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
+    (is (map= (c/resolve {:code "EUR"}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
+    (is (map= (c/resolve {:numeric "978"}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
+    (is (map= (c/resolve {:nr 978 :sc "2"}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
     (is (= (c/resolve {:numeric "ABC"}) nil))
     (is (= (c/resolve {:id :EUR :domain nil}) nil))
-    (is (map= (c/resolve {:id :EUR :weight 0}) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
+    (is (map= (c/resolve {:id :EUR :weight 0}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
     (is (= (c/resolve {:id :EUR :weight 1}) nil))
     (is (= (c/resolve-all {:id :EUR}) #{#currency EUR}))
     (is (= (c/resolve-all {:code "EUR"}) #{#currency EUR}))
@@ -137,11 +137,11 @@
     (is (= (c/resolve-all {:id :EUR :weight 0}) #{#currency EUR}))
     (is (= (c/resolve-all {:id :EUR :weight 1}) nil)))
   (testing "when it gets a currency unit from a registry or returns it when given directly"
-    (is (map= (c/unit #currency EUR) {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
-    (is (map= (c/unit :EUR)          {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
-    (is (map= (c/unit "EUR")         {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
-    (is (map= (c/unit 978)           {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0}))
-    (is (map= (c/unit {:id :EUR})    {:id :EUR :domain :ISO-4217 :kind :FIAT :numeric 978 :scale 2 :weight 0})))
+    (is (map= (c/unit #currency EUR) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
+    (is (map= (c/unit :EUR)          {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
+    (is (map= (c/unit "EUR")         {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
+    (is (map= (c/unit 978)           {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
+    (is (map= (c/unit {:id :EUR})    {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0})))
   (testing "when it checks if a currency is defined"
     (is (= (c/defined? :PLN) true))
     (is (= (c/defined? :PPPP) false))
@@ -201,8 +201,8 @@
     (is (= (c/domain #currency crypto/ETH) :CRYPTO))
     (is (= (c/domain #currency{:id :PLN :scale 1}) nil)))
   (testing "when it's possible to get the kind of a currency"
-    (is (= (c/kind #currency EUR) :FIAT))
-    (is (= (c/kind #currency crypto/ETH) :DECENTRALIZED))
+    (is (= (c/kind #currency EUR) :iso/fiat))
+    (is (= (c/kind #currency crypto/ETH) :virtual/native))
     (is (= (c/kind #currency{:id :PLN :scale 1}) nil)))
   (testing "when it's possible to get the namespaced code of a currency"
     (is (= (c/ns-code #currency EUR) "EUR"))
@@ -249,8 +249,8 @@
     (is (= (c/definitive? 978) false))
     (is (= (c/definitive? {:id :EUR}) false))
     (is (= (c/definitive? {:id :EUR :domain :ISO-4217 :numeric 978 :scale 2}) true))
-    (is (= (c/definitive? {:id :EUR :domain :ISO-4217 :numeric 978 :scale 2 :kind :FIAT}) true))
-    (is (= (c/definitive? {:id :EUR :do :ISO-4217 :nr 978 :sc 2 :ki :FIAT}) true))
+    (is (= (c/definitive? {:id :EUR :domain :ISO-4217 :numeric 978 :scale 2 :kind :iso/fiat}) true))
+    (is (= (c/definitive? {:id :EUR :do :ISO-4217 :nr 978 :sc 2 :ki :iso/fiat}) true))
     (is (= (c/definitive? {:id :EUR :domain nil :numeric nil :scale "2" :kind nil}) true))
     (is (= (c/definitive? {:id :EUR :domain nil :numeric nil :scale nil :kind nil}) true))
     (is (= (c/definitive? {:id :EUR :scale 2}) false))
@@ -260,17 +260,34 @@
     (is (= (c/has-numeric-id? #currency crypto/ETH) false))
     (is (= (c/has-numeric-id? #currency{:id :PLN :scale 1}) false)))
   (testing "when it's possible to check if a currency has particular kind"
-    (is (= (c/kind-of? :FIAT #currency EUR) true))
-    (is (= (c/kind-of? :DECENTRALIZED #currency crypto/ETH) true))
-    (is (= (c/kind-of? :FIAT #currency{:id :PLN :scale 1}) false)))
+    (is (= (c/of-kind? :iso/fiat #currency EUR) true))
+    (is (= (c/of-kind? :iso #currency EUR) true))
+    (is (= (c/of-kind? :virtual/native #currency crypto/ETH) true))
+    (is (= (c/of-kind? :virtual #currency crypto/ETH) true))
+    (is (= (c/of-kind? :iso #currency crypto/ETH) false))
+    (is (= (c/of-kind? :iso/fiat #currency{:id :PLN :scale 1}) false)))
   (testing "when it's possible to check if a currency has any kind"
     (is (= (c/has-kind? #currency EUR) true))
     (is (= (c/has-kind? #currency crypto/ETH) true))
     (is (= (c/has-kind? #currency{:id :PLN :scale 1}) false)))
+  (testing "when it's possible to check if a currency has a particular kind (exact match)"
+    (is (= (c/has-kind? #currency EUR :iso/fiat) true))
+    (is (= (c/has-kind? #currency EUR :iso) false))
+    (is (= (c/has-kind? #currency{:id :PLN :scale 1} :iso/fiat) false)))
   (testing "when it's possible to check if a currency has assigned some country"
     (is (= (c/has-country? #currency EUR) true))
     (is (= (c/has-country? #currency crypto/ETH) false))
     (is (= (c/has-country? #currency{:id :PLN :scale 1}) true)))
+  (testing "when it's possible to check if a currency has any domain"
+    (is (= (c/has-domain? #currency EUR) true))
+    (is (= (c/has-domain? #currency crypto/ETH) true))
+    (is (= (c/has-domain? #currency{:id :PLN :scale 1}) false))
+    ;; A nil second arg is treated as "use default registry" (presence check).
+    (is (= (c/has-domain? #currency{:id :PLN :scale 1} nil) false)))
+  (testing "when it's possible to check if a currency has a particular domain (exact match)"
+    (is (= (c/has-domain? #currency EUR :ISO-4217) true))
+    (is (= (c/has-domain? #currency EUR :CRYPTO) false))
+    (is (= (c/has-domain? #currency crypto/ETH :CRYPTO) true)))
   (testing "when it's possible to check if a currency has assigned the given domain"
     (is (= (c/in-domain? :ISO-4217 #currency EUR) true))
     (is (= (c/in-domain? nil #currency crypto/ETH) false))
@@ -281,7 +298,7 @@
     (let [dom (derive (make-hierarchy) :ISO-4217-LEGACY :ISO-4217)
           r   (assoc (registry/new)
                      :hierarchies
-                     (bankster/->CurrencyHierarchies dom (make-hierarchy)))]
+                     (bankster/->CurrencyHierarchies dom (make-hierarchy) (make-hierarchy)))]
       (is (= (c/of-domain? :ISO-4217 {:id :OLD :domain :ISO-4217-LEGACY :numeric 1 :scale 2} r) true))
       (is (= (c/of-domain? :ISO-4217 {:id :CRY :domain :CRYPTO :numeric 1 :scale 2} r) false))))
   (testing "when it's possible to check if a currency is auto-scaled"
@@ -302,8 +319,21 @@
     (is (= (c/iso? #currency crypto/ETH) false))
     (is (= (c/iso? #currency{:id :PLN :scale 1}) false))
     (is (= (c/iso? #currency{:id :crypto/PLN :scale 1}) false))
-    (is (= (c/iso? #currency{:id :ETH :scale 18 :domain :ISO-4217}) true))
-    (is (= (c/iso? #currency{:id :PLN :scale 1 :domain :ISO-4217}) true))))
+    ;; iso? is based on :kind hierarchy (not only on :domain).
+    (is (= (c/iso? #currency{:id :PLN :scale 1 :kind :iso/fiat}) true))
+    (is (= (c/iso? #currency{:id :PLN :scale 1 :domain :ISO-4217}) false))))
+
+(deftest currency-traits
+  (testing "traits: presence, exact membership and hierarchy-aware checks"
+    (is (= (c/has-trait? :crypto/USDT) true))
+    (is (= (c/has-trait? :crypto/ETH) false))
+    ;; Exact membership only:
+    (is (= (c/has-trait? :crypto/USDT :token/erc20) true))
+    (is (= (c/has-trait? :crypto/USDT :token) false))
+    ;; Hierarchy-aware predicate:
+    (is (= (c/of-trait? :token :crypto/USDT) true))
+    (is (= (c/of-trait? :privacy :crypto/XMR) true))
+    (is (= (c/of-trait? :privacy :crypto/USDT) false))))
 
 (deftest currency-properties-localized
   (testing "when it's possible to get a localized property"
@@ -365,13 +395,13 @@
                    (c/unit {:id :XUA :kind "ISO/FUNDS"} r))))))
 
 (deftest kind-of-uses-registry-hierarchy
-  (testing "kind-of? consults registry :kind hierarchy (derived kinds)"
+  (testing "of-kind? consults registry :kind hierarchy (derived kinds)"
     (let [k  (derive (make-hierarchy) :iso/funds :funds)
-          hs (bankster/->CurrencyHierarchies (make-hierarchy) k)
+          hs (bankster/->CurrencyHierarchies (make-hierarchy) k (make-hierarchy))
           r  (-> (registry/new)
                  (assoc :hierarchies hs)
                  (c/register (c/new :XUA 965 0 :iso/funds :ISO-4217)))]
-      (is (= true (c/kind-of? :funds :XUA r)))
+      (is (= true (c/of-kind? :funds :XUA r)))
       (is (= true (c/funds? :XUA r))))))
 
 (deftest register-allows-shared-numeric-id
