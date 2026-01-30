@@ -135,8 +135,7 @@
           kind    (if funds? :iso/funds (get special-kinds code :FIAT))
           domain  (when-not old? :ISO-4217)
           weight  0]
-      (cond-> (currency/new-currency id (long numeric) (int scale) kind domain (int weight))
-        old? (assoc :traits #{:legacy})))))
+      (currency/new-currency id (long numeric) (int scale) kind domain (int weight)))))
 
 ;;
 ;; Joda Money CSV importer.

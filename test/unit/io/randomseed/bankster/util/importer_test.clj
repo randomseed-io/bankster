@@ -19,7 +19,7 @@
              ["ADP" "20" "0" "Old, now EUR"])]
       (is (= :iso-4217-legacy/ADP (:id c)))
       (is (= :ISO-4217-LEGACY (:domain c)))
-      (is (= true (currency/has-trait? c :legacy))))))
+      (is (= true (currency/iso-legacy? c))))))
 
 (deftest make-currency-funds-kind-from-comment
   (testing "comment \"FundsCode\" causes currency kind to be set to :iso/funds"
