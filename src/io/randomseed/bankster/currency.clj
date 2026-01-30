@@ -47,7 +47,7 @@
   decimal places."
   (int -1))
 
-(def ^{:tag clojure.lang.Keyword :const true :private true :added "3.0.0"}
+(def ^{:tag clojure.lang.Keyword :const true :private true :added "2.0.0"}
   ^clojure.lang.Keyword explicit-nil
   "Internal sentinel used to express explicit `nil` values coming from currency maps.
 
@@ -56,7 +56,7 @@
   and suppress inference)."
   ::nil)
 
-(def ^{:tag clojure.lang.Keyword :const true :private true :added "3.0.0"}
+(def ^{:tag clojure.lang.Keyword :const true :private true :added "2.0.0"}
   ^clojure.lang.Keyword weight-meta-key
   "Metadata key used to store currency weight.
 
@@ -132,7 +132,7 @@
 
   This is a low-level helper for hot paths (sorting/indexing). For public API use
   `weight` which also supports non-`Currency` inputs."
-  {:tag long :private true :added "3.0.0"}
+  {:tag long :private true :added "2.0.0"}
   ^long [^Currency c]
   (let [m (meta c)]
     (unchecked-long
@@ -144,7 +144,7 @@
   "Attaches a weight hint to a currency using metadata.
 
   Weight of 0 is treated as default and is not stored."
-  {:tag Currency :private true :added "3.0.0"}
+  {:tag Currency :private true :added "2.0.0"}
   ^Currency [^Currency c weight]
   (let [w (unchecked-int (or weight 0))
         m (meta c)]
@@ -172,7 +172,7 @@
 
 (defn- needs-upper-ascii?
   "Returns `true` when `s` contains at least one ASCII lower-case letter."
-  {:tag Boolean :private true :added "3.0.0"}
+  {:tag Boolean :private true :added "2.0.0"}
   ^Boolean [^String s]
   (when (some? s)
     (let [len (unchecked-int (.length s))]
@@ -186,7 +186,7 @@
 
 (defn- upper-ascii-if-needed
   "Upper-cases `s` only when it contains ASCII lower-case letters."
-  {:tag String :private true :added "3.0.0"}
+  {:tag String :private true :added "2.0.0"}
   [^String s]
   (if (needs-upper-ascii? s)
     (bu/try-upper-case s)
@@ -200,7 +200,7 @@
 
   NOTE: for string inputs this may intern a keyword; do not use on untrusted input
   outside of constructors / controlled code paths."
-  {:tag clojure.lang.Keyword :private true :added "3.0.0"}
+  {:tag clojure.lang.Keyword :private true :added "2.0.0"}
   [id]
   (when (some? id)
     (cond
@@ -237,7 +237,7 @@
 
   Preserves namespace casing, but tries an upper-cased name variant first when the
   name contains ASCII lower-case letters. Does not intern new keywords."
-  {:tag clojure.lang.IPersistentVector :private true :added "3.0.0"}
+  {:tag clojure.lang.IPersistentVector :private true :added "2.0.0"}
   [^clojure.lang.Keyword id]
   (let [ns  (.getNamespace id)
         nm  (.getName id)
@@ -387,7 +387,7 @@
    "Coerces a currency representation to a currency code (unqualified keyword).
   Registry-free. May return `nil` if the code cannot be derived.")
 
-  (^{:tag String :added "3.0.0"}
+  (^{:tag String :added "2.0.0"}
    to-id-str
    [this]
    "Coerces a currency representation to a currency identifier string.
@@ -400,7 +400,7 @@
   - qualified IDs: original namespace + `/` + upper-case name
     (e.g. `\"crypto/USDT\"` or `\"CrYpTo/USDT\"`).")
 
-  (^{:tag String :added "3.0.0"}
+  (^{:tag String :added "2.0.0"}
    to-code-str
    [this]
    "Coerces a currency representation to a currency code string.
@@ -431,7 +431,7 @@
    "Coerces a currency representation to a map of currency fields.
   Registry-free. Returns a map (possibly partial) or `nil`.")
 
-  (^{:tag Boolean :added "3.0.0"}
+  (^{:tag Boolean :added "2.0.0"}
    definitive?
    [this]
    "Returns `true` when the given value is a *definitive* currency representation: it
@@ -612,7 +612,7 @@
   NOTE: The literal `true` works as a sentinel only at macro-level via
   `(registry/get true)`. Passing `true` as a runtime value to functions expecting a
   registry is not supported."
-  {:tag Registry :private true :added "3.0.0"}
+  {:tag Registry :private true :added "2.0.0"}
   ^Registry [registry]
   (cond
     (nil?  registry) (registry/get)
@@ -625,7 +625,7 @@
   identifier-like currency representations. For already constructed currencies
   (e.g. `Currency` records) the `nil` registry convention may still mean
   \"return as-is\" and should be handled by the caller."
-  {:tag Currency :private true :added "3.0.0"}
+  {:tag Currency :private true :added "2.0.0"}
   ^Currency [c ^Registry registry]
   (or (resolve c registry)
       (throw
@@ -639,7 +639,7 @@
   "Canonical string form of a keyword currency identifier.
 
   Uses original namespace and upper-case name. Returns `nil` for `nil` input."
-  {:tag String :private true :added "3.0.0"}
+  {:tag String :private true :added "2.0.0"}
   ^String [^clojure.lang.Keyword id]
   (when (some? id)
     (let [ns (.getNamespace ^clojure.lang.Keyword id)
@@ -654,7 +654,7 @@
 
   Assumes the ID has already been canonicalized (upper-case name). Intended for
   `Currency` values which are treated as the source of truth."
-  {:tag String :private true :added "3.0.0"}
+  {:tag String :private true :added "2.0.0"}
   ^String [^clojure.lang.Keyword id]
   (when (some? id)
     (let [ns (.getNamespace ^clojure.lang.Keyword id)
@@ -665,7 +665,7 @@
 
 (defn- code->str
   "Canonical string form of a keyword currency code (no namespace)."
-  {:tag String :private true :added "3.0.0"}
+  {:tag String :private true :added "2.0.0"}
   ^String [^clojure.lang.Keyword id]
   (when (some? id)
     (bu/try-upper-case (.getName ^clojure.lang.Keyword id))))
@@ -674,7 +674,7 @@
   "Returns a set of possible currency IDs for `x`.
 
   This is a best-effort, non-throwing helper used by `same-ids?`."
-  {:tag clojure.lang.IPersistentSet :private true :added "3.0.0"}
+  {:tag clojure.lang.IPersistentSet :private true :added "2.0.0"}
   [x ^Registry registry]
   (try
     (cond
@@ -712,7 +712,7 @@
   - non-throwing (returns `false` when IDs cannot be established),
   - `registry=nil` or `registry=true` means: use the default registry,
   - `Currency` values are never treated as registry references."
-  {:tag Boolean :added "3.0.0"}
+  {:tag Boolean :added "2.0.0"}
   ([a b]
    (same-ids? a b nil))
   ([a b registry]
@@ -726,7 +726,7 @@
              (some b-ids a-ids)
              (some a-ids b-ids)))))))
 
-(def ^{:tag clojure.lang.Keyword :const true :private true :added "3.0.0"}
+(def ^{:tag clojure.lang.Keyword :const true :private true :added "2.0.0"}
   invalid-map-hint
   ::invalid-map-hint)
 
@@ -734,7 +734,7 @@
   "Best-effort, registry-free normalization of an ID hint.
 
   Strips the ISO namespace (`ISO-4217`, case-insensitive) if present."
-  {:tag clojure.lang.Keyword :private true :added "3.0.0"}
+  {:tag clojure.lang.Keyword :private true :added "2.0.0"}
   [x]
   (when-some [^clojure.lang.Keyword kid (to-id x)]
     (let [ns (some-> (namespace kid) bu/try-upper-case)]
@@ -744,7 +744,7 @@
 
 (defn- normalize-code-hint
   "Best-effort, registry-free normalization of a currency code hint."
-  {:tag clojure.lang.Keyword :private true :added "3.0.0"}
+  {:tag clojure.lang.Keyword :private true :added "2.0.0"}
   [x]
   (to-code x))
 
@@ -754,7 +754,7 @@
   - Missing key means \"not specified\" (handled by the caller via `contains?`).
   - Present key with `nil` value means \"specified as nil\" -> `no-numeric-id`.
   - Non-nil values are parsed and must satisfy `valid-numeric-id?`."
-  {:tag Object :private true :added "3.0.0"}
+  {:tag Object :private true :added "2.0.0"}
   [x]
   (cond
     (nil? x)
@@ -780,7 +780,7 @@
   - Non-nil values are parsed to integer.
 
   Negative scales are treated as `auto-scaled` (matching `map->new`)."
-  {:tag Object :private true :added "3.0.0"}
+  {:tag Object :private true :added "2.0.0"}
   [x]
   (cond
     (nil? x)
@@ -798,7 +798,7 @@
 
 (defn- normalize-domain-hint
   "Normalizes a currency domain hint to an upper-cased keyword."
-  {:tag clojure.lang.Keyword :private true :added "3.0.0"}
+  {:tag clojure.lang.Keyword :private true :added "2.0.0"}
   [x]
   (when-not (nil? x)
     (when-some [s (not-empty (if (ident? x) (core-name x) (str x)))]
@@ -808,7 +808,7 @@
   "Normalizes a currency kind hint to a keyword.
 
   Kind is treated as case-sensitive and may be namespaced."
-  {:tag clojure.lang.Keyword :private true :added "3.0.0"}
+  {:tag clojure.lang.Keyword :private true :added "2.0.0"}
   [x]
   (when-not (nil? x)
     (cond
@@ -830,7 +830,7 @@
   - Missing key means \"not specified\" (handled by the caller via `contains?`).
   - Present key with `nil` value means \"specified as nil\" -> `0`.
   - Non-nil values are parsed to integer."
-  {:tag Object :private true :added "3.0.0"}
+  {:tag Object :private true :added "2.0.0"}
   [x]
   (cond (nil? x)    0
         (number? x) (int x)
@@ -959,7 +959,7 @@
   `io.randomseed.bankster.util/keep-in-set-where`, this does not rely on transients.
 
   Returns `nil` when `s` is `nil` or when the resulting set is empty."
-  {:tag clojure.lang.PersistentTreeSet :private true :added "3.0.0"}
+  {:tag clojure.lang.PersistentTreeSet :private true :added "2.0.0"}
   [^clojure.lang.IFn pred ^clojure.lang.PersistentTreeSet s]
   (when (some? s)
     (let [s (reduce (fn [acc x] (if (pred x) acc (disj acc x))) s s)]
@@ -2111,7 +2111,7 @@
 
   NOTE: Unlike currency constructors (which treat weight as an optional hint),
   `with-weight` is an explicit setter: it records the weight even when it is 0."
-  {:tag Currency :added "3.0.0"}
+  {:tag Currency :added "2.0.0"}
   ^Currency [^Currency c weight]
   (when (some? c)
     (let [w (unchecked-int (or weight 0))
@@ -2128,7 +2128,7 @@
   map is meaningful). Use `clear-weight` to remove the explicit entry (default 0).
 
   Throws when the currency cannot be resolved in the registry."
-  {:tag Registry :added "3.0.0"}
+  {:tag Registry :added "2.0.0"}
   [^Registry registry currency-id weight]
   (when (some? registry)
     (when-not (defined? currency-id registry)
@@ -2138,17 +2138,17 @@
                      " does not exist in a registry.")
                 {:currency-id currency-id})))
     (let [^Currency c0 (of-id currency-id registry)
-          cid         (.id ^Currency c0)
-          w           (normalize-weight-hint weight)]
+          cid          (.id ^Currency c0)
+          w            (normalize-weight-hint weight)]
       (when (identical? w invalid-map-hint)
         (throw
          (ex-info "Invalid currency weight."
                   {:currency-id cid
                    :weight      weight})))
-      (let [w  (int w)
+      (let [w           (int w)
             ^Currency c (with-weight* c0 w)
-            cids       (registry/currency-id->country-ids* cid registry)
-            code       (if (namespace cid) (keyword (core-name cid)) cid)]
+            cids        (registry/currency-id->country-ids* cid registry)
+            code        (if (namespace cid) (keyword (core-name cid)) cid)]
         (as-> registry r
           ;; Base map: source of truth (explicit entries, including 0).
           (assoc-in r [:cur-id->weight cid] w)
@@ -2165,7 +2165,7 @@
 
 (defn set-weight!
   "Sets currency weight in the global registry. See `set-weight`."
-  {:tag Registry :added "3.0.0"}
+  {:tag Registry :added "2.0.0"}
   [currency-id weight]
   (swap! registry/R set-weight currency-id weight))
 
@@ -2174,7 +2174,7 @@
   to weight 0) and updates all weight-dependent indexes.
 
   Throws when the currency cannot be resolved in the registry."
-  {:tag Registry :added "3.0.0"}
+  {:tag Registry :added "2.0.0"}
   [^Registry registry currency-id]
   (when (some? registry)
     (when-not (defined? currency-id registry)
@@ -2184,10 +2184,10 @@
                      " does not exist in a registry.")
                 {:currency-id currency-id})))
     (let [^Currency c0 (of-id currency-id registry)
-          cid         (.id ^Currency c0)
-          ^Currency c (with-weight* c0 0)
-          cids        (registry/currency-id->country-ids* cid registry)
-          code        (if (namespace cid) (keyword (core-name cid)) cid)]
+          cid          (.id ^Currency c0)
+          ^Currency c  (with-weight* c0 0)
+          cids         (registry/currency-id->country-ids* cid registry)
+          code         (if (namespace cid) (keyword (core-name cid)) cid)]
       (as-> registry r
         (map/dissoc-in r [:cur-id->weight cid])
         (assoc-in r [:cur-id->cur cid] c)
@@ -2201,7 +2201,7 @@
 
 (defn clear-weight!
   "Clears an explicit currency weight entry in the global registry. See `clear-weight`."
-  {:tag Registry :added "3.0.0"}
+  {:tag Registry :added "2.0.0"}
   [currency-id]
   (swap! registry/R clear-weight currency-id))
 
@@ -2481,7 +2481,7 @@
   "Prepares a currency weights map (currency ID -> int weight).
 
   Keeps explicit 0 entries (presence in the map is meaningful)."
-  {:tag clojure.lang.IPersistentMap :added "3.0.0" :private true}
+  {:tag clojure.lang.IPersistentMap :added "2.0.0" :private true}
   [^clojure.lang.IPersistentMap p]
   (when (and (map? p) (pos? (count p)))
     (into {}
@@ -3271,7 +3271,7 @@
   traits entry.
 
   Throws when the currency cannot be resolved in the registry."
-  {:tag Registry :added "3.0.0"}
+  {:tag Registry :added "2.0.0"}
   [^Registry registry currency-id traits]
   (when (some? registry)
     (when-not (defined? currency-id registry)
@@ -3280,16 +3280,16 @@
                      (if (instance? Currency currency-id) (.id ^Currency currency-id) currency-id)
                      " does not exist in a registry.")
                 {:currency-id currency-id})))
-    (let [^Currency c  (of-id currency-id registry)
-          cid          (.id ^Currency c)
-          traits       (prep-traits traits)]
+    (let [^Currency c (of-id currency-id registry)
+          cid         (.id ^Currency c)
+          traits      (prep-traits traits)]
       (if (seq traits)
         (assoc-in registry [:cur-id->traits cid] traits)
         (map/dissoc-in registry [:cur-id->traits cid])))))
 
 (defn set-traits!
   "Sets traits for the given currency in the global registry. See `set-traits`."
-  {:tag Registry :added "3.0.0"}
+  {:tag Registry :added "2.0.0"}
   [currency-id traits]
   (swap! registry/R set-traits currency-id traits))
 
@@ -3299,7 +3299,7 @@
   Passing `nil` or an empty collection is a no-op.
 
   Throws when the currency cannot be resolved in the registry."
-  {:tag Registry :added "3.0.0"}
+  {:tag Registry :added "2.0.0"}
   [^Registry registry currency-id traits]
   (when (some? registry)
     (when-not (defined? currency-id registry)
@@ -3308,16 +3308,16 @@
                      (if (instance? Currency currency-id) (.id ^Currency currency-id) currency-id)
                      " does not exist in a registry.")
                 {:currency-id currency-id})))
-    (let [^Currency c  (of-id currency-id registry)
-          cid          (.id ^Currency c)
-          traits       (prep-traits traits)]
+    (let [^Currency c (of-id currency-id registry)
+          cid         (.id ^Currency c)
+          traits      (prep-traits traits)]
       (if (seq traits)
         (update-in registry [:cur-id->traits cid] (fnil into #{}) traits)
         registry))))
 
 (defn add-traits!
   "Adds traits for the given currency in the global registry. See `add-traits`."
-  {:tag Registry :added "3.0.0"}
+  {:tag Registry :added "2.0.0"}
   [currency-id traits]
   (swap! registry/R add-traits currency-id traits))
 
@@ -3328,7 +3328,7 @@
   becomes empty.
 
   Throws when the currency cannot be resolved in the registry."
-  {:tag Registry :added "3.0.0"}
+  {:tag Registry :added "2.0.0"}
   [^Registry registry currency-id traits]
   (when (some? registry)
     (when-not (defined? currency-id registry)
@@ -3337,9 +3337,9 @@
                      (if (instance? Currency currency-id) (.id ^Currency currency-id) currency-id)
                      " does not exist in a registry.")
                 {:currency-id currency-id})))
-    (let [^Currency c  (of-id currency-id registry)
-          cid          (.id ^Currency c)
-          traits       (prep-traits traits)]
+    (let [^Currency c (of-id currency-id registry)
+          cid         (.id ^Currency c)
+          traits      (prep-traits traits)]
       (if-not (seq traits)
         registry
         (let [ts (registry/currency-id->traits* cid registry)
@@ -3350,7 +3350,7 @@
 
 (defn remove-traits!
   "Removes traits for the given currency in the global registry. See `remove-traits`."
-  {:tag Registry :added "3.0.0"}
+  {:tag Registry :added "2.0.0"}
   [currency-id traits]
   (swap! registry/R remove-traits currency-id traits))
 
