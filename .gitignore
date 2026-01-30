@@ -25,3 +25,4 @@ gh-pages
 node_modules/
 /cljs-test-runner-out
 .eastwood
+/dev/resources/org/joda/
