@@ -2063,6 +2063,42 @@
   ([c _locale ^Registry registry]
    (weight c registry)))
 
+(defn info
+  "Returns a map describing the given currency, including registry-associated
+  properties when available.
+
+  Base fields come from the Monetary `to-map` representation. When a registry can be
+  consulted (default or explicitly passed), this function also adds:
+
+  - `:countries` - a set of associated country IDs,
+  - `:localized` - a localized properties map (locale keywords, including `:*`),
+  - `:traits`    - a set of associated traits.
+
+  Returns `nil` when the given value points to a registry currency but cannot be
+  resolved. Locale argument is ignored."
+  {:tag clojure.lang.IPersistentMap :added "2.0.0"}
+  ([c]
+   (info c (registry/get)))
+  ([c ^Registry registry]
+   (let [^Registry registry (unit-registry registry)
+         r (with-attempt c registry [cur]
+             (let [cid  (.id ^Currency cur)
+                   ctrs (registry/currency-id->country-ids* cid registry)
+                   lcl  (registry/currency-id->localized* cid registry)
+                   lcl  (when (and (map? lcl) (pos? (count lcl)))
+                          (not-empty
+                           (map/map-keys
+                            (comp keyword str l/locale)
+                            lcl)))
+                   trts (registry/currency-id->traits* cid registry)]
+               (cond-> (to-map cur)
+                 (seq ctrs) (assoc :countries ctrs)
+                 (seq lcl)  (assoc :localized lcl)
+                 (seq trts) (assoc :traits trts))))]
+     (when-not (false? r) r)))
+  ([c _locale ^Registry registry]
+   (info c registry)))
+
 ;;
 ;; Currency - country relations.
 ;;

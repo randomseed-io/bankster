@@ -360,6 +360,32 @@
       (is (= nil (c/resolve :AAA r2)))
       (is (= nil (get (registry/currency-code->currencies* r2) :AAA))))))
 
+(deftest currency-info
+  (testing "info returns currency fields and registry-associated properties"
+    (let [cur (c/new :AAA 123 2 :iso/fiat :ISO-4217 0)
+          r0  (registry/new)
+          r1  (-> r0
+                  (c/register cur [:PL] {:* {:name "A"}})
+                  (assoc :cur-id->traits {:AAA #{:token/erc20}}))]
+      (is (= (c/info :AAA r1)
+             {:id :AAA
+              :nr 123
+              :sc 2
+              :do :ISO-4217
+              :ki :iso/fiat
+              :we 0
+              :countries #{:PL}
+              :localized {:* {:name "A"}}
+              :traits #{:token/erc20}}))
+      ;; Missing registry-backed currency reference -> nil (soft behavior).
+      (is (= nil (c/info :ZZZ r1)))
+      ;; Ad-hoc currency object is still informative even if it's not in the registry.
+      (let [m (c/info (c/new :QQQ 1 2 :iso/test :ISO-4217 0) r1)]
+        (is (= :QQQ (:id m)))
+        (is (= false (contains? m :countries)))
+        (is (= false (contains? m :localized)))
+        (is (= false (contains? m :traits)))))))
+
 (deftest formatter-extended-max-fraction-digits
   (testing "formatter-extended sets max-fraction-digits without throwing"
     (let [^java.text.DecimalFormat f (c/formatter-extended :EUR :en_US {:max-fraction-digits 1})]
