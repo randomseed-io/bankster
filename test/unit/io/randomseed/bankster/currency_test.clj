@@ -521,6 +521,29 @@
         (is (= nil (get (registry/currency-nr->currencies* r3) 999)))
         (is (= nil (get (registry/currency-nr->currency* r3) 999)))))))
 
+(deftest unregister-updates-canonical-shared-code
+  (testing "unregister updates canonical resolution for shared currency codes"
+    (let [r0 (registry/new)
+          a  (c/new :AAA        c/no-numeric-id 2 nil :ISO-4217 10)
+          b  (c/new :crypto/AAA c/no-numeric-id 2 nil :CRYPTO   0)
+          r1 (-> r0 (c/register a) (c/register b))]
+      ;; When multiple currencies share the same code, `resolve` should pick the
+      ;; lowest-weight one.
+      (is (= :crypto/AAA (.id (c/resolve :AAA r1))))
+      (is (= #{:AAA :crypto/AAA}
+             (set (map c/id (get (registry/currency-code->currencies* r1) :AAA)))))
+
+      ;; After unregistering the canonical one, the next one must be promoted.
+      (let [r2 (c/unregister r1 b)]
+        (is (= :AAA (.id (c/resolve :AAA r2))))
+        (is (= #{:AAA}
+               (set (map c/id (get (registry/currency-code->currencies* r2) :AAA)))))
+
+        ;; After unregistering the last one, the code bucket key must disappear.
+        (let [r3 (c/unregister r2 a)]
+          (is (= nil (c/resolve :AAA r3)))
+          (is (= nil (get (registry/currency-code->currencies* r3) :AAA))))))))
+
 (deftest registry-weight-bases-are-synchronized
   (testing "weight base map and weighted buckets stay in sync when updating weights"
     (let [r0     (registry/new)
