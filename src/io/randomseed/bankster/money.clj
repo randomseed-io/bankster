@@ -2803,6 +2803,39 @@
       (when (map? d)
         (into {} (for [[k v] d] [k (resolve v)]))))))
 
+(defn readers
+  "Returns a data readers map (tag symbol -> handler function) suitable for
+  `clojure.edn/read` / `clojure.edn/read-string`.
+
+  The returned map always includes the base tags:
+  - `#money` and `#bankster.money`,
+  - `#currency` and `#bankster.currency`.
+
+  When a registry is available it also includes tags of form `#money/NS` (and
+  `#bankster.money/NS`) for each currency namespace present in the registry, so EDN
+  can disambiguate codes between currency domains (e.g. `#money/crypto[1 ETH]`).
+
+  Note: this helper does not mutate `clojure.core/*data-readers*`."
+  {:tag clojure.lang.IPersistentMap :added "2.0.0"}
+  ([]
+   (readers (registry/get)))
+  ([^Registry registry]
+   (let [^Registry registry (registry/get registry)
+         nses (->> (.cur-id->cur registry)
+                   (keys)
+                   (keep namespace)
+                   (distinct)
+                   (sort-by str))]
+     (into {'money            data-literal
+            'bankster.money   data-literal
+            'currency         currency/data-literal
+            'bankster.currency currency/data-literal}
+           (mapcat (fn [^String ns]
+                     (let [h (fn [arg] (ns-data-literal ns arg))]
+                       [[(symbol "money" ns) h]
+                        [(symbol "bankster.money" ns) h]])))
+           nses))))
+
 ;;
 ;; Formatting.
 ;;
