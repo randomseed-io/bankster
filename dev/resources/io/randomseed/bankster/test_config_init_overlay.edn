@@ -1,0 +1,6 @@
+{:version "test-init-overlay"
+
+ ;; A custom currency that should not exist in the distribution registry.
+ :currencies {:init/AAA {:kind  :virtual/token
+                         :scale 2}}}
+
