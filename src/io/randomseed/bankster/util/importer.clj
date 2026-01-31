@@ -99,23 +99,22 @@
 (def ^{:private true :added "1.0.0"}
   special-kinds
   "ISO codes for special kinds of currencies."
-  {:USN :FIDUCIARY
-   :XSU :FIDUCIARY
-   :CLF :FIDUCIARY
-   :XUA :FUNDS
-   :XTS :EXPERIMENTAL
-   :XPT :COMMODITY
-   :XPD :COMMODITY
-   :XAU :COMMODITY
-   :XAG :COMMODITY
-   :XOF :FIAT
-   :XPF :FIAT
-   :XDR :FIDUCIARY
-   :XBA :FIDUCIARY
-   :XBB :FIDUCIARY
-   :XBC :FIDUCIARY
-   :XBD :FIDUCIARY
-   :XXX nil})
+  ;; These kinds are aligned with the default kind ontology shipped in seed/config.
+  {:USN :iso.funds/settlement
+   :XSU :iso.funds/international
+   :CLF :iso.funds/market
+   :XUA :iso.funds/institutional
+   :XTS :iso/test
+   :XPT :iso/metal
+   :XPD :iso/metal
+   :XAU :iso/metal
+   :XAG :iso/metal
+   :XDR :iso.funds/international
+   :XBA :iso.funds/market
+   :XBB :iso.funds/market
+   :XBC :iso.funds/market
+   :XBD :iso.funds/market
+   :XXX :iso/null})
 
 (defn make-currency
   "Shapes an ISO-standardized currency entry. Gets a sequence of linear collections
@@ -132,7 +131,7 @@
           numeric (if (< numeric 0) currency/no-numeric-id numeric)
           scale   (or (bu/try-parse-int scale) currency/auto-scaled)
           scale   (if (< scale 0) currency/auto-scaled scale)
-          kind    (if funds? :iso/funds (get special-kinds code :FIAT))
+          kind    (if funds? :iso/funds (get special-kinds code :iso/fiat))
           domain  (when-not old? :ISO-4217)
           weight  0]
       (currency/new-currency id (long numeric) (int scale) kind domain (int weight)))))

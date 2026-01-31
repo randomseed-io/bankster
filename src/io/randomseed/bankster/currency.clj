@@ -348,7 +348,10 @@
                             nil)]
       (when-some [c ^Currency (new-currency id nr sc kind domain weight)]
         (if (> (count m) 1)
-          (merge c (dissoc m :id :nr :numeric :sc :scale :ki :kind :do :domain :we :weight))
+          ;; Allow extra keys on ad-hoc currencies, but do not inline registry-backed
+          ;; properties or config directives as extension fields.
+          (merge c (dissoc m :id :nr :numeric :sc :scale :ki :kind :do :domain :we :weight
+                             :countries :localized :traits :propagate-keys))
           c)))))
 
 (def ^{:tag      Currency
@@ -486,9 +489,8 @@
   will be `:crypto/BTC`; but for `:BLABLA` (which does not exist in a registry) the
   resulting value will be `:BLABLA`.
 
-  If a registry is given (or `true` value is passed, indicating to use default
-  registry) then trying to use a non-existing currency will cause an exception to be
-  thrown.")
+  If a registry is given (non-`nil`), then trying to use a non-existing currency will
+  cause an exception to be thrown.")
 
   (^{:tag io.randomseed.bankster.Currency :added "1.0.0"}
    of-id
@@ -518,10 +520,9 @@
   then the registry will NOT be consulted and the `Currency` object will be returned
   as-is.
 
-  If a valid `registry` is passed (or set to `true` value indicating that a default
-  registry should be used), it will be consulted to find the exact match. For
-  currency identifiers (keywords, strings, numbers) it will resolve them from the
-  registry.
+  If a non-`nil` `registry` is passed, it will be consulted to find the exact match.
+  For currency identifiers (keywords, strings, numbers) it will resolve them from
+  the registry.
 
   For currency maps, `unit` treats the map as a *registry lookup specification*: it
   will query the registry using meaningful keys present in the map (a mask-like
@@ -2096,10 +2097,14 @@
   {:tag 'int :added "1.0.2"}
   ([c] (when-some [^Currency c (unit c)] (currency-weight c)))
   ([c ^Registry registry]
-   (when-some [^Currency c (if (instance? Currency c)
-                             c
-                             (unit c (unit-registry registry)))]
-     (currency-weight c)))
+   (when (some? c)
+     (let [^Registry registry (unit-registry registry)
+           ^Currency cur      (if (instance? Currency c) c (unit c registry))
+           cid                (.id ^Currency cur)
+           id->w              (registry/currency-id->weight* registry)]
+       (if (contains? id->w cid)
+         (long (clojure.core/get id->w cid))
+         (currency-weight cur)))))
   ([c _locale ^Registry registry]
    (weight c registry)))
 

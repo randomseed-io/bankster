@@ -29,6 +29,22 @@
       (is (= :ISO-4217 (:domain c)))
       (is (= :iso/funds (:kind c))))))
 
+(deftest make-currency-default-kind-is-iso-fiat
+  (testing "default ISO currencies imported from CSV are classified as :iso/fiat"
+    (let [c (#'io.randomseed.bankster.util.importer/make-currency
+             ["EUR" "978" "2" nil])]
+      (is (= :EUR (:id c)))
+      (is (= :ISO-4217 (:domain c)))
+      (is (= :iso/fiat (:kind c))))))
+
+(deftest make-currency-special-kind-mapping
+  (testing "some special ISO codes get more specific kinds (aligned with seed/config ontology)"
+    (let [mk #'io.randomseed.bankster.util.importer/make-currency]
+      (is (= :iso/metal            (:kind (mk ["XAU" "959" "0" nil]))))
+      (is (= :iso/test             (:kind (mk ["XTS" "963" "0" nil]))))
+      (is (= :iso/null             (:kind (mk ["XXX" "999" "0" nil]))))
+      (is (= :iso.funds/settlement (:kind (mk ["USN" "997" "2" nil])))))))
+
 (deftest merge-registry-merges-hierarchies-and-ext
   (testing "merges :hierarchies and :ext while keeping existing currency data"
     (let [dst (-> (registry/new-registry)

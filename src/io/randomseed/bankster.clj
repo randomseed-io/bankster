@@ -29,7 +29,7 @@
     [^clojure.lang.Keyword id       ; currency ID (e.g. :EUR or :crypto/ETH)
      ^long                 numeric  ; currency numeric ID (e.g. 978 or -1 for none)
      ^int                  scale    ; currency supported scale (decimal places, e.g. 2 or -1 for auto)
-     ^clojure.lang.Keyword kind     ; currency kind (e.g. :FIAT or :DECENTRALIZED)
+     ^clojure.lang.Keyword kind     ; currency kind (e.g. :iso/fiat, :virtual/native, :iso/metal, :iso/null)
      ^clojure.lang.Keyword domain]  ; currency domain (e.g. :ISO-4217, :ISO-4217-LEGACY or :CRYPTO)
   Object
   (toString [^Currency c] (name (.id ^Currency c))))

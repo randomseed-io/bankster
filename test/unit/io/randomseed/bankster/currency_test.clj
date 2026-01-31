@@ -39,6 +39,22 @@
     (is (= (c/new nil) nil))
     (is (= (c/new {})  nil))
     (is (= (c/map->new {}) nil)))
+  (testing "when it ignores registry-backed inline keys on ad-hoc map inputs"
+    (let [cur (c/new {:id            :QQQ
+                      :numeric        1
+                      :scale          2
+                      :domain         :ISO-4217
+                      :countries      [:PL]
+                      :localized      {:* {:name "Q"}}
+                      :traits         [:token/erc20]
+                      :propagate-keys [:foo]
+                      :foo            "bar"})]
+      (is (= :QQQ (:id cur)))
+      (is (= "bar" (:foo cur)))
+      (is (= false (contains? cur :countries)))
+      (is (= false (contains? cur :localized)))
+      (is (= false (contains? cur :traits)))
+      (is (= false (contains? cur :propagate-keys)))))
   (testing "when it returns a currency object"
     (is (map= (c/new :crypto/EUR) {:id :crypto/EUR :domain :CRYPTO :kind nil :numeric -1 :scale -1 :weight 0}))
     (is (map= (c/new :EUR 1000 2 :iso/fiat :ISO-4217) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 1000 :scale 2 :weight 0}))
@@ -533,6 +549,15 @@
           (is (false? (contains? id->w4 :AAA)))
           (let [code-bucket (get (registry/currency-code->currencies* r4) :AAA)]
             (is (= :AAA (c/id (first code-bucket))))))))))
+
+(deftest weight-prefers-registry-base-when-provided
+  (testing "currency/weight with a registry consults the registry weight base (source of truth)"
+    (let [r0    (registry/new)
+          r1    (c/register r0 (c/new :AAA 999 2 :iso/fiat :ISO-4217))
+          r2    (c/set-weight r1 :AAA 10)
+          ad-hoc (c/new :AAA 999 2 :iso/fiat :ISO-4217 5)]
+      (is (= 5  (c/weight ad-hoc)))
+      (is (= 10 (c/weight ad-hoc r2))))))
 
 (deftest currency-auto-initialization-can-be-disabled
   (testing "binding bankster/*initialize-registry* to false prevents side-effectful registry init on ns reload"
