@@ -173,11 +173,16 @@
   registry. Caution: this works only on syntactic level."
   {:added "1.0.0"}
   ([]
-   `^Registry (or *default* (deref R)))
+   ;; Use a typed local to avoid losing type hints through macroexpansion of `or`.
+   ;; This keeps downstream record field/method access free of reflection.
+   `(let [^io.randomseed.bankster.Registry r# (or *default* (deref R))]
+      r#))
   ([registry]
    (if (true? registry)
-     `^Registry (or *default* (deref R))
-     `^Registry (or ~registry *default* (deref R)))))
+     `(let [^io.randomseed.bankster.Registry r# (or *default* (deref R))]
+        r#)
+     `(let [^io.randomseed.bankster.Registry r# (or ~registry *default* (deref R))]
+        r#))))
 
 ;;
 ;; Diagnostics.
@@ -424,7 +429,8 @@
   given the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If
   it is not set, current state of a global registry is used instead."
   {:added "1.0.0"}
-  ([] `(.cur-id->cur ^io.randomseed.bankster.Registry (get)))
+  ([] `(let [^io.randomseed.bankster.Registry r# (get)]
+         (.cur-id->cur r#)))
   ([registry] `(.cur-id->cur ^io.randomseed.bankster.Registry ~registry))
   ([id registry] `(clojure.core/get (.cur-id->cur ^io.randomseed.bankster.Registry ~registry) ~id)))
 
@@ -433,7 +439,8 @@
   given the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If
   it is not set, current state of a global registry is used instead."
   {:added "1.0.0"}
-  ([] `(.cur-nr->cur ^io.randomseed.bankster.Registry (get)))
+  ([] `(let [^io.randomseed.bankster.Registry r# (get)]
+         (.cur-nr->cur r#)))
   ([registry] `(.cur-nr->cur ^io.randomseed.bankster.Registry ~registry))
   ([nr registry] `(clojure.core/get (.cur-nr->cur ^io.randomseed.bankster.Registry ~registry) ~nr)))
 
@@ -442,7 +449,8 @@
   not given the dynamic variable `io.randomseed.bankster.registry/*default*` is
   tried. If it is not set, current state of a global registry is used instead."
   {:added "1.0.0"}
-  ([] `(.cur-nr->curs ^io.randomseed.bankster.Registry (get)))
+  ([] `(let [^io.randomseed.bankster.Registry r# (get)]
+         (.cur-nr->curs r#)))
   ([registry] `(.cur-nr->curs ^io.randomseed.bankster.Registry ~registry))
   ([nr registry] `(clojure.core/get (.cur-nr->curs ^io.randomseed.bankster.Registry ~registry) ~nr)))
 
@@ -451,7 +459,8 @@
   is not given the dynamic variable `io.randomseed.bankster.registry/*default*` is
   tried. If it is not set, current state of a global registry is used instead."
   {:added "1.0.0"}
-  ([] `(.cur-code->curs ^io.randomseed.bankster.Registry (get)))
+  ([] `(let [^io.randomseed.bankster.Registry r# (get)]
+         (.cur-code->curs r#)))
   ([registry] `(.cur-code->curs ^io.randomseed.bankster.Registry ~registry))
   ([code registry] `(clojure.core/get (.cur-code->curs ^io.randomseed.bankster.Registry ~registry) ~code)))
 
@@ -460,7 +469,8 @@
   the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If it is
   not set, current state of a global registry is used instead."
   {:added "1.0.0"}
-  ([] `(.ctr-id->cur ^io.randomseed.bankster.Registry (get)))
+  ([] `(let [^io.randomseed.bankster.Registry r# (get)]
+         (.ctr-id->cur r#)))
   ([registry] `(.ctr-id->cur ^io.randomseed.bankster.Registry ~registry))
   ([country registry] `(clojure.core/get (.ctr-id->cur ^io.randomseed.bankster.Registry ~registry) ~country)))
 
@@ -469,7 +479,8 @@
   given the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If
   it is not set, current state of a global registry is used instead."
   {:added "1.0.0"}
-  ([] `(.cur-id->ctr-ids ^io.randomseed.bankster.Registry (get)))
+  ([] `(let [^io.randomseed.bankster.Registry r# (get)]
+         (.cur-id->ctr-ids r#)))
   ([registry] `(.cur-id->ctr-ids ^io.randomseed.bankster.Registry ~registry))
   ([id registry] `(clojure.core/get (.cur-id->ctr-ids ^io.randomseed.bankster.Registry ~registry) ~id)))
 
@@ -478,7 +489,8 @@
   is not given the dynamic variable `io.randomseed.bankster.registry/*default*` is
   tried. If it is not set, current state of a global registry is used instead."
   {:added "1.0.0"}
-  ([] `(.cur-id->localized ^io.randomseed.bankster.Registry (get)))
+  ([] `(let [^io.randomseed.bankster.Registry r# (get)]
+         (.cur-id->localized r#)))
   ([registry] `(.cur-id->localized ^io.randomseed.bankster.Registry ~registry))
   ([id registry] `(clojure.core/get (.cur-id->localized ^io.randomseed.bankster.Registry ~registry) ~id)))
 
@@ -487,7 +499,8 @@
   the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If it is
   not set, current state of a global registry is used instead."
   {:added "2.0.0"}
-  ([] `(.cur-id->traits ^io.randomseed.bankster.Registry (get)))
+  ([] `(let [^io.randomseed.bankster.Registry r# (get)]
+         (.cur-id->traits r#)))
   ([registry] `(.cur-id->traits ^io.randomseed.bankster.Registry ~registry))
   ([id registry] `(clojure.core/get (.cur-id->traits ^io.randomseed.bankster.Registry ~registry) ~id)))
 
@@ -496,7 +509,8 @@
   the dynamic variable `io.randomseed.bankster.registry/*default*` is tried. If it is
   not set, current state of a global registry is used instead."
   {:added "2.0.0"}
-  ([] `(.cur-id->weight ^io.randomseed.bankster.Registry (get)))
+  ([] `(let [^io.randomseed.bankster.Registry r# (get)]
+         (.cur-id->weight r#)))
   ([registry] `(.cur-id->weight ^io.randomseed.bankster.Registry ~registry))
   ([id registry] `(clojure.core/get (.cur-id->weight ^io.randomseed.bankster.Registry ~registry) ~id)))
 
@@ -510,7 +524,8 @@
   field-access byte code will be generated."
   {:added "2.0.0"}
   ([]
-   `^CurrencyHierarchies (.hierarchies ^io.randomseed.bankster.Registry (get)))
+   `(let [^io.randomseed.bankster.Registry r# (get)]
+      (.hierarchies r#)))
   ([registry]
    `^CurrencyHierarchies (.hierarchies ^io.randomseed.bankster.Registry ~registry))
   ([k registry]
@@ -538,7 +553,8 @@
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
   current state of a global registry is used instead."
   {:added "2.0.0"}
-  ([] `(.ext ^io.randomseed.bankster.Registry (get)))
+  ([] `(let [^io.randomseed.bankster.Registry r# (get)]
+         (.ext r#)))
   ([registry] `(.ext ^io.randomseed.bankster.Registry ~registry))
   ([k registry] `(clojure.core/get (.ext ^io.randomseed.bankster.Registry ~registry) ~k)))
 
@@ -547,7 +563,8 @@
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
   current state of a global registry is used instead."
   {:added "2.0.0"}
-  ([] `(.version ^io.randomseed.bankster.Registry (get)))
+  ([] `(let [^io.randomseed.bankster.Registry r# (get)]
+         (.version r#)))
   ([registry] `(.version ^io.randomseed.bankster.Registry ~registry)))
 
 (defn currency-id->currency

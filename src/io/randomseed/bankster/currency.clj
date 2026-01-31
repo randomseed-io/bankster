@@ -82,7 +82,7 @@
 (defn val-auto-scaled?
   "Returns `true` if the given scale is equal to auto-scaled."
   {:added "1.0.0" :tag Boolean}
-  ^Boolean [^long scale]
+  [^long scale]
   (== auto-scaled (int scale)))
 
 (defmacro val-auto-scaled*?
@@ -110,7 +110,7 @@
   3-character, simple keyword consisting only of uppercase letters in range of
   A-Z. Otherwise it returns `false`."
   {:tag Boolean :added "2.0.0"}
-  ^Boolean [^clojure.lang.Keyword kid]
+  [^clojure.lang.Keyword kid]
   (and (keyword? kid)
        (nil? (.getNamespace kid))
        (let [^String n (.getName kid)]
@@ -123,7 +123,7 @@
 (defn valid-numeric-id?
   "Returns `true` if a numeric ID is valid."
   {:tag Boolean :private true :added "2.0.0"}
-  ^Boolean [^long nr]
+  [^long nr]
   (and (not (== (int nr) no-numeric-id))
        (pos? nr)))
 
@@ -132,7 +132,7 @@
 
   This is a low-level helper for hot paths (sorting/indexing). For public API use
   `weight` which also supports non-`Currency` inputs."
-  {:tag long :private true :added "2.0.0"}
+  {:private true :added "2.0.0"}
   ^long [^Currency c]
   (let [m (meta c)]
     (unchecked-long
@@ -156,7 +156,7 @@
 
 (defn iso-strict-currency?
   {:tag Boolean :private true :added "2.0.0"}
-  ^Boolean [^Currency c]
+  [^Currency c]
   (and (some? c)
        (identical?    :ISO-4217 (.domain  c))
        (valid-numeric-id? (long (.numeric c)))
@@ -173,7 +173,7 @@
 (defn- needs-upper-ascii?
   "Returns `true` when `s` contains at least one ASCII lower-case letter."
   {:tag Boolean :private true :added "2.0.0"}
-  ^Boolean [^String s]
+  [^String s]
   (when (some? s)
     (let [len (unchecked-int (.length s))]
       (loop [i (unchecked-int 0)]
@@ -2086,7 +2086,7 @@
   "Returns weight of the given currency (used to resolve conflicts when getting
   currencies having conflicting currency codes). Returned type should be int but may
   cast to long."
-  {:tag 'int :added "1.0.2"}
+  {:tag Long :added "1.0.2"}
   ([c] (when-some [^Currency c (attempt c)] (currency-weight c)))
   ([c ^Registry registry]
    (when (some? c)
@@ -2097,7 +2097,7 @@
                id->w (registry/currency-id->weight* registry)]
            (if (contains? id->w cid)
              (long (clojure.core/get id->w cid))
-             (currency-weight cur)))))))
+             (long (currency-weight cur))))))))
   ([c _locale ^Registry registry]
    (weight c registry)))
 

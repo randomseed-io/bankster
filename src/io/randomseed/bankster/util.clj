@@ -170,7 +170,17 @@
   (s/assert ::set s)
   (conj (disj s old-val) new-val))
 
-(defn current-thread-id   [] (.. Thread currentThread getId))
+(defn current-thread-id
+  []
+  (let [^Thread t (Thread/currentThread)]
+    (try
+      ;; Java 19+: Thread.threadId()
+      (long (.invoke (.getMethod Thread "threadId" (make-array Class 0))
+                     t (object-array 0)))
+      (catch Throwable _
+        ;; Older Java: Thread.getId()
+        (long (.invoke (.getMethod Thread "getId" (make-array Class 0))
+                       t (object-array 0)))))))
 (defn current-thread-name [] (.. Thread currentThread getName))
 (defn current-thread      [] (Thread/currentThread))
 

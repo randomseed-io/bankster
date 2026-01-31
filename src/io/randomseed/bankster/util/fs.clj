@@ -163,13 +163,18 @@
   (after #) are preserved and treated as part of the last column."
   (^clojure.lang.LazySeq [resource]
    (read-csv resource false))
-  (^clojure.lang.LazySeq [resource comments?]
-   (let [stream   (io/input-stream resource)
-         bstream  (BOMInputStream. stream true ^longs bom-utf-ary)
-         bomenc   (.getBOM bstream)
-         encoding (if (some? bomenc) (.getCharsetName bomenc) default-encoding)]
-     (with-open [reader (io/reader bstream :encoding encoding)]
-       (doall
+	  (^clojure.lang.LazySeq [resource comments?]
+	   (let [stream   (io/input-stream resource)
+	         ^org.apache.commons.io.input.BOMInputStream$Builder builder (BOMInputStream/builder)
+	         builder  (doto builder
+	                    (.setInputStream stream)
+	                    (.setInclude true)
+	                    (.setByteOrderMarks bom-utf-ary))
+	         ^BOMInputStream bstream (.get builder)
+	         bomenc   (.getBOM bstream)
+	         encoding (if (some? bomenc) (.getCharsetName bomenc) default-encoding)]
+	     (with-open [reader (io/reader bstream :encoding encoding)]
+	       (doall
         (->> reader
              line-seq
              (remove comment-line?)

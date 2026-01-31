@@ -87,7 +87,7 @@
   "Default CSV file with currencies database."
   "org/joda/money/CurrencyData.csv")
 
-(def ^{:const true :tag long :added "2.0.0"}
+(def ^{:tag 'long :const true :added "2.0.0"}
   default-legacy-weight
   "Default weight of legacy currencies."
   (long 10000))
