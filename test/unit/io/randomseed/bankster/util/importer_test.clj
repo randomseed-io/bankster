@@ -259,6 +259,19 @@
       (is (= 0 (get ws :AAA)))
       (is (= false (contains? ws :BBB))))))
 
+(deftest registry->map-stringifies-unreadable-currency-ids
+  (testing "registry->map stringifies currency IDs that EDN cannot read (e.g. :crypto/1INCH)"
+    (let [cid (keyword "crypto" "1INCH")
+          r   (currency/config->registry "io/randomseed/bankster/test_config_string_currency_ids.edn")
+          m   (importer/registry->map r)
+          ck  "crypto/1INCH"]
+      (is (= true (contains? (:currencies m) ck)))
+      (is (= 10 (get-in m [:weights ck])))
+      (is (= true (some? (get-in m [:localized ck :en :name]))))
+      (is (= #{:PL} (currency/countries cid r)))
+      (is (= ck (get-in m [:countries :PL])))
+      (is (= true (some #(= % :token/erc20) (get-in m [:traits ck])))))))
+
 (deftest map->currency-oriented-embeds-properties-and-keeps-orphans
   (testing "map->currency-oriented embeds per-currency properties and keeps only orphaned top-level entries"
     (let [m  {:version    "v"
@@ -310,3 +323,16 @@
       (is (= false (contains? (into {} b) :comment)))
       ;; Directive key never propagates.
       (is (= false (contains? (into {} b) :propagate-keys))))))
+
+(deftest config->registry-accepts-string-currency-ids
+  (testing "string currency IDs are accepted in EDN configs (including namespaced digit-start)"
+    (let [cid (keyword "crypto" "1INCH")
+          r   (currency/config->registry "io/randomseed/bankster/test_config_string_currency_ids.edn")]
+      (is (= true (currency/defined? cid r)))
+      (is (= :CRYPTO (currency/domain cid r)))
+      (is (= :virtual/token (currency/kind cid r)))
+      (is (= 18 (currency/sc cid r)))
+      (is (= 10 (currency/weight cid r)))
+      (is (= #{:PL} (currency/countries cid r)))
+      (is (= "1inch" (currency/name cid :en r)))
+      (is (= true (currency/has-trait? cid :token/erc20 r))))))

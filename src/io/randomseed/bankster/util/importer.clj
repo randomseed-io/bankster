@@ -254,7 +254,8 @@
   IDs)."
   {:tag clojure.lang.IPersistentMap :added "2.0.0"}
   [m]
-  (let [cur-id->attrs (or (:currencies m) {})
+  (let [compare-by-str (fn [a b] (compare (str a) (str b)))
+        cur-id->attrs (or (:currencies m) {})
         cur-ids       (set (keys cur-id->attrs))
         ctr->cur      (or (:countries m) {})
         cur->ctrs     (map/invert-in-sets ctr->cur)
@@ -273,7 +274,7 @@
                                               (and (map? lcl) (seq lcl)) (assoc :localized lcl)
                                               (seq trts)                 (assoc :traits trts)
                                               w?                         (assoc :weight w)))))
-                                 (sorted-map)
+                                 (sorted-map-by compare-by-str)
                                  cur-id->attrs)
         countries'    (into (sorted-map)
                             (remove (fn [[_ cid]] (contains? cur-ids cid)))
@@ -307,19 +308,46 @@
                                          :else            (vec (sort-by str ps)))]
                                 (vector child ps))))
                        rels)))]
+       (letfn [(compare-by-str [a b]
+                 (compare (str a) (str b)))
+               (edn-unreadable-currency-id? [cid]
+                 ;; Clojure/EDN reader can't parse namespaced keywords with a name starting with a digit
+                 ;; (e.g. :crypto/1INCH), but such keywords can exist at runtime.
+                 (when (keyword? cid)
+                   (let [n (name cid)]
+                     (and (some? (namespace cid))
+                          (pos? (count n))
+                          (Character/isDigit ^Character (.charAt ^String n 0))))))
+               (currency-id->edn [cid]
+                 (if (edn-unreadable-currency-id? cid)
+                   (str (namespace cid) "/" (name cid))
+                   cid))]
        (let [pks (or (sort-kw-vec (get-in registry [:ext :propagate-keys])) [])]
          (sorted-map-by
           #(compare %2 %1)
           :version     (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "yyyyMMddHHmmssSS"))
           :propagate-keys pks
-          :localized   (into (sorted-map) (map/map-vals localized->map (:cur-id->localized registry)))
-          :weights     (into (sorted-map) (or (:cur-id->weight registry) {}))
-          :traits      (into (sorted-map)
-                             (keep (fn [[cid ts]] (when-some [ts (traits->map ts)] (vector cid ts))))
+          :localized   (into (sorted-map-by compare-by-str)
+                             (map (fn [[cid lp]]
+                                    (vector (currency-id->edn cid) (localized->map lp))))
+                             (or (:cur-id->localized registry) {}))
+          :weights     (into (sorted-map-by compare-by-str)
+                             (map (fn [[cid w]] (vector (currency-id->edn cid) w)))
+                             (or (:cur-id->weight registry) {}))
+          :traits      (into (sorted-map-by compare-by-str)
+                             (keep (fn [[cid ts]]
+                                     (when-some [ts (traits->map ts)]
+                                       (vector (currency-id->edn cid) ts))))
                              (or (:cur-id->traits registry) {}))
-          :currencies  (into (sorted-map) (map/map-vals currency->map  (:cur-id->cur registry)))
-          :countries   (into (sorted-map) (map/map-vals :id (:ctr-id->cur registry)))
-          :hierarchies (into (sorted-map) (map/map-vals hierarchy->parent-map (:hierarchies registry)))))))))
+          :currencies  (into (sorted-map-by compare-by-str)
+                             (map (fn [[cid c]]
+                                    (vector (currency-id->edn cid) (currency->map c))))
+                             (or (:cur-id->cur registry) {}))
+          :countries   (into (sorted-map)
+                             (map (fn [[country-id ^Currency cur]]
+                                    (vector country-id (currency-id->edn (.id cur)))))
+                             (or (:ctr-id->cur registry) {}))
+          :hierarchies (into (sorted-map) (map/map-vals hierarchy->parent-map (:hierarchies registry))))))))))
 
 (defn registry->map-currency-oriented
   "Like `registry->map`, but produces a currency-oriented configuration map by
@@ -477,14 +505,25 @@
                           (map (comp namespace first))
                           (filter identity)
                           set seq)]
-     (let [m  (->> nsses
-                   (map #(vector (symbol "money" %) (symbol handlers-namespace (str "code-literal-" %))))
-                   (into {'money    'io.randomseed.bankster.money/code-literal
-                          'currency 'io.randomseed.bankster.currency/code-literal}))
+     (let [money-tag-nses ["money" "bankster.money"]
+           m  (->> nsses
+                   (mapcat (fn [ns]
+                             (for [tag-ns money-tag-nses]
+                               [(symbol tag-ns ns)
+                                (symbol handlers-namespace (str "code-literal-" ns))])))
+                   (into {'money            'io.randomseed.bankster.money/code-literal
+                          'bankster.money   'io.randomseed.bankster.money/code-literal
+                          'currency         'io.randomseed.bankster.currency/code-literal
+                          'bankster.currency 'io.randomseed.bankster.currency/code-literal}))
            dm (->> nsses
-                   (map #(vector (symbol "money" %) (symbol handlers-namespace (str "data-literal-" %))))
-                   (into {'money    'io.randomseed.bankster.money/data-literal
-                          'currency 'io.randomseed.bankster.currency/data-literal}))]
+                   (mapcat (fn [ns]
+                             (for [tag-ns money-tag-nses]
+                               [(symbol tag-ns ns)
+                                (symbol handlers-namespace (str "data-literal-" ns))])))
+                   (into {'money            'io.randomseed.bankster.money/data-literal
+                          'bankster.money   'io.randomseed.bankster.money/data-literal
+                          'currency         'io.randomseed.bankster.currency/data-literal
+                          'bankster.currency 'io.randomseed.bankster.currency/data-literal}))]
        (when-some [fdir (io/resource (first filenames))]
          (when-some [pdir (.getParent (io/file fdir))]
            (when-some [hfile (io/file pdir handlers-pathname)]

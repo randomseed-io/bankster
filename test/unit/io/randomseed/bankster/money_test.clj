@@ -146,7 +146,11 @@
     (is (map= #money/crypto ETH1.00000001   {:amount 1.00000001M :currency #currency crypto/ETH}))
     (is (map= #money/crypto[ETH 1.00000001] {:amount 1.00000001M :currency #currency crypto/ETH}))
     (is (map= #money/crypto[1.00000001 ETH] {:amount 1.00000001M :currency #currency crypto/ETH}))
-    (is (map= #money crypto/ETH1.00000001   {:amount 1.00000001M :currency #currency crypto/ETH}))))
+    (is (map= #money crypto/ETH1.00000001   {:amount 1.00000001M :currency #currency crypto/ETH}))
+    (is (map= #money/iso-4217-legacy[1 :BEF] {:amount 1M :currency #currency iso-4217-legacy/BEF}))
+    (is (map= #money/crypto[1 BSC-USD]      {:amount 1.00000000M :currency #currency crypto/BSC-USD}))
+    (is (map= #money/crypto BSC-USD         {:amount 0.00000000M :currency #currency crypto/BSC-USD}))
+    (is (map= #money[1 :1INCH]             {:amount 1.000000000000000000M :currency #currency :1INCH}))))
 
 (deftest monetary-protocol
   (testing "when it can get ID of a currency"

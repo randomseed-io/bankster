@@ -9,6 +9,7 @@
   (:refer-clojure :exclude [load])
 
   (:require [clojure.edn                    :as      edn]
+            [clojure.string                 :as      str]
             [io.randomseed.bankster.util.fs :as       fs]
             [io.randomseed.bankster])
 
@@ -34,6 +35,68 @@
 
 (declare add-currency-inline-data)
 
+(defn- kwish
+  "Converts common EDN representations of IDs into keywords.
+
+  Accepts:
+  - keyword => returned as-is
+  - symbol  => converted preserving the namespace (if present)
+  - string  => leading `:` is ignored (to tolerate copy-paste of printed keywords)
+
+  Returns nil for nil/blank strings."
+  {:tag clojure.lang.Keyword :added "2.0.0" :private true}
+  [x]
+  (cond
+    (nil? x) nil
+    (keyword? x) x
+    (symbol? x) (if-some [n (namespace x)]
+                  (keyword n (name x))
+                  (keyword (name x)))
+    (string? x) (let [s (str/trim x)
+                      s (if (and (pos? (count s)) (= \: (.charAt ^String s 0)))
+                          (subs s 1)
+                          s)]
+                  (when-not (str/blank? s)
+                    (keyword s)))
+    :else (keyword (str x))))
+
+(defn- normalize-currency-id-map
+  "Normalizes a map keyed by currency identifiers so it can be accessed using keyword
+  IDs after reading EDN."
+  {:tag clojure.lang.IPersistentMap :added "2.0.0" :private true}
+  [m]
+  (when (map? m)
+    (into {}
+          (keep (fn [[k v]]
+                  (when-some [k (kwish k)]
+                    (vector k v))))
+          m)))
+
+(defn- normalize-countries-map
+  "Normalizes a countries map (country-id -> currency-id)."
+  {:tag clojure.lang.IPersistentMap :added "2.0.0" :private true}
+  [m]
+  (when (map? m)
+    (into {}
+          (keep (fn [[country-id currency-id]]
+                  (when-some [country-id (kwish country-id)]
+                    (vector country-id (kwish currency-id)))))
+          m)))
+
+(defn- normalize-config
+  "Normalizes select branches of a config map right after reading EDN, so later phases
+  can freely use keyword IDs even if the input used strings."
+  {:tag clojure.lang.IPersistentMap :added "2.0.0" :private true}
+  [cfg]
+  (if-not (map? cfg)
+    cfg
+    (cond-> cfg
+      (contains? cfg :currencies) (update :currencies normalize-currency-id-map)
+      (contains? cfg :traits)     (update :traits     normalize-currency-id-map)
+      (contains? cfg :weights)    (update :weights    normalize-currency-id-map)
+      (contains? cfg :localized)  (update :localized  normalize-currency-id-map)
+      (contains? cfg :countries)  (update :countries  normalize-countries-map))))
+
 (defn load
   "Loads data structures from an EDN file. The given path should reside in one of the
   resource directories. If it is not given, the default-resource-path will be used."
@@ -42,7 +105,7 @@
    (load default-resource-path))
   (^clojure.lang.PersistentHashMap [^String resource-path]
    (when-some [^java.net.URL r (fs/paths->resource resource-path)]
-     (when-some [config (edn/read-string (slurp r))]
+     (when-some [config (some-> (slurp r) edn/read-string normalize-config)]
        (when (and (map? config) (pos? (count config)))
          (add-currency-inline-data config))))))
 
@@ -146,30 +209,33 @@
             cfg (update cfg :traits    #(or % {}))
             cfg (update cfg :weights   #(or % {}))]
         (reduce (fn [cfg [cid attrs]]
-                  (let [cid       (keyword cid)
-                        attrs     (or attrs {})
-                        countries (when-some [xs (seqable-coll (clojure.core/get attrs :countries))]
-                                    (seq (remove nil? xs)))
-                        localized (clojure.core/get attrs :localized)
-                        traits    (seqable-coll (clojure.core/get attrs :traits))
-                        weight    (or (clojure.core/get attrs :weight)
-                                      (clojure.core/get attrs :we))]
-                    (cond-> cfg
-                      (seq countries)
-                      (update :countries
-                              (fn [ctr->cur]
-                                (reduce (fn [m country-id]
-                                          (assoc m (keyword country-id) cid))
-                                        (or ctr->cur {})
-                                        countries)))
+                  (if-some [cid (kwish cid)]
+                    (let [attrs     (or attrs {})
+                          countries (when-some [xs (seqable-coll (clojure.core/get attrs :countries))]
+                                      (seq (remove nil? xs)))
+                          localized (clojure.core/get attrs :localized)
+                          traits    (seqable-coll (clojure.core/get attrs :traits))
+                          weight    (or (clojure.core/get attrs :weight)
+                                        (clojure.core/get attrs :we))]
+                      (cond-> cfg
+                        (seq countries)
+                        (update :countries
+                                (fn [ctr->cur]
+                                  (reduce (fn [m country-id]
+                                            (if-some [country-id (kwish country-id)]
+                                              (assoc m country-id cid)
+                                              m))
+                                          (or ctr->cur {})
+                                          countries)))
 
-                      (and (map? localized) (pos? (count localized)))
-                      (update-in [:localized cid] merge-localized-entry localized)
+                        (and (map? localized) (pos? (count localized)))
+                        (update-in [:localized cid] merge-localized-entry localized)
 
-                      (seq traits)
-                      (update-in [:traits cid] merge-traits-values traits)
+                        (seq traits)
+                        (update-in [:traits cid] merge-traits-values traits)
 
-                      (some? weight)
-                      (assoc-in [:weights cid] weight))))
+                        (some? weight)
+                        (assoc-in [:weights cid] weight)))
+                    cfg))
                 cfg
                 cur-id->attrs)))))

@@ -183,9 +183,136 @@
 ;; Money generation macros.
 ;;
 
-(def ^{:private true :tag clojure.lang.PersistentHashSet :added "1.0.0"}
-  amount?
-  #{\0 \1 \2 \3 \4 \5 \6 \7 \8 \9 \. \- \+})
+(defn- sep-char?
+  {:private true :tag Boolean :added "2.0.0"}
+  [^Character ch]
+  (or (clojure.core/= ch \_)
+      (Character/isWhitespace ^Character ch)))
+
+(defn- digit-or-dot?
+  {:private true :tag Boolean :added "2.0.0"}
+  [^Character ch]
+  (or (clojure.core/<= 48 (int ch) 57)
+      (clojure.core/= ch \.)))
+
+(defn- sign-char?
+  {:private true :tag Boolean :added "2.0.0"}
+  [^Character ch]
+  (or (clojure.core/= ch \-)
+      (clojure.core/= ch \+)))
+
+(defn- skip-seps
+  {:private true :tag 'long :added "2.0.0"}
+  ^long [^String s ^long i]
+  (let [len (long (.length s))]
+    (loop [i i]
+      (if (and (clojure.core/< i len) (sep-char? (.charAt s i)))
+        (recur (inc i))
+        i))))
+
+(defn- numeric-start?
+  {:private true :tag Boolean :added "2.0.0"}
+  [^String s ^long i]
+  (let [len (long (.length s))
+        i   (skip-seps s i)]
+    (if (clojure.core/>= i len)
+      false
+      (let [ch (.charAt s i)]
+        (cond
+          (digit-or-dot? ch)
+          true
+
+          (sign-char? ch)
+          (let [j (skip-seps s (inc i))]
+            (and (clojure.core/< j len)
+                 (digit-or-dot? (.charAt s j))))
+
+          :else
+          false)))))
+
+(defn- parse-number
+  "Parses a numeric token from `s` starting at `i` (allowing separators inside only
+  when followed by more digits/dots). Returns [number-str end-index]."
+  {:private true :tag clojure.lang.PersistentVector :added "2.0.0"}
+  [^String s ^long i]
+  (let [len               (long (.length s))
+        ^StringBuilder sb (StringBuilder.)]
+    (loop [i        (skip-seps s i)
+           sign-ok? true]
+      (if (clojure.core/>= i len)
+        [(when (clojure.core/pos? (.length sb)) (.toString sb)) i]
+        (let [ch (.charAt s i)]
+          (cond
+            (and sign-ok? (clojure.core/zero? (.length sb)) (sign-char? ch))
+            (do (.append sb ch)
+                (recur (skip-seps s (inc i)) false))
+
+            (digit-or-dot? ch)
+            (do (.append sb ch)
+                (recur (inc i) false))
+
+            (sep-char? ch)
+            (let [j (skip-seps s (inc i))]
+              (if (and (clojure.core/< j len) (digit-or-dot? (.charAt s j)))
+                (recur j sign-ok?)
+                [(when (clojure.core/pos? (.length sb)) (.toString sb)) i]))
+
+            :else
+            [(when (clojure.core/pos? (.length sb)) (.toString sb)) i]))))))
+
+(defn- remainder->token
+  {:private true :tag String :added "2.0.0"}
+  ^String [^String s ^long i]
+  (let [len               (long (.length s))
+        ^StringBuilder sb (StringBuilder.)]
+    (loop [i (skip-seps s i)]
+      (if (clojure.core/>= i len)
+        (when (clojure.core/pos? (.length sb)) (.toString sb))
+        (let [ch (.charAt s i)]
+          (if (sep-char? ch)
+            (recur (inc i))
+            (do (.append sb ch)
+                (recur (inc i)))))))))
+
+(defn- split-currency-first
+  "Splits `s` into [currency-str amount-str] assuming it starts with a currency token.
+
+  Plus/minus is treated as a numeric sign only when separated from the currency by a
+  separator (whitespace/_)."
+  {:private true :tag clojure.lang.PersistentVector :added "2.0.0"}
+  [^String s]
+  (let [len               (long (.length s))
+        ^StringBuilder sb (StringBuilder.)]
+    (loop [i        0
+           saw-cur? false]
+      (if (clojure.core/>= i len)
+        [(when (clojure.core/pos? (.length sb)) (.toString sb)) nil]
+        (let [ch (.charAt s i)]
+          (cond
+            (sep-char? ch)
+            (recur (inc i) saw-cur?)
+
+            ;; Amount starts with a digit/dot, but never right after a non-sign '-'/'+'.
+            (and saw-cur?
+                 (digit-or-dot? ch)
+                 (not (and (clojure.core/pos? i)
+                           (sign-char? (.charAt s (dec i)))
+                           (not (sep-char? (.charAt s (dec i)))))))
+            (let [[num _] (parse-number s i)]
+              [(when (clojure.core/pos? (.length sb)) (.toString sb)) num])
+
+            ;; Amount starts with a sign only when preceded by a separator.
+            (and saw-cur?
+                 (sign-char? ch)
+                 (clojure.core/pos? i)
+                 (sep-char? (.charAt s (dec i)))
+                 (numeric-start? s i))
+            (let [[num _] (parse-number s i)]
+              [(when (clojure.core/pos? (.length sb)) (.toString sb)) num])
+
+            :else
+            (do (.append sb ch)
+                (recur (inc i) true))))))))
 
 (defn mk-bigdec
   {:added "1.0.6" :private true}
@@ -196,18 +323,34 @@
   "Splits the amount and currency."
   {:private true :tag clojure.lang.PersistentVector :added "1.0.0"}
   [amount]
-  (let [lseq   (remove #{\_\ } (seq (if (keyword? amount)
-                                      (if-some [n (namespace amount)]
-                                        (str n "/" (name amount))
-                                        (name amount))
-                                      (if (number? amount)
-                                        (.toPlainString (bigdec amount))
-                                        (str amount)))))
-        fdigi? (amount? (first lseq))
-        [a b]  (split-with (if fdigi? amount? (complement amount?)) lseq)
-        a      (when (seq a) (clojure.core/apply str a))
-        b      (when (seq b) (clojure.core/apply str b))]
-    (if fdigi? [b a] [a b])))
+  (let [^String s (if (keyword? amount)
+                    (if-some [n (namespace amount)]
+                      (str n "/" (name amount))
+                      (name amount))
+                    (if (number? amount)
+                      (.toPlainString (bigdec amount))
+                      (str amount)))
+        len (long (.length s))]
+    (if (clojure.core/zero? len)
+      [nil nil]
+      (let [i0 (skip-seps s 0)]
+        (if (clojure.core/>= i0 len)
+          [nil nil]
+          (if (numeric-start? s i0)
+            ;; amount first: 100EUR, -100 EUR, 1_000.00 PLN
+            (let [[num end] (parse-number s i0)
+                  cur       (remainder->token s end)]
+              [cur num])
+            ;; currency first: EUR100, EUR 100, crypto/ETH1.0, BSC-USD
+            (let [slash (.indexOf s "/")]
+              (if (clojure.core/neg? slash)
+                (split-currency-first s)
+                ;; Protect namespace part (may contain digits/hyphens) from being treated as an amount.
+                (let [prefix (subs s 0 (inc slash))
+                      name   (subs s (inc slash))
+                      [c a]  (split-currency-first name)
+                      c      (when c (str prefix c))]
+                  [c a])))))))))
 
 (defmacro currency-unit-strict
   "Internal currency coercion helper for money parsing/constructors.
