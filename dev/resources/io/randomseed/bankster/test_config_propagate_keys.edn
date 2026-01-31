@@ -1,0 +1,13 @@
+{:version        "test-propagate-keys"
+ :propagate-keys [:comment]
+
+ :currencies {:AAA {:scale   2
+                    :comment "A"
+                    :foo     1}
+
+              ;; Override the global allowlist for this currency.
+              :BBB {:scale          2
+                    :propagate-keys [:foo]
+                    :comment        "B"
+                    :foo            2}}}
+

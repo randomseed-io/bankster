@@ -1,0 +1,18 @@
+{:version    "test-inline-currency-props"
+
+ ;; Branch-oriented form with additional inline per-currency keys.
+ :countries  {:DE :crypto/AMLT
+              :PL :crypto/AMLT}
+
+ :localized  {:crypto/AMLT {:en {:name "AML Token"}}}
+
+ :traits     {:crypto/AMLT [:token/costam]}
+
+ :currencies {:crypto/AMLT {:kind      :virtual/token
+                            :scale     18
+
+                            ;; Inline properties should be merged into top-level branches:
+                            :countries [:PL :AD]
+                            :localized {:pl {:name "Token AML"}}
+                            :traits    [:token/erc20]}}}
+

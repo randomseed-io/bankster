@@ -1,0 +1,12 @@
+{:version "test-string-currency-ids"
+
+ ;; Currency IDs may be strings (e.g. to support IDs that EDN cannot read as keywords,
+ ;; like "crypto/1INCH"). The loader normalizes them back to keyword IDs.
+ :currencies {"crypto/1INCH" {:kind  :virtual/token
+                              :scale 18}}
+
+ :weights    {"crypto/1INCH" 10}
+ :traits     {"crypto/1INCH" [:token/erc20]}
+ :localized  {"crypto/1INCH" {:en {:name "1inch"}}}
+ :countries  {:PL "crypto/1INCH"}}
+
