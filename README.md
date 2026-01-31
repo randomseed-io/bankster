@@ -2,8 +2,8 @@
 
 **Money as data, done right.**
 
-*A pragmatic, EDN-friendly money & currency toolkit for Clojure: ISO 4217 + crypto +
-your own currencies, with precision-first arithmetic and an expressive DSL layer.*
+*A pragmatic, EDN-friendly money & currency toolkit for Clojure: ISO 4217 / crypto /
+custom currencies, with precision-first arithmetic and an expressive DSL layer.*
 
 [![Bankster on Clojars](https://img.shields.io/clojars/v/io.randomseed/bankster.svg)](https://clojars.org/io.randomseed/bankster)
 [![Bankster on cljdoc](https://cljdoc.org/badge/io.randomseed/bankster)](https://cljdoc.org/d/io.randomseed/bankster/CURRENT)
@@ -45,8 +45,9 @@ representing currency + amount and doing safe operations around that.
 * Built-in standard **currencies database**, extendable with EDN file.
 * Ability to create *ad hoc* currencies (with optional registering).
 * Different sources of **currency registries** (dynamic, global or local).
-* Registry **hierarchies** for classification (`:domain`, `:kind`, plus custom axes) and optional per-currency **traits**.
-* **Polymorphic** interfaces (`Scalable`, `Monetary`, `Accountable` protocols)
+* Registry **hierarchies** for classification (`:domain`, `:kind`, custom)  
+  and optional per-currency **traits**.
+* **Polymorphic** interfaces (`Scalable`, `Monetary`, `Accountable` protocols).
 * Ability to **cast** and **convert** monetary amounts.
 * Useful **macros** to express currencies and monetary amounts with various forms.
 * **Namespaced identifiers** for non-ISO currencies (e.g. `crypto/ETH`).

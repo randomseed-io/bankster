@@ -356,9 +356,12 @@
 <li>Avoid <code>clojure.core/=</code> for <code>Money</code> comparisons (it uses record/map equality, compares <code>BigDecimal</code> values using Clojure numeric equality (scale-insensitive), and may reflect non-semantic differences like currency extension keys). Prefer <code>money/eq?</code> (or <code>money/=</code>) / <code>money/eq-am?</code> (<code>money/==</code>), or the inter-op layer <code>io.randomseed.bankster.money.inter-ops/=</code> for mixed numeric expressions.</li>
 <li>For untrusted input (e.g. from an API) prefer <code>to-id-str</code> / <code>to-code-str</code> and validate, instead of calling <code>keyword</code> (interning).</li>
 <li>Be explicit about rounding: set <code>scale/*rounding-mode*</code> via <code>scale/with-rounding</code> or pass rounding-mode explicitly.</li>
-<li>Beware Clojure floating-point literals (precision). For money, prefer:</li>
+<li>Beware Clojure floating-point literals (precision). For money, prefer:
+<ul>
 <li>BigDecimal literals with <code>M</code>, or</li>
 <li>strings (parsed into BigDecimal).</li>
+</ul>
+</li>
 <li>Auto-scaled currencies carry scale in the amount. This can be convenient, but requires care when interoperating with fixed-scale systems.</li>
 </ul>
 </div></div></div></body></html>

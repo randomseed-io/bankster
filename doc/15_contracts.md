@@ -484,7 +484,7 @@ Tagged literals / readers:
 - Be explicit about rounding: set `scale/*rounding-mode*` via `scale/with-rounding`
   or pass rounding-mode explicitly.
 - Beware Clojure floating-point literals (precision). For money, prefer:
-  - BigDecimal literals with `M`, or
-  - strings (parsed into BigDecimal).
+    - BigDecimal literals with `M`, or
+    - strings (parsed into BigDecimal).
 - Auto-scaled currencies carry scale in the amount. This can be convenient, but
   requires care when interoperating with fixed-scale systems.
