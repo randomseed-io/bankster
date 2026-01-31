@@ -404,6 +404,13 @@ as unstable.
 
 ## Sneak peeks
 
+Note on code literals (`#money`, `#currency`): tagged literals in Clojure code are
+handled at read time via `data_readers.clj`. Clojure does not auto-`require` the
+handler namespaces, so make sure Bankster namespaces are loaded before code
+containing these literals is read (otherwise you may see
+`Attempting to call unbound fn .../code-literal`). For scripts, prefer using
+`read-string` after `require` (or `clojure.edn/read-string` with `money/readers`).
+
 * It **shows information** about a currency:
 
 ```clojure

@@ -233,6 +233,7 @@ and optional per-currency <strong>traits</strong>.</li>
 <h3><a href="#experimental-jsr-354-semantic-bridge" id="experimental-jsr-354-semantic-bridge"></a>Experimental: JSR-354 semantic bridge</h3>
 <p>Namespace <code>io.randomseed.bankster.jsr-354</code> is an experimental, work-in-progress Clojure semantic bridge inspired by JSR-354 (JavaMoney). It is not a Java implementation/interface of the standard. The goal is to progressively cover more of JSR-354 semantics in future Bankster releases; until then, treat this namespace as unstable.</p>
 <h2><a href="#sneak-peeks" id="sneak-peeks"></a>Sneak peeks</h2>
+<p>Note on code literals (<code>#money</code>, <code>#currency</code>): tagged literals in Clojure code are handled at read time via <code>data_readers.clj</code>. Clojure does not auto-<code>require</code> the handler namespaces, so make sure Bankster namespaces are loaded before code containing these literals is read (otherwise you may see <code>Attempting to call unbound fn .../code-literal</code>). For scripts, prefer using <code>read-string</code> after <code>require</code> (or <code>clojure.edn/read-string</code> with <code>money/readers</code>).</p>
 <ul>
 <li>It <strong>shows information</strong> about a currency:</li>
 </ul>
