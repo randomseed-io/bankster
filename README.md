@@ -131,6 +131,26 @@ When the library loads, its predefined configuration is read from a default EDN 
 and its contents populate the default, global registry. This registry can be
 modified too.
 
+#### Custom registry initialization (disable auto-init)
+
+```clojure
+;; Disable Bankster's default registry auto-initialization (config.edn) at namespace load time.
+;; You typically want this when you plan to fully control which registry is used.
+(binding [io.randomseed.bankster/*initialize-registry* false]
+  (require '[io.randomseed.bankster.currency :as currency]
+           '[io.randomseed.bankster.registry :as registry]))
+
+;; Load your registry from a classpath resource (e.g. resources/my/app/currencies.edn).
+(def my-registry
+  (currency/config->registry "my/app/currencies.edn" (registry/new-registry)))
+
+;; Option A: pass the registry explicitly.
+(currency/unit :EUR my-registry)
+
+;; Option B: install it as the global registry.
+(registry/set! my-registry)
+```
+
 Configuration (`config.edn`) is branch-oriented by default (`:currencies`, plus
 top-level indices like `:countries`, `:localized` and `:traits`). For convenience,
 each currency entry may also carry inline `:countries`, `:localized` and `:traits`
