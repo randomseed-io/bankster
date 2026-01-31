@@ -1,6 +1,6 @@
 # History of Bankster releases
 
-## 2.0.0 (unreleased)
+## 2.0.0 (2025-01-31)
 
 **BREAKING CHANGES**:
 
