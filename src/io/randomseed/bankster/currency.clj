@@ -1408,14 +1408,12 @@
 
   (id
     (^clojure.lang.Keyword [c]
-     (if-let [^Registry registry registry/*default*]
-       (.id ^Currency (unit ^clojure.lang.Keyword c ^Registry registry))
-       (if (namespace c)
-         c
-         (let [^Registry registry (registry/get)]
-           (if-some [^Currency cur (resolve c registry)]
-             (.id ^Currency cur)
-             c)))))
+     (if (namespace c)
+       c
+       (let [^Registry registry (registry/get)]
+         (if-some [^Currency cur (resolve c registry)]
+           (.id ^Currency cur)
+           c))))
     (^clojure.lang.Keyword [c ^Registry registry]
      (if (nil? registry) c
          (.id ^Currency (unit ^clojure.lang.Keyword c ^Registry registry)))))
@@ -1953,13 +1951,11 @@
   number it will return nil. Locale argument is ignored."
   {:added "1.0.0"}
   ([c]
-   (when-some [^Currency c (unit c)]
+   (when-some [^Currency c (attempt c)]
      (let [n (long (.numeric ^Currency c))]
        (when-not (== n no-numeric-id) n))))
   ([c ^Registry registry]
-   (when-some [^Currency c (if (instance? Currency c)
-                             c
-                             (unit c (unit-registry registry)))]
+   (when-some [^Currency c (attempt c registry)]
      (let [n (long (.numeric ^Currency c))]
        (when-not (== n no-numeric-id) n))))
   ([c _locale ^Registry registry]
@@ -1985,13 +1981,11 @@
   argument is ignored."
   {:added "1.0.0"}
   ([c]
-   (when-some [^Currency c (unit c)]
+   (when-some [^Currency c (attempt c)]
      (let [sc (unchecked-int (.scale ^Currency c))]
        (when-not (== sc auto-scaled) (long sc)))))
   ([c ^Registry registry]
-   (when-some [^Currency c (if (instance? Currency c)
-                             c
-                             (unit c (unit-registry registry)))]
+   (when-some [^Currency c (attempt c registry)]
      (let [sc (unchecked-int (.scale ^Currency c))]
        (when-not (== sc auto-scaled) (long sc)))))
   ([c _locale ^Registry registry]
@@ -2012,11 +2006,9 @@
   object. Locale argument is ignored."
   {:tag clojure.lang.Keyword :added "1.0.0"}
   (^clojure.lang.Keyword [c]
-   (when-some [^Currency c (unit c)] (.domain ^Currency c)))
+   (when-some [^Currency c (attempt c)] (.domain ^Currency c)))
   (^clojure.lang.Keyword [c ^Registry registry]
-   (when-some [^Currency c (if (instance? Currency c)
-                             c
-                             (unit c (unit-registry registry)))]
+   (when-some [^Currency c (attempt c registry)]
      (.domain ^Currency c)))
   (^clojure.lang.Keyword [c _locale ^Registry registry]
    (domain c registry)))
@@ -2058,9 +2050,9 @@
   ignored. To list all known kinds use `kinds`."
   {:tag clojure.lang.Keyword :added "1.0.0"}
   (^clojure.lang.Keyword [c]
-   (when-some [c (unit c)] (.kind ^Currency c)))
+   (when-some [c (attempt c)] (.kind ^Currency c)))
   (^clojure.lang.Keyword [c ^Registry registry]
-   (when-some [^Currency c (if (instance? Currency c) c (unit c (unit-registry registry)))]
+   (when-some [^Currency c (attempt c registry)]
      (.kind ^Currency c)))
   (^clojure.lang.Keyword [c _locale ^Registry registry]
    (kind c registry)))
@@ -2095,16 +2087,17 @@
   currencies having conflicting currency codes). Returned type should be int but may
   cast to long."
   {:tag 'int :added "1.0.2"}
-  ([c] (when-some [^Currency c (unit c)] (currency-weight c)))
+  ([c] (when-some [^Currency c (attempt c)] (currency-weight c)))
   ([c ^Registry registry]
    (when (some? c)
      (let [^Registry registry (unit-registry registry)
-           ^Currency cur      (if (instance? Currency c) c (unit c registry))
-           cid                (.id ^Currency cur)
-           id->w              (registry/currency-id->weight* registry)]
-       (if (contains? id->w cid)
-         (long (clojure.core/get id->w cid))
-         (currency-weight cur)))))
+           ^Currency cur      (if (instance? Currency c) c (attempt c registry))]
+       (when (some? cur)
+         (let [cid   (.id ^Currency cur)
+               id->w (registry/currency-id->weight* registry)]
+           (if (contains? id->w cid)
+             (long (clojure.core/get id->w cid))
+             (currency-weight cur)))))))
   ([c _locale ^Registry registry]
    (weight c registry)))
 

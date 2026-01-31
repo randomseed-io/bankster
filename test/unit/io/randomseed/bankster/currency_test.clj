@@ -132,6 +132,23 @@
              (registry/currency-id->traits* :AAA r2)))
       (is (true? (c/decentralized? :AAA r2))))))
 
+(deftest currency-id-is-soft-with-dynamic-registry
+  (testing "id does not throw for unknown currencies even when registry/*default* is bound"
+    (let [r0 (registry/new-registry)
+          r1 (c/register r0 (c/new :crypto/BTC))]
+      (binding [registry/*default* r1]
+        (is (= :crypto/BTC (c/id :BTC)))
+        (is (= :BLABLA (c/id :BLABLA)))))))
+
+(deftest currency-properties-are-soft-for-unknown-identifiers
+  (testing "nr/sc/domain/kind/weight return nil (soft) when currency cannot be resolved"
+    (binding [registry/*default* (registry/new-registry)]
+      (is (= nil (c/nr :NOPE)))
+      (is (= nil (c/sc :NOPE)))
+      (is (= nil (c/domain :NOPE)))
+      (is (= nil (c/kind :NOPE)))
+      (is (= nil (c/weight :NOPE))))))
+
 (deftest currency-registering
   (testing "when it returns nil for nil or empty map"
     (is (= #currency nil nil))
