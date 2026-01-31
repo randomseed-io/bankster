@@ -615,9 +615,7 @@
   registry is not supported."
   {:tag Registry :private true :added "2.0.0"}
   ^Registry [registry]
-  (cond
-    (nil?  registry) (registry/get)
-    :else            registry))
+  (if (nil? registry) (registry/get) registry))
 
 (defn- unit-resolve!
   "Resolves `c` in `registry` and throws if it cannot be resolved.
@@ -631,7 +629,7 @@
   (or (resolve c registry)
       (throw
        (ex-info
-        "Currency not found in a registry."
+        (str "Currency identified by " (if (keyword? c) (core-symbol c) c) " not found in a registry.")
         {:registry registry
          :value    c
          :op       :unit}))))
@@ -711,7 +709,7 @@
   Contract:
   - symmetric (argument order does not matter),
   - non-throwing (returns `false` when IDs cannot be established),
-  - `registry=nil` or `registry=true` means: use the default registry,
+  - `registry` set to `nil` means: use the default registry,
   - `Currency` values are never treated as registry references."
   {:tag Boolean :added "2.0.0"}
   ([a b]
@@ -1731,7 +1729,8 @@
          (nil? hits)
          (throw
           (ex-info
-           "Currency not found in a registry."
+           (let [c (:id m)]
+             (str "Currency identified by " (if (keyword? c) (core-symbol c) c) " not found in a registry."))
            {:registry registry
             :value    m
             :op       :unit}))
@@ -2272,7 +2271,7 @@
        (if (registry/currency-id->currency* cid registry)
          (registry/currency-id->country-ids* cid registry)
          (throw (ex-info
-                 "Currency not found in a registry."
+                 (str "Currency " (if (keyword? c) (core-symbol c) c) " not found in a registry.")
                  {:op       :countries
                   :value    c
                   :id       cid
@@ -3543,10 +3542,10 @@
   ([c ^Registry registry]
    (when (some? c)
      (let [^Registry registry (unit-registry registry)
-           cid               (id c registry)]
+           cid                (id c registry)]
        (when-not (registry/currency-id->currency* cid registry)
          (throw (ex-info
-                 "Currency not found in a registry."
+                 (str "Currency " (if (keyword? cid) (core-symbol cid) cid) " not found in a registry.")
                  {:op       :localized-properties
                   :value    c
                   :id       cid
@@ -3627,7 +3626,7 @@
      (when (some? cid)
        (when-not (registry/currency-id->currency* cid registry)
          (throw (ex-info
-                 "Currency not found in a registry."
+                 (str "Currency " (if (keyword? cid) (core-symbol cid) cid) " not found in a registry.")
                  {:op       :localized-property
                   :property property
                   :value    currency-id
