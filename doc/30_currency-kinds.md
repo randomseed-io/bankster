@@ -4,7 +4,7 @@ This is a list of predefined currency kinds and their relationships.
 
 ## `:all`
 
-**Parents:** -  
+**Parents:** -
 **Meaning:** Global root tag for the entire currency kind taxonomy.
 
 ### `:iso`

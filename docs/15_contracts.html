@@ -133,13 +133,15 @@
 <li><code>id</code> -&gt; keyword:</li>
 <li>unary:
 <ul>
-<li>when <code>registry/*default*</code> is bound, it resolves strictly in that registry, because many workflows treat a dynamic registry as the active source of truth (missing currency -&gt; exception),</li>
-<li>otherwise it behaves “advisory”: returns what it can infer locally, but may consult the default registry to disambiguate currency codes.</li>
+<li>advisory / soft: returns what it can infer locally,</li>
+<li>may consult the default registry to disambiguate unqualified currency codes (e.g. <code>:BTC</code> -&gt; <code>:crypto/BTC</code> when such currency exists),</li>
+<li>does not throw on missing currencies (note: numeric IDs are different - see below).</li>
 </ul>
 </li>
 <li>binary: <code>registry=nil</code> means “do not consult a registry” (return local ID/coercion).</li>
+<li>binary: when a registry is actually consulted, missing currency -&gt; exception. For already constructed <code>Currency</code> values the registry is ignored and <code>.id</code> is returned.</li>
 <li>binary: <code>registry</code> should be a <code>Registry</code> (or <code>nil</code> as above). The boolean sentinel <code>true</code> works only syntactically via <code>(registry/get true)</code> (macro-level); passing <code>true</code> as a runtime value is not supported.</li>
-<li>strict (when a registry is actually consulted): missing currency -&gt; exception.</li>
+<li>note: for numeric IDs (numbers), <code>id</code> always consults a registry and throws when the mapping is missing.</li>
 <li><code>of-id</code> -&gt; Currency:</li>
 <li>strict: missing currency -&gt; exception,</li>
 <li>when the argument is a <code>Currency</code>: <code>registry=nil</code> means “return as-is”.</li>

@@ -197,17 +197,20 @@ Key methods and their contracts:
   - soft; returns a set of matches or `nil`.
 - `id` -> keyword:
   - unary:
-    - when `registry/*default*` is bound, it resolves strictly in that registry,
-      because many workflows treat a dynamic registry as the active source of truth
-      (missing currency -> exception),
-    - otherwise it behaves "advisory": returns what it can infer locally, but may
-      consult the default registry to disambiguate currency codes.
+    - advisory / soft: returns what it can infer locally,
+    - may consult the default registry to disambiguate unqualified currency codes
+      (e.g. `:BTC` -> `:crypto/BTC` when such currency exists),
+    - does not throw on missing currencies (note: numeric IDs are different - see below).
   - binary: `registry=nil` means "do not consult a registry" (return local
     ID/coercion).
+  - binary: when a registry is actually consulted, missing currency -> exception.
+    For already constructed `Currency` values the registry is ignored and `.id` is
+    returned.
   - binary: `registry` should be a `Registry` (or `nil` as above). The boolean
     sentinel `true` works only syntactically via `(registry/get true)` (macro-level);
     passing `true` as a runtime value is not supported.
-  - strict (when a registry is actually consulted): missing currency -> exception.
+  - note: for numeric IDs (numbers), `id` always consults a registry and throws when
+    the mapping is missing.
 - `of-id` -> Currency:
   - strict: missing currency -> exception,
   - when the argument is a `Currency`: `registry=nil` means "return as-is".
