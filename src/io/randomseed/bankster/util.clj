@@ -328,8 +328,8 @@
   (when (some? s) (str/upper-case s)))
 
 (defn try-parse-int
-  "Returns an integer from an object or nil if the given object does not contain a
-  valid integer."
+  "Returns an integer from an object or nil if the given object cannot be converted to
+  an integer."
   {:tag Integer}
   [s]
   (if (number? s)
@@ -339,7 +339,7 @@
            (catch NumberFormatException _e nil)))))
 
 (defn try-parse-long
-  "Returns a long from an object or nil if the given object does not contain a valid
+  "Returns a long from an object or nil if the given object cannot be converted to a
   long."
   {:tag Long}
   [s]

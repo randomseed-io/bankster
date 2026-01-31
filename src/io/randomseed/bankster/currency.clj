@@ -920,14 +920,14 @@
                     (and do? id-ns (not (identical? id-ns :ISO-4217))
                          (not= do-val id-ns)))
         (when
-            (and (or (not id?)   (identical? id-val         (.id      registered-currency)))
-                 (or (not code?) (identical? code-val       (to-code  registered-currency)))
-                 (or (not nr?)   (== (long nr-val)    (long (.numeric registered-currency))))
-                 (or (not sc?)   (== (int  sc-val)    (int  (.scale   registered-currency))))
+            (and (or (not id?)   (identical? id-val          (.id      registered-currency)))
+                 (or (not code?) (identical? code-val        (to-code  registered-currency)))
+                 (or (not nr?)   (== (long nr-val)    (long  (.numeric registered-currency))))
+                 (or (not sc?)   (== (int  sc-val)    (int   (.scale   registered-currency))))
                  (or (not we?)   (== (int  we-val)    (currency-weight registered-currency)))
-                 (or (not do?)   (identical? do-val         (.domain  registered-currency)))
-                 (or (not ki?)   (identical? ki-val         (.kind    registered-currency))))
-            registered-currency)))))
+                 (or (not do?)   (identical? do-val          (.domain  registered-currency)))
+                 (or (not ki?)   (identical? ki-val          (.kind    registered-currency))))
+          registered-currency)))))
 
 (defn- map-registry-op!
   "Throws when a currency map is used in a strict, identifier-oriented registry operation.
@@ -2084,8 +2084,7 @@
 
 (defn weight
   "Returns weight of the given currency (used to resolve conflicts when getting
-  currencies having conflicting currency codes). Returned type should be int but may
-  cast to long."
+  currencies having conflicting currency codes)."
   {:tag Long :added "1.0.2"}
   ([c] (when-some [^Currency c (attempt c)] (currency-weight c)))
   ([c ^Registry registry]
@@ -4034,11 +4033,11 @@
 
 (defmethod ^{:added "1.0.0"} print-method Currency
   [c w]
-  (let [sc  (int  (.scale   ^Currency c))
-        nr  (long (.numeric ^Currency c))
+  (let [sc  (int  (.scale    ^Currency c))
+        nr  (long (.numeric  ^Currency c))
         wei (currency-weight ^Currency c)
-        ki  (.kind          ^Currency c)
-        dom (.domain        ^Currency c)]
+        ki  (.kind           ^Currency c)
+        dom (.domain         ^Currency c)]
     (print-simple
      (str "#currency{"
           ":id "    (.id ^Currency c)
