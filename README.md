@@ -151,6 +151,28 @@ modified too.
 (registry/set! my-registry)
 ```
 
+#### Registry loader helpers (`io.randomseed.bankster.init`)
+
+If you want to load a registry in a single call (optionally overlaying Bankster's
+distribution config), use `io.randomseed.bankster.init`:
+
+```clojure
+(require '[io.randomseed.bankster.init :as init])
+
+;; Load ONLY the provided config (no dist overlay).
+(def r1 (init/load-registry "my/app/currencies.edn"))
+
+;; Load dist config first, then overlay user config using importer/merge-registry.
+(def r2 (init/load-registry "my/app/currencies.edn"
+                            {:keep-dist? true
+                             :merge-opts {:verbose? true
+                                          :preserve-fields [:domain :kind]
+                                          :iso-like? false}}))
+
+;; Side-effecting variant: installs the result as the global registry.
+(init/load-registry! "my/app/currencies.edn" {:keep-dist? true})
+```
+
 Configuration (`config.edn`) is branch-oriented by default (`:currencies`, plus
 top-level indices like `:countries`, `:localized` and `:traits`). For convenience,
 each currency entry may also carry inline `:countries`, `:localized` and `:traits`
