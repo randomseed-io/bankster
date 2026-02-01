@@ -906,8 +906,9 @@
     (.currency ^Money money))
 
   (to-map
-    ^Currency [money]
-    (currency/to-map ^Currency (.currency ^Money money)))
+    ^clojure.lang.IPersistentMap [money]
+    {:currency (currency/id ^Currency (.currency ^Money money))
+     :amount   ^BigDecimal (.amount ^Money money)})
 
   (definitive?
     (^Boolean [money]
