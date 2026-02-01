@@ -69,20 +69,24 @@
   it will only work for resources on a filesystem, giving you the regular pathname,
   not a URI."
   ([]        (some-> (io/resource "") io/file str))
-  ([& paths] (some->> paths (remove nil?) seq
-                      (apply io/file) str
-                      io/resource
-                      io/file
-                      str)))
+  ([& paths]
+   (let [paths (seq (remove nil? paths))]
+     (when (some? paths)
+       (when-some [p (apply io/file paths)]
+         (when-some [r (io/resource (str p))]
+           (when-some [f (io/file r)]
+             (str f))))))))
 
 (defn paths->resource
   "For the given pathnames creates a resource object that resides within one of the
   Java resource directories. The resource must exist for the URI to be returned."
   {:tag java.net.URL :added "1.0.0"}
   ([] (when-some [r (io/resource "")] r))
-  ([& paths] (some->> paths (remove nil?) seq
-                      (apply io/file) str
-                      io/resource)))
+  ([& paths]
+   (let [paths (seq (remove nil? paths))]
+     (when (some? paths)
+       (when-some [p (apply io/file paths)]
+         (io/resource (str p)))))))
 
 (defn get-resource
   "For the given pathname, returns the resource URL if the path exists. If the path
