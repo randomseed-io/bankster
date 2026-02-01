@@ -539,22 +539,24 @@
              (println)
              (puget/cprint dm)
              (println)
-             (doseq [f filenames]
-               (let [fname (io/file pdir f)]
-                 (println "Exporting to:" (str fname))
-                 (spit fname (puget/pprint-str m))))
+             (reduce (fn [_ f]
+                       (let [fname (io/file pdir f)]
+                         (println "Exporting to:" (str fname))
+                         (spit fname (puget/pprint-str m))))
+                     nil
+                     filenames)
              (when (some? (seq data-filename))
                (when-some [fname (io/file pdir data-filename)]
                  (println "Exporting to:" (str fname))
                  (spit fname (puget/pprint-str dm))))
              (println)
              (println "Generating handlers code to:" (str hfile))
-             (some->> nsses
-                      (handler-gen)
-                      (cons (handler-preamble handlers-namespace))
-                      (map puget/pprint-str)
-                      (str/join (str \newline \newline))
-                      (spit hfile)))))))))
+             (->> nsses
+                  (handler-gen)
+                  (cons (handler-preamble handlers-namespace))
+                  (map puget/pprint-str)
+                  (str/join (str \newline \newline))
+                  (spit hfile)))))))))
 
 ;;
 ;; High-level operations.
