@@ -743,8 +743,6 @@
                      ^Currency c    (if (and iso-like? (not= src-id dst-id)) (assoc c :id dst-id) c)
                      existing       (get (:cur-id->cur r) dst-id)
                      existing       (if (or existing (not iso-like?)) existing (get (:cur-id->cur r) alt-id))
-                     existing-id    (when existing (.id ^Currency existing))
-                     rename?        (and iso-like? (some? existing) (not= existing-id dst-id))
                      src-countries  (or (clojure.core/get src-cur-id->ctr-ids dst-id)
                                         (when iso-like? (clojure.core/get src-cur-id->ctr-ids iso-code-id)))
                      src-localized  (or (clojure.core/get src-cur-id->localized dst-id)
@@ -752,7 +750,8 @@
                      src-traits     (or (clojure.core/get src-cur-id->traits dst-id)
                                         (when iso-like? (clojure.core/get src-cur-id->traits iso-code-id)))]
                  (if existing
-                   (let [existing-id        (or existing-id dst-id)
+                   (let [existing-id        (.id ^Currency existing)
+                         rename?            (and iso-like? (not= existing-id dst-id))
                          existing-countries (clojure.core/get (:cur-id->ctr-ids r) existing-id)
                          existing-localized (clojure.core/get (:cur-id->localized r) existing-id)
                          existing-traits    (clojure.core/get (:cur-id->traits r) existing-id)
