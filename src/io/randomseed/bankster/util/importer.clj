@@ -145,38 +145,34 @@
   to countries associations where countries are sets. The pathname should be
   relative to the resources directory."
   {:added "1.0.0"}
-  ([]
-   (countries-load nil))
-  ([^String pathname]
-   (when-some [r (fs/paths->resource (or pathname default-countries-csv))]
-     (->> r fs/read-csv
-          (map (comp vec (partial map keyword)))
-          (into {})
-          (map/invert-in-sets)))))
+  [& [pathname]]
+  (when-some [r (fs/paths->resource (or pathname default-countries-csv))]
+    (->> r fs/read-csv
+         (map (comp vec (partial map keyword)))
+         (into {})
+         (map/invert-in-sets))))
 
 (defn currencies-load
   "Reads a CSV file compliant with Joda Money and returns a sequence of currencies.
 
   The pathname should be relative to the resources directory."
   {:added "1.0.0"}
-  ([]
-   (currencies-load nil))
-  ([^String pathname]
-   (when-some [f (fs/paths->resource (or pathname default-currencies-csv))]
-     (let [split-comment
-           (fn [row]
-             (let [row (vec row)
-                   l   (peek row)]
-               (if (and (string? l) (str/includes? l "#"))
-                 (let [i (str/index-of l "#")
-                       v (str/trimr (subs l 0 i))
-                       c (str/triml (subs l (inc i)))
-                       c (when-not (str/blank? c) c)]
-                   (conj (pop row) v c))
-                 (conj row nil))))]
-       (->> (fs/read-csv f true)
-            (map split-comment)
-            (map make-currency))))))
+  [& [pathname]]
+  (when-some [f (fs/paths->resource (or pathname default-currencies-csv))]
+    (let [split-comment
+          (fn [row]
+            (let [row (vec row)
+                  l   (peek row)]
+              (if (and (string? l) (str/includes? l "#"))
+                (let [i (str/index-of l "#")
+                      v (str/trimr (subs l 0 i))
+                      c (str/triml (subs l (inc i)))
+                      c (when-not (str/blank? c) c)]
+                  (conj (pop row) v c))
+                (conj row nil))))]
+      (->> (fs/read-csv f true)
+           (map split-comment)
+           (map make-currency)))))
 
 (defn joda-import
   "Reads CSV files with countries and currencies definitions (Joda Money format) and
@@ -184,8 +180,8 @@
   {:tag Registry :added "1.0.0"}
   ([]
    (joda-import nil nil))
-  ([^String countries-pathname
-    ^String currencies-pathname]
+  ([countries-pathname
+    currencies-pathname]
    (let [^Registry                       registry   (registry/new-registry)
          ^clojure.lang.PersistentHashMap countries  (countries-load countries-pathname)
          ^clojure.lang.PersistentHashMap currencies (currencies-load currencies-pathname)]
@@ -296,7 +292,7 @@
   {:added "1.0.0"}
   ([]
    (registry->map (registry/state)))
-  ([^Registry registry]
+  ([registry]
    (when (some? registry)
      (letfn [(hierarchy->parent-map [h]
                (let [rels (or (clojure.core/get h :parents) {})]
@@ -356,8 +352,15 @@
   {:tag clojure.lang.IPersistentMap :added "2.0.0"}
   ([]
    (registry->map-currency-oriented (registry/state)))
-  ([^Registry registry]
+  ([registry]
    (map->currency-oriented (registry->map registry))))
+
+(defn- default-registry
+  "Returns the default registry as used by `io.randomseed.bankster.registry/get`,
+  without relying on macroexpansion (helps code coverage and keeps behavior explicit)."
+  {:tag Registry :added "2.0.0" :private true}
+  []
+  (or registry/*default* (registry/state)))
 
 (defn dump
   "For the given filename (defaults to default-dump-filename) and a registry (defaults
@@ -366,17 +369,17 @@
   Filename will be placed in the default directory of resources (the same directory
   as `config.edn`)."
   {:added "1.0.0"}
-  ([]
-   (dump default-dump-filename (registry/get)))
-  ([^Registry registry]
-   (dump default-dump-filename registry))
-  ([^String   filename
-    ^Registry registry]
-   (when-some [rdir (fs/resource-pathname default-resource-name
-                                          default-resource-must-exist-file)]
-     (let [pathname (io/file (.getParent ^java.io.File (io/file rdir)) filename)]
-       (println "Dumping registry to" (str pathname))
-       (spit pathname (puget/pprint-str registry))))))
+  [& args]
+  (let [[filename registry] (case (count args)
+                              0 [default-dump-filename (default-registry)]
+                              1 [default-dump-filename (first args)]
+                              2 [(first args) (second args)]
+                              (throw (ex-info "Invalid arity." {:fn `dump :args args})))]
+    (when-some [rdir (fs/resource-pathname default-resource-name
+                                           default-resource-must-exist-file)]
+      (let [pathname (io/file (.getParent ^java.io.File (io/file rdir)) filename)]
+        (println "Dumping registry to" (str pathname))
+        (spit pathname (puget/pprint-str registry))))))
 
 (defn export
   "For the given filename (defaults to default-export-filename) and a registry (defaults
@@ -385,17 +388,17 @@
   Filename will be placed in the default directory of resources (the same directory
   that holds `config.edn`)."
   {:added "1.0.0"}
-  ([]
-   (export default-export-filename (registry/get)))
-  ([^Registry registry]
-   (export default-export-filename registry))
-  ([^String   filename
-    ^Registry registry]
-   (when-some [rdir (fs/resource-pathname default-resource-name
-                                          default-resource-must-exist-file)]
-     (let [pathname (io/file (.getParent ^java.io.File (io/file rdir)) filename)]
-       ;; (println "Exporting configuration to" (str pathname))
-       (spit pathname (puget/pprint-str (registry->map registry)))))))
+  [& args]
+  (let [[filename registry] (case (count args)
+                              0 [default-export-filename (default-registry)]
+                              1 [default-export-filename (first args)]
+                              2 [(first args) (second args)]
+                              (throw (ex-info "Invalid arity." {:fn `export :args args})))]
+    (when-some [rdir (fs/resource-pathname default-resource-name
+                                           default-resource-must-exist-file)]
+      (let [pathname (io/file (.getParent ^java.io.File (io/file rdir)) filename)]
+        ;; (println "Exporting configuration to" (str pathname))
+        (spit pathname (puget/pprint-str (registry->map registry)))))))
 
 (defn export-currency-oriented
   "For the given filename (defaults to default-export-currency-oriented-filename) and a
@@ -406,16 +409,16 @@
   properties and traits) into the maps under `:currencies`. Top-level branches keep
   only orphaned entries."
   {:added "2.0.0"}
-  ([]
-   (export-currency-oriented default-export-currency-oriented-filename (registry/get)))
-  ([^Registry registry]
-   (export-currency-oriented default-export-currency-oriented-filename registry))
-  ([^String   filename
-    ^Registry registry]
-   (when-some [rdir (fs/resource-pathname default-resource-name
-                                          default-resource-must-exist-file)]
-     (let [pathname (io/file (.getParent ^java.io.File (io/file rdir)) filename)]
-       (spit pathname (puget/pprint-str (registry->map-currency-oriented registry)))))))
+  [& args]
+  (let [[filename registry] (case (count args)
+                              0 [default-export-currency-oriented-filename (default-registry)]
+                              1 [default-export-currency-oriented-filename (first args)]
+                              2 [(first args) (second args)]
+                              (throw (ex-info "Invalid arity." {:fn `export-currency-oriented :args args})))]
+    (when-some [rdir (fs/resource-pathname default-resource-name
+                                           default-resource-must-exist-file)]
+      (let [pathname (io/file (.getParent ^java.io.File (io/file rdir)) filename)]
+        (spit pathname (puget/pprint-str (registry->map-currency-oriented registry)))))))
 
 ;;
 ;; Readers generator.
@@ -482,25 +485,25 @@
                    default-data-reader-filename
                    default-handlers-pathname
                    default-handlers-namespace))
-  ([^Registry registry]
+  ([registry]
    (readers-export registry
                    default-reader-filenames
                    default-data-reader-filename
                    default-handlers-pathname
                    default-handlers-namespace))
-  ([^Registry registry filenames]
+  ([registry filenames]
    (readers-export registry
                    filenames
                    default-data-reader-filename
                    default-handlers-pathname
                    default-handlers-namespace))
-  ([^Registry registry filenames data-filename]
+  ([registry filenames data-filename]
    (readers-export registry
                    filenames
                    data-filename
                    default-handlers-pathname
                    default-handlers-namespace))
-  ([^Registry registry filenames data-filename handlers-pathname handlers-namespace]
+  ([registry filenames data-filename handlers-pathname handlers-namespace]
    (when-some [nsses (->> (.cur-id->cur ^Registry registry)
                           (map (comp namespace first))
                           (filter identity)
