@@ -60,6 +60,7 @@ representing currency + amount and doing safe operations around that.
 * **Tagged literals** for currencies and monetary amounts.
 * **Data readers** for currencies and monetary amounts expressed with EDN.
 * Customizable currency and money **formatting** with **locale support**.
+* **JSON and EDN serialization** with per-format protocols, minimal/full representations, and Cheshire integration.
 
 ## Contracts
 
@@ -810,6 +811,86 @@ true
 
 (currency/code #money[1 GBP])
 "GBP"
+```
+
+* It allows to **serialize and deserialize** monetary amounts:
+
+```clojure
+(require '[io.randomseed.bankster.serializers.json :as sj]
+         '[io.randomseed.bankster.serializers.edn  :as se])
+
+;; JSON serialization (minimal - only currency ID and amount)
+(sj/money->json-map #money[12.30 PLN])
+{:currency "PLN", :amount "12.30"}
+
+;; JSON full serialization (currency as nested map)
+(sj/money->json-full-map #money[12.30 PLN])
+{:currency {:id "PLN", :numeric 985, :scale 2, :kind "iso/fiat", :domain "ISO-4217"},
+ :amount "12.30"}
+
+;; JSON with :full? option
+(sj/to-json-map #money[12.30 PLN] {:full? true})
+{:currency {:id "PLN", :numeric 985, :scale 2, :kind "iso/fiat", :domain "ISO-4217"},
+ :amount "12.30"}
+
+;; JSON with :keys filtering (nested options for currency)
+(sj/money->json-full-map #money[12.30 PLN] {:keys [:amount {:currency {:keys [:id :numeric]}}]})
+{:amount "12.30", :currency {:id "PLN", :numeric 985}}
+
+;; JSON string representation
+(sj/money->json-string #money[12.30 PLN])
+"12.30 PLN"
+
+;; EDN serialization (BigDecimals, keyword IDs)
+(se/money->edn-map #money[12.30 PLN])
+{:currency :PLN, :amount 12.30M}
+
+;; EDN tagged literal string
+(se/money->edn-string #money[12.30 PLN])
+"#money[12.30M PLN]"
+
+(se/money->edn-string #money/crypto[1.5 ETH])
+"#money/crypto[1.500000000000000000M ETH]"
+
+;; Deserialization
+(sj/json-map->money {:currency "PLN" :amount "12.30"})
+#money[12.30 PLN]
+
+;; Note: for JSON inputs prefer string amounts (or configure your JSON parser
+;; to produce BigDecimal) to avoid double-precision loss.
+(sj/json-text->money "{\"currency\":\"PLN\",\"amount\":12.30}")
+#money[12.30 PLN]
+
+(sj/json-string->money "12.30 PLN")
+#money[12.30 PLN]
+
+(se/edn-string->money "#money[12.30M PLN]")
+#money[12.30 PLN]
+
+;; With custom registry and rounding (also accepts keywords/strings)
+(sj/json-map->money {:currency "PLN" :amount "1.005"}
+                    {:rounding-mode :HALF_UP})
+#money[1.01 PLN]
+
+;; Rescaling - preserve precision beyond currency's nominal scale
+(sj/json-map->money {:currency "PLN" :amount "12.3456"}
+                    {:rescale 4})
+#money[12.3456 PLN]  ; Currency has scale 4, not the registry's 2
+
+;; Rescaling during serialization
+(sj/money->json-map #money[12.30 PLN] {:rescale 4})
+{:currency "PLN", :amount "12.3000"}
+
+;; Currency serialization (minimal by default)
+(sj/currency->json-map #currency PLN)
+{:id "PLN"}
+
+(sj/currency->json-full-map #currency PLN)
+{:id "PLN", :numeric 985, :scale 2, :kind "iso/fiat", :domain "ISO-4217"}
+
+;; :code-only? omits namespace
+(sj/money->json-map #money/crypto[1.5 ETH] {:code-only? true})
+{:currency "ETH", :amount "1.500000000000000000"}
 ```
 
 And more…

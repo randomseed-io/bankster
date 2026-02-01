@@ -488,3 +488,125 @@ Tagged literals / readers:
     - strings (parsed into BigDecimal).
 - Auto-scaled currencies carry scale in the amount. This can be convenient, but
   requires care when interoperating with fixed-scale systems.
+
+## 6. Serialization (`io.randomseed.bankster.serializers.*`)
+
+Bankster provides per-format serialization protocols for JSON and EDN. For detailed
+usage and examples see `doc/50_serialization.md`.
+
+### 6.1 Protocols
+
+JSON (`io.randomseed.bankster.serializers.json`):
+- `JsonSerializable`: `to-json-map`, `to-json-full-map`, `to-json-string`
+- `JsonDeserializable`: `from-json-map`, `from-json-string`
+
+EDN (`io.randomseed.bankster.serializers.edn`):
+- `EdnSerializable`: `to-edn-map`, `to-edn-full-map`, `to-edn-string`
+- `EdnDeserializable`: `from-edn-map`, `from-edn-string`
+
+Implementations: `Money`, `Currency`, `Class` (type token for deserialization).
+
+### 6.2 Serialization contracts
+
+- `to-*-map` -> map/nil:
+  - returns **minimal** representation by default (currency ID + amount only),
+  - with `:full? true` delegates to `to-*-full-map`,
+  - returns `nil` when input is `nil`.
+- `to-*-full-map` -> map/nil:
+  - returns **full** representation with all fields,
+  - for `Money`: currency is serialized as a nested map (not string ID),
+  - for `Money`: includes extended fields (from record extension map),
+  - accepts `:keys` option for filtering; supports nested opts via map elements,
+  - returns `nil` when input is `nil`.
+- `to-*-string` -> String/nil:
+  - returns canonical string representation,
+  - JSON: `"<amount> <currency-id>"` (e.g. `"12.30 PLN"`),
+  - EDN: tagged literal (e.g. `#money[12.30M PLN]`, `#money/crypto[1.5M ETH]`),
+  - returns `nil` when input is `nil`.
+
+### 6.3 Deserialization contracts
+
+- `from-*-map` -> Money/Currency:
+  - strict: throws `ExceptionInfo` when:
+    - input is not a map,
+    - required key is missing (`:currency`, `:amount` for Money; `:id` for Currency),
+    - currency cannot be resolved in registry,
+    - `:rounding-mode` cannot be parsed (when provided). Accepts: `RoundingMode`,
+      keywords (`:HALF_UP`), or strings (`"HALF_UP"`).
+  - returns `nil` when input is `nil`.
+- `from-*-string` -> Money/Currency:
+  - strict: throws `ExceptionInfo` when:
+    - input is not a string,
+    - string cannot be parsed,
+    - currency cannot be resolved in registry.
+  - returns `nil` when input is `nil`.
+
+### 6.4 Registry, rounding, and rescaling behavior
+
+- Deserialization uses the default registry (`registry/get`) unless `:registry` is
+  provided in opts.
+- Amount is rescaled to currency's nominal scale during deserialization, unless
+  `:rescale` option overrides it.
+- When rescaling requires rounding and no `:rounding-mode` is provided (neither in
+  opts nor in `scale/*rounding-mode*`), an `ArithmeticException` is thrown (wrapped
+  as `ExceptionInfo`).
+- `:rounding-mode` accepts: `java.math.RoundingMode` objects, keywords (`:HALF_UP`),
+  or strings (`"HALF_UP"`, `"ROUND_HALF_UP"`). Parsed via `scale/post-parse-rounding`.
+- Invalid `:rounding-mode` values (provided but not parseable) throw `ExceptionInfo`
+  in both serialization and deserialization paths.
+
+### 6.4.1 The `:rescale` option
+
+**Serialization** with `:rescale`:
+- Rescales the amount to the specified scale before outputting.
+- Downscaling requires `:rounding-mode` or `scale/*rounding-mode*`.
+- Does not modify the Money object itself, only the serialized output.
+
+**Deserialization** with `:rescale`:
+- Overrides the currency's nominal scale from the registry.
+- The Currency object is cloned with the `:rescale` value as its scale.
+- The resulting Money carries this modified Currency (not the registry's version).
+- Use case: preserving precision when incoming data has more decimal places than
+  the registry currency's scale.
+
+Contract:
+- `:rescale` must be a non-negative integer when provided.
+- Invalid `:rescale` (non-integer or negative) throws `ExceptionInfo` on both
+  serialization and deserialization.
+- When `:rescale` is `nil`, standard behavior applies (use currency's nominal scale).
+- `:rescale` applies to both JSON and EDN serializers identically.
+
+### 6.5 Nil handling
+
+All serialization and deserialization functions return `nil` when given `nil` input.
+They do not throw on `nil`.
+
+### 6.6 Map key acceptance (JSON)
+
+JSON deserialization accepts both keyword and string keys in input maps:
+- `:currency` or `"currency"`
+- `:amount` or `"amount"`
+- `:id` or `"id"`
+
+EDN deserialization expects keyword keys only.
+
+**JSON numeric precision caveat:** parsing JSON numbers into `double` loses precision
+before Bankster sees the data. For production, prefer amount as a string, or configure
+your JSON parser to emit `BigDecimal` (e.g. Cheshire via `cheshire.parse/*use-bigdecimals?*`).
+
+### 6.7 Extended fields
+
+- `Money` records may carry extended fields via `assoc`.
+- `to-*-full-map` includes them in output.
+- JSON: extended field values are stringified (BigDecimal → `.toPlainString`,
+  keyword → `name`, other → `str`).
+- EDN: extended field values are preserved as-is.
+- Extended fields are **not** restored during deserialization (they are not part of
+  the core `Money` schema).
+
+### 6.8 Cheshire integration
+
+- `register-cheshire-codecs!` registers a Cheshire encoder for `Money`.
+- Throws `ExceptionInfo` when Cheshire is not on the classpath.
+- Does not register a decoder; decoding must be done explicitly via
+  `json-map->money` / `json-string->money`.

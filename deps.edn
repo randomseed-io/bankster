@@ -21,7 +21,8 @@
                                      ch.qos.logback/logback-classic {:mvn/version "1.2.12"}
                                      lambdaisland/kaocha            {:mvn/version "1.91.1392"}
                                      lambdaisland/kaocha-cloverage  {:mvn/version "1.1.89"}
-                                     clj-commons/spyscope           {:mvn/version "0.1.48"} }
+                                     clj-commons/spyscope           {:mvn/version "0.1.48"}
+                                     cheshire/cheshire              {:mvn/version "6.1.0"}}
                        :extra-paths ["dev/src" "dev/resources" "test/unit"]
                        :jvm-opts    ["-Dclojure.spec.compile-asserts=true"]}
            :test      {:extra-paths ["test/unit" "dev/resources"]
@@ -30,7 +31,8 @@
                                      expound/expound                {:mvn/version "0.9.0"}
                                      ch.qos.logback/logback-classic {:mvn/version "1.2.12"}
                                      lambdaisland/kaocha            {:mvn/version "1.91.1392"}
-                                     lambdaisland/kaocha-cloverage  {:mvn/version "1.1.89"}}
+                                     lambdaisland/kaocha-cloverage  {:mvn/version "1.1.89"}
+                                     cheshire/cheshire              {:mvn/version "6.1.0"}}
                        :main-opts   ["-m" "io.randomseed.bankster.test-main" "--config-file" "tests.edn"
                                      "--stc-num-tests" "100"
                                      "--stc-instrumentation"

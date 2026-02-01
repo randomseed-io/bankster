@@ -2921,3 +2921,128 @@
      (str "#money" (when n (str "/" n))
           "[" a " " (currency/code c) "]")
      w)))
+
+;;
+;; EDN-friendly map conversion.
+;;
+
+(defn to-map
+  "Coerces a money-like value into an EDN-friendly map.
+
+  Canonical shape:
+  - `:currency` - currency ID keyword (may be namespaced, e.g. `:crypto/USDT`)
+  - `:amount`   - BigDecimal amount (scale preserved)
+
+  This is intended as a stable, data-oriented representation (close to what Bankster
+  already supports in `#money{...}` literals). For JSON wire formats see
+  `to-json-map` / `to-json-string`."
+  {:tag clojure.lang.IPersistentMap :added "2.1.0"}
+  ^clojure.lang.IPersistentMap [money]
+  (when-some [^Money m (value money)]
+    {:currency (currency/id ^Currency (.currency m))
+     :amount   ^BigDecimal (.amount m)}))
+
+(defn of-map
+  "Creates Money from a map representation.
+
+  Expected keys:
+  - `:currency` (or `:cur`)  - any currency representation accepted by Bankster
+  - `:amount`               - amount as BigDecimal/number/string
+  - optional `:rounding-mode` / `:rounding`
+
+  This is a general-purpose helper meant for EDN-like data. It accepts keyword/symbol
+  rounding-mode names (e.g. `:HALF_UP`), not only `java.math.RoundingMode`."
+  {:tag Money :added "2.1.0"}
+  ^Money [m]
+  (when (some? m)
+    (when-not (map? m)
+      (throw
+       (ex-info
+        "Money map representation must be a map."
+        {:op    :bankster.money/of-map
+         :value m
+         :class (class m)})))
+    (let [cur (or (get m :currency) (get m :cur) (get m "currency") (get m "cur"))
+          amt (or (get m :amount) (get m "amount"))
+          rm  (or (get m :rounding-mode) (get m :rounding)
+                  (get m "rounding-mode") (get m "rounding"))
+          rm  (when (some? rm) (scale/post-parse-rounding rm))]
+      (when-not (some? cur)
+        (throw
+         (ex-info
+          "Money map is missing :currency."
+          {:op    :bankster.money/of-map
+           :value m})))
+      (when-not (some? amt)
+        (throw
+         (ex-info
+          "Money map is missing :amount."
+          {:op    :bankster.money/of-map
+           :value m})))
+      (if (some? rm)
+        (do
+          (when-not (instance? RoundingMode rm)
+            (throw
+             (ex-info
+              "Money :rounding-mode must resolve to java.math.RoundingMode."
+              {:op    :bankster.money/of-map
+               :value rm
+               :class (class rm)})))
+          (value cur amt rm))
+        (value cur amt)))))
+
+;;
+;; JSON serialization helpers.
+;;
+
+(defn to-json-map
+  "Serializes a money-like value to a JSON-friendly map.
+
+  The returned map uses keyword keys but is safe to pass to JSON encoders.
+
+  Options:
+  - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `\"ETH\"`"
+  {:tag clojure.lang.IPersistentMap :added "2.1.0"}
+  (^clojure.lang.IPersistentMap [money]
+   (when-some [m (value money)]
+     (serializers-json/money->json-map m)))
+  (^clojure.lang.IPersistentMap [money opts]
+   (when-some [m (value money)]
+     (serializers-json/money->json-map m opts))))
+
+(defn to-json-string
+  "Serializes a money-like value to a canonical JSON string.
+
+  Options:
+  - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `\"ETH\"`"
+  {:tag String :added "2.1.0"}
+  (^String [money]
+   (when-some [m (value money)]
+     (serializers-json/money->json-string m)))
+  (^String [money opts]
+   (when-some [m (value money)]
+     (serializers-json/money->json-string m opts))))
+
+(defn from-json-map
+  "Deserializes Money from a JSON map.
+
+  Options:
+  - `:registry`      - registry to use for currency lookup (default: `registry/get`)
+  - `:rounding-mode` - `java.math.RoundingMode` for rescaling"
+  {:tag Money :added "2.1.0"}
+  (^Money [m]
+   (serializers-json/json-map->money m))
+  (^Money [m opts]
+   (serializers-json/json-map->money m opts)))
+
+(defn from-json-string
+  "Deserializes Money from a JSON string.
+
+  Options:
+  - `:registry`      - registry to use for currency lookup (default: `registry/get`)
+  - `:rounding-mode` - `java.math.RoundingMode` for rescaling"
+  {:tag Money :added "2.1.0"}
+  (^Money [s]
+   (serializers-json/json-string->money s))
+  (^Money [s opts]
+   (serializers-json/json-string->money s opts)))

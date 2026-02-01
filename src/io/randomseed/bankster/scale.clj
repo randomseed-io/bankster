@@ -109,7 +109,7 @@
 ;; Auto-scaled indicator.
 ;;
 
-(def ^{:tag 'int :const true :added "2.2.0"}
+(def ^{:tag 'int :const true :added "2.1.0"}
   ^int auto-scaled
   "Expresses the scale of a currency which is automatic and not limited to certain
   decimal places. Used to indicate that the scale should be determined by the actual
@@ -118,14 +118,14 @@
 
 (defn auto-scaled?
   "Returns `true` if the given scale equals the auto-scaled sentinel value (-1)."
-  {:added "2.2.0" :tag Boolean}
+  {:added "2.1.0" :tag Boolean}
   ^Boolean [^long scale]
   (== auto-scaled (int scale)))
 
 (defmacro auto-scaled*?
   "Macro version of `auto-scaled?`. Returns `true` if the given scale equals the
   auto-scaled sentinel value (-1). Inlines the comparison for performance."
-  {:added "2.2.0"}
+  {:added "2.1.0"}
   [scale]
   `(clojure.core/== auto-scaled (int ~scale)))
 
@@ -158,7 +158,7 @@
   Contract:
   - always sets `:op`, `:arithmetic-exception`, and `:arithmetic-exception/cause`
   - preserves all keys from the provided `data` map"
-  {:tag clojure.lang.ExceptionInfo :private true :added "2.2.0"}
+  {:tag clojure.lang.ExceptionInfo :private true :added "2.1.0"}
   [op data ^ArithmeticException e]
   (ex-info (or (.getMessage e) "Arithmetic error.")
            (assoc data
@@ -561,6 +561,43 @@
     ([_] nil)
     ([_ _] nil)
     ([_ _ _] nil)))
+
+;;
+;; Monetary scaling.
+;;
+
+(defn monetary-scale
+  "Applies monetary scaling rules to a BigDecimal-like value `n` and a currency scale.
+
+  When the scale indicates auto-scaling (equals `auto-scaled`, i.e., -1), the value
+  is returned as-is (converted to BigDecimal if necessary). Otherwise, the value is
+  scaled to the given number of decimal places.
+
+  This function is locale-independent and strict - it will throw ArithmeticException
+  (wrapped in ExceptionInfo) if rounding is needed but no rounding mode is available.
+
+  Arguments:
+  - `n`  - a value convertible to BigDecimal (number, string, BigDecimal)
+  - `sc` - target scale (long); -1 means auto-scaled (no rescaling)
+  - `rm` - optional RoundingMode for downscaling
+
+  Returns BigDecimal."
+  {:tag BigDecimal :added "2.1.0"}
+  (^BigDecimal [n ^long sc]
+   (if (auto-scaled*? sc)
+     (if (instance? BigDecimal n)
+       ^BigDecimal n
+       (apply n))
+     (let [^BigDecimal bd (if (instance? BigDecimal n) n (apply n))]
+       (.setScale ^BigDecimal bd (int sc) ^RoundingMode (or (rounding-mode)
+                                                            ROUND_UNNECESSARY)))))
+  (^BigDecimal [n ^long sc ^RoundingMode rm]
+   (if (auto-scaled*? sc)
+     (if (instance? BigDecimal n)
+       ^BigDecimal n
+       (apply n))
+     (let [^BigDecimal bd (if (instance? BigDecimal n) n (apply n))]
+       (.setScale ^BigDecimal bd (int sc) ^RoundingMode (or rm ROUND_UNNECESSARY))))))
 
 ;;
 ;; Getting integer and fractional parts.

@@ -4059,6 +4059,64 @@
      w)))
 
 ;;
+;; JSON/EDN serialization helpers.
+;;
+;; NOTE: These functions require serializers.json and serializers.edn namespaces.
+;; They are lazy-loaded to avoid circular dependencies at compile time.
+
+(defn to-json-map
+  "Serializes a currency to a JSON-friendly map.
+
+  Options:
+  - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `\"ETH\"`"
+  {:tag clojure.lang.IPersistentMap :added "2.1.0"}
+  (^clojure.lang.IPersistentMap [currency]
+   (to-json-map currency nil))
+  (^clojure.lang.IPersistentMap [currency opts]
+   (when-some [^Currency c (unit currency)]
+     ((requiring-resolve 'io.randomseed.bankster.serializers.json/currency->json-map)
+      c opts))))
+
+(defn to-json-string
+  "Serializes a currency to a JSON string identifier.
+
+  Options:
+  - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `\"ETH\"`"
+  {:tag String :added "2.1.0"}
+  (^String [currency]
+   (to-json-string currency nil))
+  (^String [currency opts]
+   (when-some [^Currency c (unit currency)]
+     ((requiring-resolve 'io.randomseed.bankster.serializers.json/currency->json-string)
+      c opts))))
+
+(defn to-edn-map
+  "Serializes a currency to an EDN-friendly map.
+
+  Options:
+  - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `:ETH`"
+  {:tag clojure.lang.IPersistentMap :added "2.1.0"}
+  (^clojure.lang.IPersistentMap [currency]
+   (to-edn-map currency nil))
+  (^clojure.lang.IPersistentMap [currency opts]
+   (when-some [^Currency c (unit currency)]
+     ((requiring-resolve 'io.randomseed.bankster.serializers.edn/currency->edn-map)
+      c opts))))
+
+(defn to-edn-string
+  "Serializes a currency to an EDN tagged literal string.
+
+  Options:
+  - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `:ETH`"
+  {:tag String :added "2.1.0"}
+  (^String [currency]
+   (to-edn-string currency nil))
+  (^String [currency opts]
+   (when-some [^Currency c (unit currency)]
+     ((requiring-resolve 'io.randomseed.bankster.serializers.edn/currency->edn-string)
+      c opts))))
+
+;;
 ;; Populating registry with defaults.
 ;;
 
