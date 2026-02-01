@@ -4053,5 +4053,10 @@
 ;; Populating registry with defaults.
 ;;
 
-(when io.randomseed.bankster/*initialize-registry*
-  (set-default-registry!))
+(defn- initialize-registry-if-enabled!
+  {:added "2.1.0" :private true}
+  []
+  (when io.randomseed.bankster/*initialize-registry*
+    (set-default-registry!)))
+
+(initialize-registry-if-enabled!)
