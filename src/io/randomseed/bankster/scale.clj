@@ -106,6 +106,30 @@
   RoundingMode/UNNECESSARY)
 
 ;;
+;; Auto-scaled indicator.
+;;
+
+(def ^{:tag 'int :const true :added "2.2.0"}
+  ^int auto-scaled
+  "Expresses the scale of a currency which is automatic and not limited to certain
+  decimal places. Used to indicate that the scale should be determined by the actual
+  precision of the amount, not by a fixed currency scale."
+  (int -1))
+
+(defn auto-scaled?
+  "Returns `true` if the given scale equals the auto-scaled sentinel value (-1)."
+  {:added "2.2.0" :tag Boolean}
+  ^Boolean [^long scale]
+  (== auto-scaled (int scale)))
+
+(defmacro auto-scaled*?
+  "Macro version of `auto-scaled?`. Returns `true` if the given scale equals the
+  auto-scaled sentinel value (-1). Inlines the comparison for performance."
+  {:added "2.2.0"}
+  [scale]
+  `(clojure.core/== auto-scaled (int ~scale)))
+
+;;
 ;; Scale calculations.
 ;;
 

@@ -44,8 +44,11 @@
 (def ^{:tag 'int :const true :added "1.0.0"}
   ^int auto-scaled
   "Expresses the scale of a currency which is automatic and not limited to certain
-  decimal places."
-  (int -1))
+  decimal places.
+
+  Note: This is an alias for `scale/auto-scaled`. The canonical definition lives in
+  `io.randomseed.bankster.scale`."
+  scale/auto-scaled)
 
 (def ^{:tag clojure.lang.Keyword :const true :private true :added "2.0.0"}
   ^clojure.lang.Keyword explicit-nil
@@ -78,18 +81,24 @@
 ;;
 ;; Auto-scaling predicate for scale.
 ;;
+;; Note: These are aliases for `scale/auto-scaled?` and `scale/auto-scaled*?`.
+;; The canonical definitions live in `io.randomseed.bankster.scale`.
+;;
 
-(defn val-auto-scaled?
-  "Returns `true` if the given scale is equal to auto-scaled."
-  {:added "1.0.0" :tag Boolean}
-  [^long scale]
-  (== auto-scaled (int scale)))
+(def ^{:tag Boolean :added "1.0.0"}
+  val-auto-scaled?
+  "Returns `true` if the given scale is equal to auto-scaled.
+
+  Note: This is an alias for `scale/auto-scaled?`."
+  scale/auto-scaled?)
 
 (defmacro val-auto-scaled*?
-  "Returns `true` if the given scale is equal to auto-scaled."
+  "Returns `true` if the given scale is equal to auto-scaled.
+
+  Note: This delegates to `scale/auto-scaled*?`."
   {:added "2.0.0"}
   [scale]
-  `(clojure.core/== auto-scaled (int ~scale)))
+  `(scale/auto-scaled*? ~scale))
 
 ;;
 ;; Set of all Java currencies.
