@@ -69,14 +69,16 @@
   "Returns a set with all elements matching `pred` removed.
 
   Returns `nil` when `s` is `nil` or when the resulting set is empty."
-  {:tag clojure.lang.PersistentHashSet :added "2.0.0"}
-  [^clojure.lang.IFn pred ^clojure.lang.PersistentHashSet s]
+  {:tag clojure.lang.IPersistentSet :added "2.0.0"}
+  [^clojure.lang.IFn pred ^clojure.lang.IPersistentSet s]
   (when (some? s)
     (not-empty
-     (persistent!
-      (reduce (fn [ts x] (if (pred x) (disj! ts x) ts))
-              (transient s)
-              s)))))
+     (if (instance? clojure.lang.IEditableCollection s)
+       (persistent!
+        (reduce (fn [ts x] (if (pred x) (disj! ts x) ts))
+                (transient s)
+                s))
+       (reduce (fn [acc x] (if (pred x) (disj acc x) acc)) s s)))))
 
 (defn keep-in-set-where
   "Returns a set with all elements *not* matching `pred` removed.
