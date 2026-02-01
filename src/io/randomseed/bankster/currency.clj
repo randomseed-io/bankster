@@ -2876,7 +2876,7 @@
   dynamic registry, even if it is set)."
   {:tag Registry :added "1.0.0"}
   [^Currency currency country-ids]
-  (when (nil? currency) @registry/R (swap! registry/R add-countries currency country-ids)))
+  (if (nil? currency) @registry/R (swap! registry/R add-countries currency country-ids)))
 
 (defn remove-countries!
   "Removes country (a keyword) or countries (seqable collection of keywords) from the
@@ -2896,7 +2896,7 @@
   dynamic registry, even if it is set)."
   {:tag Registry :added "1.0.0"}
   [^Currency currency properties]
-  (when (nil? currency) @registry/R (swap! registry/R add-localized-properties currency properties)))
+  (if (nil? currency) @registry/R (swap! registry/R add-localized-properties currency properties)))
 
 (defn remove-localized-props!
   "Removes localized properties of the given currency from the global registry.
