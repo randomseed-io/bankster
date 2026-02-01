@@ -301,4 +301,11 @@
   symbols). Non-qualified identifiers and other data types are not renamed."
   {:added "1.0.2" :tag clojure.lang.Associative}
   [^clojure.lang.Associative m]
-  (map-keys m (fn [k] (if (qualified-ident? k) (name k) k))))
+  (map-keys (fn [k]
+              (if (qualified-ident? k)
+                (cond
+                  (keyword? k) (keyword (name k))
+                  (symbol?  k) (symbol  (name k))
+                  :else        (name k))
+                k))
+            m))
