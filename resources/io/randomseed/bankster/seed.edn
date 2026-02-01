@@ -112,27 +112,29 @@
            :iso-4217-legacy/XFU 10000,
            :iso-4217-legacy/ZWL 10000,
            "crypto/1INCH" 10},
- :version "2026013114025967",
+ :version "2026020100091539",
  :traits {:crypto/ADA [:blockchain/cardano :control/decentralized],
-          :crypto/AMLT [:blockchain/ethereum :token/erc20],
+          :crypto/AMLT [:blockchain/ethereum :control/centralized :token/erc20],
           :crypto/AVAX [:blockchain/avalanche :control/decentralized],
-          :crypto/BAT [:blockchain/ethereum :token/erc20],
-          :crypto/BCC [:blockchain/ethereum :token/erc20],
+          :crypto/BAT [:blockchain/ethereum :control/centralized :token/erc20],
+          :crypto/BCC [:blockchain/ethereum :control/decentralized :token/erc20],
           :crypto/BCH [:blockchain/bitcoin-cash :control/decentralized],
-          :crypto/BCP [:blockchain/ethereum :token/erc20],
+          :crypto/BCP [:blockchain/ethereum :control/centralized :token/erc20],
           :crypto/BNB [:blockchain/bnb-chain :control/decentralized],
           :crypto/BSC-USD [:blockchain/bnb-chain
+                           :control/centralized
                            :peg/fiat
                            :stable/coin
                            :token/bep20],
           :crypto/BSV [:blockchain/bitcoin-sv :control/decentralized],
           :crypto/BTC [:blockchain/bitcoin :control/decentralized],
           :crypto/BTG [:blockchain/bitcoin-gold :control/decentralized],
-          :crypto/CBBTC [:blockchain/ethereum :token/erc20],
+          :crypto/CBBTC [:blockchain/ethereum :control/centralized :token/erc20],
           :crypto/CC [:blockchain/canton :control/decentralized],
           :crypto/CRO [:blockchain/cronos :control/decentralized],
           :crypto/DAI [:blockchain/ethereum
                        :collateral/crypto
+                       :control/decentralized
                        :peg/fiat
                        :stable/coin
                        :token/erc20],
@@ -142,93 +144,130 @@
           :crypto/EOS [:blockchain/eos :control/decentralized],
           :crypto/ETC [:blockchain/ethereum-classic :control/decentralized],
           :crypto/ETH [:blockchain/ethereum :control/decentralized],
-          :crypto/EXY [:blockchain/ethereum :token/erc20],
-          :crypto/FIGR_HELOC [:blockchain/provenance],
+          :crypto/EXY [:blockchain/ethereum :control/centralized :token/erc20],
+          :crypto/FIGR_HELOC [:blockchain/provenance :control/centralized],
           :crypto/GAME [:blockchain/gamecredits :control/decentralized],
-          :crypto/GGC [:blockchain/bnb-chain :token/bep20],
-          :crypto/GNT [:blockchain/ethereum :token/erc20],
+          :crypto/GGC [:blockchain/bnb-chain
+                       :control/decentralized
+                       :token/bep20],
+          :crypto/GNT [:blockchain/ethereum :control/decentralized :token/erc20],
           :crypto/HBAR [:blockchain/hedera :control/decentralized],
           :crypto/HYPE [:blockchain/hyperliquid :control/decentralized],
           :crypto/KZC [:blockchain/kz-cash :control/decentralized],
-          :crypto/LEO [:blockchain/ethereum :token/erc20],
-          :crypto/LINK [:blockchain/ethereum :defi/oracle :token/erc20],
-          :crypto/LML [:blockchain/ethereum :token/erc20],
+          :crypto/LEO [:blockchain/ethereum :control/centralized :token/erc20],
+          :crypto/LINK [:blockchain/ethereum
+                        :control/decentralized
+                        :defi/oracle
+                        :token/erc20],
+          :crypto/LML [:blockchain/ethereum :control/centralized :token/erc20],
           :crypto/LSK [:blockchain/lisk :control/decentralized],
           :crypto/LTC [:blockchain/litecoin :control/decentralized],
-          :crypto/M [:blockchain/ethereum :token/erc20],
-          :crypto/MKR [:blockchain/ethereum :defi/governance :token/erc20],
-          :crypto/MNT [:blockchain/mantle :token/erc20],
-          :crypto/NEU [:blockchain/ethereum :token/erc20],
+          :crypto/M [:blockchain/ethereum :control/decentralized :token/erc20],
+          :crypto/MKR [:blockchain/ethereum
+                       :control/decentralized
+                       :defi/governance
+                       :token/erc20],
+          :crypto/MNT [:blockchain/mantle :control/decentralized :token/erc20],
+          :crypto/NEU [:blockchain/ethereum :control/centralized :token/erc20],
           :crypto/NMC [:blockchain/namecoin :control/decentralized],
-          :crypto/NPXS [:blockchain/ethereum :token/erc20],
-          :crypto/OMG [:blockchain/ethereum :token/erc20],
-          :crypto/PAY [:blockchain/ethereum :token/erc20],
+          :crypto/NPXS [:blockchain/ethereum :control/centralized :token/erc20],
+          :crypto/OMG [:blockchain/ethereum :control/decentralized :token/erc20],
+          :crypto/PAY [:blockchain/ethereum :control/centralized :token/erc20],
           :crypto/PYUSD [:blockchain/ethereum
+                         :control/centralized
                          :peg/fiat
                          :stable/coin
                          :token/erc20],
-          :crypto/QARK [:blockchain/ethereum :token/erc20],
-          :crypto/RAIN [:blockchain/arbitrum :token/erc20],
-          :crypto/REP [:blockchain/ethereum :token/erc20],
-          :crypto/SHIB [:blockchain/ethereum :token/erc20],
+          :crypto/QARK [:blockchain/ethereum :control/centralized :token/erc20],
+          :crypto/RAIN [:blockchain/arbitrum
+                        :control/decentralized
+                        :token/erc20],
+          :crypto/REP [:blockchain/ethereum :control/decentralized :token/erc20],
+          :crypto/SHIB [:blockchain/ethereum
+                        :control/decentralized
+                        :token/erc20],
           :crypto/SOL [:blockchain/solana :control/decentralized],
-          :crypto/SRN [:blockchain/ethereum :token/erc20],
+          :crypto/SRN [:blockchain/ethereum :control/centralized :token/erc20],
           :crypto/STEEM [:blockchain/steem :control/decentralized],
-          :crypto/STETH [:blockchain/ethereum :token/erc20],
+          :crypto/STETH [:blockchain/ethereum
+                         :control/decentralized
+                         :token/erc20],
           :crypto/SUI [:blockchain/sui :control/decentralized],
           :crypto/SUSDE [:blockchain/ethereum
+                         :control/centralized
                          :peg/fiat
                          :stable/coin
                          :token/erc20],
           :crypto/SUSDS [:blockchain/ethereum
+                         :control/decentralized
                          :peg/fiat
                          :stable/coin
                          :token/erc20],
           :crypto/TON [:blockchain/ton :control/decentralized],
           :crypto/TRX [:blockchain/tron :control/decentralized],
-          :crypto/UNI [:blockchain/ethereum :defi/governance :token/erc20],
+          :crypto/UNI [:blockchain/ethereum
+                       :control/decentralized
+                       :defi/governance
+                       :token/erc20],
           :crypto/USD1 [:blockchain/ethereum
+                        :control/centralized
                         :peg/fiat
                         :stable/coin
                         :token/erc20],
           :crypto/USDC [:blockchain/ethereum
+                        :control/centralized
                         :peg/fiat
                         :stable/coin
                         :token/erc20],
           :crypto/USDE [:blockchain/ethereum
+                        :control/centralized
                         :peg/fiat
                         :stable/coin
                         :token/erc20],
           :crypto/USDS [:blockchain/ethereum
+                        :control/decentralized
                         :peg/fiat
                         :stable/coin
                         :token/erc20],
           :crypto/USDT [:blockchain/ethereum
+                        :control/centralized
                         :peg/fiat
                         :stable/coin
                         :token/erc20],
           :crypto/USDT0 [:blockchain/ethereum
+                         :control/centralized
                          :peg/fiat
                          :stable/coin
                          :token/erc20],
           :crypto/VTC [:blockchain/vertcoin :control/decentralized],
-          :crypto/WBETH [:blockchain/bnb-chain :token/bep20],
-          :crypto/WBT [:blockchain/ethereum :token/erc20],
-          :crypto/WBTC [:blockchain/ethereum :token/erc20],
-          :crypto/WEETH [:blockchain/ethereum :token/erc20],
-          :crypto/WETH [:blockchain/ethereum :token/erc20],
-          :crypto/WLFI [:blockchain/ethereum :token/erc20],
-          :crypto/WSTETH [:blockchain/ethereum :token/erc20],
-          :crypto/XAUT [:blockchain/ethereum :token/erc20],
-          :crypto/XBX [:blockchain/ethereum :token/erc20],
+          :crypto/WBETH [:blockchain/bnb-chain
+                         :control/centralized
+                         :token/bep20],
+          :crypto/WBT [:blockchain/ethereum :control/centralized :token/erc20],
+          :crypto/WBTC [:blockchain/ethereum :control/federated :token/erc20],
+          :crypto/WEETH [:blockchain/ethereum
+                         :control/decentralized
+                         :token/erc20],
+          :crypto/WETH [:blockchain/ethereum
+                        :control/decentralized
+                        :token/erc20],
+          :crypto/WLFI [:blockchain/ethereum :control/centralized :token/erc20],
+          :crypto/WSTETH [:blockchain/ethereum
+                          :control/decentralized
+                          :token/erc20],
+          :crypto/XAUT [:blockchain/ethereum :control/centralized :token/erc20],
+          :crypto/XBX [:blockchain/ethereum :control/centralized :token/erc20],
           :crypto/XIN [:blockchain/infinity-economics :control/decentralized],
           :crypto/XLM [:blockchain/stellar :control/decentralized],
           :crypto/XMR [:blockchain/monero :control/decentralized :privacy/coin],
           :crypto/XRP [:blockchain/xrp-ledger :control/decentralized],
           :crypto/XTZ [:blockchain/tezos :control/decentralized],
           :crypto/ZEC [:blockchain/zcash :control/decentralized :privacy/coin],
-          :crypto/ZRX [:blockchain/ethereum :token/erc20],
-          "crypto/1INCH" [:blockchain/ethereum :defi/governance :token/erc20]},
+          :crypto/ZRX [:blockchain/ethereum :control/decentralized :token/erc20],
+          "crypto/1INCH" [:blockchain/ethereum
+                          :control/decentralized
+                          :defi/governance
+                          :token/erc20]},
  :propagate-keys [],
  :localized {:EUR {:pl {:name "euro", :symbol "€"}},
              :PLN {:pl {:name "złoty polski", :symbol "zł"}},

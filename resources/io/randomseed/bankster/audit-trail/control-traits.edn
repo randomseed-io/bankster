@@ -1,0 +1,439 @@
+{:audit {:kind :bankster/control-traits
+         :generated-at "2026-01-31"
+         :seed-version "2026013114025967"
+         :scope {:only-currencies-with-control-added true
+                 :files ["resources/io/randomseed/bankster/seed.edn"
+                         "resources/io/randomseed/bankster/config.edn"]}
+         :notes ["This file documents the rationale and sources used to assign a :control/* trait."
+                 "It is intentionally data-oriented (EDN) to make later re-audits and diffs easy."
+                 "When an entry is marked :confidence :low, it means primary/official sources were not found quickly and the mapping should be revalidated."]}
+
+ :definitions {:control/centralized {:meaning "Single issuer/operator retains meaningful administrative power (e.g. mint/burn authority, blacklist/freeze, unilateral product changes, or contractual discretion)."}
+               :control/decentralized {:meaning "Control is primarily exercised via a protocol/DAO or permissionless network rules; no single operator is meant to have unilateral authority (even if there are upgrade mechanisms controlled by governance)."}
+               :control/federated {:meaning "Control is shared across multiple identifiable parties (e.g. consortium/DAO with merchants/custodians and multi-party governance)."}}
+
+ :currency-id->control
+ {"crypto/1INCH"
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "Governance token of the 1inch DAO; governance is designed around token-holder voting."
+   :sources [{:type :docs
+              :title "1inch DAO governance"
+              :url "https://docs.1inch.io/docs/dao/governance/"}
+             {:type :docs
+              :title "1INCH token (governance)"
+              :url "https://docs.1inch.io/docs/dao/token/"}]}
+
+  :crypto/AMLT
+  {:control :control/centralized
+   :confidence :high
+   :rationale "AMLT is introduced as a dedicated utility token released by Coinfirm to access/participate in its compliance/AML platform and network."
+   :sources [{:type :press-release
+              :title "Coinfirm to Launch AMLT Token for Anti-Money Laundering Compliance"
+              :url "https://www.prnewswire.com/news-releases/blockchain-regtech-leader-coinfirm-to-launch-amlt-token-for-anti-money-laundering-compliance-300551798.html"}]}
+
+  :crypto/BAT
+  {:control :control/centralized
+   :confidence :high
+   :rationale "BAT platform functionality and services are described as developed/modified by a company (Brave/BAT terms explicitly reserve unilateral discretion over development plans)."
+   :sources [{:type :terms
+              :title "Basic Attention Token Terms and Conditions"
+              :url "https://basicattentiontoken.org/terms-and-conditions/"}
+             {:type :docs
+              :title "Basic Attention Token FAQ (whitepaper pointer)"
+              :url "https://basicattentiontoken.org/FAQ/"}]}
+
+  :crypto/BCC
+  {:control :control/decentralized
+   :confidence :low
+   :rationale "No clear primary/official issuer/governance documentation was found quickly; defaulted to :control/decentralized as a token on a decentralized base chain (needs re-audit)."
+   :sources [{:type :directory
+              :title "Basiscoin Cash (BCC) listing"
+              :url "https://coinmarketcap.com/currencies/basiscoin/"}]}
+
+  :crypto/BCP
+  {:control :control/centralized
+   :confidence :medium
+   :rationale "Project is presented as a centrally-run token project with operational incidents and contract migration; no clear DAO governance evidence."
+   :sources [{:type :directory
+              :title "Bitcashpay (old) listing / migration warning"
+              :url "https://coinmarketcap.com/currencies/bitcashpay/"}]}
+
+  :crypto/BSC-USD
+  {:control :control/centralized
+   :confidence :medium
+   :rationale "Bridged/issued stable token representation by an operator; relies on centralized mint/burn custody model (see similar wrapped stablecoin issuance patterns)."
+   :sources [{:type :directory
+              :title "Binance Bridged USDT (BNB Smart Chain) listing context (BSC-USD)"
+              :url "https://coinmarketcap.com/currencies/binance-bridged-usdt-bnb-smart-chain/"}]}
+
+  :crypto/CBBTC
+  {:control :control/centralized
+   :confidence :high
+   :rationale "cbBTC is described by Coinbase as a 1:1 wrapped BTC asset backed by BTC held in Coinbase custody (custodial mint/burn model)."
+   :sources [{:type :docs
+              :title "Coinbase Wrapped Bitcoin (cbBTC) help article"
+              :url "https://help.coinbase.com/en/coinbase/trading-and-funding/sending-or-receiving-cryptocurrency/coinbase-wrapped-btc"}
+             {:type :blog
+              :title "Coinbase Wrapped BTC (cbBTC) is now live"
+              :url "https://www.coinbase.com/blog/coinbase-wrapped-btc-cbbtc-is-now-live"}
+             {:type :attestation
+              :title "cbBTC Proof of Reserves"
+              :url "https://www.coinbase.com/cbBTC/proof-of-reserves"}]}
+
+  :crypto/DAI
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "DAI is governed by MakerDAO; governance is designed around decentralized, token-holder controlled processes."
+   :sources [{:type :docs
+              :title "MakerDAO governance documentation"
+              :url "https://docs.makerdao.com/governance"}]}
+
+  :crypto/EXY
+  {:control :control/centralized
+   :confidence :low
+   :rationale "Project materials found quickly do not clearly document a DAO governance/control model; treated as centrally-operated product token (needs re-audit)."
+   :sources [{:type :directory
+              :title "Experty (EXY) listing"
+              :url "https://coinmarketcap.com/currencies/experty/"}]}
+
+  :crypto/FIGR_HELOC
+  {:control :control/centralized
+   :confidence :high
+   :rationale "Provenance / Figure-based tokenization context suggests issuer/operator control rather than permissionless DAO control."
+   :sources [{:type :docs
+              :title "Provenance Blockchain documentation"
+              :url "https://docs.provenance.io/"}]}
+
+  :crypto/GGC
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "Project states ownership renunciation and claims decentralization (no further issuer controls)."
+   :sources [{:type :project
+              :title "GG (Global Game Coin) site"
+              :url "https://gg.world/"}]}
+
+  :crypto/GNT
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "Golem describes itself as a decentralized computing network."
+   :sources [{:type :project
+              :title "Golem project site"
+              :url "https://www.golem.network/"}]}
+
+  :crypto/LEO
+  {:control :control/centralized
+   :confidence :high
+   :rationale "LEO is described as a utility token designed for the Bitfinex platform and sold/issued by Bitfinex (exchange-issued token)."
+   :sources [{:type :docs
+              :title "Bitfinex Help Center: What is UNUS SED LEO (LEO)"
+              :url "https://support.bitfinex.com/hc/en-us/articles/360023342674-Unus-Sed-LEO-LEO"}]}
+
+  :crypto/LINK
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "Chainlink is documented as a decentralized oracle network."
+   :sources [{:type :docs
+              :title "Chainlink documentation"
+              :url "https://docs.chain.link/"}]}
+
+  :crypto/LML
+  {:control :control/centralized
+   :confidence :low
+   :rationale "No authoritative project/issuer/governance documentation was found quickly; classified as centralized by default for a legacy/obscure ERC-20 token (needs re-audit)."
+   :sources []}
+
+  :crypto/M
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "M is documented as the native token of MemeCore, used for gas/staking/governance (L1 protocol participation)."
+   :sources [{:type :docs
+              :title "MemeCore docs: $M token"
+              :url "https://docs.memecore.com/memecore/token/m"}]}
+
+  :crypto/MKR
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "MKR is the governance token of MakerDAO; Maker governance is designed as token-holder governance."
+   :sources [{:type :docs
+              :title "MakerDAO governance documentation"
+              :url "https://docs.makerdao.com/governance"}]}
+
+  :crypto/MNT
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "Mantle documentation describes MNT as a governance token for Mantle Governance."
+   :sources [{:type :docs
+              :title "Mantle docs: tokenomics/governance"
+              :url "https://docs.mantle.xyz/governance/parameters/tokenomics"}]}
+
+  :crypto/NEU
+  {:control :control/centralized
+   :confidence :low
+   :rationale "Neumark is described as tied to Neufund (platform/company context); no clear DAO governance evidence in primary sources found quickly."
+   :sources [{:type :directory
+              :title "Neumark (NEU) listing"
+              :url "https://cryptoslate.com/coins/neumark/"}]}
+
+  :crypto/NPXS
+  {:control :control/centralized
+   :confidence :high
+   :rationale "NPXS is positioned as a token within the Pundi X payment ecosystem with operational processes controlled by the Pundi X team."
+   :sources [{:type :blog
+              :title "Pundi X Official blog (NPXS utility in ecosystem)"
+              :url "https://blog.pundix.com/2019/05/01/introducing-open-platform%E2%80%8A-%E2%80%8Acustom-token-listing-on-the-pundi-x-payment-ecosystem/"}
+             {:type :docs
+              :title "Pundi X support: NPXS staking rules (team discretion / KYC, revocation)"
+              :url "https://support.pundix.com/hc/en-us/articles/360026638191-A-guide-to-staking-NPXS-NPXSXEM-for-f-x-tokens"}]}
+
+  :crypto/OMG
+  {:control :control/decentralized
+   :confidence :low
+   :rationale "OMG Network is presented as a decentralized public network; quick audit did not locate a strong primary governance/control spec."
+   :sources [{:type :directory
+              :title "OMG Network overview (links to official website/docs)"
+              :url "https://asdx.zendesk.com/hc/en-us/articles/4409375311891-OMG-Network-OMG"}]}
+
+  :crypto/PAY
+  {:control :control/centralized
+   :confidence :low
+   :rationale "Insufficient primary documentation found quickly; treated as a centrally-run product token (needs re-audit)."
+   :sources []}
+
+  :crypto/PYUSD
+  {:control :control/centralized
+   :confidence :high
+   :rationale "PYUSD is described by PayPal as a stablecoin issued by Paxos Trust Company and backed by reserves (issuer model)."
+   :sources [{:type :docs
+              :title "PayPal: PayPal USD overview"
+              :url "https://www.paypal.com/us/digital-wallet/manage-money/crypto/paypal-usd"}
+             {:type :docs
+              :title "Paxos: PayPal USD (PYUSD)"
+              :url "https://paxos.com/paypal-usd/"}]}
+
+  :crypto/QARK
+  {:control :control/centralized
+   :confidence :medium
+   :rationale "QANplatform token infrastructure is described as including centrally-controlled token mechanisms (e.g. vesting/locking in codebase context); treated as centrally-administered."
+   :sources [{:type :code
+              :title "QANX (QARK) token contracts repository"
+              :url "https://github.com/QANplatform/qark-token"}]}
+
+  :crypto/RAIN
+  {:control :control/decentralized
+   :confidence :medium
+   :rationale "RAIN is described as governed by a DAO (governance token on Arbitrum)."
+   :sources [{:type :directory
+              :title "Rain (RAIN) overview (DAO governance claim)"
+              :url "https://www.geckoterminal.com/arbitrum/pools/0xd13040d4fe917ee704158cfcb3338dcd2838b245"}]}
+
+  :crypto/REP
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "Augur is described as a decentralized prediction market / oracle protocol."
+   :sources [{:type :project
+              :title "Augur: mission / decentralization"
+              :url "https://www.augur.net/mission"}]}
+
+  :crypto/SHIB
+  {:control :control/decentralized
+   :confidence :medium
+   :rationale "Shiba Inu project describes itself as a community-driven ecosystem; no single issuer governance spec found quickly."
+   :sources [{:type :project
+              :title "Shiba Inu official site"
+              :url "https://shibatoken.com/"}]}
+
+  :crypto/SRN
+  {:control :control/centralized
+   :confidence :high
+   :rationale "SRN whitepaper describes a token sale and token usage for products/services provided by SIRIN LABS (company-driven issuance and platform)."
+   :sources [{:type :whitepaper
+              :title "SIRIN LABS Token (SRN) whitepaper (PDF mirror)"
+              :url "https://www.allcryptowhitepapers.com/wp-content/uploads/2018/05/SIRIN-LABS-Token-SRN-Whitepaper.pdf"}]}
+
+  :crypto/STETH
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "Lido is documented as DAO-governed; stETH is its staking derivative."
+   :sources [{:type :docs
+              :title "Lido DAO: governance"
+              :url "https://docs.lido.fi/guides/lido-dao/"}
+             {:type :docs
+              :title "Lido docs (stETH)"
+              :url "https://docs.lido.fi/guides/steth-integration-guide/"}]}
+
+  :crypto/SUSDE
+  {:control :control/centralized
+   :confidence :high
+   :rationale "Ethena documentation describes USDe minting/redemption as restricted (whitelisted users, role-gated, and gatekeeping), which implies meaningful centralized control surfaces."
+   :sources [{:type :docs
+              :title "Ethena docs: minting and redemption (whitelisting/gatekeeping)"
+              :url "https://docs.ethena.fi/developers/integration/minting-and-redemption"}]}
+
+  :crypto/SUSDS
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "sUSDS is documented as a tokenized implementation of the Sky Savings Rate for USDS (protocol-controlled, upgradeable via governance)."
+   :sources [{:type :docs
+              :title "Sky Protocol docs: sUSDS"
+              :url "https://developers.sky.money/core-protocol/susds/"}
+             {:type :docs
+              :title "Sky Protocol docs: USDS"
+              :url "https://developers.sky.money/core-protocol/usds/"}]}
+
+  :crypto/UNI
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "Uniswap governance is documented as token-holder/DAO governance around the protocol."
+   :sources [{:type :docs
+              :title "Uniswap: governance overview"
+              :url "https://docs.uniswap.org/governance/overview"}]}
+
+  :crypto/USD1
+  {:control :control/centralized
+   :confidence :medium
+   :rationale "USD1 is described by issuer as a redeemable, fully-backed stablecoin with attestations and custody model (issuer-driven fiat stablecoin)."
+   :sources [{:type :project
+              :title "World Liberty Financial: USD1 overview"
+              :url "https://worldlibertyfinancial.com/usd1"}]}
+
+  :crypto/USDC
+  {:control :control/centralized
+   :confidence :high
+   :rationale "USDC contract includes blacklisting/freezing semantics in Circle terms; issuer-driven fiat stablecoin."
+   :sources [{:type :terms
+              :title "Circle: USDC Terms (blacklisting disclosure)"
+              :url "https://www.circle.com/legal/usdc-terms"}
+             {:type :contract
+              :title "USDC (Ethereum) verified contract code"
+              :url "https://etherscan.io/token/0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48#code"}]}
+
+  :crypto/USDE
+  {:control :control/centralized
+   :confidence :high
+   :rationale "Ethena documents mint/redeem as whitelisted and role-gated, indicating centralized control surfaces."
+   :sources [{:type :docs
+              :title "Ethena docs: minting and redemption (whitelisting/gatekeeping)"
+              :url "https://docs.ethena.fi/developers/integration/minting-and-redemption"}]}
+
+  :crypto/USDS
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "USDS is documented as a Sky Protocol core token (upgraded DAI) with upgradeability designed for governance-driven evolution."
+   :sources [{:type :docs
+              :title "Sky Protocol docs: USDS"
+              :url "https://developers.sky.money/core-protocol/usds/"}]}
+
+  :crypto/USDT
+  {:control :control/centralized
+   :confidence :high
+   :rationale "USDT is an issuer-driven fiat stablecoin; on-chain contract implements administrative controls (e.g., blacklisting) consistent with centralized issuance."
+   :sources [{:type :contract
+              :title "USDT (Ethereum) verified contract code"
+              :url "https://etherscan.io/token/0xdac17f958d2ee523a2206206994597c13d831ec7#code"}]}
+
+  :crypto/USDT0
+  {:control :control/centralized
+   :confidence :medium
+   :rationale "USDT0 is described in reporting as a centralized, operator-mediated stable token representation and/or bridging product rather than a permissionless DAO-issued stablecoin."
+   :sources [{:type :news
+              :title "CoinDesk: USDT0 is coming to Ethereum"
+              :url "https://www.coindesk.com/markets/2024/12/12/usdt0-is-coming-to-ethereum-and-it-could-change-the-way-bridging-works/"}]}
+
+  :crypto/WBETH
+  {:control :control/centralized
+   :confidence :medium
+   :rationale "WBETH is presented as an exchange/operator product token (staking derivative) rather than DAO-issued."
+   :sources [{:type :docs
+              :title "Binance Academy: What is WBETH?"
+              :url "https://academy.binance.com/en/articles/what-is-wbeth"}]}
+
+  :crypto/WBT
+  {:control :control/centralized
+   :confidence :high
+   :rationale "WBT is explicitly described as the native coin created and developed by the WhiteBIT exchange (exchange-issued token)."
+   :sources [{:type :docs
+              :title "WhiteBIT Help: Features of WhiteBIT Coin (WBT)"
+              :url "https://help.whitebit.com/hc/en-gb/articles/9789787642269-Features-of-WhiteBIT-Coin-WBT"}
+             {:type :project
+              :title "WhiteBIT: WBT overview page"
+              :url "https://whitebit.com/wbt"}]}
+
+  :crypto/WBTC
+  {:control :control/federated
+   :confidence :high
+   :rationale "WBTC is governed via WBTC DAO with multiple merchants/custodians; mint/burn relies on multi-party roles."
+   :sources [{:type :press-release
+              :title "WBTC DAO and role model announcement (BitGo PDF)"
+              :url "https://www.bitgo.com/wp-content/uploads/2019/01/WBTC-Launch-announcement_White-Paper.pdf"}
+             {:type :audit
+              :title "Least Authority: WBTC audit / role descriptions"
+              :url "https://leastauthority.com/blog/audit-of-wrapped-bitcoin-wbtc/"}]}
+
+  :crypto/WEETH
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "weETH is described in Ether.fi documentation as a wrapper around eETH in a protocol governed via ETHFI token/DAO mechanisms."
+   :sources [{:type :docs
+              :title "ether.fi technical documentation (weETH)"
+              :url "https://etherfi.gitbook.io/etherfi/ether.fi-whitepaper/technical-documentation"}
+             {:type :docs
+              :title "ether.fi docs: ETHFI governance token"
+              :url "https://etherfi.gitbook.io/etherfi/ethfi"}]}
+
+  :crypto/WETH
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "WETH is the canonical wrapper contract pattern for ETH on Ethereum; no issuer/custodian model is implied by design."
+   :sources [{:type :contract
+              :title "WETH9 reference implementation"
+              :url "https://github.com/weth-protocol/weth10/blob/main/contracts/WETH9.sol"}]}
+
+  :crypto/WLFI
+  {:control :control/centralized
+   :confidence :high
+   :rationale "WLFI terms describe governance-only utility, non-transferability and company discretion for unlock timing/eligibility, implying centralized administration surfaces."
+   :sources [{:type :terms
+              :title "WLFI Token Use and Acquisition Terms & Conditions"
+              :url "https://worldlibertyfinancial.com/wlfi/terms"}
+             {:type :project
+              :title "World Liberty Financial: product overview"
+              :url "https://worldlibertyfinancial.com/"}]}
+
+  :crypto/WSTETH
+  {:control :control/decentralized
+   :confidence :high
+   :rationale "wstETH is the wrapped form of stETH; Lido is DAO-governed."
+   :sources [{:type :docs
+              :title "Lido docs (wstETH integration)"
+              :url "https://docs.lido.fi/guides/wsteth-integration-guide/"}]}
+
+  :crypto/XAUT
+  {:control :control/centralized
+   :confidence :high
+   :rationale "XAUT is a tokenized gold product issued/managed by a company; contract is centrally administered."
+   :sources [{:type :blog
+              :title "Tether: XAUT backing overview"
+              :url "https://tether.io/news/tether-gold-xaut-the-first-stablecoin-pegged-to-the-price-of-gold/"}
+             {:type :contract
+              :title "XAUT (Ethereum) token contract"
+              :url "https://etherscan.io/token/0x68749665ff8d2d112fa859aa293f07a622782f38#code"}]}
+
+  :crypto/XBX
+  {:control :control/centralized
+   :confidence :medium
+   :rationale "XBX is described in project/exchange contexts as a token used within a service provider ecosystem (issuer/operator model)."
+   :sources [{:type :directory
+              :title "Bitex Global XBX Coin listing"
+              :url "https://coinmarketcap.com/currencies/bitex-global-xbx-coin/"}
+             {:type :press-release
+              :title "Bitex XBX listing announcement (PRNewswire)"
+              :url "https://www.prnewswire.com/news-releases/crypto-banking-giant-bitex-xbx-gets-listed-on-coinall-300808326.html"}]}
+
+  :crypto/ZRX
+  {:control :control/decentralized
+   :confidence :medium
+   :rationale "0x protocol describes an open, decentralized exchange infrastructure; token used in protocol governance/incentives."
+   :sources [{:type :project
+              :title "0x protocol site"
+              :url "https://0x.org/"}]}}}

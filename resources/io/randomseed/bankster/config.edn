@@ -1,5 +1,5 @@
 {:weights {},
- :version "2026013114025983",
+ :version "2026020100091570",
  :traits {},
  :propagate-keys [],
  :localized {},
@@ -420,7 +420,9 @@
               :crypto/AMLT {:kind :virtual/token,
                             :localized {:* {:name "AML Token", :symbol "⬙"}},
                             :scale 18,
-                            :traits [:blockchain/ethereum :token/erc20],
+                            :traits [:blockchain/ethereum
+                                     :control/centralized
+                                     :token/erc20],
                             :weight 10},
               :crypto/AVAX {:kind :virtual/native,
                             :localized {:* {:name "Avalanche", :symbol "∕▲"}},
@@ -432,12 +434,16 @@
                            :localized {:* {:name "Basic Attention Token",
                                            :symbol "▵"}},
                            :scale 18,
-                           :traits [:blockchain/ethereum :token/erc20],
+                           :traits [:blockchain/ethereum
+                                    :control/centralized
+                                    :token/erc20],
                            :weight 10},
               :crypto/BCC {:kind :virtual/token,
                            :localized {:* {:name "Basiscoin Cash", :symbol "⟥"}},
                            :scale 18,
-                           :traits [:blockchain/ethereum :token/erc20],
+                           :traits [:blockchain/ethereum
+                                    :control/decentralized
+                                    :token/erc20],
                            :weight 10},
               :crypto/BCH {:kind :virtual/native,
                            :localized {:* {:name "Bitcoin Cash", :symbol "Ƀ"}},
@@ -448,7 +454,9 @@
               :crypto/BCP {:kind :virtual/token,
                            :localized {:* {:name "Bitcashpay", :symbol "BCP"}},
                            :scale 18,
-                           :traits [:blockchain/ethereum :token/erc20],
+                           :traits [:blockchain/ethereum
+                                    :control/centralized
+                                    :token/erc20],
                            :weight 10},
               :crypto/BNB {:kind :virtual/native,
                            :localized {:* {:name "Binance Coin", :symbol "BNB"}},
@@ -461,6 +469,7 @@
                                                :symbol "BSC-USD"}},
                                :scale 8,
                                :traits [:blockchain/bnb-chain
+                                        :control/centralized
                                         :peg/fiat
                                         :stable/coin
                                         :token/bep20],
@@ -486,7 +495,9 @@
                              :localized {:* {:name "Coinbase Wrapped BTC",
                                              :symbol "CBBTC"}},
                              :scale 8,
-                             :traits [:blockchain/ethereum :token/erc20],
+                             :traits [:blockchain/ethereum
+                                      :control/centralized
+                                      :token/erc20],
                              :weight 10},
               :crypto/CC {:kind :virtual/native,
                           :localized {:* {:name "Canton", :symbol "CC"}},
@@ -503,6 +514,7 @@
                            :scale 18,
                            :traits [:blockchain/ethereum
                                     :collateral/crypto
+                                    :control/decentralized
                                     :peg/fiat
                                     :stable/coin
                                     :token/erc20],
@@ -543,13 +555,16 @@
               :crypto/EXY {:kind :virtual/token,
                            :localized {:* {:name "Experty", :symbol "EXY"}},
                            :scale 18,
-                           :traits [:blockchain/ethereum :token/erc20],
+                           :traits [:blockchain/ethereum
+                                    :control/centralized
+                                    :token/erc20],
                            :weight 10},
               :crypto/FIGR_HELOC {:kind :virtual/token,
                                   :localized {:* {:name "Figure Heloc",
                                                   :symbol "FIGR_HELOC"}},
                                   :scale 6,
-                                  :traits [:blockchain/provenance],
+                                  :traits [:blockchain/provenance
+                                           :control/centralized],
                                   :weight 10},
               :crypto/GAME {:kind :virtual/native,
                             :localized {:* {:name "GameCredits", :symbol "G"}},
@@ -561,12 +576,16 @@
                            :localized {:* {:name "Global Game Coin",
                                            :symbol "GG"}},
                            :scale 18,
-                           :traits [:blockchain/bnb-chain :token/bep20],
+                           :traits [:blockchain/bnb-chain
+                                    :control/decentralized
+                                    :token/bep20],
                            :weight 10},
               :crypto/GNT {:kind :virtual/token,
                            :localized {:* {:name "Golem", :symbol "ꖉ"}},
                            :scale 18,
-                           :traits [:blockchain/ethereum :token/erc20],
+                           :traits [:blockchain/ethereum
+                                    :control/decentralized
+                                    :token/erc20],
                            :weight 10},
               :crypto/HBAR {:kind :virtual/native,
                             :localized {:* {:name "Hedera", :symbol "HBAR"}},
@@ -587,12 +606,15 @@
               :crypto/LEO {:kind :virtual/token,
                            :localized {:* {:name "LEO Token", :symbol "LEO"}},
                            :scale 18,
-                           :traits [:blockchain/ethereum :token/erc20],
+                           :traits [:blockchain/ethereum
+                                    :control/centralized
+                                    :token/erc20],
                            :weight 10},
               :crypto/LINK {:kind :virtual/token,
                             :localized {:* {:name "Chainlink", :symbol "⬡"}},
                             :scale 18,
                             :traits [:blockchain/ethereum
+                                     :control/decentralized
                                      :defi/oracle
                                      :token/erc20],
                             :weight 10},
@@ -600,7 +622,9 @@
                            :localized {:* {:name "Lisk Machine Learning",
                                            :symbol "◇"}},
                            :scale 18,
-                           :traits [:blockchain/ethereum :token/erc20],
+                           :traits [:blockchain/ethereum
+                                    :control/centralized
+                                    :token/erc20],
                            :weight 10},
               :crypto/LSK {:kind :virtual/native,
                            :localized {:* {:name "Lisk", :symbol "⬠"}},
@@ -615,24 +639,31 @@
               :crypto/M {:kind :virtual/token,
                          :localized {:* {:name "MemeCore", :symbol "M"}},
                          :scale 18,
-                         :traits [:blockchain/ethereum :token/erc20],
+                         :traits [:blockchain/ethereum
+                                  :control/decentralized
+                                  :token/erc20],
                          :weight 10},
               :crypto/MKR {:kind :virtual/token,
                            :localized {:* {:name "Maker", :symbol "Μ"}},
                            :scale 18,
                            :traits [:blockchain/ethereum
+                                    :control/decentralized
                                     :defi/governance
                                     :token/erc20],
                            :weight 10},
               :crypto/MNT {:kind :virtual/token,
                            :localized {:* {:name "Mantle", :symbol "MNT"}},
                            :scale 18,
-                           :traits [:blockchain/mantle :token/erc20],
+                           :traits [:blockchain/mantle
+                                    :control/decentralized
+                                    :token/erc20],
                            :weight 5},
               :crypto/NEU {:kind :virtual/token,
                            :localized {:* {:name "Neumark", :symbol "NEU"}},
                            :scale 18,
-                           :traits [:blockchain/ethereum :token/erc20],
+                           :traits [:blockchain/ethereum
+                                    :control/centralized
+                                    :token/erc20],
                            :weight 10},
               :crypto/NMC {:kind :virtual/native,
                            :localized {:* {:name "NMC", :symbol "ℕ"}},
@@ -642,45 +673,60 @@
               :crypto/NPXS {:kind :virtual/token,
                             :localized {:* {:name "Pundi X", :symbol "⤫"}},
                             :scale 18,
-                            :traits [:blockchain/ethereum :token/erc20],
+                            :traits [:blockchain/ethereum
+                                     :control/centralized
+                                     :token/erc20],
                             :weight 10},
               :crypto/OMG {:kind :virtual/token,
                            :localized {:* {:name "OMG", :symbol "OMG"}},
                            :scale 18,
-                           :traits [:blockchain/ethereum :token/erc20],
+                           :traits [:blockchain/ethereum
+                                    :control/decentralized
+                                    :token/erc20],
                            :weight 10},
               :crypto/PAY {:kind :virtual/token,
                            :localized {:* {:name "TenX PAY", :symbol "⋈"}},
                            :scale 18,
-                           :traits [:blockchain/ethereum :token/erc20],
+                           :traits [:blockchain/ethereum
+                                    :control/centralized
+                                    :token/erc20],
                            :weight 10},
               :crypto/PYUSD {:kind :virtual.stable.peg/fiat,
                              :localized {:* {:name "PayPal USD",
                                              :symbol "PYUSD"}},
                              :scale 8,
                              :traits [:blockchain/ethereum
+                                      :control/centralized
                                       :peg/fiat
                                       :stable/coin
                                       :token/erc20],
                              :weight 4},
               :crypto/QARK {:kind :virtual/token,
                             :scale 18,
-                            :traits [:blockchain/ethereum :token/erc20],
+                            :traits [:blockchain/ethereum
+                                     :control/centralized
+                                     :token/erc20],
                             :weight 10},
               :crypto/RAIN {:kind :virtual/token,
                             :localized {:* {:name "Rain", :symbol "RAIN"}},
                             :scale 18,
-                            :traits [:blockchain/arbitrum :token/erc20],
+                            :traits [:blockchain/arbitrum
+                                     :control/decentralized
+                                     :token/erc20],
                             :weight 10},
               :crypto/REP {:kind :virtual/token,
                            :localized {:* {:name "REP", :symbol "Ɍ"}},
                            :scale 18,
-                           :traits [:blockchain/ethereum :token/erc20],
+                           :traits [:blockchain/ethereum
+                                    :control/decentralized
+                                    :token/erc20],
                            :weight 10},
               :crypto/SHIB {:kind :virtual/token,
                             :localized {:* {:name "Shiba Inu", :symbol "SHIB"}},
                             :scale 18,
-                            :traits [:blockchain/ethereum :token/erc20],
+                            :traits [:blockchain/ethereum
+                                     :control/decentralized
+                                     :token/erc20],
                             :weight 10},
               :crypto/SOL {:kind :virtual/native,
                            :localized {:* {:name "Solana", :symbol "SOL"}},
@@ -691,7 +737,9 @@
                            :localized {:* {:name "Sirin Labs Token",
                                            :symbol "⌓"}},
                            :scale 18,
-                           :traits [:blockchain/ethereum :token/erc20],
+                           :traits [:blockchain/ethereum
+                                    :control/centralized
+                                    :token/erc20],
                            :weight 10},
               :crypto/STEEM {:kind :virtual/native,
                              :localized {:* {:name "Steem", :symbol "ȿ"}},
@@ -702,7 +750,9 @@
                              :localized {:* {:name "Lido Staked Ether",
                                              :symbol "STETH"}},
                              :scale 18,
-                             :traits [:blockchain/ethereum :token/erc20],
+                             :traits [:blockchain/ethereum
+                                      :control/decentralized
+                                      :token/erc20],
                              :weight 10},
               :crypto/SUI {:kind :virtual/native,
                            :localized {:* {:name "Sui", :symbol "SUI"}},
@@ -714,6 +764,7 @@
                                              :symbol "SUSDE"}},
                              :scale 8,
                              :traits [:blockchain/ethereum
+                                      :control/centralized
                                       :peg/fiat
                                       :stable/coin
                                       :token/erc20],
@@ -722,6 +773,7 @@
                              :localized {:* {:name "sUSDS", :symbol "SUSDS"}},
                              :scale 8,
                              :traits [:blockchain/ethereum
+                                      :control/decentralized
                                       :peg/fiat
                                       :stable/coin
                                       :token/erc20],
@@ -739,6 +791,7 @@
               :crypto/UNI {:kind :virtual/token,
                            :scale 18,
                            :traits [:blockchain/ethereum
+                                    :control/decentralized
                                     :defi/governance
                                     :token/erc20],
                            :weight 10},
@@ -746,6 +799,7 @@
                             :localized {:* {:name "USD1", :symbol "USD1"}},
                             :scale 8,
                             :traits [:blockchain/ethereum
+                                     :control/centralized
                                      :peg/fiat
                                      :stable/coin
                                      :token/erc20],
@@ -754,6 +808,7 @@
                             :localized {:* {:name "USD Coin", :symbol "USDC"}},
                             :scale 8,
                             :traits [:blockchain/ethereum
+                                     :control/centralized
                                      :peg/fiat
                                      :stable/coin
                                      :token/erc20],
@@ -762,6 +817,7 @@
                             :localized {:* {:name "Ethena USDe", :symbol "USDE"}},
                             :scale 8,
                             :traits [:blockchain/ethereum
+                                     :control/centralized
                                      :peg/fiat
                                      :stable/coin
                                      :token/erc20],
@@ -770,6 +826,7 @@
                             :localized {:* {:name "USDS", :symbol "USDS"}},
                             :scale 8,
                             :traits [:blockchain/ethereum
+                                     :control/decentralized
                                      :peg/fiat
                                      :stable/coin
                                      :token/erc20],
@@ -778,6 +835,7 @@
                             :localized {:* {:name "Tether", :symbol "₮"}},
                             :scale 8,
                             :traits [:blockchain/ethereum
+                                     :control/centralized
                                      :peg/fiat
                                      :stable/coin
                                      :token/erc20],
@@ -786,6 +844,7 @@
                              :localized {:* {:name "USDT0", :symbol "USDT0"}},
                              :scale 8,
                              :traits [:blockchain/ethereum
+                                      :control/centralized
                                       :peg/fiat
                                       :stable/coin
                                       :token/erc20],
@@ -799,51 +858,69 @@
                              :localized {:* {:name "Wrapped Beacon ETH",
                                              :symbol "WBETH"}},
                              :scale 18,
-                             :traits [:blockchain/bnb-chain :token/bep20],
+                             :traits [:blockchain/bnb-chain
+                                      :control/centralized
+                                      :token/bep20],
                              :weight 10},
               :crypto/WBT {:kind :virtual/token,
                            :localized {:* {:name "WhiteBIT Coin", :symbol "WBT"}},
                            :scale 18,
-                           :traits [:blockchain/ethereum :token/erc20],
+                           :traits [:blockchain/ethereum
+                                    :control/centralized
+                                    :token/erc20],
                            :weight 10},
               :crypto/WBTC {:kind :virtual/wrapped,
                             :localized {:* {:name "Wrapped Bitcoin",
                                             :symbol "WBTC"}},
                             :scale 8,
-                            :traits [:blockchain/ethereum :token/erc20],
+                            :traits [:blockchain/ethereum
+                                     :control/federated
+                                     :token/erc20],
                             :weight 10},
               :crypto/WEETH {:kind :virtual/staked,
                              :localized {:* {:name "Wrapped eETH",
                                              :symbol "WEETH"}},
                              :scale 18,
-                             :traits [:blockchain/ethereum :token/erc20],
+                             :traits [:blockchain/ethereum
+                                      :control/decentralized
+                                      :token/erc20],
                              :weight 10},
               :crypto/WETH {:kind :virtual/wrapped,
                             :localized {:* {:name "WETH", :symbol "WETH"}},
                             :scale 18,
-                            :traits [:blockchain/ethereum :token/erc20],
+                            :traits [:blockchain/ethereum
+                                     :control/decentralized
+                                     :token/erc20],
                             :weight 10},
               :crypto/WLFI {:kind :virtual/token,
                             :localized {:* {:name "World Liberty Financial",
                                             :symbol "WLFI"}},
                             :scale 18,
-                            :traits [:blockchain/ethereum :token/erc20],
+                            :traits [:blockchain/ethereum
+                                     :control/centralized
+                                     :token/erc20],
                             :weight 10},
               :crypto/WSTETH {:kind :virtual/staked,
                               :localized {:* {:name "Wrapped stETH",
                                               :symbol "WSTETH"}},
                               :scale 18,
-                              :traits [:blockchain/ethereum :token/erc20],
+                              :traits [:blockchain/ethereum
+                                       :control/decentralized
+                                       :token/erc20],
                               :weight 10},
               :crypto/XAUT {:kind :virtual.stable.peg/metal,
                             :localized {:* {:name "Tether Gold", :symbol "XAUT"}},
                             :scale 8,
-                            :traits [:blockchain/ethereum :token/erc20],
+                            :traits [:blockchain/ethereum
+                                     :control/centralized
+                                     :token/erc20],
                             :weight 10},
               :crypto/XBX {:kind :virtual/token,
                            :localized {:* {:name "Bitex Global", :symbol "XBX"}},
                            :scale 18,
-                           :traits [:blockchain/ethereum :token/erc20],
+                           :traits [:blockchain/ethereum
+                                    :control/centralized
+                                    :token/erc20],
                            :weight 10},
               :crypto/XIN {:kind :virtual/native,
                            :localized {:* {:name "Infinity Economics",
@@ -885,7 +962,9 @@
               :crypto/ZRX {:kind :virtual/token,
                            :localized {:* {:name "0x", :symbol "ꕕ"}},
                            :scale 18,
-                           :traits [:blockchain/ethereum :token/erc20],
+                           :traits [:blockchain/ethereum
+                                    :control/decentralized
+                                    :token/erc20],
                            :weight 10},
               :iso-4217-legacy/ADP {:kind :iso/fiat,
                                     :numeric 20,
@@ -1015,6 +1094,7 @@
                               :localized {:* {:name "1inch", :symbol "1INCH"}},
                               :scale 18,
                               :traits [:blockchain/ethereum
+                                       :control/decentralized
                                        :defi/governance
                                        :token/erc20],
                               :weight 10}},
