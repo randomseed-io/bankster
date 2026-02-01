@@ -7,11 +7,19 @@
 
     io.randomseed.bankster.util.importer-test
 
-  (:require [clojure.test                    :refer [deftest testing is]]
+  (:require [clojure.edn                     :as edn]
+            [clojure.java.io                 :as io]
+            [clojure.string                  :as str]
+            [clojure.test                    :refer [deftest testing is]]
             [io.randomseed.bankster          :as bankster]
             [io.randomseed.bankster.currency :as currency]
             [io.randomseed.bankster.registry :as registry]
             [io.randomseed.bankster.util.importer :as importer]))
+
+(defn- tmp-dir []
+  (.toFile (java.nio.file.Files/createTempDirectory
+            "bankster-importer-test"
+            (make-array java.nio.file.attribute.FileAttribute 0))))
 
 (deftest make-currency-legacy-domain-from-comment
   (testing "comment \"Old, now\" causes currency ID to get iso-4217-legacy namespace"
@@ -44,6 +52,585 @@
       (is (= :iso/test             (:kind (mk ["XTS" "963" "0" nil]))))
       (is (= :iso/null             (:kind (mk ["XXX" "999" "0" nil]))))
       (is (= :iso.funds/settlement (:kind (mk ["USN" "997" "2" nil])))))))
+
+(deftest make-currency-parsing-fallbacks
+  (testing "numeric/scale parse fallbacks and normalization"
+    (let [mk #'io.randomseed.bankster.util.importer/make-currency]
+      (is (nil? (mk [nil "1" "2" nil])))
+      (is (= currency/no-numeric-id (:numeric (mk ["EUR" "nope" "2" nil]))))
+      (is (= currency/no-numeric-id (:numeric (mk ["EUR" "-10"  "2" nil]))))
+      (is (= currency/auto-scaled  (:scale   (mk ["EUR" "978" "nope" nil]))))
+      (is (= currency/auto-scaled  (:scale   (mk ["EUR" "978" "-2"   nil])))))))
+
+(deftest joda-csv-importer-defaults-and-path-overrides
+  (testing "countries-load returns nil when the resource is missing"
+    (with-redefs [io.randomseed.bankster.util.fs/paths->resource (fn [& _] nil)]
+      (is (nil? (importer/countries-load)))
+      (is (nil? (importer/countries-load "nope.csv")))))
+  (testing "currencies-load returns nil when the resource is missing"
+    (with-redefs [io.randomseed.bankster.util.fs/paths->resource (fn [& _] nil)]
+      (is (nil? (importer/currencies-load)))
+      (is (nil? (importer/currencies-load "nope.csv")))))
+  (testing "currencies-load split-comment branch: with and without '#'"
+    (let [dir  (tmp-dir)
+          f    (io/file dir "cur.csv")
+          path (.getPath f)
+          ;; 4 columns: id,numeric,scale,comment
+          ;; comment contains an inline '#' to trigger split-comment branch
+          _    (spit f (str "AAA,1,2,Hello # Old, now BBB\n"
+                            "BBB,2,0,Plain comment\n"
+                            "CCC,3,0,Hello #    \n"))]
+      (with-redefs [io.randomseed.bankster.util.fs/paths->resource (fn [& _] path)]
+        (let [cs (doall (importer/currencies-load "ignored.csv"))]
+          (is (= 3 (count cs)))
+          (is (= :AAA (:id (first cs))))
+          (is (= :BBB (:id (second cs))))
+          (is (= :CCC (:id (nth cs 2))))))))
+  (testing "currencies-load split-comment branch: last column can be nil (covers (string? l) false)"
+    (with-redefs [io.randomseed.bankster.util.fs/paths->resource (fn [& _] "/tmp/ignored.csv")
+                  io.randomseed.bankster.util.fs/read-csv         (fn [& _]
+                                                                  ;; 4 columns expected by make-currency: id,numeric,scale,comment
+                                                                  [["AAA" "1" "2" nil]])]
+      (let [cs (doall (importer/currencies-load "ignored.csv"))]
+        (is (= 1 (count cs)))
+        (is (= :AAA (:id (first cs)))))))
+  (testing "countries-load reads simple CSV rows via fs/read-csv"
+    (let [dir  (tmp-dir)
+          f    (io/file dir "countries.csv")
+          path (.getPath f)
+          _    (spit f (str "PL,PLN\n"
+                            "DE,EUR\n"
+                            "FR,EUR\n"))]
+      (with-redefs [io.randomseed.bankster.util.fs/paths->resource (fn [& _] path)]
+        (let [m (importer/countries-load "ignored.csv")]
+          (is (= #{:PL} (get m :PLN)))
+          (is (= #{:DE :FR} (get m :EUR))))))))
+
+(deftest joda-import-uses-countries-and-currencies
+  (testing "joda-import registers currencies and attaches countries"
+    (let [eur (currency/new :EUR 978 2 :iso/fiat :ISO-4217 0)]
+      (with-redefs [io.randomseed.bankster.util.importer/countries-load  (fn [& _] {:EUR #{:PL}})
+                    io.randomseed.bankster.util.importer/currencies-load (fn [& _] [eur])]
+        (let [r (importer/joda-import)]
+          (is (true? (currency/defined? :EUR r)))
+          (is (= #{:PL} (currency/countries :EUR r)))))))
+  (testing "joda-import handles nil loaders (returns empty registry)"
+    (with-redefs [io.randomseed.bankster.util.importer/countries-load  (fn [& _] nil)
+                  io.randomseed.bankster.util.importer/currencies-load (fn [& _] nil)]
+      (let [r (importer/joda-import)]
+        (is (true? (registry/registry? r)))
+        (is (= {} (:cur-id->cur r)))))))
+
+(deftest edn-import-is-an-alias-for-registry-global
+  (testing "edn-import returns the global registry atom"
+    (is (= (registry/global) (importer/edn-import)))))
+
+(deftest export-shaping-helpers
+  (testing "currency->map includes only meaningful fields"
+    (is (= {:scale nil} (importer/currency->map {})))
+    (is (= {:scale 2} (importer/currency->map {:scale 2 :numeric -1 :kind nil})))
+    (is (= {:numeric 978 :scale 2 :kind :iso/fiat}
+           (importer/currency->map {:numeric 978 :scale 2 :kind :iso/fiat :foo "bar"})))
+    (is (= {:numeric 978} (importer/currency->map {:numeric 978 :scale -1 :kind nil}))))
+  (testing "traits->map and localized->map"
+    (is (nil? (importer/traits->map nil)))
+    (is (nil? (importer/traits->map [])))
+    (is (= [:a :b] (importer/traits->map #{:b :a})))
+    (is (= {:en {:name "Euro"} :pl {:name "Euro (PL)"}}
+           (importer/localized->map {:en {:name "Euro"} :pl {:name "Euro (PL)"}}))))
+  (testing "sort-kw-vec normalizes keywords/strings and removes nils"
+    (let [f #'io.randomseed.bankster.util.importer/sort-kw-vec]
+      (is (= [:a :b] (f [nil :b "a"]))))))
+
+(deftest map-to-currency-oriented-defaulting-and-weights
+  (testing "map->currency-oriented defaults missing branches to {}"
+    (let [m  {:version "v"}
+          m2 (importer/map->currency-oriented m)]
+      (is (= {} (:currencies m2)))
+      (is (= {} (:countries m2)))
+      (is (= {} (:localized m2)))
+      (is (= {} (:traits m2)))
+      (is (= {} (:weights m2)))))
+  (testing "map->currency-oriented embeds :weight when weights contain the currency ID (including 0)"
+    (let [m  {:version    "v"
+              :currencies (sorted-map :AAA {:scale 2}
+                                      :BBB {:scale 2})
+              :weights    (sorted-map :AAA 0
+                                      :BBB 5
+                                      :CCC 9)
+              :hierarchies (sorted-map)}
+          m2 (importer/map->currency-oriented m)]
+      (is (= 0 (get-in m2 [:currencies :AAA :weight])))
+      (is (= 5 (get-in m2 [:currencies :BBB :weight])))
+      (is (= {:CCC 9} (:weights m2))))))
+
+(deftest dump-and-export-write-to-a-determined-directory
+  (testing "dump/export/export-currency-oriented write to a directory based on fs/resource-pathname"
+    (let [dir    (tmp-dir)
+          root   (io/file dir "io" "randomseed" "bankster")
+          _      (.mkdirs root)
+          config (io/file root "config.edn")
+          _      (spit config "{}")
+          r      (-> (registry/new-registry)
+                     (currency/register (currency/new :EUR 978 2 :iso/fiat :ISO-4217 0)))]
+      (with-redefs [io.randomseed.bankster.util.fs/resource-pathname
+                    (fn [& _] (.getPath config))]
+        (importer/dump "dump.edn" r)
+        (importer/export "export.edn" r)
+        (importer/export-currency-oriented "export-co.edn" r)
+        ;; cover additional arities
+        (importer/dump r)
+        (importer/export r)
+        (importer/export-currency-oriented r)
+        (registry/with r
+          (importer/dump)
+          (importer/export)
+          (importer/export-currency-oriented))
+        (is (true? (.exists (io/file root "dump.edn"))))
+        (is (true? (.exists (io/file root "export.edn"))))
+        (is (true? (.exists (io/file root "export-co.edn"))))
+        (is (true? (.exists (io/file root importer/default-dump-filename))))
+        (is (true? (.exists (io/file root importer/default-export-filename))))
+        (is (true? (.exists (io/file root importer/default-export-currency-oriented-filename))))
+        (is (str/includes? (slurp (io/file root "dump.edn"))
+                           "#io.randomseed.bankster.Registry"))))))
+
+(deftest dump-and-export-return-nil-when-resource-dir-cannot-be-resolved
+  (testing "dump/export/export-currency-oriented no-op when fs/resource-pathname returns nil"
+    (let [r (registry/new-registry)]
+      (with-redefs [io.randomseed.bankster.util.fs/resource-pathname (fn [& _] nil)]
+        (is (nil? (importer/dump "x.edn" r)))
+        (is (nil? (importer/export "x.edn" r)))
+        (is (nil? (importer/export-currency-oriented "x.edn" r)))))))
+
+(deftest readers-export-no-op-when-no-namespaced-currency-ids
+  (testing "readers-export does nothing when there are no namespaced currency IDs"
+    (let [dir (tmp-dir)
+          f   (io/file dir "data_readers.clj")
+          _   (spit f "{}")]
+      (with-redefs [clojure.java.io/resource (fn [_] (.toURL (.toURI f)))]
+        (is (nil? (importer/readers-export (registry/new-registry) ["data_readers.clj"] "data_readers_edn.clj"
+                                           "io/randomseed/bankster/money/reader_handlers.clj"
+                                           "io.randomseed.bankster.money")))))))
+
+(deftest readers-export-wrapper-arities
+  (testing "readers-export wrappers call the 5-arity implementation"
+    (let [dir      (tmp-dir)
+          f        (io/file dir "data_readers.clj")
+          _        (spit f "{}")
+          handlers (io/file dir "io" "randomseed" "bankster" "money" "reader_handlers.clj")
+          _        (.mkdirs (.getParentFile handlers))
+          r        (-> (registry/new-registry)
+                       (currency/register (currency/new :crypto/BTC -1 8 :virtual/token :CRYPTO 0)))]
+      (with-redefs [clojure.java.io/resource           (fn [_] (.toURL (.toURI f)))
+                    io.randomseed.bankster.registry/state (fn [] r)]
+        (importer/readers-export)
+        (importer/readers-export r)
+        (importer/readers-export r ["data_readers.clj"])
+        (importer/readers-export r ["data_readers.clj"] "data_readers_edn.clj")
+        (importer/readers-export r ["data_readers.clj"] "data_readers_edn.clj"
+                                 "io/randomseed/bankster/money/reader_handlers.clj"
+                                 "io.randomseed.bankster.money")
+        ;; Non-chunked seq path (doseq macroexpansion differs for lists vs vectors).
+        (importer/readers-export r (list "data_readers.clj") "data_readers_edn.clj"
+                                 "io/randomseed/bankster/money/reader_handlers.clj"
+                                 "io.randomseed.bankster.money")
+        (is (true? (.exists (io/file dir "data_readers.clj"))))
+        (is (true? (.exists handlers)))))))
+
+(deftest readers-export-skip-data-file-when-data-filename-nil
+  (testing "readers-export skips exporting EDN data readers map when data-filename is nil"
+    (let [dir        (tmp-dir)
+          f          (io/file dir "data_readers.clj")
+          _          (spit f "{}")
+          handlers   (io/file dir "io" "randomseed" "bankster" "money" "reader_handlers.clj")
+          _          (.mkdirs (.getParentFile handlers))
+          r          (-> (registry/new-registry)
+                         (currency/register (currency/new :crypto/BTC -1 8 :virtual/token :CRYPTO 0)))]
+      (with-redefs [clojure.java.io/resource (fn [_] (.toURL (.toURI f)))]
+        (importer/readers-export r ["data_readers.clj"] nil
+                                 "io/randomseed/bankster/money/reader_handlers.clj"
+                                 "io.randomseed.bankster.money")
+        (is (false? (.exists (io/file dir "data_readers_edn.clj"))))))))
+
+(deftest readers-export-writes-files-and-handlers
+  (testing "readers-export writes readers maps and handlers file"
+    (let [dir        (tmp-dir)
+          f          (io/file dir "data_readers.clj")
+          _          (spit f "{}")
+          handlers   (io/file dir "io" "randomseed" "bankster" "money" "reader_handlers.clj")
+          _          (.mkdirs (.getParentFile handlers))
+          r          (-> (registry/new-registry)
+                         (currency/register (currency/new :crypto/BTC -1 8 :virtual/token :CRYPTO 0)))
+          filenames  ["data_readers.clj"]
+          data-file  "data_readers_edn.clj"]
+      (with-redefs [clojure.java.io/resource (fn [_] (.toURL (.toURI f)))]
+        (importer/readers-export r filenames data-file
+                                "io/randomseed/bankster/money/reader_handlers.clj"
+                                "io.randomseed.bankster.money")
+        (is (true? (.exists (io/file dir "data_readers.clj"))))
+        (is (true? (.exists (io/file dir "data_readers_edn.clj"))))
+        (is (true? (.exists handlers)))
+        (is (re-find #"money/crypto" (slurp (io/file dir "data_readers.clj"))))
+        (is (re-find #"data-literal-crypto" (slurp handlers)))))))
+
+(deftest readers-export-short-circuits-on-missing-paths
+  (testing "when io/resource is nil it short-circuits"
+    (let [r (-> (registry/new-registry)
+                (currency/register (currency/new :crypto/BTC -1 8 :virtual/token :CRYPTO 0)))]
+      (with-redefs [clojure.java.io/resource (fn [_] nil)]
+        (is (nil? (importer/readers-export r ["data_readers.clj"] "data_readers_edn.clj"
+                                           "io/randomseed/bankster/money/reader_handlers.clj"
+                                           "io.randomseed.bankster.money"))))))
+  (testing "when the resource file has no parent directory, it short-circuits"
+    (let [r          (-> (registry/new-registry)
+                         (currency/register (currency/new :crypto/BTC -1 8 :virtual/token :CRYPTO 0)))
+          fake-url   (.toURL (.toURI (java.io.File. "data_readers.clj")))
+          orig-file  clojure.java.io/file]
+      (with-redefs [clojure.java.io/resource (fn [_] fake-url)
+                    clojure.java.io/file     (fn
+                                               ([x]
+                                                (if (instance? java.net.URL x)
+                                                  (java.io.File. "data_readers.clj")
+                                                  (orig-file x)))
+                                               ([x y]
+                                                (orig-file x y))
+                                               ([x y & more]
+                                                (apply orig-file x y more)))]
+        (is (nil? (importer/readers-export r ["data_readers.clj"] "data_readers_edn.clj"
+                                           "io/randomseed/bankster/money/reader_handlers.clj"
+                                           "io.randomseed.bankster.money"))))))
+  (testing "when io/file cannot construct the handlers path, it short-circuits"
+    (let [r          (-> (registry/new-registry)
+                         (currency/register (currency/new :crypto/BTC -1 8 :virtual/token :CRYPTO 0)))
+          dir        (tmp-dir)
+          f          (io/file dir "data_readers.clj")
+          _          (spit f "{}")
+          orig-file  clojure.java.io/file]
+      (with-redefs [clojure.java.io/resource (fn [_] (.toURL (.toURI f)))
+                    clojure.java.io/file     (fn
+                                               ([x] (orig-file x))
+                                               ([x y]
+                                                (if (and (string? x) (string? y))
+                                                  nil
+                                                  (orig-file x y)))
+                                               ([x y & more]
+                                                (apply orig-file x y more)))]
+        (is (nil? (importer/readers-export r ["data_readers.clj"] "data_readers_edn.clj"
+                                           "io/randomseed/bankster/money/reader_handlers.clj"
+                                           "io.randomseed.bankster.money")))))))
+
+(deftest readers-export-internal-branches
+  (testing "doseq branch: empty filenames list (forced by stubbing io/resource for nil)"
+    (let [r        (-> (registry/new-registry)
+                       (currency/register (currency/new :crypto/BTC -1 8 :virtual/token :CRYPTO 0)))
+          dir      (tmp-dir)
+          f        (io/file dir "data_readers.clj")
+          _        (spit f "{}")
+          handlers (io/file dir "io" "randomseed" "bankster" "money" "reader_handlers.clj")
+          _        (.mkdirs (.getParentFile handlers))]
+      (with-redefs [clojure.java.io/resource (fn [_] (.toURL (.toURI f)))]
+        (is (nil? (importer/readers-export r [] nil
+                                           "io/randomseed/bankster/money/reader_handlers.clj"
+                                           "io.randomseed.bankster.money")))
+        (is (true? (.exists handlers))))))
+  (testing "when-some branch: data-filename is truthy but io/file returns nil for it"
+    (let [r         (-> (registry/new-registry)
+                        (currency/register (currency/new :crypto/BTC -1 8 :virtual/token :CRYPTO 0)))
+          dir       (tmp-dir)
+          f         (io/file dir "data_readers.clj")
+          _         (spit f "{}")
+          handlers  (io/file dir "io" "randomseed" "bankster" "money" "reader_handlers.clj")
+          _         (.mkdirs (.getParentFile handlers))
+          orig-file clojure.java.io/file]
+      (with-redefs [clojure.java.io/resource (fn [_] (.toURL (.toURI f)))
+                    clojure.java.io/file     (fn
+                                               ([x] (orig-file x))
+                                               ([x y]
+                                                (if (= "data_readers_edn.clj" (str y))
+                                                  nil
+                                                  (orig-file x y)))
+                                               ([x y & more]
+                                                (apply orig-file x y more)))]
+        (is (nil? (importer/readers-export r ["data_readers.clj"] "data_readers_edn.clj"
+                                           "io/randomseed/bankster/money/reader_handlers.clj"
+                                           "io.randomseed.bankster.money"))))))
+  (testing "handler-gen returning nil still produces a valid handlers file (preamble only)"
+    (let [r        (-> (registry/new-registry)
+                       (currency/register (currency/new :crypto/BTC -1 8 :virtual/token :CRYPTO 0)))
+          dir      (tmp-dir)
+          f        (io/file dir "data_readers.clj")
+          _        (spit f "{}")
+          handlers (io/file dir "io" "randomseed" "bankster" "money" "reader_handlers.clj")
+          _        (.mkdirs (.getParentFile handlers))]
+      (with-redefs [clojure.java.io/resource (fn [_] (.toURL (.toURI f)))
+                    io.randomseed.bankster.util.importer/handler-gen (fn [_] nil)]
+        (is (nil? (importer/readers-export r ["data_readers.clj"] nil
+                                           "io/randomseed/bankster/money/reader_handlers.clj"
+                                           "io.randomseed.bankster.money")))
+        (is (true? (.exists handlers)))))))
+
+(deftest handler-preamble-default-arity
+  (testing "handler-preamble 0-arity uses default-handlers-namespace"
+    (is (= (importer/handler-preamble importer/default-handlers-namespace)
+           (importer/handler-preamble)))))
+
+(deftest registry->map-default-arity
+  (testing "registry->map 0-arity uses registry/state"
+    (let [r (registry/new-registry)]
+      (with-redefs [io.randomseed.bankster.registry/state (fn [] r)]
+        (let [m1 (importer/registry->map r)
+              m2 (importer/registry->map)]
+          ;; :version is time-based (now), so we compare everything else.
+          (is (= (dissoc m1 :version) (dissoc m2 :version)))
+          (is (string? (:version m1)))
+          (is (string? (:version m2))))))))
+
+(deftest registry->map-cur-id->traits-nil-is-treated-as-empty
+  (testing "registry->map treats :cur-id->traits nil as empty map"
+    (let [r (assoc (registry/new-registry) :cur-id->traits nil)
+          m (importer/registry->map r)]
+      (is (= {} (:traits m))))))
+
+(deftest registry->map-edn-unreadable-currency-id-guards
+  (testing "edn-unreadable-currency-id? handles edge keyword shapes (e.g. empty name) without throwing"
+    (let [cid (keyword "crypto" "")
+          r   (assoc (registry/new-registry) :cur-id->weight {cid 1})
+          m   (importer/registry->map r)]
+      (is (= 1 (get-in m [:weights cid]))))))
+
+(deftest registry-to-map-currency-oriented-default-arity
+  (testing "registry->map-currency-oriented 0-arity uses registry/state"
+    (let [r (-> (registry/new-registry)
+                (currency/register (currency/new :EUR 978 2 :iso/fiat :ISO-4217 0)))]
+      (with-redefs [io.randomseed.bankster.registry/state (fn [] r)]
+        (let [m1 (importer/registry->map-currency-oriented r)
+              m2 (importer/registry->map-currency-oriented)]
+          (is (= (dissoc m1 :version) (dissoc m2 :version)))
+          (is (string? (:version m1)))
+          (is (string? (:version m2))))))))
+
+(deftest seed-import-and-high-level-ops
+  (testing "seed-import calls currency/config->registry with default resource path"
+    (let [seen (atom nil)]
+      (with-redefs [io.randomseed.bankster.currency/config->registry
+                    (fn [resource-path reg]
+                      (reset! seen {:resource resource-path :registry reg})
+                      reg)]
+        (is (registry/registry? (importer/seed-import)))
+        (is (str/includes? (:resource @seen) "seed.edn"))
+        (is (registry/registry? (:registry @seen))))))
+  (testing "joda->bankster-dump and joda->bankster-export wire together building blocks"
+    (let [calls (atom [])]
+      (with-redefs [io.randomseed.bankster.util.importer/seed-import (fn [& _] (registry/new-registry))
+                    io.randomseed.bankster.util.importer/joda-import (fn [& _] (registry/new-registry))
+                    io.randomseed.bankster.util.importer/dump        (fn [& args] (swap! calls conj [:dump args]))
+                    io.randomseed.bankster.util.importer/export      (fn [& args] (swap! calls conj [:export args]))
+                    io.randomseed.bankster.util.importer/export-currency-oriented
+                    (fn [& args] (swap! calls conj [:export-co args]))
+                    io.randomseed.bankster.util.importer/merge-registry (fn [& _] (registry/new-registry))]
+        (importer/joda->bankster-dump)
+        (importer/joda->bankster-export)
+        (is (= true (some #(= :dump (first %)) @calls)))
+        (is (= true (some #(= :export (first %)) @calls)))
+        (is (= true (some #(= :export-co (first %)) @calls)))))))
+
+(deftest invalid-arities-for-dump-and-exporters-throw
+  (testing "varargs versions keep the old arity contract (they reject arities > 2)"
+    (is (thrown? clojure.lang.ExceptionInfo (importer/dump "a" "b" "c")))
+    (is (thrown? clojure.lang.ExceptionInfo (importer/export "a" "b" "c")))
+    (is (thrown? clojure.lang.ExceptionInfo (importer/export-currency-oriented "a" "b" "c")))))
+
+(deftest default-registry-prefers-dynamic-over-global
+  (testing "default-registry matches registry/get 0-arity semantics (*default* wins over global state)"
+    (let [r (registry/new-registry)]
+      (binding [registry/*default* r]
+        (is (identical? r (#'io.randomseed.bankster.util.importer/default-registry))))))
+  (testing "when *default* is nil, default-registry falls back to registry/state"
+    (let [r (registry/new-registry)]
+      (binding [registry/*default* nil]
+        (with-redefs [io.randomseed.bankster.registry/state (fn [] r)]
+          (is (identical? r (#'io.randomseed.bankster.util.importer/default-registry))))))))
+
+(deftest hierarchy-map-predicate-covers-false-cases
+  (testing "hierarchy-map? returns false for non-hierarchy inputs and true for a real hierarchy map"
+    (let [hierarchy-map? #'io.randomseed.bankster.util.importer/hierarchy-map?]
+      (is (= false (hierarchy-map? (Object.))))
+      (is (= false (hierarchy-map? {})))
+      (is (= false (hierarchy-map? {:parents {} :ancestors {}})))          ; missing :descendants
+      (is (= false (hierarchy-map? {:parents {} :descendants {}})))        ; missing :ancestors
+      (is (= false (hierarchy-map? {:parents {} :ancestors nil :descendants {}})))
+      (is (= false (hierarchy-map? {:parents {} :ancestors {} :descendants nil})))
+      (is (= false (hierarchy-map? {:parents nil :ancestors {} :descendants {}})))
+      (is (= true (hierarchy-map? (make-hierarchy)))))))
+
+(deftest merge-hierarchies-handles-nils
+  (testing "merge-hierarchies tolerates nil inputs (treated as empty)"
+    (let [merge-hierarchies #'io.randomseed.bankster.util.importer/merge-hierarchies
+          h (merge-hierarchies nil nil)]
+      (is (map? h))
+      (is (= {:domain nil :kind nil :traits nil} (into {} h))))))
+
+(deftest merge-registry-nil-inputs-produce-new-registry
+  (testing "merge-registry accepts nil dst/src and falls back to registry/new-registry"
+    (let [r (importer/merge-registry nil nil false)]
+      (is (true? (registry/registry? r))))))
+
+(deftest merge-registry-iso-like-and-weight-branch-coverage
+  (testing "iso-like? param true but non-ISO domain => treated as not iso-like"
+    (let [dst    (registry/new-registry)
+          src    (-> (registry/new-registry)
+                     (currency/register (currency/new :crypto/AAA -1 8 :virtual/token :CRYPTO 0)))
+          merged (importer/merge-registry dst src false nil true)]
+      (is (true? (currency/defined? :crypto/AAA merged)))))
+  (testing "new currency branch tolerates nil :cur-id->weight (treated as empty)"
+    (let [dst    (registry/new-registry)
+          src0   (-> (registry/new-registry)
+                     (currency/register (currency/new :crypto/BBB -1 8 :virtual/token :CRYPTO 0)))
+          src    (assoc src0 :cur-id->weight nil)
+          merged (importer/merge-registry dst src false nil false)]
+      (is (true? (currency/defined? :crypto/BBB merged)))))
+  (testing "iso-like mode normalizes legacy-domain currencies to :iso-4217-legacy/* IDs"
+    (let [dst    (registry/new-registry)
+          src    (-> (registry/new-registry)
+                     ;; No namespace in the ID, but legacy ISO domain: should become :iso-4217-legacy/QQQ.
+                     (currency/register (currency/new :QQQ 1 2 :iso/fiat :ISO-4217-LEGACY 0)))
+          merged (importer/merge-registry dst src false nil true)]
+      (is (true? (currency/defined? :iso-4217-legacy/QQQ merged)))
+      (is (false? (currency/defined? :QQQ merged)))))
+  (testing "iso-like mode can migrate legacy ID -> ISO code when src is ISO and dst has only legacy"
+    (let [dst    (-> (registry/new-registry)
+                     (currency/register (currency/new :iso-4217-legacy/AAA 1 2 :iso/fiat :ISO-4217-LEGACY 0)))
+          src    (-> (registry/new-registry)
+                     (currency/register (currency/new :AAA 1 2 :iso/fiat :ISO-4217 0)))
+          merged (importer/merge-registry dst src false nil true)]
+      (is (nil? (get (:cur-id->cur merged) :iso-4217-legacy/AAA)))
+      (is (some? (get (:cur-id->cur merged) :AAA)))))
+  (testing "rename path: when existing-countries is nil, it still merges src countries (uses #{})"
+    (let [dst    (-> (registry/new-registry)
+                     (currency/register (currency/new :iso-4217-legacy/CCC 1 2 :iso/fiat :ISO-4217-LEGACY 0)))
+          src    (-> (registry/new-registry)
+                     (currency/register (currency/new :CCC 1 2 :iso/fiat :ISO-4217 0) [:PL]))
+          merged (importer/merge-registry dst src false nil true)]
+      (is (= #{:PL} (currency/countries :CCC merged)))))
+  (testing "existing currency: explicit src weight via iso-code-id selects src-exp? branch"
+    (let [cid    :iso-4217-legacy/WWW
+          dst0   (-> (registry/new-registry)
+                     (currency/register (currency/new cid 1 0 :iso/fiat :ISO-4217-LEGACY 0)))
+          src0   (-> (registry/new-registry)
+                     (currency/register (currency/new cid 1 0 :iso/fiat :ISO-4217-LEGACY 0)))
+          ;; Force explicitness through the base map, but only under ISO code (:WWW), not legacy ID.
+          src    (assoc src0 :cur-id->weight {:WWW 5})
+          dst    (assoc dst0 :cur-id->weight nil)
+          merged (importer/merge-registry dst src false nil true)]
+      (is (= 5 (currency/weight (currency/unit cid merged))))))
+  (testing "existing currency weight base selection: src-exp? false and dst-exp? true uses dst hint weight"
+    (let [dst    (-> (registry/new-registry)
+                     (currency/register (currency/new :W 1 0 :FIAT :TEST 7)))
+          src    (-> (registry/new-registry)
+                     (currency/register (currency/new :W 1 0 :FIAT :TEST 0)))
+          ;; Make weight base maps absent to force relying on currency meta weight hints.
+          dst    (assoc dst :cur-id->weight nil)
+          src    (assoc src :cur-id->weight nil)
+          merged (importer/merge-registry dst src false nil false)]
+      (is (= 7 (currency/weight (currency/unit :W merged))))))
+  (testing "existing currency weight base selection: when both sides are non-explicit, base weight is 0"
+    (let [dst    (-> (registry/new-registry)
+                     (currency/register (currency/new :W2 1 0 :FIAT :TEST 0)))
+          src    (-> (registry/new-registry)
+                     (currency/register (currency/new :W2 1 0 :FIAT :TEST 0)))
+          dst    (assoc dst :cur-id->weight nil)
+          src    (assoc src :cur-id->weight nil)
+          merged (importer/merge-registry dst src false nil false)]
+      (is (= 0 (currency/weight (currency/unit :W2 merged))))))
+  (testing "new currency branch: iso-like weight lookup can use iso-code-id when dst-id differs"
+    (let [cid    :iso-4217-legacy/ZZZ
+          dst    (registry/new-registry)
+          src0   (-> (registry/new-registry)
+                     (currency/register (currency/new cid 1 0 :iso/fiat :ISO-4217-LEGACY 0)))
+          ;; Put weight under ISO code (:ZZZ), not under legacy ID.
+          src    (assoc src0 :cur-id->weight {:ZZZ 11})
+          merged (importer/merge-registry dst src false nil true)]
+      (is (= 11 (currency/weight (currency/unit cid merged)))))))
+
+(deftest merge-registry-existing-branch-covers-src-weight-and-noop-update
+  (testing "existing branch: src-id->weight contains dst-id (covers src-w? and src-w first branches)"
+    (let [dst-cur (currency/new :NOOPW 1 0 :FIAT :TEST 9)
+          src-cur (currency/new :NOOPW 1 0 :FIAT :TEST 9)
+          dst0    (-> (registry/new-registry) (currency/register dst-cur))
+          src0    (-> (registry/new-registry) (currency/register src-cur))
+          ;; Make both weights explicit and equal under the same key to keep weight-changed? false.
+          dst     (assoc dst0 :cur-id->weight {:NOOPW 9} :cur-id->traits nil :cur-id->ctr-ids nil :cur-id->localized nil)
+          src     (assoc src0 :cur-id->weight {:NOOPW 9} :cur-id->traits nil :cur-id->ctr-ids nil :cur-id->localized nil)
+          merged  (importer/merge-registry dst src false nil false)]
+      ;; Nothing changes for the currency record itself (updated? is false).
+      (is (identical? (get (:cur-id->cur dst) :NOOPW)
+                      (get (:cur-id->cur merged) :NOOPW))))))
+
+(deftest merge-registry-existing-branch-src-traits-short-circuit
+  (testing "src-traits uses dst-id key when present (second branch of `or` is not evaluated)"
+    (let [dst   (-> (registry/new-registry)
+                    (currency/register (currency/new :TR 1 0 :FIAT :TEST 0)))
+          src0  (-> (registry/new-registry)
+                    (currency/register (currency/new :TR 1 0 :FIAT :TEST 0)))
+          src   (assoc src0 :cur-id->traits {:TR #{:t/x}})
+          merged (importer/merge-registry dst src false nil false)]
+      (is (= true (currency/has-trait? :TR :t/x merged))))))
+
+(deftest merge-registry-existing-branch-updated-is-false-when-nothing-changes
+  (testing "updated? becomes false when all change detectors are false (exercise full `or` evaluation)"
+    (let [c    (currency/new :UNCHANGED -1 0 :virtual/token :CRYPTO 0)
+          dst  (-> (registry/new-registry)
+                   (assoc :cur-id->cur {:UNCHANGED c}
+                          :cur-id->weight nil
+                          :cur-id->ctr-ids nil
+                          :cur-id->localized nil
+                          :cur-id->traits nil))
+          src  (-> (registry/new-registry)
+                   (assoc :cur-id->cur {:UNCHANGED c}
+                          :cur-id->weight nil
+                          :cur-id->ctr-ids nil
+                          :cur-id->localized nil
+                          :cur-id->traits nil))
+          merged (importer/merge-registry dst src false nil false)]
+      (is (identical? c (get (:cur-id->cur merged) :UNCHANGED)))
+      (is (nil? (get (:cur-id->traits merged) :UNCHANGED))))))
+
+(deftest merge-registry-existing-branch-existing-traits-are-used-when-src-has-none
+  (testing "traits merge uses existing-traits when src-traits is nil"
+    (let [c    (currency/new :TR2 -1 0 :virtual/token :CRYPTO 0)
+          dst  (-> (registry/new-registry)
+                   (assoc :cur-id->cur {:TR2 c}
+                          :cur-id->traits {:TR2 #{:t/existing}}
+                          :cur-id->weight nil
+                          :cur-id->ctr-ids nil
+                          :cur-id->localized nil))
+          src  (-> (registry/new-registry)
+                   (assoc :cur-id->cur {:TR2 c}
+                          :cur-id->traits nil
+                          :cur-id->weight nil
+                          :cur-id->ctr-ids nil
+                          :cur-id->localized nil))
+          merged (importer/merge-registry dst src false nil false)]
+      (is (= true (currency/has-trait? :TR2 :t/existing merged))))))
+
+(deftest merge-registry-updated-can-be-triggered-by-countries-difference
+  (testing "updated? can become true due to countries mismatch (with earlier clauses false)"
+    (let [c      (currency/new :COUNTRY -1 0 :virtual/token :CRYPTO 0)
+          dst    (-> (registry/new-registry)
+                     (assoc :cur-id->cur {:COUNTRY c}
+                            :cur-id->ctr-ids {:COUNTRY #{:PL}}
+                            :cur-id->weight nil
+                            :cur-id->localized nil
+                            :cur-id->traits nil))
+          src    (-> (registry/new-registry)
+                     (assoc :cur-id->cur {:COUNTRY c}
+                            :cur-id->ctr-ids {:COUNTRY #{:DE}}
+                            :cur-id->weight nil
+                            :cur-id->localized nil
+                            :cur-id->traits nil))
+          merged (importer/merge-registry dst src false nil false)]
+      (is (= #{:DE} (currency/countries :COUNTRY merged))))))
 
 (deftest merge-registry-merges-hierarchies-and-ext
   (testing "merges :hierarchies and :ext while keeping existing currency data"
@@ -336,3 +923,61 @@
       (is (= #{:PL} (currency/countries cid r)))
       (is (= "1inch" (currency/name cid :en r)))
       (is (= true (currency/has-trait? cid :token/erc20 r))))))
+
+(deftest seed-import-explicit-resource-path-is-passed-through
+  (testing "seed-import passes explicit resource path through to currency/config->registry"
+    (let [calls (atom [])]
+      (with-redefs [io.randomseed.bankster.currency/config->registry (fn [path r]
+                                                                       (swap! calls conj [path r])
+                                                                       r)]
+        (let [r (importer/seed-import "seed-x.edn")]
+          (is (instance? io.randomseed.bankster.Registry r))
+          (is (= 1 (count @calls)))
+          (is (= "seed-x.edn" (ffirst @calls))))))))
+
+(deftest localized->register-input-handles-wildcard-locale
+  (testing "localized->register-input keeps :* as-is and converts Locale keys to keyword locale IDs"
+    (let [f  #'io.randomseed.bankster.util.importer/localized->register-input
+          in {:*                       {:name "Any"}
+              java.util.Locale/ENGLISH {:name "English"}}
+          out (f in)]
+      (is (= #{:* :en} (set (keys out))))
+      (is (= {:name "Any"} (get out :*)))
+      (is (= {:name "English"} (get out :en))))))
+
+(deftest registry->map-covers-or-branches-and-empty-traits
+  (testing "registry->map handles nil per-currency maps and drops empty traits entries"
+    (let [r  (-> (registry/new-registry)
+                 (currency/register (currency/new :1INCH -1 8 :virtual/token :CRYPTO 0)))
+          r2 (-> r
+                 ;; Ensure both branches of (when-some [ts (traits->map ts)]) are covered:
+                 ;; - empty traits -> dropped
+                 ;; - non-empty traits -> kept, and currency-id->edn is invoked for an unnamespaced keyword
+                 (assoc :cur-id->traits {:1INCH []
+                                         :2INCH [:t/x]})
+                 (assoc :cur-id->localized nil)
+                 (assoc :cur-id->weight nil)
+                 (assoc :cur-id->cur nil)
+                 (assoc :ctr-id->cur nil)
+                 (update :hierarchies assoc
+                         :test-empty {:parents nil}
+                         :test-nil   {:parents {:A nil}}))
+          m  (importer/registry->map r2)]
+      ;; empty traits entry is dropped by (keep ...) branch
+      (is (= false (contains? (:traits m) :1INCH)))
+      ;; non-empty traits entry is kept and remains a keyword key (no stringification)
+      (is (= true (contains? (:traits m) :2INCH)))
+      ;; hierarchies normalization: missing/empty parents maps become empty parent maps
+      (is (= (sorted-map) (get-in m [:hierarchies :test-empty])))
+      (is (= (sorted-map :A nil) (get-in m [:hierarchies :test-nil]))))))
+
+(deftest hierarchy-coercion-branches-in-importer
+  (testing "->hierarchy accepts parent-map specs and rejects invalid ones with ex-data"
+    (let [->h #'io.randomseed.bankster.util.importer/->hierarchy]
+      (is (map? (->h {:a [:b :c]
+                      :d :e}
+                     :test)))
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo
+           #"Invalid currency hierarchy specification"
+           (->h 1 :test))))))

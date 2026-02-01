@@ -600,13 +600,13 @@
       (is (= 10 (c/weight ad-hoc r2))))))
 
 (deftest currency-auto-initialization-can-be-disabled
-  (testing "binding bankster/*initialize-registry* to false prevents side-effectful registry init on ns reload"
+  (testing "binding bankster/*initialize-registry* to false prevents side-effectful registry init"
     (let [orig  (registry/state)
           empty (registry/new)]
       (try
         (registry/set! empty)
         (binding [bankster/*initialize-registry* false]
-          (require 'io.randomseed.bankster.currency :reload))
+          (#'io.randomseed.bankster.currency/initialize-registry-if-enabled!))
         (is (identical? empty (registry/state)))
         (finally
           (registry/set! orig))))))

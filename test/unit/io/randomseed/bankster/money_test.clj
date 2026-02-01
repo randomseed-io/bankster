@@ -132,6 +132,24 @@
       (is (map= (m/of mv 10) {:amount 10M :currency #currency{:id :KIKI :scale 1 :weight 0}}))
       (is (map= (m/of mv)    {:amount 123M :currency #currency{:id :KIKI :scale 1 :weight 0}})))))
 
+(deftest money-map-representations
+  (testing "money/to-map yields EDN-friendly representation"
+    (is (= {:currency :PLN :amount 12.30M}
+           (m/to-map (m/of :PLN 12.30M)))))
+  (testing "money/of-map supports :currency/:cur keys, string keys, and rounding-mode parsing"
+    (is (= #money[1.01 PLN]
+           (m/of-map {:currency :PLN :amount 1.005M :rounding-mode :HALF_UP})))
+    (is (= #money[1.01 PLN]
+           (m/of-map {"cur" "PLN" "amount" "1.005" "rounding-mode" "HALF_UP"})))))
+
+(deftest nominal-scale-can-be-reapplied-via-scale-apply
+  (testing "scale/apply on Money re-applies nominal currency scale (strict unless rounding is set)"
+    (let [cur (c/unit :PLN)
+          m0  (Money. cur 1.235M)]
+      (is (thrown? clojure.lang.ExceptionInfo (scale/apply m0)))
+      (scale/with-rounding HALF_UP
+        (is (= "1.24" (.toPlainString ^java.math.BigDecimal (m/amount (scale/apply m0)))))))))
+
 (deftest money-tagged-literal
   (testing "when it returns a money object"
     (is (map= #money PLN {:amount 0M :currency #currency PLN}))
