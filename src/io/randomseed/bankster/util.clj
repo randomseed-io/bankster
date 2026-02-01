@@ -84,14 +84,16 @@
   "Returns a set with all elements *not* matching `pred` removed.
 
   Returns `nil` when `s` is `nil` or when the resulting set is empty."
-  {:tag clojure.lang.PersistentHashSet :added "2.0.0"}
-  [^clojure.lang.IFn pred ^clojure.lang.PersistentHashSet s]
+  {:tag clojure.lang.IPersistentSet :added "2.0.0"}
+  [^clojure.lang.IFn pred ^clojure.lang.IPersistentSet s]
   (when (some? s)
     (not-empty
-     (persistent!
-      (reduce (fn [ts x] (if (pred x) ts (disj! ts x)))
-              (transient s)
-              s)))))
+     (if (instance? clojure.lang.IEditableCollection s)
+       (persistent!
+        (reduce (fn [ts x] (if (pred x) ts (disj! ts x)))
+                (transient s)
+                s))
+       (reduce (fn [acc x] (if (pred x) acc (disj acc x))) s s)))))
 
 (defn split-on-first-slash
   "Splits a string on the first slash character ('/').
