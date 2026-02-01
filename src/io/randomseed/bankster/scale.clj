@@ -128,6 +128,21 @@
    (MathContext. (int (div-max-precision ^BigDecimal a ^BigDecimal b))
                  ^RoundingMode rounding-mode)))
 
+(defn- arithmetic-ex->ex-info
+  "Wraps an ArithmeticException into ExceptionInfo with stable ex-data keys.
+
+  Contract:
+  - always sets `:op`, `:arithmetic-exception`, and `:arithmetic-exception/cause`
+  - preserves all keys from the provided `data` map"
+  {:tag clojure.lang.ExceptionInfo :private true :added "2.2.0"}
+  [op data ^ArithmeticException e]
+  (ex-info (or (.getMessage e) "Arithmetic error.")
+           (assoc data
+                  :op op
+                  :arithmetic-exception true
+                  :arithmetic-exception/cause e)
+           e))
+
 ;;
 ;; Scalable protocol.
 ;;
@@ -192,14 +207,11 @@
               (.setScale ^BigDecimal num sc))
             (catch ArithmeticException e
               (throw
-               (ex-info (or (.getMessage e) "Arithmetic error.")
-                        {:op                         :scale/apply
-                         :value                      num
-                         :scale                      sc
-                         :rounding-mode              rm
-                         :arithmetic-exception       true
-                         :arithmetic-exception/cause e}
-                        e))))))))
+               (arithmetic-ex->ex-info :scale/apply
+                                       {:value         num
+                                        :scale         sc
+                                        :rounding-mode rm}
+                                       e))))))))
    (^BigDecimal [num ^long scale ^RoundingMode r]
     (let [sc (int scale)]
       (if (== (.scale ^BigDecimal num) sc)
@@ -208,14 +220,11 @@
           (.setScale ^BigDecimal num sc ^RoundingMode r)
           (catch ArithmeticException e
             (throw
-             (ex-info (or (.getMessage e) "Arithmetic error.")
-                      {:op                         :scale/apply
-                       :value                      num
-                       :scale                      sc
-                       :rounding-mode              r
-                       :arithmetic-exception       true
-                       :arithmetic-exception/cause e}
-                      e))))))))
+             (arithmetic-ex->ex-info :scale/apply
+                                     {:value         num
+                                      :scale         sc
+                                      :rounding-mode r}
+                                     e))))))))
 
   (^BigDecimal amount
    (^BigDecimal [num] num)
@@ -233,38 +242,16 @@
    (^BigDecimal [num]
     (.toBigDecimal ^clojure.lang.BigInt num))
    (^BigDecimal [num ^long scale]
-    (let [sc (int scale)
+   (let [sc (int scale)
     rm (rounding-mode)
     bd (.toBigDecimal ^clojure.lang.BigInt num)]
-      (try
-        (if (some? rm)
-          (.setScale ^BigDecimal bd sc ^RoundingMode rm)
-          (.setScale ^BigDecimal bd sc))
-        (catch ArithmeticException e
-          (throw
-           (ex-info (or (.getMessage e) "Arithmetic error.")
-                    {:op                         :scale/apply
-                     :value                      num
-                     :scale                      sc
-                     :rounding-mode              rm
-                     :arithmetic-exception       true
-                     :arithmetic-exception/cause e}
-                    e))))))
+      (if (some? rm)
+        (.setScale ^BigDecimal bd sc ^RoundingMode rm)
+        (.setScale ^BigDecimal bd sc))))
    (^BigDecimal [num ^long scale ^RoundingMode r]
     (let [sc (int scale)
           bd (.toBigDecimal ^clojure.lang.BigInt num)]
-      (try
-        (.setScale ^BigDecimal bd sc ^RoundingMode r)
-        (catch ArithmeticException e
-          (throw
-           (ex-info (or (.getMessage e) "Arithmetic error.")
-                    {:op                         :scale/apply
-                     :value                      num
-                     :scale                      sc
-                     :rounding-mode              r
-                     :arithmetic-exception       true
-                     :arithmetic-exception/cause e}
-                    e)))))))
+      (.setScale ^BigDecimal bd sc ^RoundingMode r))))
 
   (^BigDecimal amount
    (^BigDecimal [num] (apply num))
@@ -282,38 +269,16 @@
    (^BigDecimal [num]
     (BigDecimal. ^BigInteger num))
    (^BigDecimal [num ^long scale]
-    (let [sc (int scale)
+   (let [sc (int scale)
     rm (rounding-mode)
     bd (BigDecimal. ^BigInteger num)]
-      (try
-        (if (some? rm)
-          (.setScale ^BigDecimal bd sc ^RoundingMode rm)
-          (.setScale ^BigDecimal bd sc))
-        (catch ArithmeticException e
-          (throw
-           (ex-info (or (.getMessage e) "Arithmetic error.")
-                    {:op                         :scale/apply
-                     :value                      num
-                     :scale                      sc
-                     :rounding-mode              rm
-                     :arithmetic-exception       true
-                     :arithmetic-exception/cause e}
-                    e))))))
+      (if (some? rm)
+        (.setScale ^BigDecimal bd sc ^RoundingMode rm)
+        (.setScale ^BigDecimal bd sc))))
    (^BigDecimal [num ^long scale ^RoundingMode r]
     (let [sc (int scale)
           bd (BigDecimal. ^BigInteger num)]
-      (try
-        (.setScale ^BigDecimal bd sc ^RoundingMode r)
-        (catch ArithmeticException e
-          (throw
-           (ex-info (or (.getMessage e) "Arithmetic error.")
-                    {:op                         :scale/apply
-                     :value                      num
-                     :scale                      sc
-                     :rounding-mode              r
-                     :arithmetic-exception       true
-                     :arithmetic-exception/cause e}
-                    e)))))))
+      (.setScale ^BigDecimal bd sc ^RoundingMode r))))
 
   (^BigDecimal amount
    (^BigDecimal [num]               (apply num))
@@ -340,14 +305,11 @@
           (.setScale ^BigDecimal bd sc))
         (catch ArithmeticException e
           (throw
-           (ex-info (or (.getMessage e) "Arithmetic error.")
-                    {:op                         :scale/apply
-                     :value                      num
-                     :scale                      sc
-                     :rounding-mode              rm
-                     :arithmetic-exception       true
-                     :arithmetic-exception/cause e}
-                    e))))))
+           (arithmetic-ex->ex-info :scale/apply
+                                   {:value         num
+                                    :scale         sc
+                                    :rounding-mode rm}
+                                   e))))))
    (^BigDecimal [num ^long scale ^RoundingMode r]
     (let [sc (int scale)
           bd (BigDecimal/valueOf num)]
@@ -355,14 +317,11 @@
         (.setScale ^BigDecimal bd sc ^RoundingMode r)
         (catch ArithmeticException e
           (throw
-           (ex-info (or (.getMessage e) "Arithmetic error.")
-                    {:op                         :scale/apply
-                     :value                      num
-                     :scale                      sc
-                     :rounding-mode              r
-                     :arithmetic-exception       true
-                     :arithmetic-exception/cause e}
-                    e)))))))
+           (arithmetic-ex->ex-info :scale/apply
+                                   {:value         num
+                                    :scale         sc
+                                    :rounding-mode r}
+                                   e)))))))
 
   (^BigDecimal amount
    (^BigDecimal [num]               (apply num))
@@ -389,14 +348,11 @@
           (.setScale ^BigDecimal bd sc))
         (catch ArithmeticException e
           (throw
-           (ex-info (or (.getMessage e) "Arithmetic error.")
-                    {:op                         :scale/apply
-                     :value                      num
-                     :scale                      sc
-                     :rounding-mode              rm
-                     :arithmetic-exception       true
-                     :arithmetic-exception/cause e}
-                    e))))))
+           (arithmetic-ex->ex-info :scale/apply
+                                   {:value         num
+                                    :scale         sc
+                                    :rounding-mode rm}
+                                   e))))))
    (^BigDecimal [num ^long scale ^RoundingMode r]
     (let [sc (int scale)
           bd (BigDecimal/valueOf (double num))]
@@ -404,14 +360,11 @@
         (.setScale ^BigDecimal bd sc ^RoundingMode r)
         (catch ArithmeticException e
           (throw
-           (ex-info (or (.getMessage e) "Arithmetic error.")
-                    {:op                         :scale/apply
-                     :value                      num
-                     :scale                      sc
-                     :rounding-mode              r
-                     :arithmetic-exception       true
-                     :arithmetic-exception/cause e}
-                    e)))))))
+           (arithmetic-ex->ex-info :scale/apply
+                                   {:value         num
+                                    :scale         sc
+                                    :rounding-mode r}
+                                   e)))))))
 
   (^BigDecimal amount
    (^BigDecimal [num] (apply num))
@@ -437,17 +390,14 @@
                                                    ^BigDecimal b
                                                    ^RoundingMode rm))
            (.divide ^BigDecimal a ^BigDecimal b))
-         (catch ArithmeticException e
-           (throw
-            (ex-info (or (.getMessage e) "Arithmetic error.")
-                     {:op                         :scale/apply
-                      :value                      num
-                      :numerator                  a
-                      :denominator                b
-                      :rounding-mode              rm
-                      :arithmetic-exception       true
-                      :arithmetic-exception/cause e}
-                     e))))))
+	         (catch ArithmeticException e
+	           (throw
+	            (arithmetic-ex->ex-info :scale/apply
+	                                    {:value         num
+	                                     :numerator     a
+	                                     :denominator   b
+	                                     :rounding-mode rm}
+	                                    e))))))
     (^BigDecimal [num ^long scale]
      (let [^BigDecimal a (apply (.numerator   ^clojure.lang.Ratio num))
      ^BigDecimal b (apply (.denominator ^clojure.lang.Ratio num))
@@ -457,16 +407,13 @@
    (.divide ^BigDecimal a ^BigDecimal b sc ^RoundingMode rm)
    (catch ArithmeticException e
            (throw
-            (ex-info (or (.getMessage e) "Arithmetic error.")
-                     {:op                         :scale/apply
-                      :value                      num
-                      :numerator                  a
-                      :denominator                b
-                      :scale                      sc
-                      :rounding-mode              rm
-                      :arithmetic-exception       true
-                      :arithmetic-exception/cause e}
-                     e))))))
+            (arithmetic-ex->ex-info :scale/apply
+                                    {:value         num
+                                     :numerator     a
+                                     :denominator   b
+                                     :scale         sc
+                                     :rounding-mode rm}
+                                    e))))))
     (^BigDecimal [num ^long scale ^RoundingMode r]
      (let [^BigDecimal a (apply (.numerator   ^clojure.lang.Ratio num))
            ^BigDecimal b (apply (.denominator ^clojure.lang.Ratio num))
@@ -475,16 +422,13 @@
          (.divide ^BigDecimal a ^BigDecimal b sc ^RoundingMode r)
          (catch ArithmeticException e
            (throw
-            (ex-info (or (.getMessage e) "Arithmetic error.")
-                     {:op                         :scale/apply
-                      :value                      num
-                      :numerator                  a
-                      :denominator                b
-                      :scale                      sc
-                      :rounding-mode              r
-                      :arithmetic-exception       true
-                      :arithmetic-exception/cause e}
-                     e)))))))
+            (arithmetic-ex->ex-info :scale/apply
+                                    {:value         num
+                                     :numerator     a
+                                     :denominator   b
+                                     :scale         sc
+                                     :rounding-mode r}
+                                    e)))))))
 
   (^BigDecimal amount
    (^BigDecimal [num]               (apply num))
@@ -501,38 +445,16 @@
   (^BigDecimal apply
    (^BigDecimal [num] (BigDecimal/valueOf (long num)))
    (^BigDecimal [num ^long scale]
-    (let [sc (int scale)
+   (let [sc (int scale)
     rm (rounding-mode)
     bd (BigDecimal/valueOf (long num))]
-      (try
-        (if (some? rm)
-          (.setScale ^BigDecimal bd sc ^RoundingMode rm)
-          (.setScale ^BigDecimal bd sc))
-        (catch ArithmeticException e
-          (throw
-           (ex-info (or (.getMessage e) "Arithmetic error.")
-                    {:op                         :scale/apply
-                     :value                      num
-                     :scale                      sc
-                     :rounding-mode              rm
-                     :arithmetic-exception       true
-                     :arithmetic-exception/cause e}
-                    e))))))
+      (if (some? rm)
+        (.setScale ^BigDecimal bd sc ^RoundingMode rm)
+        (.setScale ^BigDecimal bd sc))))
    (^BigDecimal [num ^long scale ^RoundingMode r]
     (let [sc (int scale)
           bd (BigDecimal/valueOf (long num))]
-      (try
-        (.setScale ^BigDecimal bd sc ^RoundingMode r)
-        (catch ArithmeticException e
-          (throw
-           (ex-info (or (.getMessage e) "Arithmetic error.")
-                    {:op                         :scale/apply
-                     :value                      num
-                     :scale                      sc
-                     :rounding-mode              r
-                     :arithmetic-exception       true
-                     :arithmetic-exception/cause e}
-                    e)))))))
+      (.setScale ^BigDecimal bd sc ^RoundingMode r))))
 
   (^BigDecimal amount
    (^BigDecimal [num] (apply num))
@@ -559,14 +481,11 @@
           (.setScale ^BigDecimal bd sc))
         (catch ArithmeticException e
           (throw
-           (ex-info (or (.getMessage e) "Arithmetic error.")
-                    {:op                         :scale/apply
-                     :value                      num
-                     :scale                      sc
-                     :rounding-mode              rm
-                     :arithmetic-exception       true
-                     :arithmetic-exception/cause e}
-                    e))))))
+           (arithmetic-ex->ex-info :scale/apply
+                                   {:value         num
+                                    :scale         sc
+                                    :rounding-mode rm}
+                                   e))))))
    (^BigDecimal [num ^long scale ^RoundingMode r]
     (let [sc (int scale)
           bd (BigDecimal. num ^MathContext unscaled-context)]
@@ -574,14 +493,11 @@
         (.setScale ^BigDecimal bd sc ^RoundingMode r)
         (catch ArithmeticException e
           (throw
-           (ex-info (or (.getMessage e) "Arithmetic error.")
-                    {:op                         :scale/apply
-                     :value                      num
-                     :scale                      sc
-                     :rounding-mode              r
-                     :arithmetic-exception       true
-                     :arithmetic-exception/cause e}
-                    e)))))))
+           (arithmetic-ex->ex-info :scale/apply
+                                   {:value         num
+                                    :scale         sc
+                                    :rounding-mode r}
+                                   e)))))))
 
   (^BigDecimal amount
    (^BigDecimal [num]               (apply num))
@@ -607,52 +523,20 @@
 
   Object
 
-  (scalable? [_] nil)
-  (applied?  [_] nil)
+  (^Boolean scalable? [_] false)
+  (^Boolean applied?  [_] false)
 
-  (of ^long [num] (long (.scale ^BigDecimal (apply num))))
+  (of [_] nil)
 
-  (^BigDecimal apply
-   (^BigDecimal [n]
-    (BigDecimal. (long (num n)) ^MathContext unscaled-context))
-   (^BigDecimal [n ^long scale]
-    (let [sc (int scale)
-    rm (rounding-mode)
-    bd (BigDecimal. (long (num n)) ^MathContext unscaled-context)]
-      (try
-        (if (some? rm)
-          (.setScale ^BigDecimal bd sc ^RoundingMode rm)
-          (.setScale ^BigDecimal bd sc))
-        (catch ArithmeticException e
-          (throw
-           (ex-info (or (.getMessage e) "Arithmetic error.")
-                    {:op                         :scale/apply
-                     :value                      n
-                     :scale                      sc
-                     :rounding-mode              rm
-                     :arithmetic-exception       true
-                     :arithmetic-exception/cause e}
-                    e))))))
-   (^BigDecimal [n ^long scale ^RoundingMode r]
-    (let [sc (int scale)
-          bd (BigDecimal. (long (num n)) ^MathContext unscaled-context)]
-      (try
-        (.setScale ^BigDecimal bd sc ^RoundingMode r)
-        (catch ArithmeticException e
-          (throw
-           (ex-info (or (.getMessage e) "Arithmetic error.")
-                    {:op                         :scale/apply
-                     :value                      n
-                     :scale                      sc
-                     :rounding-mode              r
-                     :arithmetic-exception       true
-                     :arithmetic-exception/cause e}
-                    e)))))))
+  (apply
+    ([_]     nil)
+    ([_ _]   nil)
+    ([_ _ _] nil))
 
-  (^BigDecimal amount
-   (^BigDecimal [num]               (apply num))
-   (^BigDecimal [num ^long scale]   (apply num scale))
-   (^BigDecimal [num ^long scale r] (apply num scale r))))
+  (amount
+    ([_] nil)
+    ([_ _] nil)
+    ([_ _ _] nil)))
 
 ;;
 ;; Getting integer and fractional parts.
