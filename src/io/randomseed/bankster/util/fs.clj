@@ -168,7 +168,7 @@
 	         ^org.apache.commons.io.input.BOMInputStream$Builder builder (BOMInputStream/builder)
 	         builder  (doto builder
 	                    (.setInputStream stream)
-	                    (.setInclude true)
+	                    (.setInclude false)
 	                    (.setByteOrderMarks bom-utf-ary))
 	         ^BOMInputStream bstream (.get builder)
 	         bomenc   (.getBOM bstream)
