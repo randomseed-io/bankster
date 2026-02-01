@@ -1161,9 +1161,7 @@
      (unit jc (registry/get)))
     (^Currency [jc ^Registry registry]
      (let [^Registry registry (unit-registry registry)]
-       (unit-resolve! jc registry)))
-    (^Currency [jc ^Registry registry _]
-     (unit jc registry)))
+       (unit-resolve! jc registry))))
 
   (id
     (^clojure.lang.Keyword [jc]
@@ -1263,9 +1261,7 @@
      (unit num (registry/get)))
     (^Currency [num ^Registry registry]
      (let [^Registry registry (unit-registry registry)]
-       (unit-resolve! num registry)))
-    (^Currency [num ^Registry registry _]
-     (unit num registry)))
+       (unit-resolve! num registry))))
 
   (id
     (^clojure.lang.Keyword [num]
