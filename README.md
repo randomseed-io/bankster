@@ -135,20 +135,26 @@ modified too.
 #### Custom registry initialization (disable auto-init)
 
 ```clojure
-;; Disable Bankster's default registry auto-initialization (config.edn) at namespace load time.
-;; You typically want this when you plan to fully control which registry is used.
+;; Disable Bankster's default registry auto-initialization (config.edn)
+;; at namespace load time. You typically want this when you plan
+;; to fully control which registry is used.
+
 (binding [io.randomseed.bankster/*initialize-registry* false]
   (require '[io.randomseed.bankster.currency :as currency]
            '[io.randomseed.bankster.registry :as registry]))
 
-;; Load your registry from a classpath resource (e.g. resources/my/app/currencies.edn).
+;; Load your registry from a classpath resource
+;; (e.g. resources/my/app/currencies.edn).
+
 (def my-registry
   (currency/config->registry "my/app/currencies.edn" (registry/new-registry)))
 
 ;; Option A: pass the registry explicitly.
+
 (currency/unit :EUR my-registry)
 
 ;; Option B: install it as the global registry.
+
 (registry/set! my-registry)
 ```
 
@@ -161,9 +167,12 @@ distribution config), use `io.randomseed.bankster.init`:
 (require '[io.randomseed.bankster.init :as init])
 
 ;; Load ONLY the provided config (no dist overlay).
+
 (def r1 (init/load-registry "my/app/currencies.edn"))
 
-;; Load dist config first, then overlay user config using importer/merge-registry.
+;; Load dist config first, then overlay user config
+;; using importer/merge-registry.
+
 (def r2 (init/load-registry "my/app/currencies.edn"
                             {:keep-dist? true
                              :merge-opts {:verbose? true
@@ -171,6 +180,7 @@ distribution config), use `io.randomseed.bankster.init`:
                                           :iso-like? false}}))
 
 ;; Side-effecting variant: installs the result as the global registry.
+
 (init/load-registry! "my/app/currencies.edn" {:keep-dist? true})
 ```
 
@@ -217,10 +227,12 @@ affect money equality or arithmetic.
          :cur-id->traits {:crypto/USDC #{:token/erc20 :stable/coin}}))
 
 ;; Domains can be queried using a hierarchy-aware predicate.
+
 (currency/of-domain? :ISO-4217 (currency/new :iso-4217-legacy/ADP) r)
 ;; => true
 
 ;; Traits can be queried via the traits hierarchy.
+
 (currency/of-trait? :token/fungible :crypto/USDC r)
 ;; => true
 ```
@@ -249,8 +261,9 @@ weight in metadata as an optimization (hot-path: weighted buckets), but weight d
 not affect `=` / `hash` semantics. Use `currency/weight` to read it.
 
 To mutate weights and traits (which are registry attributes) use:
-`currency/set-weight`/`currency/clear-weight` and `currency/set-traits`/`currency/add-traits`/`currency/remove-traits`
-(plus `!` variants operating on the global registry).
+`currency/set-weight`/`currency/clear-weight` and
+`currency/set-traits`/`currency/add-traits`/`currency/remove-traits` (plus `!`
+variants operating on the global registry).
 
 **Currency ID** is a unique identifier of a currency within a registry. Internally it
 is a keyword and optionally it can have a namespace. By default Bankster identifies
@@ -263,10 +276,9 @@ objects exists in a registry. It allows to get currencies using their codes (and
 add namespace, especially when interacting with some external API) and still maintain
 uniqueness of identifiers. If custom currency is created with the same code as
 already existing currency, it is possible to give it a **weight** (lower weight wins)
-which will decide
-whether its code will have priority during resolution (and getting from a registry).
-Currency `:weight` is a registry resolution mechanism and is treated as non-semantic
-in equality and arithmetic on monetary values.
+which will decide whether its code will have priority during resolution (and getting
+from a registry).  Currency `:weight` is a registry resolution mechanism and is
+treated as non-semantic in equality and arithmetic on monetary values.
 
 **Currency domain** is a keyword which groups currencies into separate "worlds". By
 default it is derived from the namespace of currency ID (upper-cased), e.g.
@@ -356,18 +368,23 @@ Highlights:
 
 * CSV loader supports comment lines and inline `# ...` comments (preserved for
   post-processing).
+
 * Joda currency comments are used to infer ISO legacy IDs ("Old, now ...") and ISO
   funds kinds ("FundsCode ...").
+
 * When ISO legacy is inferred, Bankster also tags the currency with trait `:legacy`.
+
 * When merging `seed.edn` with Joda CSV imports, a practical default is to treat
   `seed.edn` as the semantic authority (domain/kind/traits/weights/localized), while
   refreshing `:numeric` and `:scale` from the CSV. This is expressed via
   `importer/merge-registry` + `preserve-fields` (and optionally `::importer/countries`
   if you want to preserve assigned countries from the seed).
+
 * `importer/merge-registry` merges registries together with `:hierarchies` and
   `:ext`, supports preserving selected currency fields (and/or localized properties
   and assigned countries), and can align ISO vs legacy classification in "ISO-like"
   mode.
+
 * Export helpers:
   - `importer/export` writes a branch-oriented config (as produced by `registry->map`),
   - `importer/export-currency-oriented` writes a currency-oriented config (per-currency
@@ -820,44 +837,55 @@ true
          '[io.randomseed.bankster.serializers.edn  :as se])
 
 ;; JSON serialization (minimal - only currency ID and amount)
+
 (sj/money->json-map #money[12.30 PLN])
 {:currency "PLN", :amount "12.30"}
 
 ;; JSON full serialization (currency as nested map)
+
 (sj/money->json-full-map #money[12.30 PLN])
 {:currency {:id "PLN", :numeric 985, :scale 2, :kind "iso/fiat", :domain "ISO-4217"},
  :amount "12.30"}
 
 ;; JSON with :full? option
+
 (sj/to-json-map #money[12.30 PLN] {:full? true})
 {:currency {:id "PLN", :numeric 985, :scale 2, :kind "iso/fiat", :domain "ISO-4217"},
  :amount "12.30"}
 
 ;; JSON with :keys filtering (nested options for currency)
-(sj/money->json-full-map #money[12.30 PLN] {:keys [:amount {:currency {:keys [:id :numeric]}}]})
+
+(sj/money->json-full-map #money[12.30 PLN]
+                        {:keys [:amount {:currency {:keys [:id :numeric]}}]})
 {:amount "12.30", :currency {:id "PLN", :numeric 985}}
 
 ;; JSON string representation
+
 (sj/money->json-string #money[12.30 PLN])
 "12.30 PLN"
 
 ;; EDN serialization (BigDecimals, keyword IDs)
+
 (se/money->edn-map #money[12.30 PLN])
 {:currency :PLN, :amount 12.30M}
 
 ;; EDN tagged literal string
+
 (se/money->edn-string #money[12.30 PLN])
 "#money[12.30M PLN]"
 
 (se/money->edn-string #money/crypto[1.5 ETH])
+
 "#money/crypto[1.500000000000000000M ETH]"
 
 ;; Deserialization
+
 (sj/json-map->money {:currency "PLN" :amount "12.30"})
 #money[12.30 PLN]
 
-;; Note: for JSON inputs prefer string amounts (or configure your JSON parser
-;; to produce BigDecimal) to avoid double-precision loss.
+;; Note: for JSON inputs prefer string amounts (or configure your
+;; JSON parser to produce BigDecimal) to avoid double-precision loss.
+
 (sj/json-text->money "{\"currency\":\"PLN\",\"amount\":12.30}")
 #money[12.30 PLN]
 
@@ -868,20 +896,24 @@ true
 #money[12.30 PLN]
 
 ;; With custom registry and rounding (also accepts keywords/strings)
+
 (sj/json-map->money {:currency "PLN" :amount "1.005"}
                     {:rounding-mode :HALF_UP})
 #money[1.01 PLN]
 
 ;; Rescaling - preserve precision beyond currency's nominal scale
+
 (sj/json-map->money {:currency "PLN" :amount "12.3456"}
                     {:rescale 4})
 #money[12.3456 PLN]  ; Currency has scale 4, not the registry's 2
 
 ;; Rescaling during serialization
+
 (sj/money->json-map #money[12.30 PLN] {:rescale 4})
 {:currency "PLN", :amount "12.3000"}
 
 ;; Currency serialization (minimal by default)
+
 (sj/currency->json-map #currency PLN)
 {:id "PLN"}
 
@@ -889,12 +921,12 @@ true
 {:id "PLN", :numeric 985, :scale 2, :kind "iso/fiat", :domain "ISO-4217"}
 
 ;; :code-only? omits namespace
+
 (sj/money->json-map #money/crypto[1.5 ETH] {:code-only? true})
 {:currency "ETH", :amount "1.500000000000000000"}
 ```
 
 And more…
-
 
 ### Warning about literal amounts
 
