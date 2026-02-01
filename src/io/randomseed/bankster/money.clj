@@ -13,10 +13,11 @@
 
   (:require [clojure.edn]
             [io.randomseed.bankster]
-            [io.randomseed.bankster.scale    :as         scale]
-            [io.randomseed.bankster.currency :as      currency]
-            [io.randomseed.bankster.registry :as      registry]
-            [io.randomseed.bankster.util.fs  :as            fs])
+            [io.randomseed.bankster.scale            :as            scale]
+            [io.randomseed.bankster.currency         :as         currency]
+            [io.randomseed.bankster.registry         :as         registry]
+            [io.randomseed.bankster.serializers.json :as serializers-json]
+            [io.randomseed.bankster.util.fs          :as               fs])
 
   (:import  (io.randomseed.bankster       Currency
                                           Registry

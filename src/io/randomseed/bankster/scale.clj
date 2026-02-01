@@ -242,9 +242,9 @@
    (^BigDecimal [num]
     (.toBigDecimal ^clojure.lang.BigInt num))
    (^BigDecimal [num ^long scale]
-   (let [sc (int scale)
-    rm (rounding-mode)
-    bd (.toBigDecimal ^clojure.lang.BigInt num)]
+    (let [sc (int scale)
+          rm (rounding-mode)
+          bd (.toBigDecimal ^clojure.lang.BigInt num)]
       (if (some? rm)
         (.setScale ^BigDecimal bd sc ^RoundingMode rm)
         (.setScale ^BigDecimal bd sc))))
@@ -269,9 +269,9 @@
    (^BigDecimal [num]
     (BigDecimal. ^BigInteger num))
    (^BigDecimal [num ^long scale]
-   (let [sc (int scale)
-    rm (rounding-mode)
-    bd (BigDecimal. ^BigInteger num)]
+    (let [sc (int scale)
+          rm (rounding-mode)
+          bd (BigDecimal. ^BigInteger num)]
       (if (some? rm)
         (.setScale ^BigDecimal bd sc ^RoundingMode rm)
         (.setScale ^BigDecimal bd sc))))
@@ -297,8 +297,8 @@
     (BigDecimal/valueOf num))
    (^BigDecimal [num ^long scale]
     (let [sc (int scale)
-    rm (rounding-mode)
-    bd (BigDecimal/valueOf num)]
+          rm (rounding-mode)
+          bd (BigDecimal/valueOf num)]
       (try
         (if (some? rm)
           (.setScale ^BigDecimal bd sc ^RoundingMode rm)
@@ -340,8 +340,8 @@
     (BigDecimal/valueOf (double num)))
    (^BigDecimal [num ^long scale]
     (let [sc (int scale)
-    rm (rounding-mode)
-    bd (BigDecimal/valueOf (double num))]
+          rm (rounding-mode)
+          bd (BigDecimal/valueOf (double num))]
       (try
         (if (some? rm)
           (.setScale ^BigDecimal bd sc ^RoundingMode rm)
@@ -381,31 +381,31 @@
   (apply
     (^BigDecimal [num]
      (let [^BigDecimal a (apply (.numerator   ^clojure.lang.Ratio num))
-     ^BigDecimal b (apply (.denominator ^clojure.lang.Ratio num))
-     rm            (rounding-mode)]
+           ^BigDecimal b (apply (.denominator ^clojure.lang.Ratio num))
+           rm            (rounding-mode)]
        (try
-   (if (some? rm)
-     (.divide ^BigDecimal a ^BigDecimal b
-              ^MathContext (div-math-context ^BigDecimal a
+         (if (some? rm)
+           (.divide ^BigDecimal a ^BigDecimal b
+                    ^MathContext (div-math-context ^BigDecimal a
                                                    ^BigDecimal b
                                                    ^RoundingMode rm))
            (.divide ^BigDecimal a ^BigDecimal b))
-	         (catch ArithmeticException e
-	           (throw
-	            (arithmetic-ex->ex-info :scale/apply
-	                                    {:value         num
-	                                     :numerator     a
-	                                     :denominator   b
-	                                     :rounding-mode rm}
-	                                    e))))))
+	 (catch ArithmeticException e
+	   (throw
+	    (arithmetic-ex->ex-info :scale/apply
+	                            {:value         num
+	                             :numerator     a
+	                             :denominator   b
+	                             :rounding-mode rm}
+	                            e))))))
     (^BigDecimal [num ^long scale]
      (let [^BigDecimal a (apply (.numerator   ^clojure.lang.Ratio num))
-     ^BigDecimal b (apply (.denominator ^clojure.lang.Ratio num))
-     sc            (int scale)
-     rm            (or (rounding-mode) ROUND_UNNECESSARY)]
+           ^BigDecimal b (apply (.denominator ^clojure.lang.Ratio num))
+           sc            (int scale)
+           rm            (or (rounding-mode) ROUND_UNNECESSARY)]
        (try
-   (.divide ^BigDecimal a ^BigDecimal b sc ^RoundingMode rm)
-   (catch ArithmeticException e
+         (.divide ^BigDecimal a ^BigDecimal b sc ^RoundingMode rm)
+         (catch ArithmeticException e
            (throw
             (arithmetic-ex->ex-info :scale/apply
                                     {:value         num
@@ -445,9 +445,9 @@
   (^BigDecimal apply
    (^BigDecimal [num] (BigDecimal/valueOf (long num)))
    (^BigDecimal [num ^long scale]
-   (let [sc (int scale)
-    rm (rounding-mode)
-    bd (BigDecimal/valueOf (long num))]
+    (let [sc (int scale)
+          rm (rounding-mode)
+          bd (BigDecimal/valueOf (long num))]
       (if (some? rm)
         (.setScale ^BigDecimal bd sc ^RoundingMode rm)
         (.setScale ^BigDecimal bd sc))))
@@ -473,8 +473,8 @@
     (BigDecimal. num ^MathContext unscaled-context))
    (^BigDecimal [num ^long scale]
     (let [sc (int scale)
-    rm (rounding-mode)
-    bd (BigDecimal. num ^MathContext unscaled-context)]
+          rm (rounding-mode)
+          bd (BigDecimal. num ^MathContext unscaled-context)]
       (try
         (if (some? rm)
           (.setScale ^BigDecimal bd sc ^RoundingMode rm)

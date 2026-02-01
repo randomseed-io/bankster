@@ -299,8 +299,8 @@
   ([bary & byte-arys]
    (let [byte-arys (remove empty? (cons bary byte-arys))]
      (when (seq byte-arys)
-       (let [^long sum-size (apply + (map count byte-arys))
-             ^bytes buff (byte-array sum-size)
+       (let [^long sum-size             (apply + (map count byte-arys))
+             ^bytes buff                (byte-array sum-size)
              ^java.nio.ByteBuffer bbuff (java.nio.ByteBuffer/wrap buff)]
          (doseq [^bytes a byte-arys] (.put bbuff a)) buff)))))
 

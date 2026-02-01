@@ -206,9 +206,9 @@
     (cond
       (keyword? id)
       (let [^clojure.lang.Keyword kid id
-            ns (.getNamespace kid)
-            nm (.getName kid)
-            nm' (upper-ascii-if-needed nm)]
+            ns                        (.getNamespace kid)
+            nm                        (.getName kid)
+            nm'                       (upper-ascii-if-needed nm)]
         (if (identical? nm nm')
           kid
           (if (nil? ns)
@@ -217,8 +217,8 @@
 
       (symbol? id)
       (let [^clojure.lang.Symbol sid id
-            ns (.getNamespace sid)
-            nm (upper-ascii-if-needed (.getName sid))]
+            ns                       (.getNamespace sid)
+            nm                       (upper-ascii-if-needed (.getName sid))]
         (if (nil? ns) (keyword nm) (keyword ns nm)))
 
       (string? id)
@@ -293,13 +293,13 @@
   (^Currency [id numeric-id scale kind domain]  (new-currency id numeric-id scale kind domain nil))
   (^Currency [id numeric-id scale kind domain weight]
    (when (some? id)
-     (let [kid        (normalize-id-input id)
-           numeric-id (long (or numeric-id no-numeric-id))
-           scale      (unchecked-int (or scale auto-scaled))
-           weight     (unchecked-int (or weight 0))
-           ns-domain  (some-> (namespace kid) bu/try-upper-case keyword)
-           iso-ns?    (identical? ns-domain :ISO-4217)
-           kid        (if iso-ns? (keyword (upper-ascii-if-needed (core-name kid))) kid)
+     (let [kid           (normalize-id-input id)
+           numeric-id    (long (or numeric-id no-numeric-id))
+           scale         (unchecked-int (or scale auto-scaled))
+           weight        (unchecked-int (or weight 0))
+           ns-domain     (some-> (namespace kid) bu/try-upper-case keyword)
+           iso-ns?       (identical? ns-domain :ISO-4217)
+           kid           (if iso-ns? (keyword (upper-ascii-if-needed (core-name kid))) kid)
            explicit-nil? (identical? domain explicit-nil)
            domain        (if explicit-nil?
                            nil
@@ -310,7 +310,7 @@
                                (if (ident? domain)
                                  (core-name domain)
                                  (let [d (str domain)] (when (seq d) d)))))))
-           ns-domain  (when-not iso-ns? ns-domain)]
+           ns-domain     (when-not iso-ns? ns-domain)]
        (when (and (some? ns-domain) (not= domain ns-domain))
          (throw (ex-info
                  "Currency domain should reflect its namespace (upper-cased) if a namespace is set."
@@ -351,7 +351,7 @@
           ;; Allow extra keys on ad-hoc currencies, but do not inline registry-backed
           ;; properties or config directives as extension fields.
           (merge c (dissoc m :id :nr :numeric :sc :scale :ki :kind :do :domain :we :weight
-                             :countries :localized :traits :propagate-keys))
+                           :countries :localized :traits :propagate-keys))
           c)))))
 
 (def ^{:tag      Currency
@@ -696,9 +696,9 @@
       (or
        ;; Numeric identifiers are registry-only hints (including numeric strings).
        (when-some [nr (to-numeric-id x)]
-           (when (valid-numeric-id? (long nr))
-             (when-some [curs (resolve-all (long nr) registry)]
-               (not-empty
+         (when (valid-numeric-id? (long nr))
+           (when-some [curs (resolve-all (long nr) registry)]
+             (not-empty
               (into #{} (map (fn [^Currency c] (id->str-fast (.id c))) curs))))))
        (when-some [s (to-id-str x)] #{s})))
     (catch Throwable _ nil)))
@@ -1135,14 +1135,14 @@
      (or (when-some [curs (some-> (.getNumericCode jc) long
                                   (registry/currency-nr->currencies* registry))]
            (when-some [jcode (keyword ^String (.getCurrencyCode jc))]
-	             (let [jsca (int (.getDefaultFractionDigits jc))]
-	               (some (fn [^Currency c]
-	                       (and (== jsca     ^int (.scale c))
-	                            (identical? jcode (.id    c))
-	                            c))
-	                     curs))))
-	         (throw (ex-info
-	                 (str "Currency with the properties of Java currency "
+	     (let [jsca (int (.getDefaultFractionDigits jc))]
+	       (some (fn [^Currency c]
+	               (and (== jsca     ^int (.scale c))
+	                    (identical? jcode (.id    c))
+	                    c))
+	             curs))))
+	 (throw (ex-info
+	         (str "Currency with the properties of Java currency "
                       (.getCurrencyCode jc)
                       " not found in a registry.")
                  {:registry registry :currency jc})))))
@@ -2221,28 +2221,28 @@
    (info c (registry/get)))
   ([c ^Registry registry]
    (let [^Registry registry (unit-registry registry)
-         r (with-attempt c registry [cur]
-             (let [cid  (.id ^Currency cur)
-                   ctrs (registry/currency-id->country-ids* cid registry)
-                   lcl  (registry/currency-id->localized* cid registry)
-                   lcl  (when (and (map? lcl) (pos? (count lcl)))
-                          (not-empty
-                           (map/map-keys
-                            (comp keyword str l/locale)
-                            lcl)))
-                   trts (registry/currency-id->traits* cid registry)
-                 m0   (into {} cur)
-                 m    (cond-> m0
-                        (contains? m0 :sc) (assoc :scale   (get m0 :sc))
-                        (contains? m0 :nr) (assoc :numeric (get m0 :nr))
-                        (contains? m0 :do) (assoc :domain  (get m0 :do))
-                        (contains? m0 :ki) (assoc :kind    (get m0 :ki))
-                        true               (dissoc :sc :nr :do :ki :we :traits))
-                   id->w (registry/currency-id->weight* registry)
-                   w     (if (contains? id->w cid)
-                           (long (clojure.core/get id->w cid))
-                           (currency-weight cur))
-                   m     (assoc m :weight (long w))]
+         r                  (with-attempt c registry [cur]
+                              (let [cid   (.id ^Currency cur)
+                                    ctrs  (registry/currency-id->country-ids* cid registry)
+                                    lcl   (registry/currency-id->localized* cid registry)
+                                    lcl   (when (and (map? lcl) (pos? (count lcl)))
+                                           (not-empty
+                                            (map/map-keys
+                                             (comp keyword str l/locale)
+                                             lcl)))
+                                    trts  (registry/currency-id->traits* cid registry)
+                                    m0    (into {} cur)
+                                    m     (cond-> m0
+                                            (contains? m0 :sc) (assoc :scale   (get m0 :sc))
+                                            (contains? m0 :nr) (assoc :numeric (get m0 :nr))
+                                            (contains? m0 :do) (assoc :domain  (get m0 :do))
+                                            (contains? m0 :ki) (assoc :kind    (get m0 :ki))
+                                            true               (dissoc :sc :nr :do :ki :we :traits))
+                                    id->w (registry/currency-id->weight* registry)
+                                    w     (if (contains? id->w cid)
+                                            (long (clojure.core/get id->w cid))
+                                            (currency-weight cur))
+                                    m     (assoc m :weight (long w))]
                (cond-> m
                  (seq ctrs) (assoc :countries ctrs)
                  (seq lcl)  (assoc :localized lcl)
@@ -2268,7 +2268,7 @@
   (^clojure.lang.PersistentHashSet [c ^Registry registry]
    (when (some? c)
      (let [^Registry registry (unit-registry registry)
-           cid               (id c registry)]
+           cid                (id c registry)]
        (if (registry/currency-id->currency* cid registry)
          (registry/currency-id->country-ids* cid registry)
          (throw (ex-info
@@ -2313,7 +2313,7 @@
                       (not (val-auto-scaled*? sc)))
              (when-some [^String code (code currency)]
                (when-some [^java.util.Currency jc (try (java.util.Currency/getInstance code)
-                                                      (catch Throwable _ nil))]
+                                                       (catch Throwable _ nil))]
                  (when (and (== nr (long (.getNumericCode ^java.util.Currency jc)))
                             (== sc (int  (.getDefaultFractionDigits ^java.util.Currency jc))))
                    jc))))))))))
@@ -2791,8 +2791,8 @@
              cid-to-cur         (registry/currency-id->currency* registry)
              ^Registry registry (assoc registry :cur-id->cur (assoc cid-to-cur cid c))
              ^Registry registry (if store-w?
-                                 (assoc-in registry [:cur-id->weight cid] w-final)
-                                 (map/dissoc-in registry [:cur-id->weight cid]))
+                                  (assoc-in registry [:cur-id->weight cid] w-final)
+                                  (map/dissoc-in registry [:cur-id->weight cid]))
              ^Registry registry (register-numeric registry c)
              ;; Restore registry attributes that should survive currency replacement.
              ^Registry registry (if (and update? (seq old-traits))
@@ -2819,8 +2819,8 @@
      (if (nil? currency)
        registry
        (let [^Currency present (if (instance? Currency currency) currency (of-id currency registry))
-             cid              (.id ^Currency present)
-             exists?          (registry/currency-id->currency* cid registry)]
+             cid               (.id ^Currency present)
+             exists?           (registry/currency-id->currency* cid registry)]
          (register registry
                    present
                    (or country-ids (when exists? (registry/currency-id->country-ids* cid registry)))
@@ -2920,23 +2920,23 @@
    (config->registry config/default-resource-path (registry/new-registry)))
   (^Registry [^String resource-path]
    (config->registry resource-path (registry/new-registry)))
-    (^Registry [^String resource-path ^Registry regi]
-     (if-some [cfg (config/load resource-path)]
-       (let [regi (or regi (registry/new-registry))
-             hier (clojure.core/get cfg :hierarchies)
-             regi (if (some? hier)
-                    (registry/new-registry (assoc (into {} regi) :hierarchies hier))
-                    regi)
-             pks  (let [pks (prep-propagate-keys (config/propagate-keys cfg))]
-                    (if (seq pks) (vec (sort-by str pks)) []))
-             regi (clojure.core/update regi :ext (fnil assoc {}) :propagate-keys pks)
-             curs (prep-currencies          (config/currencies cfg) pks)
-             ctrs (prep-cur->ctr            (config/countries  cfg))
-             lpro (config/localized                            cfg)
-             trts (prep-all-traits          (config/traits     cfg))
-             wts  (or (prep-weights         (config/weights    cfg)) {})
-             vers (str                      (config/version    cfg))
-             regi (if (nil? vers) regi (assoc regi :version vers))
+  (^Registry [^String resource-path ^Registry regi]
+   (if-some [cfg (config/load resource-path)]
+     (let [regi (or regi (registry/new-registry))
+           hier (clojure.core/get cfg :hierarchies)
+           regi (if (some? hier)
+                  (registry/new-registry (assoc (into {} regi) :hierarchies hier))
+                  regi)
+           pks  (let [pks (prep-propagate-keys (config/propagate-keys cfg))]
+                  (if (seq pks) (vec (sort-by str pks)) []))
+           regi (clojure.core/update regi :ext (fnil assoc {}) :propagate-keys pks)
+           curs (prep-currencies          (config/currencies cfg) pks)
+           ctrs (prep-cur->ctr            (config/countries  cfg))
+           lpro (config/localized                            cfg)
+           trts (prep-all-traits          (config/traits     cfg))
+           wts  (or (prep-weights         (config/weights    cfg)) {})
+           vers (str                      (config/version    cfg))
+           regi (if (nil? vers) regi (assoc regi :version vers))
            ^Registry regi
            (reduce (fn ^Registry [^Registry r ^Currency c]
                      (let [cid (.id ^Currency c)]
@@ -3086,8 +3086,8 @@
    (if (nil? registry-or-ns)
      (has-domain? c)
      (if (instance? Registry registry-or-ns)
-     (with-attempt c ^Registry registry-or-ns [c] (some? (.domain ^Currency c)))
-     (with-attempt c nil [c] (identical? registry-or-ns (.domain ^Currency c))))))
+       (with-attempt c ^Registry registry-or-ns [c] (some? (.domain ^Currency c)))
+       (with-attempt c nil [c] (identical? registry-or-ns (.domain ^Currency c))))))
   ([c ns ^Registry registry]
    (with-attempt c registry [c]
      (identical? ns (.domain ^Currency c)))))
@@ -3622,8 +3622,8 @@
                                                      (registry/get)))
   ([property currency-id locale ^Registry registry]
    (let [^Registry registry (unit-registry registry)
-         cid    (id currency-id registry)
-         locale (l/locale locale)]
+         cid                (id currency-id registry)
+         locale             (l/locale locale)]
      (when (some? cid)
        (when-not (registry/currency-id->currency* cid registry)
          (throw (ex-info
@@ -3693,17 +3693,17 @@
                ^String [currency ^Registry registry])}
   ([c]
    (let [^Registry registry (registry/get)
-         cid               (id c registry)
-         lc                (map/lazy-get nat-helper
-                                        cid
-                                        (first (registry/currency-id->country-ids* cid registry)))]
+         cid                (id c registry)
+         lc                 (map/lazy-get nat-helper
+                                         cid
+                                         (first (registry/currency-id->country-ids* cid registry)))]
      (symbol c lc registry)))
   ([c registry]
    (let [^Registry registry (unit-registry registry)
-         cid               (id c registry)
-         lc                (map/lazy-get nat-helper
-                                        cid
-                                        (first (registry/currency-id->country-ids* cid registry)))]
+         cid                (id c registry)
+         lc                 (map/lazy-get nat-helper
+                                         cid
+                                         (first (registry/currency-id->country-ids* cid registry)))]
      (symbol c lc registry)))
   ([c _locale registry]
    (symbol-native c registry)))
@@ -3759,22 +3759,22 @@
                ^String [currency ^Registry registry])}
   ([c]
    (let [^Registry registry (registry/get)
-         cid               (id c registry)
-         lc                (map/lazy-get nat-helper
-                                        cid
-                                        (first (registry/currency-id->country-ids* cid registry)))]
+         cid                (id c registry)
+         lc                 (map/lazy-get nat-helper
+                                          cid
+                                          (first (registry/currency-id->country-ids* cid registry)))]
      (display-name c lc registry)))
   ([c registry]
    (let [^Registry registry (unit-registry registry)
-         cid               (id c registry)
-         lc                (map/lazy-get nat-helper
-                                        cid
-                                        (first (registry/currency-id->country-ids* cid registry)))]
+         cid                (id c registry)
+         lc                 (map/lazy-get nat-helper
+                                          cid
+                                          (first (registry/currency-id->country-ids* cid registry)))]
      (display-name c lc registry)))
   ([c _locale registry]
    (display-name-native c registry)))
 
-(def ^{:tag String :added "1.0.0"
+(def ^{:tag      String :added "1.0.0"
        :arglists '(^String [currency]
                    ^String [currency locale]
                    ^String [currency locale ^Registry registry])}
@@ -3782,7 +3782,7 @@
   "Alias for display-name."
   display-name)
 
-(def ^{:tag String :added "1.0.0"
+(def ^{:tag      String :added "1.0.0"
        :arglists '(^String [currency]
                    ^String [currency ^Registry registry])}
   name-native

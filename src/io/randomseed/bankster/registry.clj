@@ -8,9 +8,9 @@
 
   (:refer-clojure :exclude [new get update])
 
-  (:require [io.randomseed.bankster          :as bankster]
-            [io.randomseed.bankster.util.map :as      map]
-            [clojure.tools.logging           :as      log]
+  (:require [io.randomseed.bankster          :as      bankster]
+            [io.randomseed.bankster.util.map :as           map]
+            [clojure.tools.logging           :as           log]
             [clojure.tools.logging.impl      :as      log-impl])
 
   (:import  (io.randomseed.bankster Registry CurrencyHierarchies)
@@ -64,7 +64,7 @@
             (let [parents (cond
                             (set? parent)        (sort-by str parent)
                             (sequential? parent) parent
-                            :else               (list parent))]
+                            :else                (list parent))]
               (reduce (fn [h p] (derive h child p)) h parents)))
           (make-hierarchy)
           ;; Stable order makes failures deterministic (cycles, invalid derives, etc.).
@@ -72,7 +72,7 @@
                      (let [parent (cond
                                     (set? parent)        (sort-by str parent)
                                     (sequential? parent) parent
-                                    :else               parent)]
+                                    :else                parent)]
                        (str child "->" parent)))
                    rels)))
 
@@ -100,9 +100,9 @@
   {:tag CurrencyHierarchies :added "2.0.0" :private true}
   [spec]
   (let [m (cond
-            (nil? spec) {}
+            (nil? spec)                          {}
             (instance? CurrencyHierarchies spec) (into {} spec)
-            (map? spec) spec
+            (map? spec)                          spec
             :else
             (throw
              (ex-info
@@ -200,10 +200,10 @@
   "A logging function which should take a message string and an optional map. Used to
   issue registry warnings. Defaults to `clojure.tools.logging/warn`."
   (fn [ex-message ex-data]
-    (let [^String msg   (if (some? ex-data)
-                          (str ex-message " " (pr-str ex-data))
-                          (str ex-message))
-          logger (log-impl/get-logger log/*logger-factory* "io.randomseed.bankster.registry")]
+    (let [^String msg (if (some? ex-data)
+                        (str ex-message " " (pr-str ex-data))
+                        (str ex-message))
+          logger      (log-impl/get-logger log/*logger-factory* "io.randomseed.bankster.registry")]
       (log/log* logger :warn nil msg))))
 
 (defmacro inconsistency-warning
@@ -681,7 +681,7 @@
   (let [parents (cond
                   (set? parent)        (sort-by str parent)
                   (sequential? parent) parent
-                  :else               (list parent))]
+                  :else                (list parent))]
     (update-in registry
                [:hierarchies hierarchy-name]
                (fn [h]
