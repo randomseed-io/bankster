@@ -36,7 +36,7 @@ docs: readme
 	@echo "# Introduction" > doc/10_introduction.md
 	@tail -n +2 README.md >> doc/10_introduction.md
 	@cat     CONTRACTS.md  > doc/15_contracts.md
-	@$(DOCS) :version '"$(VERSION)"'
+	@$(DOCS) :version '"$(VERSION)"' :description '"$(DESCRIPTION)"'
 
 doc: docs
 
