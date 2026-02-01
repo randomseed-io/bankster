@@ -3819,9 +3819,9 @@
   (of ^long [c] (long (.getDefaultFractionDigits ^java.util.Currency c)))
 
   (^Currency apply
-   (^Currency [c] ^Currency c)
-   (^Currency [c ^long scale] (assoc c :scale (int scale)))
-   (^Currency [c ^long scale ^RoundingMode _rounding-mode] (assoc c :scale (int scale))))
+   (^Currency [c] ^Currency (unit c))
+   (^Currency [c ^long scale] (assoc (unit c) :scale (int scale)))
+   (^Currency [c ^long scale ^RoundingMode _rounding-mode] (assoc (unit c) :scale (int scale))))
 
   (amount
     ([_]     nil)
