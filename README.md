@@ -866,7 +866,7 @@ final and the support for currencies is limited to the "official" ones.
 
 ## License
 
-Copyright © 2021–2025 Paweł Wilk
+Copyright © 2021–2026 Paweł Wilk
 
 Bankster is copyrighted software owned by Paweł Wilk (pw@gnu.org). You may
 redistribute and/or modify this software as long as you comply with the terms of
