@@ -1135,13 +1135,14 @@
      (or (when-some [curs (some-> (.getNumericCode jc) long
                                   (registry/currency-nr->currencies* registry))]
            (when-some [jcode (keyword ^String (.getCurrencyCode jc))]
-             (let [jsca (int (.getDefaultFractionDigits jc))]
-               (some (fn [^Currency c]
-                       (and (== jsca     ^int (.scale c))
-                            (identical? jcode (.id    c))))
-                     curs))))
-         (throw (ex-info
-                 (str "Currency with the properties of Java currency "
+	             (let [jsca (int (.getDefaultFractionDigits jc))]
+	               (some (fn [^Currency c]
+	                       (and (== jsca     ^int (.scale c))
+	                            (identical? jcode (.id    c))
+	                            c))
+	                     curs))))
+	         (throw (ex-info
+	                 (str "Currency with the properties of Java currency "
                       (.getCurrencyCode jc)
                       " not found in a registry.")
                  {:registry registry :currency jc})))))
