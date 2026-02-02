@@ -2781,16 +2781,21 @@
 ;; Data readers maps.
 ;;
 
+(defn- load-readers
+  {:private true :added "2.1.1"}
+  [resource-name]
+  (when-some [r (fs/get-resource resource-name)]
+    (when-some [d (clojure.edn/read-string (slurp r))]
+      (when (map? d)
+        (into {} (for [[k v] d] [k (resolve v)]))))))
+
 (def ^{:tag clojure.lang.IPersistentMap :added "1.2.4"}
   data-readers
   "Data readers map for currency and money (intended to be used when reading EDN data
   files containing tagged literals: #currency and #money). Handlers assigned to
   literals are always emitting constant forms. Please note that tagged literal
   handlers for Clojure code are using different readers (defined as code-readers)."
-  (when-some [r (fs/get-resource "data_readers_edn.clj")]
-    (when-some [d (clojure.edn/read-string (slurp r))]
-      (when (map? d)
-        (into {} (for [[k v] d] [k (resolve v)]))))))
+  (load-readers "data_readers_edn.clj"))
 
 (def ^{:tag clojure.lang.IPersistentMap :added "1.2.4"}
   code-readers
@@ -2798,10 +2803,7 @@
   code with tagged literals: #currency and #money). Handlers assigned to literals may
   emit compound forms, like function call forms (as Clojure code). To operate on EDN
   data files, see data-readers."
-  (when-some [r (fs/get-resource "data_readers.clj")]
-    (when-some [d (clojure.edn/read-string (slurp r))]
-      (when (map? d)
-        (into {} (for [[k v] d] [k (resolve v)]))))))
+  (load-readers "data_readers.clj"))
 
 (defn readers
   "Returns a data readers map (tag symbol -> handler function) suitable for
