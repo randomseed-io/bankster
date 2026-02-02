@@ -539,12 +539,10 @@
              (println)
              (puget/cprint dm)
              (println)
-             (reduce (fn [_ f]
-                       (let [fname (io/file pdir f)]
-                         (println "Exporting to:" (str fname))
-                         (spit fname (puget/pprint-str m))))
-                     nil
-                     filenames)
+             (doseq [f filenames]
+               (let [fname (io/file pdir f)]
+                 (println "Exporting to:" (str fname))
+                 (spit fname (puget/pprint-str m))))
              (when (some? (seq data-filename))
                (when-some [fname (io/file pdir data-filename)]
                  (println "Exporting to:" (str fname))
