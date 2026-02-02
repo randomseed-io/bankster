@@ -1,6 +1,10 @@
 # History of Bankster releases
 
-## 2.1.0 (2025-02-02)
+## 2.1.1 (2026-02-02)
+
+- Documentation fixes (dates, registry shape and contructors).
+
+## 2.1.0 (2026-02-02)
 
 **BREAKING CHANGES**:
 
@@ -74,7 +78,7 @@ Data / configuration:
   `resources/io/randomseed/bankster/audit-trail/control-traits.edn`.
 - Updated currency configuration and seed data.
 
-## 2.0.0 (2025-01-31)
+## 2.0.0 (2026-01-31)
 
 **BREAKING CHANGES**:
 
@@ -147,17 +151,17 @@ Tooling / DX:
 - nREPL support improved; piggieback removed; Logback added for `:dev` and `:test`.
 - Coverage/CI fixes and initial perf benchmarks added.
 
-## 1.2.19 (2025-01-19)
+## 1.2.19 (2026-01-19)
 
 - Performance improvements in `money/allocate`.
 - AOT compilation enabled for `io.randomseed.bankster` namespace.
 
-## 1.2.18 (2025-01-19)
+## 1.2.18 (2026-01-19)
 
 - Allocation and distribution of monetary amounts via
   `money/allocate` and `money/distribute`.
 
-## 1.2.17 (2025-01-19)
+## 1.2.17 (2026-01-19)
 
 - Building and deployment workflow changed.
 - Lazy map support is now realized (sic!) by `io.randomseed/lazy-map`.
