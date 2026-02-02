@@ -866,16 +866,22 @@
    (register-cheshire-codecs! {}))
   ([{:keys [representation code-only? add-encoder] :as opts}]
    (let [rep         (normalize-representation representation)
-         add-encoder (or add-encoder
-                         (try
-                           (requiring-resolve 'cheshire.generate/add-encoder)
-                           (catch Throwable _ nil)))
-         encode-map  (try
-                       (requiring-resolve 'cheshire.generate/encode-map)
-                       (catch Throwable _ nil))
-         encode-str  (try
-                       (requiring-resolve 'cheshire.generate/encode-str)
-                       (catch Throwable _ nil))
+         resolved-add-var (try
+                            (requiring-resolve 'cheshire.generate/add-encoder)
+                            (catch Throwable _ nil))
+         resolved-add-fn  (when resolved-add-var (var-get resolved-add-var))
+         add-encoder      (or add-encoder resolved-add-fn)
+         use-cheshire?    (and resolved-add-fn (identical? add-encoder resolved-add-fn))
+         encode-map       (when use-cheshire?
+                            (some-> (try
+                                      (requiring-resolve 'cheshire.generate/encode-map)
+                                      (catch Throwable _ nil))
+                                    var-get))
+         encode-str       (when use-cheshire?
+                            (some-> (try
+                                      (requiring-resolve 'cheshire.generate/encode-str)
+                                      (catch Throwable _ nil))
+                                    var-get))
          enc-opts    (when code-only? {:code-only? code-only?})]
      (when-not add-encoder
        (throw
@@ -884,7 +890,7 @@
          {:op   :bankster.serializers.json/register-cheshire-codecs!
           :opts opts
           :hint "Add cheshire/cheshire to deps.edn or use map/string helpers directly."})))
-     (when-not (and encode-map encode-str)
+     (when (and use-cheshire? (not (and encode-map encode-str)))
        (throw
         (ex-info
          "Cheshire encoder helpers are not available on the classpath."
@@ -894,9 +900,22 @@
      (add-encoder
       Money
       (if (= rep :map)
-        (fn [^Money m jg]
-          (let [{:keys [currency amount]} (money->json-map m enc-opts)]
-            (encode-map {"currency" currency "amount" amount} jg)))
-        (fn [^Money m jg]
-          (encode-str (money->json-string m enc-opts) jg))))
+        (if use-cheshire?
+          (fn [^Money m jg]
+            (let [{:keys [currency amount]} (money->json-map m enc-opts)]
+              (encode-map {"currency" currency "amount" amount} jg)))
+          (fn [^Money m jg]
+            (let [{:keys [currency amount]} (money->json-map m enc-opts)]
+              (clojure.lang.Reflector/invokeInstanceMethod jg "writeStartObject" (object-array 0))
+              (clojure.lang.Reflector/invokeInstanceMethod jg "writeStringField"
+                                                           (object-array ["currency" currency]))
+              (clojure.lang.Reflector/invokeInstanceMethod jg "writeStringField"
+                                                           (object-array ["amount" amount]))
+              (clojure.lang.Reflector/invokeInstanceMethod jg "writeEndObject" (object-array 0)))))
+        (if use-cheshire?
+          (fn [^Money m jg]
+            (encode-str (money->json-string m enc-opts) jg))
+          (fn [^Money m jg]
+            (clojure.lang.Reflector/invokeInstanceMethod jg "writeString"
+                                                         (object-array [(money->json-string m enc-opts)]))))))
      true)))
