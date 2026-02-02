@@ -1106,18 +1106,22 @@
 
   (to-currency
     ^Currency [c]
-    (new-currency (keyword (.getCurrencyCode ^java.util.Currency c))
-                  (long    (.getNumericCode  ^java.util.Currency c))
-                  (long    (or (.getDefaultFractionDigits ^java.util.Currency c) auto-scaled))
-                  nil
-                  :ISO-4217))
+    (let [sc (int (.getDefaultFractionDigits ^java.util.Currency c))
+          sc (if (neg? sc) auto-scaled sc)]
+      (new-currency (keyword (.getCurrencyCode ^java.util.Currency c))
+                    (long    (.getNumericCode  ^java.util.Currency c))
+                    (long    sc)
+                    nil
+                    :ISO-4217)))
 
   (to-map
     [c]
-    {:id (keyword (.getCurrencyCode ^java.util.Currency c))
-     :nr (long    (.getNumericCode  ^java.util.Currency c))
-     :sc (long    (or (.getDefaultFractionDigits ^java.util.Currency c) auto-scaled))
-     :do :ISO-4217})
+    (let [sc (int (.getDefaultFractionDigits ^java.util.Currency c))
+          sc (if (neg? sc) auto-scaled sc)]
+      {:id (keyword (.getCurrencyCode ^java.util.Currency c))
+       :nr (long    (.getNumericCode  ^java.util.Currency c))
+       :sc (long    sc)
+       :do :ISO-4217}))
 
   (definitive?
     ([_]
