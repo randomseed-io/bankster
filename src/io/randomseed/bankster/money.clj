@@ -157,38 +157,34 @@
 ;; Predicate helpers
 ;;
 
-(defmacro same-currency-objs-native?
+(defn- same-currency-objs-native?
   "Returns true if both Currency objects are the same for Money operations.
 
   Currency weight is ignored."
-  {:private true :added "2.0.0"}
-  [ca cb]
-  `(let [^Currency ca# ~ca
-         ^Currency cb# ~cb]
-     (or (clojure.core/identical? ca# cb#)
-         (and (clojure.core/identical? (.id      ^Currency  ca#)        (.id      ^Currency cb#))
-              (clojure.core/== (int    (.scale   ^Currency  ca#)) (int  (.scale   ^Currency cb#)))
-              (clojure.core/== (long   (.numeric ^Currency  ca#)) (long (.numeric ^Currency cb#)))
-              (clojure.core/identical? (.domain  ^Currency  ca#)        (.domain  ^Currency cb#))
-              (clojure.core/identical? (.kind    ^Currency  ca#)        (.kind    ^Currency cb#))))))
+  {:private true :added "2.0.0" :tag Boolean}
+  ^Boolean [^Currency ca ^Currency cb]
+  (or (clojure.core/identical? ca cb)
+      (and (clojure.core/identical? (.id      ^Currency  ca)        (.id      ^Currency cb))
+           (clojure.core/== (int    (.scale   ^Currency  ca)) (int  (.scale   ^Currency cb)))
+           (clojure.core/== (long   (.numeric ^Currency  ca)) (long (.numeric ^Currency cb)))
+           (clojure.core/identical? (.domain  ^Currency  ca)        (.domain  ^Currency cb))
+           (clojure.core/identical? (.kind    ^Currency  ca)        (.kind    ^Currency cb)))))
 
-(defmacro same-currency-objs?
+(defn- same-currency-objs?
   "Returns true if both Currency objects get from .currency field of Money objects are
   the same for Money operations.
 
   Currency weight is ignored."
-  {:private true :added "2.0.0"}
-  [ma mb]
-  `(let [^Money     ma# ~ma
-         ^Money     mb# ~mb
-         ^Currency  ca# (.currency ma#)
-         ^Currency  cb# (.currency mb#)]
-     (or (clojure.core/identical? ca# cb#)
-         (and (clojure.core/identical? (.id      ^Currency  ca#)        (.id      ^Currency cb#))
-              (clojure.core/== (int    (.scale   ^Currency  ca#)) (int  (.scale   ^Currency cb#)))
-              (clojure.core/== (long   (.numeric ^Currency  ca#)) (long (.numeric ^Currency cb#)))
-              (clojure.core/identical? (.domain  ^Currency  ca#)        (.domain  ^Currency cb#))
-              (clojure.core/identical? (.kind    ^Currency  ca#)        (.kind    ^Currency cb#))))))
+  {:private true :added "2.0.0" :tag Boolean}
+  ^Boolean [^Money ma ^Money mb]
+  (let [^Currency ca (.currency ma)
+        ^Currency cb (.currency mb)]
+    (or (clojure.core/identical? ca cb)
+        (and (clojure.core/identical? (.id      ^Currency  ca)        (.id      ^Currency cb))
+             (clojure.core/== (int    (.scale   ^Currency  ca)) (int  (.scale   ^Currency cb)))
+             (clojure.core/== (long   (.numeric ^Currency  ca)) (long (.numeric ^Currency cb)))
+             (clojure.core/identical? (.domain  ^Currency  ca)        (.domain  ^Currency cb))
+             (clojure.core/identical? (.kind    ^Currency  ca)        (.kind    ^Currency cb))))))
 
 ;;
 ;; Money generation macros.
