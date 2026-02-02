@@ -3,9 +3,10 @@
 
    Bankster uses a registry system to store currency definitions,
    supporting custom currencies, dynamic scoping, and hierarchical classification."
-  (:require [io.randomseed.bankster.money    :as money]
+  (:require [io.randomseed.bankster.money    :as    money]
             [io.randomseed.bankster.currency :as currency]
-            [io.randomseed.bankster.registry :as registry]))
+            [io.randomseed.bankster.registry :as registry]
+            [io.randomseed.bankster.init     :as     init]))
 
 ;;; ---------------------------------------------------------------------------
 ;;; Example 1: Inspecting the default registry
@@ -306,7 +307,9 @@
   (binding [io.randomseed.bankster/*initialize-registry* false]
     (require '[io.randomseed.bankster.currency :as c] :reload))
 
-  ;; Now initialize manually with custom config
-  (registry/set-default-registry!
-   (registry/load-registry "path/to/custom-config.edn"))
+  ;; Now initialize manually with custom config (with optional overlay on dist config)
+  (init/load-registry! "path/to/custom-config.edn"
+                       {:keep-dist? true
+                        :merge-opts {:preserve-fields [:domain :kind]
+                                     :iso-like? true}})
   )

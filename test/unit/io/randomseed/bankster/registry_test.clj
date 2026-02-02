@@ -366,6 +366,25 @@
       (is (map? (:cur-id->cur r)))
       (is (string? (:version r))))))
 
+(deftest registry-indexes-derived-from-base-maps
+  (testing "new-registry derives code/nr/domain indexes from cur-id->cur"
+    (let [c-iso       (c/new :USD 840 2 :iso/fiat :ISO-4217)
+          c-custom    (c/new :custom/USD 840 2 :custom/usd :CUSTOM)
+          cur-id->cur {:USD c-iso :custom/USD c-custom}
+          cur-id->w   {:USD 5 :custom/USD 1}
+          r           (registry/new-registry cur-id->cur nil nil nil cur-id->w nil "v")
+          code-set    (registry/currency-code->currencies* :USD r)
+          nr-set      (registry/currency-nr->currencies* 840 r)
+          dom-custom  (registry/currency-domain->currencies* :CUSTOM r)
+          dom-iso     (registry/currency-domain->currencies* :ISO-4217 r)]
+      (is (= #{c-iso c-custom} (set code-set)))
+      (is (= #{c-iso c-custom} (set nr-set)))
+      (is (= #{c-custom} (set dom-custom)))
+      (is (= #{c-iso} (set dom-iso)))
+      (is (= :custom/USD (.id ^Currency (registry/currency-nr->currency* 840 r))))
+      (is (= :custom/USD (.id ^Currency (first code-set))))
+      (is (= 1 (get (meta (first code-set)) :io.randomseed.bankster.currency/weight))))))
+
 (deftest private-hierarchy-map-branch-coverage
   (let [hierarchy-map? #'io.randomseed.bankster.registry/hierarchy-map?]
     (testing "hierarchy-map? exercises all short-circuit branches"

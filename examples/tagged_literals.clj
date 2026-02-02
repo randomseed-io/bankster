@@ -162,14 +162,14 @@
   [config-path]
   ;; EDN reader automatically handles #money literals
   (clojure.edn/read-string
-   {:readers {'money    io.randomseed.bankster/lit-money
-              'currency io.randomseed.bankster/lit-currency}}
+   {:readers {'money    io.randomseed.bankster.money/data-literal
+              'currency io.randomseed.bankster.currency/data-literal}}
    (slurp config-path)))
 
 (comment
   ;; Reading EDN with literals
   (clojure.edn/read-string
-   {:readers {'money io.randomseed.bankster/lit-money}}
+   {:readers {'money io.randomseed.bankster.money/data-literal}}
    "#money[100 PLN]")
   ;; => #money[100.00 PLN]
   )
