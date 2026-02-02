@@ -52,6 +52,7 @@
                                     org.clojure/tools.namespace {:mvn/version "1.5.1"}
                                     org.clojure/tools.deps      {:mvn/version "0.28.1569"}
                                     org.clojure/spec.alpha      {:mvn/version "0.6.249"}
+                                    org.slf4j/slf4j-nop         {:mvn/version "1.7.36"}
                                     jonase/eastwood             {:mvn/version "1.4.3"}}}
            :import    {:extra-paths ["aliases/import"]
                        :exec-fn     io.randomseed.bankster.import.main/-main}
