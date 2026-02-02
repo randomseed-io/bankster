@@ -935,6 +935,9 @@ true
 
 And more…
 
+For more complete, runnable examples see the `examples/` directory in the
+[source repository](https://github.com/randomseed-io/bankster/tree/main/examples).
+
 ### Warning about literal amounts
 
 Clojure changes number literals into objects of various numeric data types.
