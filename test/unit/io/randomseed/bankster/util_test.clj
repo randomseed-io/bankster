@@ -21,7 +21,10 @@
   (testing "must-have-ns adds namespace when missing"
     (is (= :x/a (u/must-have-ns :a "x")))
     (is (= 'x/a (u/must-have-ns 'a "x")))
-    (is (= :x/a (u/must-have-ns :x/a "x")))))
+    (is (= :x/a (u/must-have-ns :x/a "x"))))
+  (testing "ensure-keyword-having-ns forces namespace"
+    (is (= :x/a (u/ensure-keyword-having-ns :a "x")))
+    (is (= :x/a (u/ensure-keyword-having-ns 'a "x")))))
 
 (deftest slash-splitting
   (testing "split-on-first-slash"
@@ -39,7 +42,8 @@
       (is (true? (u/inferred-contains? m :ns/a)))
       (is (= 2 (u/inferred-get m :ns/a)))
       (is (= 1 (u/inferred-get {:a 1} :ns/a)))
-      (is (= :nope (u/inferred-get {} :ns/a :nope))))))
+      (is (= :nope (u/inferred-get {} :ns/a :nope)))
+      (is (= false (u/inferred-contains? {} :a))))))
 
 (deftest collection-helpers
   (testing "with-not-empty returns nil for empty and identity for non-empty"
@@ -49,7 +53,11 @@
     (is (= nil (u/remove-from-set-where even? #{2})))
     (is (= nil (u/keep-in-set-where even? #{1})))
     (is (= #{1 3} (u/remove-from-set-where even? #{1 2 3})))
-    (is (= #{2} (u/keep-in-set-where even? #{1 2 3})))))
+    (is (= #{2} (u/keep-in-set-where even? #{1 2 3}))))
+  (testing "remove-from-set-where supports non-transient sets"
+    (is (= #{1 3} (u/remove-from-set-where even? (sorted-set 1 2 3)))))
+  (testing "replace-in-set swaps values"
+    (is (= #{:b} (u/replace-in-set #{:a} :a :b)))))
 
 (deftest macros-try-null-and-is
   (testing "try-null catches NPE"
@@ -73,6 +81,16 @@
     (is (= 12 (u/try-parse-long "12")))
     (is (= nil (u/try-parse-long "")))))
 
+(deftest ns-infer-and-thread-utils
+  (testing "ns-infer respects existing namespace and opt flag"
+    (is (= :x/a (u/ns-infer "x" :a)))
+    (is (= :ns/a (u/ns-infer "x" :ns/a)))
+    (is (= :a (u/ns-infer "x" :a false))))
+  (testing "current-thread helpers return sensible values"
+    (is (integer? (u/current-thread-id)))
+    (is (string? (u/current-thread-name)))
+    (is (instance? Thread (u/current-thread)))))
+
 (deftest bytes-and-text
   (testing "bytes roundtrip is stable for ASCII"
     (let [b (u/to-bytes "abc")]
@@ -84,10 +102,47 @@
           b (byte-array 0)
           c (u/to-bytes "c")]
       (is (= "ac" (u/bytes-to-string (u/bytes-concat a b c))))))
+  (testing "bytes-concat accepts single array"
+    (let [a (u/to-bytes "a")]
+      (is (= "a" (u/bytes-to-string (u/bytes-concat a))))))
+  (testing "text-to-bytes handles bytes and nil"
+    (let [a (u/to-bytes "x")]
+      (is (= a (u/text-to-bytes a)))
+      (let [b (u/text-to-bytes nil)]
+        (is (bytes? b))
+        (is (zero? (alength b))))))
   (testing "to-long uses default on parse failure"
     (is (= 7 (u/to-long nil 7)))
     (is (= 12 (u/to-long "12" 7)))
     (is (= 7 (u/to-long "nope" 7)))))
+
+(deftest random-and-seq-helpers
+  (testing "get-rand-int uses optional RNG"
+    (let [rng (java.util.Random. 0)]
+      (is (<= 0 (u/get-rand-int 10) 9))
+      (is (<= 0 (u/get-rand-int 10 rng) 9))
+      (is (= 0 (u/get-rand-int 0 rng)))))
+  (testing "random-digits-len handles shrink and RNG"
+    (let [rng (java.util.Random. 0)]
+      (is (= 0 (u/random-digits-len 0 1 true)))
+      (is (pos? (u/random-digits-len 5 0 true)))
+      (is (pos? (u/random-digits-len 5 0 true rng)))))
+  (testing "gen-digits supports RNG"
+    (let [rng (java.util.Random. 0)]
+      (is (string? (u/gen-digits 4)))
+      (is (string? (u/gen-digits 4 rng)))))
+  (testing "get-rand-nth supports RNG and empty input"
+    (let [rng (java.util.Random. 0)]
+      (is (nil? (u/get-rand-nth [])))
+      (is (#{:a :b} (u/get-rand-nth [:a :b] rng)))))
+  (testing "juxt-seq returns a lazy seq of results"
+    (let [f (u/juxt-seq inc dec)]
+      (is (= [2 0] (vec (f 1))))))
+  (testing "uuid and try-upper-case helpers"
+    (is (= (java.util.UUID/fromString "00000000-0000-0000-0000-000000000000")
+           (u/uuid "00000000-0000-0000-0000-000000000000")))
+    (is (= "AB" (u/try-upper-case "ab")))
+    (is (nil? (u/try-upper-case nil)))))
 
 (deftest lazy-iterator-seq-test
   (testing "lazy-iterator-seq exposes Java Iterable as a seq"

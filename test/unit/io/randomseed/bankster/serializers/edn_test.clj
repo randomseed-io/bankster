@@ -96,6 +96,9 @@
       (is (instance? Money m))
       (is (= :PLN (c/id m)))
       (is (= "12.30" (.toPlainString ^BigDecimal (m/amount m))))))
+  (testing "edn-string->money parses vector with string amount (parse-bigdec)"
+    (let [m (se/edn-string->money "#money[\"12.30\" PLN]")]
+      (is (= "12.30" (.toPlainString ^BigDecimal (m/amount m))))))
   (testing "edn-string->money parses namespaced tagged literal"
     (let [m (se/edn-string->money "#money/crypto[1.5M ETH]")]
       (is (instance? Money m))
@@ -109,6 +112,13 @@
          clojure.lang.ExceptionInfo
          #"must be a string"
          (se/edn-string->money 123)))))
+
+(deftest money-edn-string-invalid-literal
+  (testing "edn-string->money rejects invalid tagged literal argument"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"Invalid money literal"
+         (se/edn-string->money "#money 12")))))
 
 (deftest money-edn-string-roundtrip
   (testing "money <-> EDN string roundtrip for ISO currency"
@@ -232,17 +242,32 @@
     (let [m (m/of :PLN 12.30M)]
       (is (= :PLN (:currency (se/to-edn-map m))))
       (is (instance? BigDecimal (:amount (se/to-edn-map m))))))
+  (testing "Money implements EdnSerializable via to-edn-map with opts"
+    (let [m (m/of :crypto/ETH 12.30M)]
+      (is (= :ETH (:currency (se/to-edn-map m {:code-only? true})))))) 
   (testing "Money implements EdnSerializable via to-edn-string"
     (let [m (m/of :PLN 12.30M)]
-      (is (= "#money[12.30M PLN]" (se/to-edn-string m))))))
+      (is (= "#money[12.30M PLN]" (se/to-edn-string m)))))
+  (testing "Money implements EdnSerializable via to-edn-full-map with opts"
+    (let [m (m/of :PLN 12.30M)]
+      (is (= (se/money->edn-full-map m {:keys [:amount]})
+             (se/to-edn-full-map m {:keys [:amount]}))))))
 
 (deftest edn-serializable-protocol-currency
   (testing "Currency implements EdnSerializable via to-edn-map"
     (let [c (c/of :PLN)]
       (is (= :PLN (:id (se/to-edn-map c))))))
+  (testing "Currency implements EdnSerializable via to-edn-full-map with opts"
+    (let [c (c/of :PLN)]
+      (is (= (se/currency->edn-full-map c {:keys [:id]})
+             (se/to-edn-full-map c {:keys [:id]})))))
   (testing "Currency implements EdnSerializable via to-edn-string"
     (let [c (c/of :PLN)]
-      (is (= "#currency :PLN" (se/to-edn-string c))))))
+      (is (= "#currency :PLN" (se/to-edn-string c)))))
+  (testing "Currency implements EdnSerializable via to-edn-string with opts"
+    (let [c (c/of :crypto/ETH)]
+      (is (= (se/currency->edn-string c {:code-only? true})
+             (se/to-edn-string c {:code-only? true})))))) 
 
 (deftest edn-deserializable-protocol
   (testing "Class implements EdnDeserializable via from-edn-map for Money"
@@ -345,6 +370,17 @@
           m (decode {:currency :MYCUR :amount 1.005M})]
       (is (= :MYCUR (c/id m)))
       (is (= "1.01" (.toPlainString ^BigDecimal (m/amount m)))))))
+
+(deftest edn-money-codec-string-with-opts
+  (testing "money-codec string representation respects encoder/decoder opts"
+    (let [custom-reg (registry/new-registry)
+          custom-reg (c/register custom-reg (c/of {:id :crypto/ETH :scale 18}))
+          {:keys [encode decode]} (se/money-codec {:representation :string
+                                                   :code-only? true
+                                                   :registry custom-reg})
+          s (encode (m/of :crypto/ETH 1M))]
+      (is (string? s))
+      (is (instance? Money (decode "#money[1M ETH]"))))))
 
 ;;
 ;; Edge cases and error handling.
@@ -459,6 +495,11 @@
   (testing "money->edn-full-map with :keys filters output"
     (let [money (m/of :PLN 12.30M)
           em (se/money->edn-full-map money {:keys [:amount]})]
+      (is (= 12.30M (:amount em)))
+      (is (nil? (:currency em)))))
+  (testing "money->edn-full-map ignores missing keys"
+    (let [money (m/of :PLN 12.30M)
+          em (se/money->edn-full-map money {:keys [:amount :missing]})]
       (is (= 12.30M (:amount em)))
       (is (nil? (:currency em)))))
   (testing "money->edn-full-map with nested :keys for currency"

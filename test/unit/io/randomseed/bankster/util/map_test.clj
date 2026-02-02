@@ -46,16 +46,30 @@
     (is (= {:c 1} (um/remove-empty-values {:a nil :b [] :c 1 :d ""})))
     (is (= {:a nil :b [] :c 1 :d ""}
            (um/remove-empty-values {:a nil :b [] :c 1 :d ""} #{:x}))))
+  (testing "remove-if-value-in / remove-if-value-not-in"
+    (is (= {:a 1} (um/remove-if-value-in {:a 1 :b 2} [2])))
+    (is (= {:b 2} (um/remove-if-value-not-in {:a 1 :b 2} [2]))))
   (testing "map-vals/map-keys/map-keys-and-vals"
     (is (= {:a 2 :b 3} (um/map-vals inc {:a 1 :b 2})))
     (is (= {:A 1 :B 2} (um/map-keys (comp keyword str/upper-case name) {:a 1 :b 2})))
     (is (= {:a "1" :b "2"}
            (um/map-keys-and-vals (fn [k v] [k (str v)]) {:a 1 :b 2})))))
 
+(deftest map-vals-by-k-and-kv
+  (testing "map-vals-by-k supports destination map"
+    (is (= {:a :A :b :B}
+           (um/map-vals-by-k (comp keyword str/upper-case name) {:a 1 :b 2} {}))))
+  (testing "map-vals-by-kv supports destination map"
+    (is (= {:a 2 :b 4}
+           (um/map-vals-by-kv (fn [_k v] (* 2 v)) {:a 1 :b 2} {})))))
+
 (deftest invert-and-recursive-updates
   (testing "invert-in-sets preserves all keys in sets"
     (is (= {:x #{:a :b} :y #{:c}}
            (um/invert-in-sets {:a :x :b :x :c :y} #{}))))
+  (testing "map-of-sets-invert preserves all values"
+    (is (= {:x #{:a :b} :y #{:a}}
+           (um/map-of-sets-invert {:a #{:x :y} :b #{:x}}))))
   (testing "map-of-vectors-invert-flatten flattens vectors into key->value"
     (is (= {:x :a :y :a :z :b}
            (um/map-of-vectors-invert-flatten {:a [:x :y] :b [:z]}))))
@@ -65,7 +79,10 @@
   (testing "update-values-recur visits nested maps and vectors"
     (let [m {:a 1 :b {:c 2} :d [{:e 3}]}]
       (is (= {:a 1 :b {:c 20} :d [{:e 30}]}
-             (um/update-values-recur m {:c #(* 10 %) :e #(* 10 %)} false))))))
+             (um/update-values-recur m {:c #(* 10 %) :e #(* 10 %)} false)))))
+  (testing "map-values recursively updates nested maps"
+    (is (= {:a 2 :b {:c 3}}
+           (um/map-values inc {:a 1 :b {:c 2}})))))
 
 (deftest dissoc-in-and-remove-keys-ns
   (testing "dissoc-in removes nested keys but keeps empty maps"
@@ -74,3 +91,9 @@
   (testing "remove-keys-ns strips namespaces from qualified keys"
     (is (= {:a 1 :b 2}
            (um/remove-keys-ns {:ns/a 1 :b 2})))))
+
+(deftest remove-keys-ns-non-ident-branch
+  (testing "remove-keys-ns uses name for non-ident when qualified-ident? is forced"
+    (with-redefs [clojure.core/qualified-ident? (fn [_] true)]
+      (is (= {"ns/name" 1}
+             (um/remove-keys-ns {"ns/name" 1}))))))

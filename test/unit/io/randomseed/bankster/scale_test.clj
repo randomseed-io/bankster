@@ -573,3 +573,12 @@
           ^BigDecimal f (scale/fractional n)
           ^BigDecimal rr (.add i (.movePointLeft f (int sc)))]
       (bd= (scale/amount n) rr))))
+
+(deftest monetary-scale-auto-scaled-non-bigdecimal
+  (testing "monetary-scale applies conversion when auto-scaled and input is not BigDecimal"
+    (let [sc (long scale/auto-scaled)]
+      (is (= 12M (scale/monetary-scale "12" sc)))
+      (is (= 12M (scale/monetary-scale 12 sc)))
+      (is (= 12M (scale/monetary-scale "12" sc java.math.RoundingMode/HALF_UP)))
+      (let [^java.math.BigDecimal bd (bigdec "12.00")]
+        (is (identical? bd (scale/monetary-scale bd sc)))))))

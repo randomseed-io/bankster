@@ -309,6 +309,9 @@
       (is (= {:currency "PLN" :amount "12.30"} (sj/to-json-map m)))
       (is (= {:currency "PLN" :amount "12.30"} (sj/to-json-map m nil)))
       (is (= {:currency "PLN" :amount "12.30"} (sj/to-json-map m {})))))
+  (testing "Money implements JsonSerializable via to-json-full-map with opts"
+    (let [m (m/of :PLN 12.30M)]
+      (is (map? (sj/to-json-full-map m {})))))
   (testing "Money implements JsonSerializable via to-json-string"
     (let [m (m/of :PLN 12.30M)]
       (is (= "12.30 PLN" (sj/to-json-string m)))
@@ -326,6 +329,7 @@
   (testing "Currency implements JsonSerializable via to-json-full-map"
     (let [c (c/of :PLN)]
       (is (map? (sj/to-json-full-map c)))
+      (is (map? (sj/to-json-full-map c {})))
       (is (= "PLN" (:id (sj/to-json-full-map c))))
       (is (= 985 (:numeric (sj/to-json-full-map c))))
       (is (= 2 (:scale (sj/to-json-full-map c))))
@@ -333,7 +337,8 @@
       (is (= "ISO-4217" (:domain (sj/to-json-full-map c))))))
   (testing "Currency implements JsonSerializable via to-json-string"
     (let [c (c/of :PLN)]
-      (is (= "PLN" (sj/to-json-string c))))))
+      (is (= "PLN" (sj/to-json-string c)))
+      (is (= "PLN" (sj/to-json-string c {}))))))
 
 (deftest json-deserializable-protocol
   (testing "Class implements JsonDeserializable via from-json-map for Money"
@@ -482,6 +487,21 @@
       (is (= :MYCUR (c/id m)))
       (is (= "1.01" (.toPlainString ^BigDecimal (m/amount m)))))))
 
+(deftest money-codec-string-with-opts-coverage
+  (testing "money-codec :string uses enc/dec opts when provided"
+    (let [custom-reg (registry/new-registry)
+          custom-reg (c/register custom-reg (c/of {:id :MYCUR :scale 2}))
+          {:keys [encode decode representation]} (sj/money-codec {:representation :string
+                                                                  :code-only? true
+                                                                  :registry custom-reg
+                                                                  :rounding-mode RoundingMode/HALF_UP})
+          money (m/of :crypto/ETH 1.5M)]
+      (is (= :string representation))
+      (is (= "1.500000000000000000 ETH" (encode money)))
+      (let [m1 (decode "1.005 MYCUR")]
+        (is (= :MYCUR (c/id m1)))
+        (is (= "1.01" (.toPlainString ^BigDecimal (m/amount m1))))))))
+
 ;;
 ;; Cheshire integration with :code-only?.
 ;;
@@ -557,12 +577,27 @@
           jm (sj/currency->json-full-map c {:keys []})]
       (is (= {} jm)))))
 
+(deftest currency-json-full-map-kind-without-namespace
+  (testing "currency->json-full-map renders non-namespaced kind with name"
+    (let [c  (c/of {:id :ZZZ :numeric 999 :scale 2 :kind :fiat :domain :ISO-4217})
+          jm (sj/currency->json-full-map c)]
+      (is (= "fiat" (:kind jm))))))
+
 (deftest keys-filtering-money
   (testing "money->json-full-map with :keys filters output"
     (let [money (m/of :PLN 12.30M)
           jm (sj/money->json-full-map money {:keys [:amount]})]
       (is (= "12.30" (:amount jm)))
       (is (nil? (:currency jm)))))
+  (testing "money->json-full-map ignores missing keys"
+    (let [money (m/of :PLN 12.30M)
+          jm (sj/money->json-full-map money {:keys [:amount :missing]})]
+      (is (= "12.30" (:amount jm)))
+      (is (nil? (:missing jm)))))
+  (testing "money->json-full-map with empty :keys returns empty map"
+    (let [money (m/of :PLN 12.30M)
+          jm (sj/money->json-full-map money {:keys []})]
+      (is (= {} jm))))
   (testing "money->json-full-map with nested :keys for currency"
     (let [money (m/of :PLN 12.30M)
           jm (sj/money->json-full-map money {:keys [:amount {:currency {:keys [:id :numeric]}}]})]
@@ -643,12 +678,23 @@
           money (sj/json-text->money json {:representation :string})]
       (is (instance? Money money))
       (is (= :PLN (c/id money)))))
+  (testing "json-text->money with :map uses parsed map value"
+    (let [money (sj/json-text->money "{}" {:representation :map
+                                           :parse-fn (fn [_] {:currency "PLN" :amount "12.30"})})]
+      (is (= :PLN (c/id money)))))
   (testing "json-text->currency parses JSON object (map representation)"
     (require 'cheshire.core)
     (let [json     "{\"id\":\"PLN\"}"
           currency (sj/json-text->currency json)]
       (is (instance? Currency currency))
       (is (= :PLN (c/id currency)))))
+  (testing "json-text->currency with :map/:string uses parsed value"
+    (let [cur1 (sj/json-text->currency "{}" {:representation :map
+                                             :parse-fn (fn [_] {:id "PLN"})})
+          cur2 (sj/json-text->currency "\"PLN\"" {:representation :string
+                                                  :parse-fn (fn [_] "PLN")})]
+      (is (= :PLN (c/id cur1)))
+      (is (= :PLN (c/id cur2)))))
   (testing "json-text->money representation mismatch throws"
     (require 'cheshire.core)
     (is (thrown-with-msg?
@@ -814,3 +860,116 @@
            clojure.lang.ExceptionInfo
            #"Invalid rounding-mode"
            (sj/money->json-map money {:rescale 2 :rounding-mode "NOPE"}))))))
+
+(deftest json-text-parsing-branches
+  (testing "parse-json-text uses parse-fn when provided"
+    (is (= {:ok true} (#'sj/parse-json-text "{}" {:parse-fn (fn [_] {:ok true})}))))
+  (testing "parse-json-text throws when no parser is available"
+    (with-redefs [clojure.core/requiring-resolve (fn [_] nil)]
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo
+           #"No JSON parser available"
+           (#'sj/parse-json-text "{}" {})))))
+  (testing "parse-json-text uses parse-string and key-fn branches"
+    (let [calls    (atom [])
+          parse-fn (fn
+                     ([s] (swap! calls conj [:parse s]) {:ok true})
+                     ([s key-fn] (swap! calls conj [:parse s key-fn]) {:ok true}))]
+      (with-redefs [clojure.core/requiring-resolve (fn [sym]
+                                                     (cond
+                                                       (= sym 'cheshire.core/parse-string) parse-fn
+                                                       (= sym 'cheshire.parse/*use-bigdecimals?*) #'clojure.core/*print-length*
+                                                       :else nil))]
+        (#'sj/parse-json-text "{}" {})
+        (#'sj/parse-json-text "{}" {:key-fn keyword})
+        (is (= [[:parse "{}"] [:parse "{}" keyword]] @calls))))))
+  (testing "parse-json-text uses parse-string without bigdec var"
+    (let [calls    (atom [])
+          parse-fn (fn
+                     ([s] (swap! calls conj [:parse s]) {:ok true})
+                     ([s key-fn] (swap! calls conj [:parse s key-fn]) {:ok true}))]
+      (with-redefs [clojure.core/requiring-resolve (fn [sym]
+                                                     (cond
+                                                       (= sym 'cheshire.core/parse-string) parse-fn
+                                                       (= sym 'cheshire.parse/*use-bigdecimals?*) nil
+                                                       :else nil))]
+        (#'sj/parse-json-text "{}" {})
+        (is (= [[:parse "{}"]] @calls)))))
+
+(deftest json-text-representation-errors
+  (testing "json-text->money requires string input"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"must be a string"
+         (sj/json-text->money 12))))
+  (testing "json-text->money rejects unsupported JSON value in :auto"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"Unsupported JSON value"
+         (sj/json-text->money "x" {:parse-fn (fn [_] [:bad])}))))
+  (testing "json-text->money rejects mismatched representation"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"not a map"
+         (sj/json-text->money "x" {:representation :map :parse-fn (fn [_] "PLN 1.00")})))
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"not a string"
+         (sj/json-text->money "x" {:representation :string :parse-fn (fn [_] {:currency "PLN" :amount "1.00"})}))))
+  (testing "json-text->money rejects invalid representation"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"Invalid JSON representation"
+         (sj/json-text->money "x" {:representation :nope :parse-fn (fn [_] {:currency "PLN" :amount "1.00"})}))))
+  (testing "json-text->currency requires string input"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"must be a string"
+         (sj/json-text->currency 12))))
+  (testing "json-text->currency rejects unsupported JSON value in :auto"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"Unsupported JSON value"
+         (sj/json-text->currency "x" {:parse-fn (fn [_] [:bad])}))))
+  (testing "json-text->currency rejects mismatched representation"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"not a map"
+         (sj/json-text->currency "x" {:representation :map :parse-fn (fn [_] "PLN")})))
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"not a string"
+         (sj/json-text->currency "x" {:representation :string :parse-fn (fn [_] {:id "PLN"})}))))
+  (testing "json-text->currency rejects invalid representation"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"Invalid JSON representation"
+         (sj/json-text->currency "x" {:representation :nope :parse-fn (fn [_] {:id "PLN"})})))))
+
+(deftest money-json-full-map-extensions-and-keys
+  (let [money (-> (m/of :PLN 12.30M)
+                  (assoc :rate 1.23M :tag :alpha :meta {:a 1}))
+        jm    (sj/money->json-full-map money)
+        jm2   (sj/money->json-full-map money {:keys [:amount {:currency {:keys [:id]}} :rate :tag :meta]})]
+    (is (= "1.23" (:rate jm)))
+    (is (= "alpha" (:tag jm)))
+    (is (= "{:a 1}" (:meta jm)))
+    (is (= "PLN" (get-in jm2 [:currency :id])))
+    (is (= "12.30" (:amount jm2)))))
+
+(deftest currency-json-full-map-domain-branch
+  (let [cur (c/of :crypto/USDT)]
+    (is (= "CRYPTO" (:domain (sj/currency->json-full-map cur))))))
+
+(deftest money-codec-encode-decode-branches
+  (let [{:keys [encode decode]} (sj/money-codec {:representation :string})
+        m0 (m/of :PLN 1.00M)]
+    (is (= "1.00 PLN" (encode m0)))
+    (is (= :PLN (c/id (decode "1.00 PLN"))))))
+
+(deftest cheshire-codecs-missing
+  (with-redefs [clojure.core/requiring-resolve (fn [_] nil)]
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"Cheshire is not available"
+         (sj/register-cheshire-codecs! {:representation :map})))))
