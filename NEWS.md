@@ -1,5 +1,79 @@
 # History of Bankster releases
 
+## 2.1.0 (2025-02-02)
+
+**BREAKING CHANGES**:
+
+- Registry record changed: added `cur-dom->curs` field (currency domain to currencies
+  mapping with weights).
+- Constructor `registry/new-registry` arity changed from 11/10 arguments to 7/6
+  arguments. Previously required manually computed indexes (`cur-nr->cur`,
+  `cur-id->ctr-ids`, `cur-code->curs`, `cur-nr->curs`) are now derived automatically
+  via internal `derive-indexes` function.
+
+Currency / registry:
+
+- Added domain-based currency lookup index (`cur-dom->curs` in `Registry`).
+- Registry constructor now automatically initializes all derived indexes (code
+  buckets, numeric buckets, domain buckets, country mappings) with proper
+  weight-based ordering.
+- Added helper functions: `currency/all`, `currency/ids`, `currency/codes`,
+  `currency/traits`, `currency/traits-expanded`, `currency/numerics`,
+  `currency/numeric-ids` for listing currencies and their properties from registry.
+- Improved BOM (byte-order mark) parsing: BOM is now excluded from the data stream.
+- Fixed typos in `currency/add-countries!` and `currency/add-localized-props!`:
+  changed `when` to `if` for proper nil value handling.
+- Fixed return value in `Monetary/of-id` for `java.util.Currency`: corrected function
+  call within `clojure.core/some`.
+- Added compatibility arities in `Monetary/unit` protocol implementation for
+  `java.util.Currency` and `Number` types.
+
+Money:
+
+- Added `money/arith-message` helper for generating arithmetic error messages.
+- Added `money/load-readers` function for loading data readers programmatically.
+
+Serialization (new):
+
+- Added complete serialization support with three new namespaces:
+  - `io.randomseed.bankster.serializers.common` – shared serialization utilities
+  - `io.randomseed.bankster.serializers.edn` – EDN serialization for currencies, money, and registries
+  - `io.randomseed.bankster.serializers.json` – JSON serialization with configurable formats
+- Full roundtrip support for `Currency`, `Money`, and `Registry` objects in both EDN
+  and JSON.
+- JSON serialization supports multiple output formats and customizable encoding
+  strategies.
+
+Utilities / internals:
+
+- Improved `util/keep-in-set-where` and `util/remove-from-set-where`: now
+  conditionally use transient collections for better performance.
+- Exception handling refactored: moved to caller with dedicated helper for throwing
+  exceptions.
+- Data readers export improved: reduce now controls iteration for better efficiency.
+- Conditional registry initialization improved with helper function.
+
+Documentation / examples:
+
+- Added 11 complete usage examples in `examples/` directory: allocation, comparison,
+  crypto, crypto_traits, ecommerce, formatting, json_serialization, parsing,
+  registry, rounding, tagged_literals.
+- Updated `CONTRACTS.md` with new registry constructor signature.
+- Added link to examples in `README.md`.
+
+Testing:
+
+- Added comprehensive coverage tests for currency and money operations.
+- Added registry regression test to prevent future breaking changes in derived indexes.
+- Added serialization tests for EDN and JSON formats.
+- Added scale tests.
+
+Data / configuration:
+
+- Added audit trail for control traits in
+  `resources/io/randomseed/bankster/audit-trail/control-traits.edn`.
+- Updated currency configuration and seed data.
+
 ## 2.0.0 (2025-01-31)
 
 **BREAKING CHANGES**:
