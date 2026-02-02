@@ -97,23 +97,28 @@
                         :arithmetic-exception/cause e#)
                  e#)))))
 
-(defmacro bd-set-scale
+(defn- bd-set-scale*
+  {:private true :tag BigDecimal :added "2.1.0"}
+  [^BigDecimal bd sc rm op data]
+  (let [rm# rm]
+    (arith-ex op
+              (assoc data :value bd :scale sc :rounding-mode rm#)
+              (if (some? rm#)
+                (.setScale ^BigDecimal bd sc ^RoundingMode rm#)
+                (.setScale ^BigDecimal bd sc)))))
+
+(defn- bd-set-scale
   "Rescales `bd` (a BigDecimal) to `scale` using the optional rounding mode `rm`
-  without protocol dispatch. `rm` is evaluated only when scaling is needed.
+  without protocol dispatch.
 
   On ArithmeticException it throws ExceptionInfo via `arith-ex`."
   {:private true :added "2.0.0"}
   [bd scale rm op data]
-  `(let [^BigDecimal bd# ~bd
-         sc#             (int ~scale)]
-     (if (clojure.core/== (.scale bd#) sc#)
-       bd#
-       (let [rm# ~rm]
-         (arith-ex ~op
-                   (assoc ~data :value bd# :scale sc# :rounding-mode rm#)
-                   (if (some? rm#)
-                     (.setScale ^BigDecimal bd# sc# ^RoundingMode rm#)
-                     (.setScale ^BigDecimal bd# sc#)))))))
+  (let [^BigDecimal bd bd
+        sc              (int scale)]
+    (if (clojure.core/== (.scale ^BigDecimal bd) sc)
+      bd
+      (bd-set-scale* bd sc rm op data))))
 
 (defn monetary-scale
   "Rescales the given number `n` using `io.randomseed.bankster.scale/apply` on the
