@@ -72,6 +72,11 @@
 ;; Rescaling helper.
 ;;
 
+(defn- arith-message
+  {:private true :tag String :added "2.1.0"}
+  ^String [^ArithmeticException e]
+  (or (.getMessage e) "Arithmetic error."))
+
 (defmacro arith-ex
   "Executes `body` and, if an ArithmeticException is thrown, rethrows it as
   ExceptionInfo with standardized ex-data keys.
@@ -85,7 +90,7 @@
      ~@body
      (catch ArithmeticException e#
        (throw
-        (ex-info (or (.getMessage e#) "Arithmetic error.")
+        (ex-info (arith-message e#)
                  (assoc ~data
                         :op ~op
                         :arithmetic-exception true
@@ -1513,7 +1518,7 @@
         (.setScale ^BigDecimal (.multiply ^BigDecimal a# ^BigDecimal b#) sc# rm#)
         (catch ArithmeticException e#
           (throw
-           (ex-info (or (.getMessage e#) "Arithmetic error.")
+          (ex-info (arith-message e#)
                     {:op                         :mul
                      :multiplicant               a#
                      :multiplier                 b#
@@ -1531,7 +1536,7 @@
         (.setScale ^BigDecimal (.multiply ^BigDecimal a# ^BigDecimal b#) sc# rm#)
         (catch ArithmeticException e#
           (throw
-           (ex-info (or (.getMessage e#) "Arithmetic error.")
+          (ex-info (arith-message e#)
                     {:op                         :mul
                      :multiplicant               a#
                      :multiplier                 b#
@@ -1700,6 +1705,23 @@
   "Alias for mul."
   mul)
 
+(defn div-core-num-fn
+  "Performs division without rounding and rescaling (number-only variant)."
+  {:tag BigDecimal :added "2.1.0" :private true}
+  ([^BigDecimal a b]
+   (let [^BigDecimal b (scale/apply b)]
+     (try
+       ^BigDecimal (.divide ^BigDecimal a ^BigDecimal b)
+       (catch ArithmeticException e
+         (throw
+          (ex-info (arith-message e)
+                   {:op                         :div
+                    :dividend                   a
+                    :divisor                    b
+                    :arithmetic-exception       true
+                    :arithmetic-exception/cause e}
+                   e)))))))
+
 (defn div-core-fn
   "Performs division without rounding and rescaling."
   {:tag BigDecimal :added "1.0.0" :private true}
@@ -1738,7 +1760,7 @@
         ^BigDecimal (.divide ^BigDecimal a# ^BigDecimal b# sc# rm#)
         (catch ArithmeticException e#
           (throw
-           (ex-info (or (.getMessage e#) "Arithmetic error.")
+           (ex-info (arith-message e#)
                     {:op                         :div
                      :dividend                   a#
                      :divisor                    b#
@@ -1759,7 +1781,7 @@
                                            ^RoundingMode ~r))
         (catch ArithmeticException e#
           (throw
-           (ex-info (or (.getMessage e#) "Arithmetic error.")
+           (ex-info (arith-message e#)
                     {:op                         :div
                      :dividend                   a#
                      :divisor                    b#
@@ -1778,7 +1800,7 @@
             ^BigDecimal (.divide ^BigDecimal a# ^BigDecimal b#)
             (catch ArithmeticException e#
               (throw
-               (ex-info (or (.getMessage e#) "Arithmetic error.")
+               (ex-info (arith-message e#)
                         {:op                         :div
                          :dividend                   a#
                          :divisor                    b#
@@ -1999,7 +2021,7 @@
                            ^BigDecimal (.divide ^BigDecimal am ^BigDecimal d ^RoundingMode rm)
                            (catch ArithmeticException e
                              (throw
-                              (ex-info (or (.getMessage e) "Arithmetic error.")
+                              (ex-info (arith-message e)
                                        {:op                         :div
                                         :dividend                   a
                                         :divisor                    b
@@ -2022,7 +2044,7 @@
                (.divide ^BigDecimal am ^BigDecimal bm)
                (catch ArithmeticException e
                  (throw
-                  (ex-info (or (.getMessage e) "Arithmetic error.")
+                  (ex-info (arith-message e)
                            {:op                         :div
                             :dividend                   a
                             :divisor                    b
@@ -2780,7 +2802,7 @@
 ;;
 
 (defn- load-readers
-  {:private true :added "2.1.1"}
+  {:private true :added "2.1.0"}
   [resource-name]
   (when-some [r (fs/get-resource resource-name)]
     (when-some [d (clojure.edn/read-string (slurp r))]
