@@ -911,8 +911,6 @@
 
   (definitive?
     (^Boolean [money]
-     (currency/definitive? ^Currency (.currency ^Money money)))
-    (^Boolean [money ^Registry _registry]
      (currency/definitive? ^Currency (.currency ^Money money))))
 
   (resolve
