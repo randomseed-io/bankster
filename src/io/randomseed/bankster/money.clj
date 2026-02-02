@@ -358,25 +358,22 @@
                       c      (when c (str prefix c))]
                   [c a])))))))))
 
-(defmacro currency-unit-strict
+(defn- currency-unit-strict
   "Internal currency coercion helper for money parsing/constructors.
 
   - For maps, treats the value as a currency specification and creates an ad-hoc
     `Currency` using `io.randomseed.bankster.currency/new-currency`.
-  - For other non-numeric inputs, uses `io.randomseed.bankster.currency/unit` (registry
-    lookup).
+
+  - For other non-numeric inputs, uses
+    `io.randomseed.bankster.currency/unit` (registry lookup).
 
   Returns `nil` for numeric inputs."
-  {:tag Currency :added "1.0.0" :private true}
+  {:tag Currency :added "1.0.0"}
   [a]
-  `(let [na# ~a]
-     (when-not (number? na#)
-       (cond
-         (map? na#)
-         (currency/to-currency na#)
-
-         :else
-         (currency/unit na#)))))
+  (when-not (number? a)
+    (if (map? a)
+      (currency/to-currency a)
+      (currency/unit a))))
 
 (defn parse-int
   "Internal parser with amount modifier."
