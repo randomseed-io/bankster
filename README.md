@@ -75,14 +75,14 @@ To use Bankster in your project, add the following to dependencies section of
 `project.clj` or `build.boot`:
 
 ```clojure
-[io.randomseed/bankster "2.0.0"]
+[io.randomseed/bankster "2.1.0"]
 ```
 
 For `deps.edn` add the following as an element of a map under `:deps` or
 `:extra-deps` key:
 
 ```clojure
-io.randomseed/bankster {:mvn/version "2.0.0"}
+io.randomseed/bankster {:mvn/version "2.1.0"}
 ```
 
 You can also download JAR from [Clojars](https://clojars.org/io.randomseed/bankster).
