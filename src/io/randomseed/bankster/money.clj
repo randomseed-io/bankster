@@ -100,12 +100,13 @@
 (defn- bd-set-scale*
   {:private true :tag BigDecimal :added "2.1.0"}
   [^BigDecimal bd sc rm op data]
-  (let [rm# rm]
+  (let [sc#               (int sc)
+        ^RoundingMode rm# rm]
     (arith-ex op
-              (assoc data :value bd :scale sc :rounding-mode rm#)
+              (assoc data :value bd :scale sc# :rounding-mode rm#)
               (if (some? rm#)
-                (.setScale ^BigDecimal bd sc ^RoundingMode rm#)
-                (.setScale ^BigDecimal bd sc)))))
+                (.setScale ^BigDecimal bd (int sc#) rm#)
+                (.setScale ^BigDecimal bd (int sc#))))))
 
 (defn- bd-set-scale
   "Rescales `bd` (a BigDecimal) to `scale` using the optional rounding mode `rm`
@@ -115,7 +116,7 @@
   {:private true :added "2.0.0"}
   [bd scale rm op data]
   (let [^BigDecimal bd bd
-        sc              (int scale)]
+        sc             (int scale)]
     (if (clojure.core/== (.scale ^BigDecimal bd) sc)
       bd
       (bd-set-scale* bd sc rm op data))))
@@ -335,7 +336,7 @@
                     (if (number? amount)
                       (.toPlainString (bigdec amount))
                       (str amount)))
-        len (long (.length s))]
+        len       (long (.length s))]
     (if (clojure.core/zero? len)
       [nil nil]
       (let [i0 (skip-seps s 0)]
@@ -1514,7 +1515,7 @@
         (.setScale ^BigDecimal (.multiply ^BigDecimal a# ^BigDecimal b#) sc# rm#)
         (catch ArithmeticException e#
           (throw
-          (ex-info (arith-message e#)
+           (ex-info (arith-message e#)
                     {:op                         :mul
                      :multiplicant               a#
                      :multiplier                 b#
@@ -1532,7 +1533,7 @@
         (.setScale ^BigDecimal (.multiply ^BigDecimal a# ^BigDecimal b#) sc# rm#)
         (catch ArithmeticException e#
           (throw
-          (ex-info (arith-message e#)
+           (ex-info (arith-message e#)
                     {:op                         :mul
                      :multiplicant               a#
                      :multiplier                 b#
@@ -2828,14 +2829,14 @@
    (readers (registry/get)))
   ([^Registry registry]
    (let [^Registry registry (registry/get registry)
-         nses (->> (.cur-id->cur registry)
-                   (keys)
-                   (keep namespace)
-                   (distinct)
-                   (sort-by str))]
-     (into {'money            data-literal
-            'bankster.money   data-literal
-            'currency         currency/data-literal
+         nses               (->> (.cur-id->cur registry)
+                                 (keys)
+                                 (keep namespace)
+                                 (distinct)
+                                 (sort-by str))]
+     (into {'money             data-literal
+            'bankster.money    data-literal
+            'currency          currency/data-literal
             'bankster.currency currency/data-literal}
            (mapcat (fn [^String ns]
                      (let [h (fn [arg] (ns-data-literal ns arg))]

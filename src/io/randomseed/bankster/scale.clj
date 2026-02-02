@@ -588,16 +588,17 @@
      (if (instance? BigDecimal n)
        ^BigDecimal n
        (apply n))
-     (let [^BigDecimal bd (if (instance? BigDecimal n) n (apply n))]
-       (.setScale ^BigDecimal bd (int sc) ^RoundingMode (or (rounding-mode)
-                                                            ROUND_UNNECESSARY)))))
+     (let [^BigDecimal bd   (if (instance? BigDecimal n) n (apply n))
+           ^RoundingMode rm (or (rounding-mode) ROUND_UNNECESSARY)]
+       (.setScale ^BigDecimal bd (int sc) rm))))
   (^BigDecimal [n ^long sc ^RoundingMode rm]
    (if (auto-scaled*? sc)
      (if (instance? BigDecimal n)
        ^BigDecimal n
        (apply n))
-     (let [^BigDecimal bd (if (instance? BigDecimal n) n (apply n))]
-       (.setScale ^BigDecimal bd (int sc) ^RoundingMode (or rm ROUND_UNNECESSARY))))))
+     (let [^BigDecimal bd    (if (instance? BigDecimal n) n (apply n))
+           ^RoundingMode rm# (or rm ROUND_UNNECESSARY)]
+       (.setScale ^BigDecimal bd (int sc) rm#)))))
 
 ;;
 ;; Getting integer and fractional parts.
