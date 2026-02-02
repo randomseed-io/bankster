@@ -2052,16 +2052,15 @@
   "Alias for domain."
   domain)
 
-(comment
-  (defn domains
-    "Returns a sequence of keywords for all currency domains in a registry or `nil` if
+(defn domains
+  "Returns a sequence of keywords for all currency domains in a registry or `nil` if
   there are no currencies with domains. When registry is not given or `nil`, the
   default is used."
-    {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0"}
-    ([]
-     (keys (registry/currency-do->currency*)))
-    ([^Registry registry]
-     (keys (registry/currency-do->currency* registry)))))
+  {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0"}
+  ([]
+   (keys (registry/currency-domain->currencies*)))
+  ([^Registry registry]
+   (keys (registry/currency-domain->currencies* registry))))
 
 (defn kinds
   "Returns a map of all registered currency kinds as keys and their ancestors as
@@ -2232,7 +2231,8 @@
       (let [w           (int w)
             ^Currency c (with-weight* c0 w)
             cids        (registry/currency-id->country-ids* cid registry)
-            code        (if (namespace cid) (keyword (core-name cid)) cid)]
+            code        (if (namespace cid) (keyword (core-name cid)) cid)
+            dom         (.domain ^Currency c)]
         (as-> registry r
           ;; Base map: source of truth (explicit entries, including 0).
           (assoc-in r [:cur-id->weight cid] w)
@@ -2245,6 +2245,11 @@
           (update-in r [:cur-code->curs code]
                      (fn [^clojure.lang.PersistentTreeSet s]
                        (conj (weighted-currencies (remove-currency-by-id-from-set s cid)) c)))
+          (if (some? dom)
+            (update-in r [:cur-dom->curs dom]
+                       (fn [^clojure.lang.PersistentTreeSet s]
+                         (conj (weighted-currencies (remove-currency-by-id-from-set s cid)) c)))
+            r)
           (register-numeric r c))))))
 
 (defn set-weight!
@@ -2271,7 +2276,8 @@
           cid          (.id ^Currency c0)
           ^Currency c  (with-weight* c0 0)
           cids         (registry/currency-id->country-ids* cid registry)
-          code         (if (namespace cid) (keyword (core-name cid)) cid)]
+          code         (if (namespace cid) (keyword (core-name cid)) cid)
+          dom          (.domain ^Currency c)]
       (as-> registry r
         (map/dissoc-in r [:cur-id->weight cid])
         (assoc-in r [:cur-id->cur cid] c)
@@ -2281,6 +2287,11 @@
         (update-in r [:cur-code->curs code]
                    (fn [^clojure.lang.PersistentTreeSet s]
                      (conj (weighted-currencies (remove-currency-by-id-from-set s cid)) c)))
+        (if (some? dom)
+          (update-in r [:cur-dom->curs dom]
+                     (fn [^clojure.lang.PersistentTreeSet s]
+                       (conj (weighted-currencies (remove-currency-by-id-from-set s cid)) c)))
+          r)
         (register-numeric r c)))))
 
 (defn clear-weight!
@@ -2378,6 +2389,18 @@
    (registry/country-id->currency* (keyword country-id) (unit-registry registry)))
   (^Currency [^clojure.lang.Keyword country-id _locale ^Registry registry]
    (of-country country-id registry)))
+
+(defn of-domain
+  "Returns a set of currencies assigned to the given domain or `nil` if none exist.
+  Locale argument is ignored."
+  {:tag clojure.lang.PersistentTreeSet :added "2.1.0"}
+  ([domain]
+   (of-domain domain (registry/get)))
+  ([domain ^Registry registry]
+   (when-some [dom (normalize-domain-hint domain)]
+     (registry/currency-domain->currencies* dom (unit-registry registry))))
+  ([domain _locale ^Registry registry]
+   (of-domain domain registry)))
 
 ;;
 ;; Other selectors
@@ -2652,6 +2675,17 @@
         (dissoc m code))
       m)))
 
+(defn remove-weighted-domain
+  "Removes a currency object from a sorted set associated with a currency domain keyword
+  in a map."
+  {:tag clojure.lang.PersistentHashMap :private true :added "2.1.0"}
+  [^clojure.lang.PersistentHashMap m dom cid]
+  (if-some [currencies-set (get m dom)]
+    (if-some [new-currencies (remove-currency-by-id-from-set currencies-set cid)]
+      (assoc  m dom new-currencies)
+      (dissoc m dom))
+    m))
+
 (defn register-numeric
   "Updates numeric indexes:
    - `:cur-nr->curs` => sorted-set
@@ -2709,6 +2743,7 @@
           ^Currency registered (get (registry/currency-id->currency* registry) cid cur)
           ;; numeric handling (bucket + canonical)
           nr                   (long (.numeric ^Currency registered))
+          dom                  (.domain ^Currency registered)
           has-nr?              (valid-numeric-id? nr)
           nr->curs             (when has-nr? (registry/currency-nr->currencies* registry))
           old-bucket           (when has-nr? (get nr->curs nr))
@@ -2734,7 +2769,8 @@
                                  (map/dissoc-in [:cur-id->traits    cid])
                                  (map/dissoc-in [:cur-id->ctr-ids   cid])
                                  (map/dissoc-in [:cur-id->weight    cid])
-                                 (core-update   :cur-code->curs remove-weighted-currency cid))]
+                                 (core-update   :cur-code->curs remove-weighted-currency cid)
+                                 (core-update   :cur-dom->curs  remove-weighted-domain dom cid))]
 
       ;; remove country -> currency entries
       (if (seq country-ids)
@@ -2836,6 +2872,20 @@
                    (fn [^clojure.lang.PersistentTreeSet s]
                      (conj (weighted-currencies (remove-currency-by-id-from-set s cid)) c)))))))
 
+(defn- add-weighted-domain
+  "Associates the existing currency domain with the currency object in the given
+  registry using the currency weight attribute."
+  {:tag Registry :private true :added "2.1.0"}
+  [^Registry registry ^Currency c]
+  (when (some? registry)
+    (let [dom (.domain c)
+          cid (.id c)]
+      (if (some? dom)
+        (update-in registry [:cur-dom->curs dom]
+                   (fn [^clojure.lang.PersistentTreeSet s]
+                     (conj (weighted-currencies (remove-currency-by-id-from-set s cid)) c)))
+        registry))))
+
 (defn register
   "Adds a currency and optional, associated country mappings and/or localized
   properties to the given registry. Returns updated registry.
@@ -2906,11 +2956,12 @@
                                   (map/dissoc-in registry [:cur-id->weight cid]))
              ^Registry registry (register-numeric registry c)
              ;; Restore registry attributes that should survive currency replacement.
-             ^Registry registry (if (and update? (seq old-traits))
-                                  (assoc-in registry [:cur-id->traits cid] old-traits)
-                                  registry)]
+         ^Registry registry (if (and update? (seq old-traits))
+                              (assoc-in registry [:cur-id->traits cid] old-traits)
+                              registry)]
          (-> registry
              (add-weighted-code        currency)
+             (add-weighted-domain      c)
              (add-countries            currency country-ids)
              (add-localized-properties currency localized-properties)))))))
 

@@ -57,6 +57,7 @@
      ^clojure.lang.PersistentHashMap cur-id->weight     ; currency weights
      ^clojure.lang.PersistentHashMap cur-code->curs     ; currency code to currencies (weighted)
      ^clojure.lang.PersistentHashMap cur-nr->curs       ; currency numeric ID to currencies (weighted)
+     ^clojure.lang.PersistentHashMap cur-dom->curs      ; currency domain to currencies (weighted)
      ^CurrencyHierarchies hierarchies                   ; currency property hierarchies
      ^String version                                    ; version string
      ^clojure.lang.PersistentHashMap ext]               ; extra data

@@ -26,9 +26,12 @@
       ;; Same code, different IDs; ensure bucket returns both.
       (is (= #{:AAA :crypto/AAA}
              (set (map c/id (registry/currency-code->currencies :AAA r1)))))
+      (is (= #{:AAA}
+             (set (map c/id (registry/currency-domain->currencies :ISO-4217 r1)))))
+      (is (= #{:crypto/AAA}
+             (set (map c/id (registry/currency-domain->currencies :CRYPTO r1)))))
       ;; Lowest weight should be the first currency when sorting by weight.
       (is (= [:crypto/AAA :AAA]
              (->> (registry/currency-code->currencies :AAA r1)
                   (sort-by (fn [cur] (c/weight cur r1)))
                   (mapv c/id)))))))
-

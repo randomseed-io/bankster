@@ -1843,12 +1843,21 @@
       (is (seq (c/ids)))
       (is (seq (c/numerics)))
       (is (seq (c/numeric-ids)))
-      (is (seq (c/codes))))
+      (is (seq (c/codes)))
+      (is (seq (c/domains)))
+      (is (= #{:EUR :PLN}
+             (set (map c/id (c/of-domain :ISO-4217))))
+          "of-domain uses default registry when bound"))
     (is (seq (c/all r)))
     (is (seq (c/ids r)))
     (is (seq (c/numerics r)))
     (is (seq (c/numeric-ids r)))
-    (is (seq (c/codes r)))))
+    (is (seq (c/codes r)))
+    (is (seq (c/domains r)))
+    (is (= #{:EUR :PLN}
+           (set (map c/id (c/of-domain :ISO-4217 r)))))
+    (is (= #{:crypto/USDT}
+           (set (map c/id (c/of-domain "crypto" r)))))))
 
 (deftest currency-forms-coverage-monetary-extra-2
   (let [r             (mk-test-registry)

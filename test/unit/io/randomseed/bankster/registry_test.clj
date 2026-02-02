@@ -9,6 +9,7 @@
 
   (:require [clojure.test                    :refer [deftest testing is]]
             [io.randomseed.bankster.registry :as registry]
+            [io.randomseed.bankster.currency :as c]
             [io.randomseed.bankster          :as bankster]))
 
 (deftest new-registry-hierarchies
@@ -20,8 +21,7 @@
       (is (map? (:kind hs)))))
 
   (testing "hierarchies can be passed as a parent-map in a map spec"
-    (let [r (registry/new {} {} {} {} {} {} {} {}
-                          {}
+    (let [r (registry/new {} {} {} {} {}
                           {:domain {:ISO-4217-LEGACY :ISO-4217}
                            :kind   {:COMBANK :FIAT}}
                           "test")
@@ -30,8 +30,7 @@
       (is (isa? (:kind hs)   :COMBANK         :FIAT))))
 
   (testing "hierarchies can include custom axes (additional keys)"
-    (let [r (registry/new {} {} {} {} {} {} {} {}
-                          {}
+    (let [r (registry/new {} {} {} {} {}
                           {:domain {:ISO-4217-LEGACY :ISO-4217}
                            :kind   {:COMBANK :FIAT}
                            :traits {:stablecoin :stable
@@ -42,8 +41,7 @@
       (is (isa? (:traits hs) :fiat-backed :stable))))
 
   (testing "parent-map supports multiple parents via set/vector values"
-    (let [r (registry/new {} {} {} {} {} {} {} {}
-                          {}
+    (let [r (registry/new {} {} {} {} {}
                           {:domain {:ISO-4217-LEGACY #{:ISO-4217 :MONEY}
                                     :ISO-4217-LEGACY2 [:ISO-4217 :MONEY]}
                            :kind   {:COMBANK #{:FIAT :FUNDS}}}
@@ -57,8 +55,7 @@
       (is (isa? (:kind hs)   :COMBANK :FUNDS))))
 
   (testing "hierarchies can be passed as a record with parent-maps"
-    (let [r (registry/new {} {} {} {} {} {} {} {}
-                          {}
+    (let [r (registry/new {} {} {} {} {}
                           (bankster/->CurrencyHierarchies {:ISO-4217-LEGACY :ISO-4217} nil nil)
                           "test")
           hs (:hierarchies r)]
@@ -67,8 +64,7 @@
 
   (testing "hierarchies can be passed as already constructed hierarchy maps"
     (let [dom (derive (make-hierarchy) :ISO-4217-LEGACY :ISO-4217)
-          r   (registry/new {} {} {} {} {} {} {} {}
-                            {}
+          r   (registry/new {} {} {} {} {}
                             {:domain dom}
                             "test")
           hs  (:hierarchies r)]
@@ -253,51 +249,41 @@
 
 (deftest new-registry-arities-and-defaulting
   (testing "new-registry supports all constructor arities"
-    (let [cur-id->cur       (into {} (map (fn [i]
-                                            [(keyword (str "CUR" i))
-                                             {:id   (keyword (str "CUR" i))
-                                              :nr   i
-                                              :code (keyword (str "C" i))}])
-                                          (range 9)))
-          cur-nr->cur       (into {} (map (fn [[_ v]] [(:nr v) v]) cur-id->cur))
-          ctr-id->cur       {:PL :CUR1}
+    (let [cur-id->cur       (assoc (into {} (map (fn [i]
+                                                   (let [cid (keyword (str "CUR" i))]
+                                                     [cid (c/new cid i 2 :iso/fiat :ISO-4217)]))
+                                                 (range 1 9)))
+                                   :ZZZ (c/new :ZZZ c/no-numeric-id 2 :iso/fiat nil))
+          cur-nr->cur       (into {} (keep (fn [[_ ^io.randomseed.bankster.Currency c]]
+                                             (let [n (.numeric c)]
+                                               (when (pos? n) [n c])))
+                                           cur-id->cur))
+          ctr-id->cur       {:PL (get cur-id->cur :CUR1)}
           cur-id->ctr-ids   {:CUR1 #{:PL}}
           cur-id->localized {:CUR1 {:* {:name "Cur 1"}}}
           cur-id->traits    {:CUR1 #{:fiat}}
           cur-id->weight    {:CUR1 7}
-          cur-code->curs    {:C1   [:CUR1]}
-          cur-nr->curs      {1     [:CUR1]}
           hspec             {:domain {:ISO-4217-LEGACY :ISO-4217}}
           v                "test-v"]
       (is (registry/registry? (registry/new-registry)))
       (is (= v (:version (registry/new-registry cur-id->cur
-                                                cur-nr->cur
                                                 ctr-id->cur
-                                                cur-id->ctr-ids
                                                 cur-id->localized
                                                 cur-id->traits
                                                 cur-id->weight
-                                                cur-code->curs
-                                                cur-nr->curs
                                                 hspec
                                                 v))))
       (is (string? (:version (registry/new-registry cur-id->cur
-                                                    cur-nr->cur
                                                     ctr-id->cur
-                                                    cur-id->ctr-ids
                                                     cur-id->localized
                                                     cur-id->traits
                                                     cur-id->weight
-                                                    cur-code->curs
-                                                    cur-nr->curs
                                                     hspec))))
       (let [r (registry/new-registry cur-id->cur
                                      ctr-id->cur
                                      cur-id->localized
                                      cur-id->traits
                                      cur-id->weight
-                                     cur-code->curs
-                                     cur-nr->curs
                                      hspec
                                      v)]
         (is (= cur-id->cur (:cur-id->cur r)))
@@ -307,9 +293,7 @@
                                      ctr-id->cur
                                      cur-id->localized
                                      cur-id->traits
-                                     cur-id->weight
-                                     cur-code->curs
-                                     cur-nr->curs)]
+                                     cur-id->weight)]
         (is (string? (:version r)))
         (is (= cur-id->cur (:cur-id->cur r)))
         (is (= cur-nr->cur (:cur-nr->cur r)))

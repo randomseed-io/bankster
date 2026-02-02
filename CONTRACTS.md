@@ -133,6 +133,7 @@ The registry is a record with indices (maps), including:
 - `:cur-code->curs` - currency code -> a set of currencies (sorted, "weighted").
 - `:cur-nr->cur` - numeric-id -> `Currency`.
 - `:cur-nr->curs` - numeric-id -> a set of currencies (sorted, "weighted").
+- `:cur-dom->curs` - domain -> a set of currencies (sorted, "weighted").
 - `:ctr-id->cur` - country ID -> `Currency`.
 - `:cur-id->ctr-ids` - currency ID -> a set of country IDs.
 - `:cur-id->localized` - currency ID -> localization/properties map.
@@ -316,7 +317,7 @@ Creation and global state:
 Read-only indices:
 
 - `registry/currency-id->currency`, `registry/currency-code->currencies`,
-  `registry/currency-nr->currency`, etc.
+  `registry/currency-nr->currency`, `registry/currency-domain->currencies`, etc.
 - `registry/currency-id->traits` - access per-currency traits.
 - `registry/version`, `registry/ext`.
 
@@ -384,6 +385,7 @@ Properties and localization:
   `currency/domain`, `currency/kind`, `currency/weight`.
 - `currency/info` - full currency info map (fields + registry metadata).
 - `currency/countries`, `currency/localized-properties`, `currency/localized-property`.
+- `currency/domains`, `currency/of-domain` - domain selectors.
 - `currency/symbol`, `currency/display-name` (+ `*-native`).
 - `currency/formatter`, `currency/formatter-extended`.
 

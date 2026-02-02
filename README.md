@@ -111,7 +111,8 @@ Registry is implemented as a record of maps keeping the following associations:
 * currency ID to traits set (advisory tags/features);
 * currency ID to weight (an integer used for conflict resolution);
 * currency code to a sorted set of currency objects (weighted);
-* currency numeric ID to a sorted set of currency objects (weighted).
+* currency numeric ID to a sorted set of currency objects (weighted);
+* currency domain to a sorted set of currency objects (weighted).
 
 Registry also carries:
 
@@ -127,6 +128,11 @@ argument. The exceptions are math operations (especially variadic) for which the
 way to use different registry is to set a dynamic variable
 `io.randomseed.bankster.registry/*default*` (which can be done using the macro
 `io.randomseed.bankster.currency/with-registry`).
+
+`registry/new-registry` expects *base maps* (e.g. `:cur-id->cur`, `:ctr-id->cur`,
+`:cur-id->localized`, `:cur-id->traits`, `:cur-id->weight`) and derives all secondary
+indexes (`:cur-code->curs`, `:cur-nr->cur`, `:cur-nr->curs`, `:cur-dom->curs`,
+`:cur-id->ctr-ids`) deterministically.
 
 When the library loads, its predefined configuration is read from a default EDN file
 and its contents populate the default, global registry. This registry can be
@@ -287,7 +293,8 @@ it is stripped (case-insensitive) and implies `:domain :ISO-4217`. Additionally,
 ISO-like currencies may get `:ISO-4217` inferred from their code + numeric ID.
 
 Domains can be organized in a registry hierarchy (`registry/hierarchy :domain`) and
-queried with `currency/of-domain?`.
+queried with `currency/of-domain?`. To list or select currencies by domain, use
+`currency/domains` and `currency/of-domain`.
 
 **Currency kind** is a case-sensitive keyword that should describe what the currency
 is. It can be set to anything, even nil. Some common values are:
