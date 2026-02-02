@@ -1727,18 +1727,7 @@
    (if (instance? Money b)
      (throw (ex-info "Cannot divide a regular number by the monetary amount."
                      {:dividend a :divisor b}))
-     (let [^BigDecimal b (scale/apply b)]
-       (try
-         ^BigDecimal (.divide ^BigDecimal a ^BigDecimal b)
-         (catch ArithmeticException e
-           (throw
-            (ex-info (or (.getMessage e) "Arithmetic error.")
-                     {:op                         :div
-                      :dividend                   a
-                      :divisor                    b
-                      :arithmetic-exception       true
-                      :arithmetic-exception/cause e}
-                     e))))))))
+     (div-core-num-fn a b))))
 
 (defmacro div-core
   "In its binary variant it performs division without rounding and rescaling.
@@ -1869,7 +1858,7 @@
            ;; not rounding, not rescaling (since it's a decimal and rounding is not set)
            ;;
            (reduce div-core-fn
-                   (div-core ^BigDecimal (scale/apply a) b)
+                   (div-core-num-fn ^BigDecimal (scale/apply a) b)
                    more)))
        ;;
        ;; first argument is money
@@ -2059,7 +2048,7 @@
            (reduce (fn ^BigDecimal [^BigDecimal a b] (div-core ^BigDecimal a b ^RoundingMode rm))
                    (div-core ^BigDecimal (scale/apply a) b ^RoundingMode rm)
                    more)
-           (reduce div-core-fn (div-core ^BigDecimal (scale/apply a) b) more))
+           (reduce div-core-fn (div-core-num-fn ^BigDecimal (scale/apply a) b) more))
          ;; money, ...
          (let [^RoundingMode rm (or rm scale/ROUND_UNNECESSARY)
                ^Currency      c (.currency ^Money a)
