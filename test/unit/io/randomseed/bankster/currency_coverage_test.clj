@@ -1977,7 +1977,7 @@
     (testing "attempt* 1-arity branches"
       (is (instance? Currency (c/attempt* eur)))
       (is (instance? Currency (c/attempt* m-def)))
-      (is (instance? Currency (c/attempt* 978)))))))
+      (is (instance? Currency (c/attempt* 978))))))
 
 (deftest currency-forms-coverage-monetary-extra-2
   (let [r             (mk-test-registry)
