@@ -452,9 +452,7 @@
                     (if (instance? Money cc#)
                       (~fun cc#)
                       (~fun cc# ~a#)))))))
-         (if (nil? am#)
-           `(~fun ~cur#)
-           `(~fun ~cur# ~(mk-bigdec am#)))))
+         `(~fun ~cur# ~(mk-bigdec am#))))
      `(let [a# ~(mk-bigdec a)]
         (if (or (number? a#) (instance? Money a#))
           (~fun a#)
