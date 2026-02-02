@@ -2188,10 +2188,10 @@
 	                                      ^BigDecimal   a#
 	                                      ^BigDecimal   b#
 	                                      ^RoundingMode r#))
-	            (int ~scale)
-	            ^RoundingMode r#
-	            :rem
-	            {:dividend a# :divisor b#})))
+                    (int ~scale)
+                    r#
+                    :rem
+                    {:dividend a# :divisor b#})))
   ([a b r]
    `(let [^BigDecimal a# ~a
           ^BigDecimal b# (scale/apply ~b)]
