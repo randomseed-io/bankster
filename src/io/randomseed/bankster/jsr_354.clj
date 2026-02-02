@@ -89,7 +89,7 @@
 (defn- attr-key
   "Normalizes MonetaryContext attribute keys to a string.
 
-  Uses `ns/name` for keywords/symbols (without the leading colon)."
+  For keywords/symbols, uses their namespace and name parts (without the leading colon)."
   {:tag String :added "2.0.0" :private true}
   [k]
   (cond

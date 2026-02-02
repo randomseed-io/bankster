@@ -38,12 +38,12 @@
 
 (def ^{:tag 'long :const true :added "1.0.0"}
   ^long no-numeric-id
-  "Expresses the value of currency's numeric ID which does not exist."
+  "Represents the value of a currency's numeric ID when no ID exists."
   (long -1))
 
 (def ^{:tag 'int :const true :added "1.0.0"}
   ^int auto-scaled
-  "Expresses the scale of a currency which is automatic and not limited to certain
+  "Represents the scale of a currency that is automatic and not limited to specific
   decimal places.
 
   Note: This is an alias for `scale/auto-scaled`. The canonical definition lives in
@@ -115,9 +115,9 @@
 ;;
 
 (defn iso-strict-code?
-  "Returns `true` when the given currency code, expressed as keyword, is exactly a
-  3-character, simple keyword consisting only of uppercase letters in range of
-  A-Z. Otherwise it returns `false`."
+  "Returns `true` when the given currency code, expressed as a keyword, is exactly a
+  3-character, simple keyword consisting only of uppercase letters in the range A-Z.
+  Otherwise it returns `false`."
   {:tag Boolean :added "2.0.0"}
   [^clojure.lang.Keyword kid]
   (and (keyword? kid)
@@ -204,8 +204,8 @@
 (defn- normalize-id-input
   "Canonicalizes a currency identifier input:
 
-  - never changes the namespace casing,
-  - upper-cases the name part (code) when needed.
+  - never changes the namespace casing
+  - upper-cases the name part (code) when needed
 
   NOTE: for string inputs this may intern a keyword; do not use on untrusted input
   outside of constructors / controlled code paths."

@@ -111,7 +111,7 @@
 
 (def ^{:tag 'int :const true :added "2.1.0"}
   ^int auto-scaled
-  "Expresses the scale of a currency which is automatic and not limited to certain
+  "Represents the scale of a currency that is automatic and not limited to specific
   decimal places. Used to indicate that the scale should be determined by the actual
   precision of the amount, not by a fixed currency scale."
   (int -1))

@@ -126,6 +126,10 @@
            (edn/read opts (java.io.PushbackReader. r))))))))
 
 (defn rtrim-comments
+  "Removes trailing comments from a string.
+
+  Trims whitespace and content after the first hash (#) character."
+  {:tag String :added "2.0.0"}
   [^String s]
   (str/trimr
    (str/join
@@ -163,8 +167,9 @@
 (defn read-csv
   "Reads CSV file and returns a sequence of rows.
 
-  When `comments?` is truthy, lines beginning with # are ignored, but inline comments
-  (after #) are preserved and treated as part of the last column."
+  When `comments?` is truthy:
+  - lines beginning with # are ignored (full-line comments)
+  - inline comments (# within a line) are preserved as part of the last column's value"
   (^clojure.lang.LazySeq [resource]
    (read-csv resource false))
 	  (^clojure.lang.LazySeq [resource comments?]

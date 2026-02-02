@@ -61,7 +61,7 @@
     :else (keyword (str x))))
 
 (defn- normalize-currency-id-map
-  "Normalizes a map keyed by currency identifiers so it can be accessed using keyword
+  "Normalizes a map keyed by currency identifiers to allow access using keyword
   IDs after reading EDN."
   {:tag clojure.lang.IPersistentMap :added "2.0.0" :private true}
   [m]
