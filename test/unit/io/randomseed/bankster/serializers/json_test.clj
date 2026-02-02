@@ -410,7 +410,12 @@
     (let [custom-reg (registry/new-registry)
           custom-reg (c/register custom-reg (c/of {:id :MYCUR :scale 4}))
           m          (sj/json-string->money "1.2345 MYCUR" {:registry custom-reg})]
-      (is (= :MYCUR (c/id m))))))
+      (is (= :MYCUR (c/id m)))))
+  (testing "json-string->currency with :registry option uses custom registry"
+    (let [custom-reg (registry/new-registry)
+          custom-reg (c/register custom-reg (c/of {:id :MYCUR :scale 4}))
+          cur        (sj/json-string->currency "MYCUR" {:registry custom-reg})]
+      (is (= :MYCUR (c/id cur))))))
 
 ;;
 ;; :rounding-mode option tests.
@@ -582,6 +587,12 @@
     (let [c  (c/of {:id :ZZZ :numeric 999 :scale 2 :kind :fiat :domain :ISO-4217})
           jm (sj/currency->json-full-map c)]
       (is (= "fiat" (:kind jm))))))
+(deftest currency-json-full-map-kind-with-namespace-and-nil-domain
+  (testing "currency->json-full-map renders namespaced kind and nil domain"
+    (let [c  (c/of {:id :ZZZ :numeric 999 :scale 2 :kind :iso/fiat :domain nil})
+          jm (sj/currency->json-full-map c)]
+      (is (= "iso/fiat" (:kind jm)))
+      (is (nil? (:domain jm))))))
 
 (deftest keys-filtering-money
   (testing "money->json-full-map with :keys filters output"
@@ -870,6 +881,12 @@
            clojure.lang.ExceptionInfo
            #"No JSON parser available"
            (#'sj/parse-json-text "{}" {})))))
+  (testing "parse-json-text treats resolve exceptions as missing parser"
+    (with-redefs [clojure.core/requiring-resolve (fn [_] (throw (Exception. "boom")))]
+      (is (thrown-with-msg?
+           clojure.lang.ExceptionInfo
+           #"No JSON parser available"
+           (#'sj/parse-json-text "{}" {})))))
   (testing "parse-json-text uses parse-string and key-fn branches"
     (let [calls    (atom [])
           parse-fn (fn
@@ -883,6 +900,18 @@
         (#'sj/parse-json-text "{}" {})
         (#'sj/parse-json-text "{}" {:key-fn keyword})
         (is (= [[:parse "{}"] [:parse "{}" keyword]] @calls))))))
+  (testing "parse-json-text honors :bigdecimals? false"
+    (let [calls    (atom [])
+          parse-fn (fn
+                     ([s] (swap! calls conj [:parse s]) {:ok true})
+                     ([s key-fn] (swap! calls conj [:parse s key-fn]) {:ok true}))]
+      (with-redefs [clojure.core/requiring-resolve (fn [sym]
+                                                     (cond
+                                                       (= sym 'cheshire.core/parse-string) parse-fn
+                                                       (= sym 'cheshire.parse/*use-bigdecimals?*) #'clojure.core/*print-length*
+                                                       :else nil))]
+        (#'sj/parse-json-text "{}" {:bigdecimals? false})
+        (is (= [[:parse "{}"]] @calls)))))
   (testing "parse-json-text uses parse-string without bigdec var"
     (let [calls    (atom [])
           parse-fn (fn
@@ -892,6 +921,18 @@
                                                      (cond
                                                        (= sym 'cheshire.core/parse-string) parse-fn
                                                        (= sym 'cheshire.parse/*use-bigdecimals?*) nil
+                                                       :else nil))]
+        (#'sj/parse-json-text "{}" {})
+        (is (= [[:parse "{}"]] @calls)))))
+  (testing "parse-json-text tolerates errors while resolving bigdec var"
+    (let [calls    (atom [])
+          parse-fn (fn
+                     ([s] (swap! calls conj [:parse s]) {:ok true})
+                     ([s key-fn] (swap! calls conj [:parse s key-fn]) {:ok true}))]
+      (with-redefs [clojure.core/requiring-resolve (fn [sym]
+                                                     (cond
+                                                       (= sym 'cheshire.core/parse-string) parse-fn
+                                                       (= sym 'cheshire.parse/*use-bigdecimals?*) (throw (Exception. "boom"))
                                                        :else nil))]
         (#'sj/parse-json-text "{}" {})
         (is (= [[:parse "{}"]] @calls)))))
@@ -907,6 +948,9 @@
          clojure.lang.ExceptionInfo
          #"Unsupported JSON value"
          (sj/json-text->money "x" {:parse-fn (fn [_] [:bad])}))))
+  (testing "json-text->money supports JSON string in :auto"
+    (let [m (sj/json-text->money "x" {:parse-fn (fn [_] "1.00 PLN")})]
+      (is (= :PLN (c/id m)))))
   (testing "json-text->money rejects mismatched representation"
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo
@@ -931,6 +975,9 @@
          clojure.lang.ExceptionInfo
          #"Unsupported JSON value"
          (sj/json-text->currency "x" {:parse-fn (fn [_] [:bad])}))))
+  (testing "json-text->currency supports JSON string in :auto"
+    (let [c (sj/json-text->currency "x" {:parse-fn (fn [_] "PLN")})]
+      (is (= :PLN (c/id c)))))
   (testing "json-text->currency rejects mismatched representation"
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo
@@ -973,3 +1020,25 @@
          clojure.lang.ExceptionInfo
          #"Cheshire is not available"
          (sj/register-cheshire-codecs! {:representation :map})))))
+(deftest cheshire-codecs-resolve-errors-and-missing-helpers
+  (testing "add-encoder resolve failure does not break custom injection"
+    (let [encoders    (atom {})
+          add-encoder (fn [cls f] (swap! encoders assoc cls f))]
+      (with-redefs [clojure.core/requiring-resolve (fn [_] (throw (Exception. "boom")))]
+        (is (= true
+               (sj/register-cheshire-codecs! {:representation :map
+                                              :add-encoder  add-encoder}))))))
+  (testing "missing Cheshire encoder helpers cause a clear error"
+    (require 'cheshire.generate)
+    (let [add-var (resolve 'cheshire.generate/add-encoder)
+          enc-str (resolve 'cheshire.generate/encode-str)]
+      (with-redefs [clojure.core/requiring-resolve (fn [sym]
+                                                     (cond
+                                                       (= sym 'cheshire.generate/add-encoder) add-var
+                                                       (= sym 'cheshire.generate/encode-map) (throw (Exception. "boom"))
+                                                       (= sym 'cheshire.generate/encode-str) enc-str
+                                                       :else nil))]
+        (is (thrown-with-msg?
+             clojure.lang.ExceptionInfo
+             #"encoder helpers"
+             (sj/register-cheshire-codecs! {:representation :map})))))))
