@@ -1859,6 +1859,126 @@
     (is (= #{:crypto/USDT}
            (set (map c/id (c/of-domain "crypto" r)))))))
 
+(deftest currency-domain-nil-and-of-domain-arities
+  (let [r       (mk-test-registry)
+        c-nil   (c/new :ZZZ c/no-numeric-id 2 :iso/fiat nil)
+        r0      (-> (registry/new) (c/register c-nil))]
+    (testing "of-domain accepts locale arity and nil-normalized domains"
+      (is (seq (c/of-domain :ISO-4217 Locale/ROOT r)))
+      (is (nil? (c/of-domain "" r))))
+    (testing "set-weight/clear-weight skip domain index when domain is nil"
+      (let [r1 (c/set-weight r0 :ZZZ 4)
+            r2 (c/clear-weight r1 :ZZZ)]
+        (is (= 4 (get-in r1 [:cur-id->weight :ZZZ])))
+        (is (nil? (get-in r2 [:cur-id->weight :ZZZ])))))
+    (testing "add-weighted-domain no-ops when domain is nil"
+      (is (= r0 (#'io.randomseed.bankster.currency/add-weighted-domain r0 c-nil))))))
+
+(deftest currency-macro-branch-coverage
+  (testing "attempt* macro registry branches (nil, symbol nil, explicit registry)"
+    (let [form-1     (list 'io.randomseed.bankster.currency/attempt* :EUR)
+          form-nil   (list 'io.randomseed.bankster.currency/attempt* :EUR nil)
+          form-sym   (list 'io.randomseed.bankster.currency/attempt* :EUR (symbol "nil"))
+          form-reg   (list 'io.randomseed.bankster.currency/attempt* :EUR 'r)]
+      (is (not= form-1   (macroexpand-1 form-1)))
+      (is (not= form-nil (macroexpand-1 form-nil)))
+      (is (not= form-sym (macroexpand-1 form-sym)))
+      (is (not= form-reg (macroexpand-1 form-reg)))))
+  (testing "with-attempt macro binding branches"
+    (is (not= '(io.randomseed.bankster.currency/with-attempt :EUR nil [c] c)
+              (macroexpand-1 '(io.randomseed.bankster.currency/with-attempt :EUR nil [c] c))))
+    (is (not= '(io.randomseed.bankster.currency/with-attempt :EUR nil c c)
+              (macroexpand-1 '(io.randomseed.bankster.currency/with-attempt :EUR nil c c))))
+    (is (thrown? clojure.lang.Compiler$CompilerException
+                 (macroexpand-1 '(io.randomseed.bankster.currency/with-attempt :EUR nil 1 :ok)))))
+  (testing "of macro map vs non-map branches"
+    (is (not= '(io.randomseed.bankster.currency/of {:id :EUR})
+              (macroexpand-1 '(io.randomseed.bankster.currency/of {:id :EUR}))))
+    (is (not= '(io.randomseed.bankster.currency/of :EUR)
+              (macroexpand-1 '(io.randomseed.bankster.currency/of :EUR))))
+    (is (not= '(io.randomseed.bankster.currency/of :EUR r)
+              (macroexpand-1 '(io.randomseed.bankster.currency/of :EUR r))))))
+
+(deftest currency-new-currency-branch-coverage-extra
+  (let [explicit-nil (var-get #'io.randomseed.bankster.currency/explicit-nil)]
+    (testing "new-currency normalizes ISO namespace and domain"
+      (let [c1 (c/new :ISO-4217/usd 840 2 :iso/fiat nil 5)]
+        (is (= :USD (c/id c1)))
+        (is (= :ISO-4217 (c/domain c1)))
+        (is (= 5 (c/weight c1)))))
+    (testing "new-currency uppercases namespaced codes and infers domain"
+      (let [c2 (c/new :crypto/eth c/no-numeric-id 18 "token" nil 0)]
+        (is (= :crypto/ETH (c/id c2)))
+        (is (= :CRYPTO (c/domain c2)))
+        (is (= :token (c/kind c2)))))
+    (testing "explicit nil domain suppresses inference"
+      (let [c3 (c/new :EUR 978 2 :iso/fiat explicit-nil 0)]
+        (is (nil? (c/domain c3)))))
+    (testing "string domain is upper-cased and coerced"
+      (let [c4 (c/new :EUR 978 2 :iso/fiat "iso-4217" 0)]
+        (is (= :ISO-4217 (c/domain c4)))))
+    (testing "domain must match non-ISO namespace when provided"
+      (is (thrown? clojure.lang.ExceptionInfo
+                   (c/new :foo/AAA 1 2 nil :BAR 0))))
+    (testing "nil id yields nil currency"
+      (is (nil? (c/new nil 1 2 :iso/fiat :ISO-4217 0))))))
+
+(deftest currency-predicate-negative-branches-extra
+  (let [r           (mk-test-registry)
+        unknown     999999
+        nil-domain  (c/new :ZZZ c/no-numeric-id 2 :iso/fiat nil)
+        nil-kind    (c/new :ZZK c/no-numeric-id 2 nil nil)
+        nil-traits  (c/new :ZZT c/no-numeric-id 2 :iso/fiat nil)]
+    (is (false? (c/possible? nil)))
+    (is (false? (c/possible? unknown r)))
+    (is (false? (c/possible? unknown nil)))
+    (is (false? (c/iso-possible? nil)))
+    (is (false? (c/iso-possible? unknown r)))
+    (is (false? (c/has-numeric-id? unknown)))
+    (is (false? (c/has-numeric-id? unknown r)))
+    (is (false? (c/has-country? unknown)))
+    (is (false? (c/has-country? unknown r)))
+    (is (false? (c/in-domain? :ISO-4217 unknown)))
+    (is (false? (c/in-domain? :ISO-4217 unknown r)))
+    (is (false? (c/has-domain? unknown)))
+    (is (false? (c/has-domain? unknown nil)))
+    (is (false? (c/has-domain? unknown r)))
+    (is (false? (c/has-domain? unknown :ISO-4217)))
+    (is (false? (c/has-domain? unknown :ISO-4217 r)))
+    (is (false? (c/of-domain? :ISO-4217 nil-domain r)))
+    (is (false? (c/big? unknown)))
+    (is (false? (c/big? unknown r)))
+    (is (false? (c/iso-strict? unknown)))
+    (is (false? (c/iso-strict? unknown r)))
+    (is (false? (c/has-kind? unknown)))
+    (is (false? (c/has-kind? unknown nil)))
+    (is (false? (c/has-kind? unknown r)))
+    (is (false? (c/has-kind? unknown :iso/fiat)))
+    (is (false? (c/has-kind? unknown :iso/fiat r)))
+    (is (false? (c/of-kind? :iso/fiat nil-kind r)))
+    (is (false? (c/has-trait? unknown)))
+    (is (false? (c/has-trait? unknown nil)))
+    (is (false? (c/has-trait? unknown r)))
+    (is (false? (c/has-trait? unknown :foo)))
+    (is (false? (c/has-trait? unknown :foo r)))
+    (is (false? (c/of-trait? :foo nil-traits r)))))
+
+(deftest currency-attempt-macro-runtime-branches
+  (let [r      (mk-test-registry)
+        eur    (c/unit :EUR r)
+        m-def  {:id :EUR :domain :ISO-4217 :scale 2 :numeric 978}]
+    (testing "attempt* 2-arity branches"
+      (is (identical? eur (c/attempt* eur r)))
+      (is (instance? Currency (c/attempt* m-def r)))
+      (with-redefs [c/to-currency (constantly nil)
+                    c/resolve     (constantly eur)]
+        (is (identical? eur (c/attempt* m-def r))))
+      (is (instance? Currency (c/attempt* 978 r))))
+    (testing "attempt* 1-arity branches"
+      (is (instance? Currency (c/attempt* eur)))
+      (is (instance? Currency (c/attempt* m-def)))
+      (is (instance? Currency (c/attempt* 978)))))))
+
 (deftest currency-forms-coverage-monetary-extra-2
   (let [r             (mk-test-registry)
         eur           (c/unit :EUR r)

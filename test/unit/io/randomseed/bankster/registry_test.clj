@@ -10,7 +10,9 @@
   (:require [clojure.test                    :refer [deftest testing is]]
             [io.randomseed.bankster.registry :as registry]
             [io.randomseed.bankster.currency :as c]
-            [io.randomseed.bankster          :as bankster]))
+            [io.randomseed.bankster          :as bankster])
+
+  (:import (io.randomseed.bankster Currency)))
 
 (deftest new-registry-hierarchies
   (testing "default registry has CurrencyHierarchies initialized"
@@ -166,6 +168,7 @@
       (is (string? v))
       (is (<= 16 (count v)))))
   (testing "set!/update!/state/global work and accept map inputs"
+    (is (instance? clojure.lang.Atom (registry/global)))
     (let [orig (registry/state)]
       (try
         (registry/set! (registry/new))
@@ -309,6 +312,60 @@
     (let [r (registry/new-registry {})]
       (is (map? (:ext r))))))
 
+(deftest registry-private-weight-and-index-branches
+  (testing "with-weight* removes explicit 0 weight metadata"
+    (let [weight-key :io.randomseed.bankster.currency/weight
+          c0         (c/new :EUR 978 2 :iso/fiat :ISO-4217)
+          c1         (with-meta c0 {weight-key 7})
+          c2         (#'io.randomseed.bankster.registry/with-weight* c1 0)]
+      (is (nil? (get (meta c2) weight-key)))))
+  (testing "with-weight* handles nil weight and missing meta"
+    (let [weight-key :io.randomseed.bankster.currency/weight
+          c0         (c/new :EUR 978 2 :iso/fiat :ISO-4217)
+          c1         (#'io.randomseed.bankster.registry/with-weight* c0 nil)
+          c2         (#'io.randomseed.bankster.registry/with-weight* c0 3)
+          c3         (#'io.randomseed.bankster.registry/with-weight* (with-meta c0 {weight-key 1}) 5)]
+      (is (= nil (get (meta c1) weight-key)))
+      (is (= 3   (get (meta c2) weight-key)))
+      (is (= 5   (get (meta c3) weight-key)))))
+
+  (testing "weighted-currencies comparator handles identical IDs"
+    (let [c1  (c/new :EUR 978 2 :iso/fiat :ISO-4217)
+          c2  (c/new :EUR 978 2 :iso/fiat :ISO-4217)
+          s   (#'io.randomseed.bankster.registry/weighted-currencies)
+          cmp (.comparator ^clojure.lang.Sorted s)]
+      (is (zero? (cmp c1 c2)))))
+
+  (testing "currency-code-key handles namespaced keyword"
+    (is (= :EUR (#'io.randomseed.bankster.registry/currency-code-key :iso/EUR))))
+
+  (testing "apply-weights defaults to empty maps when nil is provided"
+    (let [cur (c/new :EUR 978 2 :iso/fiat :ISO-4217)
+          m1  (#'io.randomseed.bankster.registry/apply-weights nil nil)
+          m2  (#'io.randomseed.bankster.registry/apply-weights {:EUR cur} nil)]
+      (is (map? m1))
+      (is (empty? m1))
+      (is (contains? m2 :EUR))))
+
+  (testing "derive-indexes covers nil ctr-id->cur and non-Currency entries"
+    (let [cur-a (c/new :EUR 978 2 :iso/fiat :ISO-4217)
+          cur-b (bankster/->Currency nil -1 -1 nil nil)
+          idx1  (#'io.randomseed.bankster.registry/derive-indexes {:EUR cur-a :NIL cur-b} {:PL :EUR} nil)
+          idx2  (#'io.randomseed.bankster.registry/derive-indexes {:EUR cur-a} nil nil)]
+      (is (= #{:PL} (get (:cur-id->ctr-ids idx1) :EUR)))
+      (is (map? (:cur-id->cur idx2)))))
+
+  (testing "currency-domain->currencies arities 0 and 1"
+    (let [r (registry/new)]
+      (registry/with r
+        (is (map? (registry/currency-domain->currencies))))
+      (is (map? (registry/currency-domain->currencies r)))))
+
+  (testing "new-registry defaults missing maps and version"
+    (let [r (registry/new-registry nil nil nil nil nil nil nil)]
+      (is (map? (:cur-id->cur r)))
+      (is (string? (:version r))))))
+
 (deftest private-hierarchy-map-branch-coverage
   (let [hierarchy-map? #'io.randomseed.bankster.registry/hierarchy-map?]
     (testing "hierarchy-map? exercises all short-circuit branches"
@@ -325,8 +382,35 @@
   (testing "get macroexpansion covers both sentinel and non-sentinel branches"
     (doseq [form '[(io.randomseed.bankster.registry/get)
                    (io.randomseed.bankster.registry/get true)
+                   (io.randomseed.bankster.registry/get false)
+                   (io.randomseed.bankster.registry/get nil)
                    (io.randomseed.bankster.registry/get some-registry)]]
       (is (not= form (macroexpand-1 form))))))
+
+(deftest registry-domain-macro-coverage
+  (testing "currency-domain->currencies* macroexpansion covers arities"
+    (doseq [form '[(io.randomseed.bankster.registry/currency-domain->currencies*)
+                   (io.randomseed.bankster.registry/currency-domain->currencies* r)
+                   (io.randomseed.bankster.registry/currency-domain->currencies* :ISO-4217 r)]]
+      (is (not= form (macroexpand-1 form))))))
+
+(deftest registry-macro-direct-calls-coverage
+  (let [get-macro (var-get #'io.randomseed.bankster.registry/get)
+        dom-macro (var-get #'io.randomseed.bankster.registry/currency-domain->currencies*)]
+    (is (seq (get-macro nil nil)))
+    (is (seq (get-macro nil nil true)))
+    (is (seq (get-macro nil nil 'r)))
+    (is (seq (dom-macro nil nil)))
+    (is (seq (dom-macro nil nil 'r)))
+    (is (seq (dom-macro nil nil :ISO-4217 'r)))))
+
+(deftest registry-macro-eval-coverage
+  (let [r (registry/new)]
+    (registry/with r
+      (is (registry/registry? (eval '(io.randomseed.bankster.registry/get))))
+      (is (registry/registry? (eval '(io.randomseed.bankster.registry/get true))))
+      (is (registry/registry? (eval '(io.randomseed.bankster.registry/get false))))
+      (is (map? (eval '(io.randomseed.bankster.registry/currency-domain->currencies*)))))))
 
 (deftest wrapper-zero-arity-uses-default
   (testing "zero-arity wrapper fns respect registry/with and do not require explicit registry arg"
