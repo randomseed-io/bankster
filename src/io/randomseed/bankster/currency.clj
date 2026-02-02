@@ -2298,6 +2298,52 @@
    (of-country country-id registry)))
 
 ;;
+;; Other selectors
+;;
+
+(defn all
+  "Returns a sequence of all `Currency` objects in a registry if there are no
+  currencies with bnumeric identifiers. When registry is not given or `nil`, the
+  default is used."
+  {:tag clojure.lang.APersistentMap$ValSeq :added "2.1.0"}
+  ([]
+   (vals (registry/currency-id->currency*)))
+  ([^Registry registry]
+   (vals (registry/currency-id->currency* registry))))
+
+(defn all-ids
+  "Returns a sequence of keywords for all currencies in a registry if there are no
+  currencies with bnumeric identifiers. When registry is not given or `nil`, the
+  default is used."
+  {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0"}
+  ([]
+   (keys (registry/currency-id->currency*)))
+  ([^Registry registry]
+   (keys (registry/currency-id->currency* registry))))
+
+(defn all-numeric
+  "Returns a lazy sequence of long values for all numeric identifiers of currencies in
+  a registry or `nil` if there are no currencies with bnumeric identifiers. When
+  registry is not given or `nil`, the default is used."
+  {:tag clojure.lang.LazySeq :added "2.1.0"}
+  ([]
+   (when-some [v (vals (registry/currency-nr->currency*))]
+     (distinct (apply concat v))))
+  ([^Registry registry]
+   (when-some [v (vals (registry/currency-nr->currency* registry))]
+     (distinct (apply concat v)))))
+
+(defn all-numeric-ids
+  "Returns a sequence of keywords for all currencies in a registry having numeric
+  identifiers or `nil` if there are no currencies with numeric identifiers. When
+  registry is not given or `nil`, the default is used."
+  {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0"}
+  ([]
+   (keys (registry/currency-nr->currency*)))
+  ([^Registry registry]
+   (keys (registry/currency-nr->currency* registry))))
+
+;;
 ;; Converting to Java object.
 ;;
 
