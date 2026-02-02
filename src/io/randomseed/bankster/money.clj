@@ -302,8 +302,7 @@
             ;; Amount starts with a digit/dot, but never right after a non-sign '-'/'+'.
             (and saw-cur?
                  (digit-or-dot? ch)
-                 (not (and (clojure.core/pos? i)
-                           (sign-char? (.charAt s (dec i)))
+                 (not (and (sign-char? (.charAt s (dec i)))
                            (not (sep-char? (.charAt s (dec i)))))))
             (let [[num _] (parse-number s i)]
               [(when (clojure.core/pos? (.length sb)) (.toString sb)) num])
@@ -311,7 +310,6 @@
             ;; Amount starts with a sign only when preceded by a separator.
             (and saw-cur?
                  (sign-char? ch)
-                 (clojure.core/pos? i)
                  (sep-char? (.charAt s (dec i)))
                  (numeric-start? s i))
             (let [[num _] (parse-number s i)]
