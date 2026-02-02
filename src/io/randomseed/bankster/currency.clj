@@ -1984,6 +1984,28 @@
   "Alias for nr."
   nr)
 
+(defn numerics
+  "Returns a lazy sequence of long values for all numeric identifiers of currencies in
+  a registry or `nil` if there are no currencies with bnumeric identifiers. When
+  registry is not given or `nil`, the default is used."
+  {:tag clojure.lang.LazySeq :added "2.1.0"}
+  ([]
+   (when-some [v (vals (registry/currency-nr->currency*))]
+     (distinct (apply concat v))))
+  ([^Registry registry]
+   (when-some [v (vals (registry/currency-nr->currency* registry))]
+     (distinct (apply concat v)))))
+
+(defn numeric-ids
+  "Returns a sequence of keywords for all currencies in a registry having numeric
+  identifiers or `nil` if there are no currencies with numeric identifiers. When
+  registry is not given or `nil`, the default is used."
+  {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0"}
+  ([]
+   (keys (registry/currency-nr->currency*)))
+  ([^Registry registry]
+   (keys (registry/currency-nr->currency* registry))))
+
 (defn sc
   "Returns currency scale (decimal places) as a number. For currencies without the
   assigned decimal places it will return `nil` (the value of auto-scaled). Locale
@@ -2030,6 +2052,17 @@
   "Alias for domain."
   domain)
 
+(comment
+  (defn domains
+    "Returns a sequence of keywords for all currency domains in a registry or `nil` if
+  there are no currencies with domains. When registry is not given or `nil`, the
+  default is used."
+    {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0"}
+    ([]
+     (keys (registry/currency-do->currency*)))
+    ([^Registry registry]
+     (keys (registry/currency-do->currency* registry)))))
+
 (defn kinds
   "Returns a map of all registered currency kinds as keys and their ancestors as
   sets. It will not contain ad-hoc kinds that wasn't added to a registry's
@@ -2066,6 +2099,41 @@
   (^clojure.lang.Keyword [c _locale ^Registry registry]
    (kind c registry)))
 
+(defn traits
+  "Returns currency traits as a set of keywords. The function may return `nil` if the
+  currency has no traits. Locale argument is ignored. To list all known kinds use
+  `kinds`."
+  {:tag clojure.lang.IPersistentSet :added "2.1.0"}
+  ([c]
+   (traits c (registry/get)))
+  ([c ^Registry registry]
+   (when (some? c)
+     (let [^Registry registry (unit-registry registry)
+           ^Currency cur      (if (instance? Currency c) c (attempt c registry))]
+       (when (some? cur)
+         (let [cid (.id ^Currency cur)]
+           (when (registry/currency-id->currency* cid registry)
+             (registry/currency-id->traits* cid registry)))))))
+  ([c _locale ^Registry registry]
+   (traits c registry)))
+
+(defn traits-expanded
+  "Returns currency traits as a set of keywords and expands them with all ancestors
+  from the registry :traits hierarchy. The function may return `nil` if the currency
+  has no traits. Locale argument is ignored."
+  {:tag clojure.lang.IPersistentSet :added "2.1.0"}
+  ([c]
+   (traits-expanded c (registry/get)))
+  ([c ^Registry registry]
+   (when-some [ts (traits c registry)]
+     (let [^Registry registry (unit-registry registry)
+           h                  (some-> registry .hierarchies :traits)]
+       (if (and h (seq ts))
+         (into ts (mapcat #(clojure.core/ancestors h %) ts))
+         ts))))
+  ([c _locale ^Registry registry]
+   (traits-expanded c registry)))
+
 (defn ns-code
   "Returns a currency code as a string for the given currency object. If the currency
   identifier is namespaced the namespace will be used as a prefix and slash character
@@ -2090,6 +2158,16 @@
      (when-some [cid (id c registry)] (core-name cid))))
   (^String [c _locale ^Registry registry]
    (code c registry)))
+
+(defn codes
+  "Returns a sequence of keywords for all currency codes (without namespaces!) in a
+  registry or `nil` if there are no currencies with codes. When registry is not given
+  or `nil`, the default is used."
+  {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0"}
+  ([]
+   (keys (registry/currency-code->currencies*)))
+  ([^Registry registry]
+   (keys (registry/currency-code->currencies* registry))))
 
 (defn weight
   "Returns weight of the given currency (used to resolve conflicts when getting
@@ -2306,7 +2384,7 @@
 ;;
 
 (defn all
-  "Returns a sequence of all `Currency` objects in a registry if there are no
+  "Returns a sequence of all `Currency` objects in a registry or `nil` if there are no
   currencies with bnumeric identifiers. When registry is not given or `nil`, the
   default is used."
   {:tag clojure.lang.APersistentMap$ValSeq :added "2.1.0"}
@@ -2315,37 +2393,15 @@
   ([^Registry registry]
    (vals (registry/currency-id->currency* registry))))
 
-(defn all-ids
-  "Returns a sequence of keywords for all currencies in a registry if there are no
-  currencies with bnumeric identifiers. When registry is not given or `nil`, the
-  default is used."
+(defn ids
+  "Returns a sequence of keywords for all currencies in a registry or `nil` if there
+  are no currencies with numeric identifiers. When registry is not given or `nil`,
+  the default is used."
   {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0"}
   ([]
    (keys (registry/currency-id->currency*)))
   ([^Registry registry]
    (keys (registry/currency-id->currency* registry))))
-
-(defn all-numeric
-  "Returns a lazy sequence of long values for all numeric identifiers of currencies in
-  a registry or `nil` if there are no currencies with bnumeric identifiers. When
-  registry is not given or `nil`, the default is used."
-  {:tag clojure.lang.LazySeq :added "2.1.0"}
-  ([]
-   (when-some [v (vals (registry/currency-nr->currency*))]
-     (distinct (apply concat v))))
-  ([^Registry registry]
-   (when-some [v (vals (registry/currency-nr->currency* registry))]
-     (distinct (apply concat v)))))
-
-(defn all-numeric-ids
-  "Returns a sequence of keywords for all currencies in a registry having numeric
-  identifiers or `nil` if there are no currencies with numeric identifiers. When
-  registry is not given or `nil`, the default is used."
-  {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0"}
-  ([]
-   (keys (registry/currency-nr->currency*)))
-  ([^Registry registry]
-   (keys (registry/currency-nr->currency* registry))))
 
 ;;
 ;; Converting to Java object.
