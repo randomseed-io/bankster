@@ -688,6 +688,21 @@
       (is (= :FIAT (:kind eur)))
       (is (= 9 (:scale eur))))))
 
+(deftest merge-registry-updates-domain-index
+  (testing "cur-dom->curs reflects domain add/change during merge"
+    (let [dst    (-> (registry/new-registry)
+                     (currency/register (currency/new :AAA 1 2 :FIAT :DOM-A)))
+          src    (-> (registry/new-registry)
+                     (currency/register (currency/new :AAA 1 2 :FIAT :DOM-B))
+                     (currency/register (currency/new :BBB 2 2 :FIAT :DOM-C)))
+          merged (importer/merge-registry dst src false nil false)
+          dom-a  (registry/currency-domain->currencies :DOM-A merged)
+          dom-b  (registry/currency-domain->currencies :DOM-B merged)
+          dom-c  (registry/currency-domain->currencies :DOM-C merged)]
+      (is (not (seq dom-a)))
+      (is (= #{:AAA} (set (map currency/id dom-b))))
+      (is (= #{:BBB} (set (map currency/id dom-c)))))))
+
 (deftest merge-registry-skips-update-when-equal-after-preserve
   (testing "does not update currency if it becomes equal after preserve-fields (prevents data loss)"
     (let [dst (-> (registry/new-registry)

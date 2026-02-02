@@ -8,6 +8,7 @@
     io.randomseed.bankster.util-test
 
   (:require [clojure.test                 :refer [deftest testing is]]
+            [clojure.spec.alpha           :as s]
             [io.randomseed.bankster.util  :as u])
 
   (:import (java.util ArrayList)))
@@ -26,6 +27,25 @@
     (is (= :x/a (u/ensure-keyword-having-ns :a "x")))
     (is (= :x/a (u/ensure-keyword-having-ns 'a "x")))))
 
+(deftest spec-asserts-coverage
+  (let [prev (s/check-asserts true)]
+    (try
+      (is (= :x/a (u/must-have-ns :a "x")))
+      (is (= #{:b} (u/replace-in-set #{:a} :a :b)))
+      (let [b (byte-array [1 2 3])]
+        (is (identical? b (u/to-bytes b))))
+      (let [b (u/to-bytes "x")]
+        (is (= "x" (u/bytes-to-string b))))
+      (is (= 7 (u/to-long "7" 0)))
+      (finally
+        (s/check-asserts prev)))))
+
+(deftest spec-not-conflicting-ns
+  (testing "not-conflicting-ns spec predicate"
+    (is (true? (s/valid? ::u/not-conflicting-ns ["x" :a])))
+    (is (true? (s/valid? ::u/not-conflicting-ns ["x" :x/a])))
+    (is (false? (s/valid? ::u/not-conflicting-ns ["x" :y/a])))))
+
 (deftest slash-splitting
   (testing "split-on-first-slash"
     (is (= [nil nil] (u/split-on-first-slash nil)))
@@ -40,7 +60,9 @@
     (let [m {:a 1 :ns/a 2}]
       (is (true? (u/inferred-contains? m :a)))
       (is (true? (u/inferred-contains? m :ns/a)))
+      (is (true? (u/inferred-contains? {:a 1} :ns/a)))
       (is (= 2 (u/inferred-get m :ns/a)))
+      (is (= 1 (u/inferred-get {:a 1} :a)))
       (is (= 1 (u/inferred-get {:a 1} :ns/a)))
       (is (= :nope (u/inferred-get {} :ns/a :nope)))
       (is (= false (u/inferred-contains? {} :a))))))
@@ -56,6 +78,8 @@
     (is (= #{2} (u/keep-in-set-where even? #{1 2 3}))))
   (testing "remove-from-set-where supports non-transient sets"
     (is (= #{1 3} (u/remove-from-set-where even? (sorted-set 1 2 3)))))
+  (testing "keep-in-set-where supports non-transient sets"
+    (is (= #{2} (u/keep-in-set-where even? (sorted-set 1 2 3)))))
   (testing "replace-in-set swaps values"
     (is (= #{:b} (u/replace-in-set #{:a} :a :b)))))
 
@@ -79,7 +103,9 @@
     (is (= nil (u/try-parse-int "nope")))
     (is (= 12 (u/try-parse-int 12.0)))
     (is (= 12 (u/try-parse-long "12")))
-    (is (= nil (u/try-parse-long "")))))
+    (is (= 12 (u/try-parse-long 12.0)))
+    (is (= nil (u/try-parse-long "")))
+    (is (= nil (u/try-parse-long "nope")))))
 
 (deftest ns-infer-and-thread-utils
   (testing "ns-infer respects existing namespace and opt flag"
@@ -89,7 +115,16 @@
   (testing "current-thread helpers return sensible values"
     (is (integer? (u/current-thread-id)))
     (is (string? (u/current-thread-name)))
-    (is (instance? Thread (u/current-thread)))))
+    (is (instance? Thread (u/current-thread))))
+  (testing "current-thread-id falls back when threadId method is unavailable"
+    (let [orig-make-array clojure.core/make-array
+          calls (atom 0)]
+      (with-redefs [clojure.core/make-array (fn [c n]
+                                              (swap! calls inc)
+                                              (if (= 1 @calls)
+                                                (into-array Class [String])
+                                                (orig-make-array c n)))]
+        (is (integer? (u/current-thread-id)))))))
 
 (deftest bytes-and-text
   (testing "bytes roundtrip is stable for ASCII"
@@ -110,7 +145,8 @@
       (is (= a (u/text-to-bytes a)))
       (let [b (u/text-to-bytes nil)]
         (is (bytes? b))
-        (is (zero? (alength b))))))
+        (is (zero? (alength b))))
+      (is (= "x" (u/bytes-to-string (u/text-to-bytes "x"))))))
   (testing "to-long uses default on parse failure"
     (is (= 7 (u/to-long nil 7)))
     (is (= 12 (u/to-long "12" 7)))
@@ -121,20 +157,30 @@
     (let [rng (java.util.Random. 0)]
       (is (<= 0 (u/get-rand-int 10) 9))
       (is (<= 0 (u/get-rand-int 10 rng) 9))
+      (is (<= 0 (u/get-rand-int 10 nil) 9))
       (is (= 0 (u/get-rand-int 0 rng)))))
   (testing "random-digits-len handles shrink and RNG"
     (let [rng (java.util.Random. 0)]
       (is (= 0 (u/random-digits-len 0 1 true)))
       (is (pos? (u/random-digits-len 5 0 true)))
-      (is (pos? (u/random-digits-len 5 0 true rng)))))
+      (is (pos? (u/random-digits-len 5 5 true)))
+      (is (pos? (u/random-digits-len 5 1 true nil)))
+      (is (pos? (u/random-digits-len 5 0 true rng)))
+      (is (= 0 (u/random-digits-len 0 1 true rng)))
+      (is (pos? (u/random-digits-len 5 5 true rng)))
+      (is (= 5 (u/random-digits-len 5 3 false)))
+      (is (= 5 (u/random-digits-len 5 3 false rng)))))
   (testing "gen-digits supports RNG"
     (let [rng (java.util.Random. 0)]
       (is (string? (u/gen-digits 4)))
-      (is (string? (u/gen-digits 4 rng)))))
+      (is (string? (u/gen-digits 4 rng)))
+      (is (string? (u/gen-digits 4 nil)))))
   (testing "get-rand-nth supports RNG and empty input"
     (let [rng (java.util.Random. 0)]
       (is (nil? (u/get-rand-nth [])))
-      (is (#{:a :b} (u/get-rand-nth [:a :b] rng)))))
+      (is (#{:a :b} (u/get-rand-nth [:a :b] rng)))
+      (is (#{:a :b} (u/get-rand-nth [:a :b] nil)))
+      (is (#{:a :b} (u/get-rand-nth [:a :b])))))
   (testing "juxt-seq returns a lazy seq of results"
     (let [f (u/juxt-seq inc dec)]
       (is (= [2 0] (vec (f 1))))))
@@ -156,3 +202,11 @@
       (is (contains? s \C))
       (is (contains? s \2))
       (is (not (contains? s \D))))))
+
+(deftest some-string-helpers
+  (testing "some-string returns nil for non-strings and empty strings"
+    (is (nil? (u/some-string nil)))
+    (is (nil? (u/some-string "")))
+    (is (nil? (u/some-string 123))))
+  (testing "some-string returns value for non-empty strings"
+    (is (= "x" (u/some-string "x")))))

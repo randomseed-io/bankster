@@ -21,6 +21,10 @@
            (java.math BigDecimal BigInteger RoundingMode)
            (java.text DecimalFormat)))
 
+(defn ^:private m-eval [form]
+  (binding [*ns* (the-ns 'io.randomseed.bankster.money)]
+    (clojure.core/eval form)))
+
 (deftest monetary-scale-and-parsing-helpers
   (testing "monetary-scale private helpers"
     (let [bd (BigDecimal. "1.23")]
@@ -407,7 +411,7 @@
       (is (seq? exp2))
       (is (seq? exp3))
       (is (seq? exp4))
-      (is (instance? BigDecimal (eval exp5))))))
+      (is (instance? BigDecimal (m-eval exp5))))))
 
 (deftest major-minor-conversions
   (let [a (m/of :PLN 12.34M)]
@@ -770,13 +774,13 @@
 
 (deftest bd-set-scale-and-monetary-scale-branches
   (let [bd (BigDecimal. "1.23")]
-    (is (= bd (eval `(let [bd# ~bd] (m/bd-set-scale bd# 2 nil :scale/apply {})))))
+    (is (= bd (m-eval `(let [bd# ~bd] (m/bd-set-scale bd# 2 nil :scale/apply {})))))
     (is (= (BigDecimal. "1.2")
-           (eval `(m/bd-set-scale (BigDecimal. "1.23") 1 RoundingMode/DOWN :scale/apply {}))))
+           (m-eval `(m/bd-set-scale (BigDecimal. "1.23") 1 RoundingMode/DOWN :scale/apply {}))))
     (is (= (BigDecimal. "1.2300")
-           (eval `(m/bd-set-scale (BigDecimal. "1.23") 4 nil :scale/apply {}))))
+           (m-eval `(m/bd-set-scale (BigDecimal. "1.23") 4 nil :scale/apply {}))))
     (is (thrown? clojure.lang.ExceptionInfo
-                 (eval `(m/bd-set-scale (BigDecimal. "1.23") 1 nil :scale/apply {}))))
+                 (m-eval `(m/bd-set-scale (BigDecimal. "1.23") 1 nil :scale/apply {}))))
     (is (identical? bd (#'m/monetary-scale bd c/auto-scaled)))
     (is (instance? BigDecimal (#'m/monetary-scale "1.23" 2)))
     (is (instance? BigDecimal (#'m/monetary-scale "1.23" 2 RoundingMode/HALF_UP)))
@@ -799,9 +803,9 @@
     (is (= ["PLN+ABC" nil] (scf "PLN +ABC")))))
 
 (deftest currency-unit-and-parse-int-branches
-  (is (nil? (eval `(m/currency-unit-strict 123))))
-  (is (instance? Currency (eval `(m/currency-unit-strict :PLN))))
-  (is (instance? Currency (eval `(m/currency-unit-strict {:id :PLN :scale 2}))))
+  (is (nil? (m-eval `(m/currency-unit-strict 123))))
+  (is (instance? Currency (m-eval `(m/currency-unit-strict :PLN))))
+  (is (instance? Currency (m-eval `(m/currency-unit-strict {:id :PLN :scale 2}))))
   (binding [c/*default* (c/of-id :PLN)]
     (is (instance? Money (#'m/parse-int identity 12.34M)))
     (is (nil? (#'m/parse-int identity nil))))
@@ -959,10 +963,10 @@
 
 (deftest arith-ex-and-macro-expansion-branches
   (is (thrown? clojure.lang.ExceptionInfo
-               (eval `(m/arith-ex :x {} (throw (ArithmeticException.))))))
+               (m-eval `(m/arith-ex :x {} (throw (ArithmeticException.))))))
   (is (thrown? clojure.lang.ExceptionInfo
-               (eval `(m/arith-ex :x {} (throw (ArithmeticException. "boom"))))))
-  (is (= 1 (eval `(m/arith-ex :x {} 1))))
+               (m-eval `(m/arith-ex :x {} (throw (ArithmeticException. "boom"))))))
+  (is (= 1 (m-eval `(m/arith-ex :x {} 1))))
   (let [rm   'java.math.RoundingMode/HALF_UP
         exp1 (@#'m/mul-core nil nil 1M 2M 2 rm)
         exp2 (@#'m/mul-core nil nil 1M 2M 2 rm nil)
@@ -970,11 +974,11 @@
         exp4 (@#'m/mul-core nil nil 1M 2M nil)
         exp5 (@#'m/mul-core nil nil 1M 1.234M 2 'java.math.RoundingMode/UNNECESSARY)]
     (is (seq? exp1))
-    (is (instance? BigDecimal (eval exp1)))
-    (is (instance? BigDecimal (eval exp2)))
-    (is (instance? BigDecimal (eval exp3)))
-    (is (instance? BigDecimal (eval exp4)))
-    (is (thrown? clojure.lang.ExceptionInfo (eval exp5))))
+    (is (instance? BigDecimal (m-eval exp1)))
+    (is (instance? BigDecimal (m-eval exp2)))
+    (is (instance? BigDecimal (m-eval exp3)))
+    (is (instance? BigDecimal (m-eval exp4)))
+    (is (thrown? clojure.lang.ExceptionInfo (m-eval exp5))))
   (let [rm   'java.math.RoundingMode/HALF_UP
         exp1 (@#'m/div-core nil nil 1M 2M rm)
         exp2 (@#'m/div-core nil nil 1M 2M 2 rm)
@@ -982,11 +986,11 @@
         exp4 (@#'m/div-core nil nil 1M 3M 2 'java.math.RoundingMode/UNNECESSARY)
         exp5 (@#'m/div-core nil nil 1M (m/of :PLN 1M))]
     (is (seq? exp1))
-    (is (instance? BigDecimal (eval exp1)))
-    (is (instance? BigDecimal (eval exp2)))
-    (is (instance? BigDecimal (eval exp3)))
-    (is (thrown? clojure.lang.ExceptionInfo (eval exp4)))
-    (is (thrown? clojure.lang.ExceptionInfo (eval exp5)))))
+    (is (instance? BigDecimal (m-eval exp1)))
+    (is (instance? BigDecimal (m-eval exp2)))
+    (is (instance? BigDecimal (m-eval exp3)))
+    (is (thrown? clojure.lang.ExceptionInfo (m-eval exp4)))
+    (is (thrown? clojure.lang.ExceptionInfo (m-eval exp5)))))
 
 (deftest parse-int-and-of-gen-extra-branches
   (binding [c/*default* (c/of-id :PLN)]
@@ -1061,13 +1065,13 @@
 
 (deftest bd-set-scale-branches
   (let [bd (BigDecimal. "1.23")]
-    (is (= bd (eval `(m/bd-set-scale ~bd 2 java.math.RoundingMode/DOWN :x {}))))
-    (is (= "1.230" (.toPlainString ^BigDecimal (eval `(m/bd-set-scale ~bd 3 nil :x {})))))
+    (is (= bd (m-eval `(m/bd-set-scale ~bd 2 java.math.RoundingMode/DOWN :x {}))))
+    (is (= "1.230" (.toPlainString ^BigDecimal (m-eval `(m/bd-set-scale ~bd 3 nil :x {})))))
     (is (thrown? clojure.lang.ExceptionInfo
-                 (eval `(m/bd-set-scale ~bd 1 nil :x {}))))
+                 (m-eval `(m/bd-set-scale ~bd 1 nil :x {}))))
     (is (thrown? clojure.lang.ExceptionInfo
-                 (eval `(m/bd-set-scale ~bd 1 java.math.RoundingMode/UNNECESSARY :x {}))))
-    (is (= "1.2" (.toPlainString ^BigDecimal (eval `(m/bd-set-scale ~bd 1 java.math.RoundingMode/DOWN :x {})))))))
+                 (m-eval `(m/bd-set-scale ~bd 1 java.math.RoundingMode/UNNECESSARY :x {}))))
+    (is (= "1.2" (.toPlainString ^BigDecimal (m-eval `(m/bd-set-scale ~bd 1 java.math.RoundingMode/DOWN :x {})))))))
 
 (deftest parse-number-and-split-branches
   (let [parse-number #'m/parse-number
@@ -1080,9 +1084,9 @@
     (is (= ["USD" "-10"] (split-first "USD -10")))))
 
 (deftest currency-unit-strict-and-parse-int-branches
-  (is (instance? Currency (eval `(m/currency-unit-strict ~{:id :TST :sc 2}))))
-  (is (nil? (eval `(m/currency-unit-strict 1))))
-  (is (instance? Currency (eval `(m/currency-unit-strict :PLN))))
+  (is (instance? Currency (m-eval `(m/currency-unit-strict ~{:id :TST :sc 2}))))
+  (is (nil? (m-eval `(m/currency-unit-strict 1))))
+  (is (instance? Currency (m-eval `(m/currency-unit-strict :PLN))))
   (binding [c/*default* (c/of-id :PLN)]
     (is (instance? Money (#'m/parse-int identity 1.00M))))
   (binding [c/*default* (c/of-id :PLN)]
@@ -1239,7 +1243,7 @@
     (is (thrown? clojure.lang.ExceptionInfo (m/rem money other RoundingMode/HALF_UP)))
     (is (instance? BigDecimal (m/rem 10 3)))
     (is (instance? BigDecimal (m/rem 10 3 nil)))
-    (is (thrown? clojure.lang.ExceptionInfo (eval `(m/rem-core 1M ~(m/of :PLN 1M))))))
+    (is (thrown? clojure.lang.ExceptionInfo (m-eval `(m/rem-core 1M ~(m/of :PLN 1M))))))
   (let [cur     (c/new-currency :TST nil 2)
         money   (Money. cur (BigDecimal. "1.23"))
         other   (Money. (c/new-currency :USD nil 2) (BigDecimal. "0.05"))
@@ -1369,13 +1373,13 @@
         exp5 (@#'m/div-core nil nil 1M 2M)
         exp6 (@#'m/div-core nil nil 1M 3M)
         exp7 (@#'m/div-core nil nil 1M (m/of :PLN 1M))]
-    (is (instance? BigDecimal (eval exp1)))
-    (is (thrown? clojure.lang.ExceptionInfo (eval exp2)))
-    (is (instance? BigDecimal (eval exp3)))
-    (is (thrown? clojure.lang.ExceptionInfo (eval exp4)))
-    (is (instance? BigDecimal (eval exp5)))
-    (is (thrown? clojure.lang.ExceptionInfo (eval exp6)))
-    (is (thrown? clojure.lang.ExceptionInfo (eval exp7)))))
+    (is (instance? BigDecimal (m-eval exp1)))
+    (is (thrown? clojure.lang.ExceptionInfo (m-eval exp2)))
+    (is (instance? BigDecimal (m-eval exp3)))
+    (is (thrown? clojure.lang.ExceptionInfo (m-eval exp4)))
+    (is (instance? BigDecimal (m-eval exp5)))
+    (is (thrown? clojure.lang.ExceptionInfo (m-eval exp6)))
+    (is (thrown? clojure.lang.ExceptionInfo (m-eval exp7)))))
 
 (deftest div-callsite-structural-and-exception-branches
   (let [cur1 (c/new-currency :TST nil 2)
@@ -1512,9 +1516,9 @@
       (is (vector? (split-first "USD +12")))
       (is (vector? (split-first "USD +ABC")))))
   (testing "currency-unit-strict and parse-int"
-    (is (nil? (eval `(m/currency-unit-strict 1.0))))
-    (is (instance? Currency (eval `(m/currency-unit-strict :PLN))))
-    (is (instance? Currency (eval `(m/currency-unit-strict {:id :PLN :scale 2}))))
+    (is (nil? (m-eval `(m/currency-unit-strict 1.0))))
+    (is (instance? Currency (m-eval `(m/currency-unit-strict :PLN))))
+    (is (instance? Currency (m-eval `(m/currency-unit-strict {:id :PLN :scale 2}))))
     (with-redefs [c/unit (fn [_] nil)]
       (is (thrown? clojure.lang.ExceptionInfo
                    (m/parse :PLN 1M RoundingMode/HALF_UP)))))
@@ -1799,7 +1803,7 @@
           money (Money. cur (BigDecimal. "1.23"))]
       (is (= "1.2"
              (.toPlainString ^BigDecimal
-                             (eval `(m/bd-set-scale ~bd 1 java.math.RoundingMode/DOWN :x {})))))
+                             (m-eval `(m/bd-set-scale ~bd 1 java.math.RoundingMode/DOWN :x {})))))
       (is (instance? Money (m/round money 1 RoundingMode/DOWN)))
       (is (thrown? clojure.lang.ExceptionInfo (m/round money 1 nil)))))
   (testing "parse-number and split-currency-first extra paths"
@@ -1877,10 +1881,10 @@
           exp-bad3 (@#'m/div-core nil nil 1M 3M 'java.math.RoundingMode/UNNECESSARY)
           exp-ok2  (@#'m/div-core nil nil 10M 2M)
           exp-bad2 (@#'m/div-core nil nil 1M 3M)]
-      (is (instance? BigDecimal (eval exp-ok3)))
-      (is (thrown? clojure.lang.ExceptionInfo (eval exp-bad3)))
-      (is (instance? BigDecimal (eval exp-ok2)))
-      (is (thrown? clojure.lang.ExceptionInfo (eval exp-bad2)))))
+      (is (instance? BigDecimal (m-eval exp-ok3)))
+      (is (thrown? clojure.lang.ExceptionInfo (m-eval exp-bad3)))
+      (is (instance? BigDecimal (m-eval exp-ok2)))
+      (is (thrown? clojure.lang.ExceptionInfo (m-eval exp-bad2)))))
   (testing "div-scaled loop init paths with success and failure"
     (let [auto-cur (c/new-currency :AUTO2 nil c/auto-scaled)
           am1      (Money. auto-cur (BigDecimal. "10.00"))

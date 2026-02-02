@@ -103,6 +103,14 @@
     (let [m (se/edn-string->money "#money/crypto[1.5M ETH]")]
       (is (instance? Money m))
       (is (= :crypto/ETH (c/id m)))))
+  (testing "edn-string->money parses namespaced literal with string currency"
+    (let [m (se/edn-string->money "#money/crypto[1.5M \"ETH\"]")]
+      (is (instance? Money m))
+      (is (= :crypto/ETH (c/id m)))))
+  (testing "edn-string->money parses namespaced literal with map argument"
+    (let [m (se/edn-string->money "#money/crypto{:currency :crypto/ETH :amount 1.5M}")]
+      (is (instance? Money m))
+      (is (= :crypto/ETH (c/id m)))))
   (testing "edn-string->money parses map-form tagged literal"
     (let [m (se/edn-string->money "#money{:currency :PLN :amount 12.30M}")]
       (is (instance? Money m))
@@ -208,13 +216,23 @@
   (testing "edn-keyword->currency creates Currency from keyword"
     (let [c (se/edn-keyword->currency :PLN)]
       (is (instance? Currency c))
-      (is (= :PLN (.id ^Currency c))))))
+      (is (= :PLN (.id ^Currency c)))))
+  (testing "edn-keyword->currency uses custom registry when provided"
+    (let [reg (registry/new-registry)
+          reg (c/register reg (c/of {:id :MYCUR :scale 4}))
+          c2  (se/edn-keyword->currency :MYCUR {:registry reg})]
+      (is (= :MYCUR (.id ^Currency c2))))))
 
 (deftest currency-edn-string-deserialization
   (testing "edn-string->currency parses tagged literal"
     (let [c (se/edn-string->currency "#currency :PLN")]
       (is (instance? Currency c))
       (is (= :PLN (.id ^Currency c)))))
+  (testing "edn-string->currency uses custom registry when provided"
+    (let [reg (registry/new-registry)
+          reg (c/register reg (c/of {:id :MYCUR :scale 4}))
+          c2  (se/edn-string->currency "#currency :MYCUR" {:registry reg})]
+      (is (= :MYCUR (.id ^Currency c2)))))
   (testing "edn-string->currency validates input type"
     (is (thrown-with-msg?
          clojure.lang.ExceptionInfo
@@ -248,6 +266,10 @@
   (testing "Money implements EdnSerializable via to-edn-string"
     (let [m (m/of :PLN 12.30M)]
       (is (= "#money[12.30M PLN]" (se/to-edn-string m)))))
+  (testing "Money implements EdnSerializable via to-edn-string with opts"
+    (let [m (m/of :crypto/ETH 1.5M)]
+      (is (= "#money[1.500000000000000000M ETH]"
+             (se/to-edn-string m {:code-only? true})))))
   (testing "Money implements EdnSerializable via to-edn-full-map with opts"
     (let [m (m/of :PLN 12.30M)]
       (is (= (se/money->edn-full-map m {:keys [:amount]})
@@ -261,6 +283,9 @@
     (let [c (c/of :PLN)]
       (is (= (se/currency->edn-full-map c {:keys [:id]})
              (se/to-edn-full-map c {:keys [:id]})))))
+  (testing "Currency implements EdnSerializable via to-edn-full-map"
+    (let [c (c/of :PLN)]
+      (is (= 985 (:numeric (se/to-edn-full-map c))))))
   (testing "Currency implements EdnSerializable via to-edn-string"
     (let [c (c/of :PLN)]
       (is (= "#currency :PLN" (se/to-edn-string c)))))

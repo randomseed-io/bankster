@@ -385,6 +385,42 @@
       (is (= :custom/USD (.id ^Currency (first code-set))))
       (is (= 1 (get (meta (first code-set)) :io.randomseed.bankster.currency/weight))))))
 
+(deftest registry-domain-index-updates-on-register-update-unregister
+  (testing "cur-dom->curs reflects add/remove/change"
+    (let [r0    (registry/new)
+          cur-a (c/new :AAA 1 2 :iso/fiat :DOM-A)
+          cur-b (c/new :AAA 1 2 :iso/fiat :DOM-B)
+          r1    (c/register r0 cur-a)
+          dom-a (registry/currency-domain->currencies :DOM-A r1)
+          dom-b (registry/currency-domain->currencies :DOM-B r1)]
+      (is (= #{:AAA} (set (map c/id dom-a))))
+      (is (nil? dom-b))
+      (let [r2    (c/update r1 cur-b)
+            dom-a (registry/currency-domain->currencies :DOM-A r2)
+            dom-b (registry/currency-domain->currencies :DOM-B r2)
+            r3    (c/unregister r2 :AAA)]
+        (is (not (seq dom-a)))
+        (is (= #{:AAA} (set (map c/id dom-b))))
+        (is (nil? (registry/currency-domain->currencies :DOM-A r3)))
+        (is (nil? (registry/currency-domain->currencies :DOM-B r3)))))))
+
+(deftest registry-domain-index-updates-on-weight-change
+  (testing "cur-dom->curs reflects set-weight/clear-weight ordering"
+    (let [r0    (registry/new)
+          cur-a (c/new :AAA 1 2 :iso/fiat :DOM-A)
+          cur-b (c/new :BBB 2 2 :iso/fiat :DOM-A)
+          r1    (-> r0 (c/register cur-a) (c/register cur-b))
+          r2    (c/set-weight r1 :AAA 5)
+          dom2  (registry/currency-domain->currencies :DOM-A r2)]
+      (is (= #{:AAA :BBB} (set (map c/id dom2))))
+      (is (= 5 (c/weight :AAA r2)))
+      (is (= 0 (c/weight :BBB r2)))
+      (is (= :BBB (-> dom2 first c/id)))
+      (let [r3   (c/clear-weight r2 :AAA)
+            dom3 (registry/currency-domain->currencies :DOM-A r3)]
+        (is (= 0 (c/weight :AAA r3)))
+        (is (= :AAA (-> dom3 first c/id)))))))
+
 (deftest private-hierarchy-map-branch-coverage
   (let [hierarchy-map? #'io.randomseed.bankster.registry/hierarchy-map?]
     (testing "hierarchy-map? exercises all short-circuit branches"

@@ -1972,7 +1972,7 @@
       (is (instance? Currency (c/attempt* m-def r)))
       (with-redefs [c/to-currency (constantly nil)
                     c/resolve     (constantly eur)]
-        (is (identical? eur (c/attempt* m-def r))))
+        (is (nil? (c/attempt* m-def r))))
       (is (instance? Currency (c/attempt* 978 r))))
     (testing "attempt* 1-arity branches"
       (is (instance? Currency (c/attempt* eur)))

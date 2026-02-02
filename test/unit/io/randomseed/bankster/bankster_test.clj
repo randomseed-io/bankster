@@ -9,6 +9,7 @@
 
   (:require [clojure.test :refer [deftest testing is]]
             [io.randomseed.bankster :as bankster]
+            [io.randomseed.bankster.registry :as registry]
             [io.randomseed.bankster.money :as money]))
 
 (deftest record-toString-contracts
@@ -16,7 +17,7 @@
     (let [c (bankster/->Currency :PLN 985 2 :iso/fiat :ISO-4217)]
       (is (= "PLN" (.toString c)))))
   (testing "Registry toString returns pr-str form"
-    (let [r (bankster/->Registry {} {} {} {} {} {} {} {} {} nil "v" {})]
+    (let [r (registry/new-registry)]
       (is (string? (.toString r)))
       (is (re-find #"^#Registry" (.toString r)))))
   (testing "Money toString uses amount and currency"
