@@ -250,7 +250,7 @@
         [(when (clojure.core/pos? (.length sb)) (.toString sb)) i]
         (let [ch (.charAt s i)]
           (cond
-            (and sign-ok? (clojure.core/zero? (.length sb)) (sign-char? ch))
+            (and sign-ok? (sign-char? ch))
             (do (.append sb ch)
                 (recur (skip-seps s (inc i)) false))
 
