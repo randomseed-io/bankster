@@ -23,7 +23,7 @@
                                      lambdaisland/kaocha-cloverage  {:mvn/version "1.1.89"}
                                      clj-commons/spyscope           {:mvn/version "0.1.48"}
                                      cheshire/cheshire              {:mvn/version "6.1.0"}}
-                       :extra-paths ["dev/src" "dev/resources" "test/unit"]
+                       :extra-paths ["dev/src" "dev/resources" "test/unit" "examples"]
                        :jvm-opts    ["-Dclojure.spec.compile-asserts=true"]}
            :test      {:extra-paths ["test/unit" "dev/resources"]
                        :extra-deps  {org.clojure/test.check         {:mvn/version "1.1.3"}
