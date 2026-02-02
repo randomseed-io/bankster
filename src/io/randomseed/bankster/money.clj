@@ -1670,7 +1670,7 @@
          (mul-core ^BigDecimal am bm)))))
   ([a b & more]
    (if scale/*each*
-     (apply mul-scaled a b more)
+     (clojure.core/apply mul-scaled a b more)
      (let [step                       (fn [[^BigDecimal acc ^Money m] x]
 	                                (if (instance? Money x)
 	                                  (if (some? m)
