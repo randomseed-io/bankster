@@ -354,7 +354,11 @@
 ;;
 
 (defn new-registry
-  "Creates a new registry."
+  "Creates a new registry.
+
+  Accepts base maps and builds derived index maps during initialization. Even the
+  arity that accepts a Registry map/record ignores any derived index fields (they are
+  recomputed during initialization)."
   {:tag Registry :added "1.0.0"}
   (^Registry []
    (bankster/->Registry (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-m) (h-r) (default-version) (h-m)))

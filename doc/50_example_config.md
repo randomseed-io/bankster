@@ -2,8 +2,9 @@
 
 This is an example EDN configuration that Bankster can load as a currency registry
 (`io.randomseed.bankster.registry/Registry`). The format is intentionally branch-oriented:
-currency definitions live under `:currencies`, while registry-level attributes and indexes
-(`:countries`, `:localized`, `:traits`, `:weights`) are stored in dedicated top-level branches.
+currency definitions live under `:currencies`, while registry-level attributes live in
+dedicated top-level branches. `:countries` is keyed by country ID (country -> currency),
+whereas `:localized`, `:traits`, and `:weights` are keyed by currency ID.
 
 ```clojure
 {:version "2026013114025983",
@@ -12,14 +13,17 @@ currency definitions live under `:currencies`, while registry-level attributes a
  ;; into constructed Currency objects (extension fields). Useful for importer/merge tooling.
  :propagate-keys [],
 
- ;; Registry-level attributes indexed by currency ID. These branches may be populated
- ;; directly (as here) and/or via inline keys inside individual currency entries under
- ;; :currencies (inline values are merged; per-currency values take precedence).
+ ;; Registry-level attributes stored in top-level branches.
+ ;; - :countries maps country-id -> currency-id.
+ ;; - :localized, :traits, :weights map currency-id -> data.
+ ;; These branches may be populated directly (as here) and/or via inline keys inside
+ ;; individual currency entries under :currencies (inline values are merged; per-currency
+ ;; values take precedence).
 
- :traits {:XXX [:testing]},
- :weights {:XXX 0},
- :localized {},
- :countries {:XXX :PL},
+ :traits {:PLN [:testing]},
+ :weights {:PLN 0},
+ :localized {:PLN {:pl {:name "zloty"}}},
+ :countries {:PL :PLN},
 
  ;; Hierarchies define parent relationships used by predicates like of-kind?/of-domain?/of-trait?.
  ;; Each axis is a map of `child -> parent(s)`; use a vector/set to express multiple parents.

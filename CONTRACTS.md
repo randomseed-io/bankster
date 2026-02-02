@@ -149,6 +149,11 @@ Contracts:
 - The global registry lives in `io.randomseed.bankster.registry/R` (Atom).
 - In many operations, "default registry" means: the dynamic `registry/*default*`
   (when bound), otherwise the global `registry/R`.
+- `registry/new` / `registry/new-registry` accept base maps and build derived index
+  maps (`:cur-code->curs`, `:cur-nr->cur`, `:cur-nr->curs`, `:cur-dom->curs`,
+  `:cur-id->ctr-ids`) during initialization. Even the arity that accepts a Registry
+  map/record ignores any derived index fields (they are recomputed during
+  initialization).
 - Registry hierarchies are used by higher-level predicates that rely on `isa?` (e.g.
   `currency/of-domain?`, `currency/of-kind?`, `currency/of-trait?`). Custom axes may be introduced by
   consumers (stored under additional keys in `:hierarchies`).

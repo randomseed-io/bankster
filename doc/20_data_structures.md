@@ -47,9 +47,15 @@ having the following fields:
 * `cur-id->weight` – a map of currency ID to weight (integer; conflict resolution);
 * `cur-code->curs` – a map of currency code keywords to weighted buckets (sorted sets) of currencies;
 * `cur-nr->curs` – a map of currency numeric IDs to weighted buckets (sorted sets) of currencies;
+* `cur-dom->curs` – a map of currency domains to weighted buckets (sorted sets) of currencies;
 * `hierarchies` – a record holding hierarchies for currency classification axes (e.g. `:domain`, `:kind`, `:traits`);
 * `version` – a string with registry version;
 * `ext` – a map with extra registry data.
+
+Derived index maps (`cur-code->curs`, `cur-nr->cur`, `cur-nr->curs`, `cur-dom->curs`,
+`cur-id->ctr-ids`) are built during registry initialization. `registry/new-registry`
+accepts base maps; even the arity that accepts a Registry map/record ignores any
+derived index fields (they are recomputed during initialization).
 
 ## Money
 

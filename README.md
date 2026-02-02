@@ -130,9 +130,11 @@ way to use different registry is to set a dynamic variable
 `io.randomseed.bankster.currency/with-registry`).
 
 `registry/new-registry` expects *base maps* (e.g. `:cur-id->cur`, `:ctr-id->cur`,
-`:cur-id->localized`, `:cur-id->traits`, `:cur-id->weight`) and derives all secondary
-indexes (`:cur-code->curs`, `:cur-nr->cur`, `:cur-nr->curs`, `:cur-dom->curs`,
-`:cur-id->ctr-ids`) deterministically.
+`:cur-id->localized`, `:cur-id->traits`, `:cur-id->weight`) and builds all derived
+index maps during initialization (`:cur-code->curs`, `:cur-nr->cur`, `:cur-nr->curs`,
+`:cur-dom->curs`, `:cur-id->ctr-ids`). Even the arity that accepts a Registry
+map/record ignores any derived index fields (they are recomputed during
+initialization).
 
 When the library loads, its predefined configuration is read from a default EDN file
 and its contents populate the default, global registry. This registry can be
@@ -191,11 +193,14 @@ distribution config), use `io.randomseed.bankster.init`:
 ```
 
 Configuration (`config.edn`) is branch-oriented by default (`:currencies`, plus
-top-level indices like `:countries`, `:localized` and `:traits`). For convenience,
-each currency entry may also carry inline `:countries`, `:localized` and `:traits`
-which are merged into the global branches while loading (they do not become currency
-fields). Similarly, a currency entry may include inline `:weight` (or `:we`) which is
-normalized into the top-level `:weights` branch.
+top-level branches like `:countries`, `:localized`, `:traits`, and `:weights`).
+`:countries` is keyed by country ID (country -> currency), whereas `:localized`,
+`:traits`, and `:weights` are keyed by currency ID. For convenience, each currency
+entry may also carry inline `:countries` (seq of country IDs), `:localized` and
+`:traits` which are merged into the global branches while loading (they do not
+become currency fields; per-currency values take precedence). Similarly, a currency
+entry may include inline `:weight` (or `:we`) which is normalized into the top-level
+`:weights` branch.
 
 If you need selected extra keys from currency maps to be preserved on the constructed
 `Currency` objects (extension fields), use `:propagate-keys` in the config (global

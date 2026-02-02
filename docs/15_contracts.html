@@ -94,6 +94,7 @@
 <ul>
 <li>The global registry lives in <code>io.randomseed.bankster.registry/R</code> (Atom).</li>
 <li>In many operations, “default registry” means: the dynamic <code>registry/*default*</code> (when bound), otherwise the global <code>registry/R</code>.</li>
+<li><code>registry/new</code> / <code>registry/new-registry</code> accept base maps and build derived index maps (<code>:cur-code-&gt;curs</code>, <code>:cur-nr-&gt;cur</code>, <code>:cur-nr-&gt;curs</code>, <code>:cur-dom-&gt;curs</code>, <code>:cur-id-&gt;ctr-ids</code>) during initialization. Even the arity that accepts a Registry map/record ignores any derived index fields (they are recomputed during initialization).</li>
 <li>Registry hierarchies are used by higher-level predicates that rely on <code>isa?</code> (e.g. <code>currency/of-domain?</code>, <code>currency/of-kind?</code>, <code>currency/of-trait?</code>). Custom axes may be introduced by consumers (stored under additional keys in <code>:hierarchies</code>).</li>
 <li>When multiple currencies share the same numeric ID, the registry keeps them all in <code>:cur-nr-&gt;curs</code> and picks a canonical one for <code>:cur-nr-&gt;cur</code> using weight (lower wins).</li>
 </ul>
