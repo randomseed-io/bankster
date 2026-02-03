@@ -4,6 +4,7 @@
    Bankster provides tagged literals that make code more readable
    and enable data-as-code for financial values."
   (:require [io.randomseed.bankster.money    :as money]
+            [io.randomseed.bankster.api      :as api]
             [io.randomseed.bankster.currency :as currency]))
 
 ;;; ---------------------------------------------------------------------------
@@ -95,7 +96,7 @@
   ;; => #money[29.99 PLN]
 
   ;; Operations work directly
-  (money/add (:widget-a price-list) (:widget-b price-list))
+  (api/+ (:widget-a price-list) (:widget-b price-list))
   ;; => #money[79.98 PLN]
   )
 
@@ -114,9 +115,9 @@
 (defn calculate-total
   "Calculates order total with shipping."
   [subtotal]
-  (if (money/ge? subtotal minimum-order-value)
+  (if (api/>= subtotal minimum-order-value)
     subtotal
-    (money/add subtotal shipping-cost)))
+    (api/+ subtotal shipping-cost)))
 
 (comment
   (calculate-total #money[50 PLN])
@@ -136,11 +137,11 @@
 
   (deftest allocation-test
     (is (= [#money[33.34 PLN] #money[33.33 PLN] #money[33.33 PLN]]
-           (money/allocate #money[100 PLN] [1 1 1]))))
+           (api/money-allocate #money[100 PLN] [1 1 1]))))
 
   (deftest arithmetic-test
-    (is (money/eq? #money[150 PLN]
-                   (money/add #money[100 PLN] #money[50 PLN]))))
+    (is (api/= #money[150 PLN]
+                   (api/+ #money[100 PLN] #money[50 PLN]))))
   )
 
 ;;; ---------------------------------------------------------------------------
@@ -204,21 +205,21 @@
   #money[100 PLN]
 
   ;; Macro (programmatic, allows variables)
-  (money/of :PLN 100)
+  (api/money-of :PLN 100)
 
   ;; Function (fully dynamic)
   (money/value :PLN 100)
 
   ;; All produce equivalent results
-  (money/eq? #money[100 PLN]
-             (money/of :PLN 100))
+  (api/= #money[100 PLN]
+             (api/money-of :PLN 100))
   ;; => true
 
   ;; Tagged literals are compile-time - currency must be literal
   ;; For runtime currency, use of/value:
   (let [currency :PLN
         amount 100]
-    (money/of currency amount))
+    (api/money-of currency amount))
   )
 
 ;;; ---------------------------------------------------------------------------
@@ -243,13 +244,13 @@
   [template]
   (let [items (:items template)
         line-totals (map (fn [{:keys [unit-price quantity]}]
-                           (money/mul unit-price quantity))
+                           (api/* unit-price quantity))
                          items)
-        subtotal (apply money/add line-totals)]
+        subtotal (apply api/+ line-totals)]
     {:items items
      :subtotal subtotal
-     :vat (money/mul subtotal 0.23M)
-     :total (money/mul subtotal 1.23M)}))
+     :vat (api/* subtotal 0.23M)
+     :total (api/* subtotal 1.23M)}))
 
 (comment
   (calculate-invoice invoice-template)

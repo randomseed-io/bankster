@@ -8,6 +8,7 @@
 
    This allows rich classification and filtering of currencies."
   (:require [io.randomseed.bankster.money    :as money]
+            [io.randomseed.bankster.api      :as api]
             [io.randomseed.bankster.currency :as currency]
             [io.randomseed.bankster.registry :as registry]
             [io.randomseed.bankster.scale    :as scale]))
@@ -20,29 +21,29 @@
   ;; Bankster provides many built-in predicates for currency kinds:
 
   ;; Stability and value types
-  (currency/stable?     (currency/of :crypto/USDT))  ;; => true (stablecoin)
-  (currency/asset?      (currency/of :crypto/BTC))   ;; => true (value-bearing)
-  (currency/peg?        (currency/of :crypto/USDT))  ;; => true (pegged to fiat)
-  (currency/commodity?  (currency/of :XAU))          ;; => true (gold)
-  (currency/metal?      (currency/of :XAU))          ;; => true (precious metal)
+  (api/currency-stable?     (api/currency-of :crypto/USDT))  ;; => true (stablecoin)
+  (currency/asset?      (api/currency-of :crypto/BTC))   ;; => true (value-bearing)
+  (currency/peg?        (api/currency-of :crypto/USDT))  ;; => true (pegged to fiat)
+  (currency/commodity?  (api/currency-of :XAU))          ;; => true (gold)
+  (currency/metal?      (api/currency-of :XAU))          ;; => true (precious metal)
 
   ;; Token classifications
-  (currency/wrapped?    (currency/of :crypto/WBTC))  ;; => true (wrapped Bitcoin)
-  (currency/staked?     (currency/of :crypto/stETH)) ;; => true (staked ETH)
-  (currency/referenced? (currency/of :crypto/USDT))  ;; => true (references fiat)
+  (currency/wrapped?    (api/currency-of :crypto/WBTC))  ;; => true (wrapped Bitcoin)
+  (currency/staked?     (api/currency-of :crypto/stETH)) ;; => true (staked ETH)
+  (currency/referenced? (api/currency-of :crypto/USDT))  ;; => true (references fiat)
 
   ;; Fiat and traditional currencies
-  (currency/fiat?       (currency/of :USD))          ;; => true
-  (currency/fiduciary?  (currency/of :EUR))          ;; => true
-  (currency/iso?        (currency/of :PLN))          ;; => true (ISO-4217)
-  (currency/funds?      (currency/of :XDR))          ;; => true (SDR - settlement)
+  (currency/fiat?       (api/currency-of :USD))          ;; => true
+  (currency/fiduciary?  (api/currency-of :EUR))          ;; => true
+  (api/iso-currency?        (api/currency-of :PLN))          ;; => true (ISO-4217)
+  (currency/funds?      (api/currency-of :XDR))          ;; => true (SDR - settlement)
 
   ;; Virtual and experimental
-  (currency/virtual?      (currency/of :crypto/ETH))   ;; => true
-  (currency/experimental? (currency/of :XTS))          ;; => true (test currency)
-  (currency/test?         (currency/of :XTS))          ;; => true
-  (currency/special?      (currency/of :XXX))          ;; => true (no currency)
-  (currency/null?         (currency/of :XXX))          ;; => true
+  (currency/virtual?      (api/currency-of :crypto/ETH))   ;; => true
+  (currency/experimental? (api/currency-of :XTS))          ;; => true (test currency)
+  (currency/test?         (api/currency-of :XTS))          ;; => true
+  (currency/special?      (api/currency-of :XXX))          ;; => true (no currency)
+  (currency/null?         (api/currency-of :XXX))          ;; => true
   )
 
 ;;; ---------------------------------------------------------------------------
@@ -53,24 +54,24 @@
   ;; Domain predicates check the currency's domain classification
 
   ;; Cryptocurrency domain
-  (currency/crypto? (currency/of :crypto/BTC))
+  (api/currency-crypto? (api/currency-of :crypto/BTC))
   ;; => true
 
-  (currency/crypto? (currency/of :USD))
+  (api/currency-crypto? (api/currency-of :USD))
   ;; => false
 
   ;; ISO domain variants
-  (currency/iso-strict? (currency/of :EUR))
+  (currency/iso-strict? (api/currency-of :EUR))
   ;; => true (current, official ISO currency)
 
-  (currency/iso-legacy? (currency/of :DEM))
+  (currency/iso-legacy? (api/currency-of :DEM))
   ;; => true (former German Mark - legacy ISO)
 
   ;; General domain check
-  (currency/of-domain? :CRYPTO (currency/of :crypto/ETH))
+  (api/currency-of-domain? :CRYPTO (api/currency-of :crypto/ETH))
   ;; => true
 
-  (currency/of-domain? :ISO-4217 (currency/of :PLN))
+  (api/currency-of-domain? :ISO-4217 (api/currency-of :PLN))
   ;; => true
   )
 
@@ -80,21 +81,21 @@
 
 (comment
   ;; decentralized? checks for :control/decentralized trait
-  (currency/decentralized? (currency/of :crypto/BTC))
+  (api/currency-decentralized? (api/currency-of :crypto/BTC))
   ;; => true (Bitcoin is decentralized)
 
-  (currency/decentralized? (currency/of :crypto/ETH))
+  (api/currency-decentralized? (api/currency-of :crypto/ETH))
   ;; => true (Ethereum is decentralized)
 
   ;; Centralized stablecoins
-  (currency/decentralized? (currency/of :crypto/USDT))
+  (api/currency-decentralized? (api/currency-of :crypto/USDT))
   ;; => false (Tether is centralized)
 
-  (currency/decentralized? (currency/of :crypto/USDC))
+  (api/currency-decentralized? (api/currency-of :crypto/USDC))
   ;; => false (USD Coin is centralized)
 
   ;; Fiat currencies are not decentralized
-  (currency/decentralized? (currency/of :USD))
+  (api/currency-decentralized? (api/currency-of :USD))
   ;; => false
   )
 
@@ -105,19 +106,19 @@
 (defn classify-currency
   "Classifies a currency using built-in predicates."
   [currency-id]
-  (let [curr (currency/of currency-id)]
+  (let [curr (api/currency-of currency-id)]
     {:id             currency-id
      ;; Domain
-     :crypto?        (currency/crypto? curr)
-     :iso?           (currency/iso? curr)
+     :crypto?        (api/currency-crypto? curr)
+     :iso?           (api/iso-currency? curr)
      ;; Kind
-     :stable?        (currency/stable? curr)
+     :stable?        (api/currency-stable? curr)
      :fiat?          (currency/fiat? curr)
      :wrapped?       (currency/wrapped? curr)
      :commodity?     (currency/commodity? curr)
      :virtual?       (currency/virtual? curr)
      ;; Trait
-     :decentralized? (currency/decentralized? curr)}))
+     :decentralized? (api/currency-decentralized? curr)}))
 
 (comment
   (classify-currency :crypto/BTC)
@@ -155,29 +156,29 @@
 
 (comment
   ;; has-trait? - exact trait match
-  (currency/has-trait? (currency/of :crypto/BTC) :control/decentralized)
+  (api/currency-has-trait? (api/currency-of :crypto/BTC) :control/decentralized)
   ;; => true
 
-  (currency/has-trait? (currency/of :crypto/USDT) :control/centralized)
+  (api/currency-has-trait? (api/currency-of :crypto/USDT) :control/centralized)
   ;; => true
 
   ;; Check for blockchain network trait
-  (currency/has-trait? (currency/of :crypto/ETH) :blockchain/ethereum)
+  (api/currency-has-trait? (api/currency-of :crypto/ETH) :blockchain/ethereum)
   ;; => true
 
-  (currency/has-trait? (currency/of :crypto/BTC) :blockchain/bitcoin)
+  (api/currency-has-trait? (api/currency-of :crypto/BTC) :blockchain/bitcoin)
   ;; => true
 
   ;; Token standards
-  (currency/has-trait? (currency/of :crypto/USDT) :token/erc20)
+  (api/currency-has-trait? (api/currency-of :crypto/USDT) :token/erc20)
   ;; => true (for Ethereum-based USDT)
 
   ;; Privacy coins
-  (currency/has-trait? (currency/of :crypto/XMR) :privacy/coin)
+  (api/currency-has-trait? (api/currency-of :crypto/XMR) :privacy/coin)
   ;; => true (Monero is a privacy coin)
 
   ;; DeFi traits
-  (currency/has-trait? (currency/of :crypto/UNI) :defi/governance)
+  (api/currency-has-trait? (api/currency-of :crypto/UNI) :defi/governance)
   ;; => true (if registered with trait)
   )
 
@@ -189,21 +190,21 @@
   ;; of-trait? respects trait hierarchy (uses isa?)
   ;; :stable/coin derives from [:stable :token/fungible]
 
-  (currency/of-trait? :stable (currency/of :crypto/USDT))
+  (api/currency-of-trait? :stable (api/currency-of :crypto/USDT))
   ;; => true (USDT has :stable/coin which derives from :stable)
 
-  (currency/of-trait? :token/fungible (currency/of :crypto/USDT))
+  (api/currency-of-trait? :token/fungible (api/currency-of :crypto/USDT))
   ;; => true (derives from :token/fungible)
 
-  (currency/of-trait? :token (currency/of :crypto/USDT))
+  (api/currency-of-trait? :token (api/currency-of :crypto/USDT))
   ;; => true (:token/fungible derives from :token)
 
   ;; :control hierarchy
-  (currency/of-trait? :control (currency/of :crypto/BTC))
+  (api/currency-of-trait? :control (api/currency-of :crypto/BTC))
   ;; => true (has :control/decentralized which derives from :control)
 
   ;; :blockchain hierarchy - query parent
-  (currency/of-trait? :blockchain (currency/of :crypto/ETH))
+  (api/currency-of-trait? :blockchain (api/currency-of :crypto/ETH))
   ;; => true (has :blockchain/ethereum which derives from :blockchain)
 
   ;; Trait hierarchy in config.edn:
@@ -220,23 +221,23 @@
 (defn currencies-with-trait
   "Returns all currencies that have a given trait."
   [trait]
-  (->> (currency/all)
-       (filter #(currency/has-trait? % trait))
-       (map currency/id)))
+  (->> (api/currency-all)
+       (filter #(api/currency-has-trait? % trait))
+       (map api/currency-id)))
 
 (defn decentralized-currencies
   "Returns all decentralized currencies."
   []
-  (->> (currency/all)
-       (filter currency/decentralized?)
-       (map currency/id)))
+  (->> (api/currency-all)
+       (filter api/currency-decentralized?)
+       (map api/currency-id)))
 
 (defn stablecoins
   "Returns all stablecoins."
   []
-  (->> (currency/all)
-       (filter currency/stable?)
-       (map currency/id)))
+  (->> (api/currency-all)
+       (filter api/currency-stable?)
+       (map api/currency-id)))
 
 (comment
   ;; List all decentralized currencies
@@ -263,13 +264,13 @@
 (defn analyze-portfolio-traits
   "Analyzes a portfolio by currency traits."
   [holdings]
-  (let [currencies (map (comp currency/of first) holdings)]
+  (let [currencies (map (comp api/currency-of first) holdings)]
     {:total-positions   (count holdings)
-     :decentralized     (count (filter currency/decentralized? currencies))
-     :centralized       (count (filter #(currency/has-trait? % :control/centralized) currencies))
-     :stablecoins       (count (filter currency/stable? currencies))
-     :privacy-coins     (count (filter #(currency/has-trait? % :privacy/coin) currencies))
-     :defi-tokens       (count (filter #(currency/of-trait? :defi currencies) currencies))}))
+     :decentralized     (count (filter api/currency-decentralized? currencies))
+     :centralized       (count (filter #(api/currency-has-trait? % :control/centralized) currencies))
+     :stablecoins       (count (filter api/currency-stable? currencies))
+     :privacy-coins     (count (filter #(api/currency-has-trait? % :privacy/coin) currencies))
+     :defi-tokens       (count (filter #(api/currency-of-trait? :defi currencies) currencies))}))
 
 (defn portfolio-decentralization-ratio
   "Calculates what percentage of portfolio (by value) is decentralized."
@@ -278,7 +279,7 @@
                                      (* amount (get rates-in-usd curr 0M)))
                                    holdings))
         decentralized-value (reduce + (map (fn [[curr amount]]
-                                             (if (currency/decentralized? (currency/of curr))
+                                             (if (api/currency-decentralized? (api/currency-of curr))
                                                (* amount (get rates-in-usd curr 0M))
                                                0M))
                                            holdings))]
@@ -322,32 +323,32 @@
 (defn assess-currency-risk
   "Assesses risk factors for a cryptocurrency based on its traits."
   [currency-id]
-  (let [curr (currency/of currency-id)]
+  (let [curr (api/currency-of currency-id)]
     {:currency         currency-id
      :centralization-risk
      (cond
-       (currency/decentralized? curr) :low
-       (currency/has-trait? curr :control/federated) :medium
-       (currency/has-trait? curr :control/centralized) :high
+       (api/currency-decentralized? curr) :low
+       (api/currency-has-trait? curr :control/federated) :medium
+       (api/currency-has-trait? curr :control/centralized) :high
        :else :unknown)
 
      :stability-risk
      (cond
-       (currency/stable? curr) :low
-       (currency/has-trait? curr :peg/fiat) :low
+       (api/currency-stable? curr) :low
+       (api/currency-has-trait? curr :peg/fiat) :low
        :else :high)
 
      :regulatory-risk
      (cond
-       (currency/has-trait? curr :privacy/coin) :high
-       (currency/has-trait? curr :control/centralized) :medium
+       (api/currency-has-trait? curr :privacy/coin) :high
+       (api/currency-has-trait? curr :control/centralized) :medium
        :else :medium)
 
      :smart-contract-risk
      (cond
-       (currency/has-trait? curr :token/erc20) :medium
-       (currency/has-trait? curr :token/bep20) :medium
-       (currency/has-trait? curr :blockchain/bitcoin) :low
+       (api/currency-has-trait? curr :token/erc20) :medium
+       (api/currency-has-trait? curr :token/bep20) :medium
+       (api/currency-has-trait? curr :blockchain/bitcoin) :low
        :else :low)}))
 
 (comment
@@ -380,18 +381,18 @@
 (comment
   ;; Add traits to a currency in a registry
   (def custom-registry
-    (-> (registry/state)
-        (currency/add-traits :crypto/ETH #{:defi/base-layer :network/layer1})
-        (currency/add-traits :crypto/MATIC #{:network/layer2 :defi/scaling})))
+    (-> (api/registry-state)
+        (api/currency-add-traits :crypto/ETH #{:defi/base-layer :network/layer1})
+        (api/currency-add-traits :crypto/MATIC #{:network/layer2 :defi/scaling})))
 
   ;; Query custom traits
-  (currency/with-registry custom-registry
-    (currency/has-trait? (currency/of :crypto/ETH) :defi/base-layer))
+  (api/with-registry custom-registry
+    (api/currency-has-trait? (api/currency-of :crypto/ETH) :defi/base-layer))
   ;; => true
 
   ;; Set traits (replaces existing)
   (def registry-with-new-traits
-    (currency/set-traits (registry/state)
+    (api/currency-set-traits (api/registry-state)
                          :crypto/BTC
                          #{:control/decentralized
                            :blockchain/bitcoin
@@ -400,7 +401,7 @@
 
   ;; Remove traits
   (def registry-without-trait
-    (currency/remove-traits (registry/state)
+    (api/currency-remove-traits (api/registry-state)
                             :crypto/USDT
                             #{:some-trait-to-remove}))
   )
@@ -412,17 +413,17 @@
 (defn currencies-on-blockchain
   "Returns currencies that operate on a specific blockchain."
   [blockchain-trait]
-  (->> (currency/all)
-       (filter #(currency/has-trait? % blockchain-trait))
-       (map currency/id)))
+  (->> (api/currency-all)
+       (filter #(api/currency-has-trait? % blockchain-trait))
+       (map api/currency-id)))
 
 (defn multi-chain-currencies
   "Returns currencies that exist on multiple blockchains."
   [currency-id blockchains]
-  (let [curr (currency/of currency-id)]
+  (let [curr (api/currency-of currency-id)]
     {:currency   currency-id
-     :chains     (filter #(currency/has-trait? curr %) blockchains)
-     :multi-chain? (> (count (filter #(currency/has-trait? curr %) blockchains)) 1)}))
+     :chains     (filter #(api/currency-has-trait? curr %) blockchains)
+     :multi-chain? (> (count (filter #(api/currency-has-trait? curr %) blockchains)) 1)}))
 
 (comment
   ;; All Ethereum-based tokens
@@ -451,12 +452,12 @@
 (defn add-if-same-stability
   "Adds two amounts only if they have the same stability profile."
   [a b]
-  (let [curr-a (money/currency a)
-        curr-b (money/currency b)
-        stable-a? (currency/stable? curr-a)
-        stable-b? (currency/stable? curr-b)]
+  (let [curr-a (api/money-currency a)
+        curr-b (api/money-currency b)
+        stable-a? (api/currency-stable? curr-a)
+        stable-b? (api/currency-stable? curr-b)]
     (cond
-      (not (money/same-currencies? a b))
+      (not (api/money-same-currencies? a b))
       {:error "Different currencies"}
 
       (not= stable-a? stable-b?)
@@ -465,21 +466,21 @@
        :b-stable? stable-b?}
 
       :else
-      {:result (money/add a b)})))
+      {:result (api/+ a b)})))
 
 (defn calculate-with-stablecoin-fee
   "Applies different fee rates for stablecoins vs volatile crypto."
   [amount fee-rates]
-  (let [curr (money/currency amount)
-        fee-rate (if (currency/stable? curr)
+  (let [curr (api/money-currency amount)
+        fee-rate (if (api/currency-stable? curr)
                    (:stablecoin fee-rates)
                    (:volatile fee-rates))
-        fee (money/mul amount fee-rate)]
+        fee (api/* amount fee-rate)]
     {:amount     amount
      :fee-rate   fee-rate
      :fee        fee
-     :net-amount (money/sub amount fee)
-     :is-stable? (currency/stable? curr)}))
+     :net-amount (api/- amount fee)
+     :is-stable? (api/currency-stable? curr)}))
 
 (comment
   ;; Same-stability addition
@@ -512,20 +513,20 @@
 (defn validate-collateral
   "Validates if a currency can be used as collateral in DeFi."
   [currency-id allowed-traits]
-  (let [curr (currency/of currency-id)]
+  (let [curr (api/currency-of currency-id)]
     {:currency     currency-id
-     :valid?       (some #(currency/of-trait? % curr) allowed-traits)
-     :traits-found (filter #(currency/of-trait? % curr) allowed-traits)
-     :decentralized? (currency/decentralized? curr)}))
+     :valid?       (some #(api/currency-of-trait? % curr) allowed-traits)
+     :traits-found (filter #(api/currency-of-trait? % curr) allowed-traits)
+     :decentralized? (api/currency-decentralized? curr)}))
 
 (defn calculate-ltv
   "Calculates loan-to-value ratio based on collateral traits."
   [collateral-currency-id base-ltv]
-  (let [curr (currency/of collateral-currency-id)
+  (let [curr (api/currency-of collateral-currency-id)
         ;; Adjust LTV based on traits
         ltv-adjustment (cond
-                         (currency/stable? curr) 0.10M      ; +10% for stablecoins
-                         (currency/decentralized? curr) 0M  ; no adjustment
+                         (api/currency-stable? curr) 0.10M      ; +10% for stablecoins
+                         (api/currency-decentralized? curr) 0M  ; no adjustment
                          :else -0.10M)]                     ; -10% for centralized
     {:currency   collateral-currency-id
      :base-ltv   base-ltv
@@ -560,7 +561,7 @@
 
 (comment
   ;; Get the traits hierarchy from registry
-  (-> (registry/state)
+  (-> (api/registry-state)
       .hierarchies
       :traits)
   ;; => {:control/decentralized :control
@@ -570,22 +571,22 @@
   ;;     ...}
 
   ;; Check hierarchy relationships
-  (isa? (-> (registry/state) .hierarchies :traits)
+  (isa? (-> (api/registry-state) .hierarchies :traits)
         :stable/coin
         :stable)
   ;; => true
 
-  (isa? (-> (registry/state) .hierarchies :traits)
+  (isa? (-> (api/registry-state) .hierarchies :traits)
         :stable/coin
         :token/fungible)
   ;; => true
 
   ;; All traits that derive from :control
-  (descendants (-> (registry/state) .hierarchies :traits) :control)
+  (descendants (-> (api/registry-state) .hierarchies :traits) :control)
   ;; => #{:control/decentralized :control/centralized :control/federated}
 
   ;; All traits that derive from :blockchain
-  (descendants (-> (registry/state) .hierarchies :traits) :blockchain)
+  (descendants (-> (api/registry-state) .hierarchies :traits) :blockchain)
   ;; => #{:blockchain/ethereum :blockchain/bitcoin :blockchain/solana ...}
   )
 
@@ -609,20 +610,20 @@
        ├── :trust/low    (lower trust - e.g., algorithmic stables)
        └── :trust/none   (no trust - e.g., test currencies)"
   []
-  (-> (registry/state)
+  (-> (api/registry-state)
       ;; Step 1: Create :trust hierarchy
       ;; Each trust level derives from :trust parent
-      (registry/hierarchy-derive :traits :trust/full   :trust)
-      (registry/hierarchy-derive :traits :trust/normal :trust)
-      (registry/hierarchy-derive :traits :trust/low    :trust)
-      (registry/hierarchy-derive :traits :trust/none   :trust)
+      (api/registry-hierarchy-derive :traits :trust/full   :trust)
+      (api/registry-hierarchy-derive :traits :trust/normal :trust)
+      (api/registry-hierarchy-derive :traits :trust/low    :trust)
+      (api/registry-hierarchy-derive :traits :trust/none   :trust)
 
       ;; Step 2: Assign trust traits to specific currencies
-      (currency/add-traits :crypto/BTC  #{:trust/full})
-      (currency/add-traits :crypto/ETH  #{:trust/full})
-      (currency/add-traits :crypto/USDT #{:trust/normal})
-      (currency/add-traits :crypto/USDC #{:trust/normal})
-      (currency/add-traits :XXX         #{:trust/none})))
+      (api/currency-add-traits :crypto/BTC  #{:trust/full})
+      (api/currency-add-traits :crypto/ETH  #{:trust/full})
+      (api/currency-add-traits :crypto/USDT #{:trust/normal})
+      (api/currency-add-traits :crypto/USDC #{:trust/normal})
+      (api/currency-add-traits :XXX         #{:trust/none})))
 
 (defn build-trust-hierarchy-with-inheritance
   "Builds trust hierarchy AND makes existing traits inherit trust levels.
@@ -632,34 +633,34 @@
 
    Similarly, :metal (precious metals like XAU, XAG) can inherit :trust/full."
   []
-  (-> (registry/state)
+  (-> (api/registry-state)
       ;; Step 1: Create base :trust hierarchy
-      (registry/hierarchy-derive :traits :trust/full   :trust)
-      (registry/hierarchy-derive :traits :trust/normal :trust)
-      (registry/hierarchy-derive :traits :trust/low    :trust)
-      (registry/hierarchy-derive :traits :trust/none   :trust)
+      (api/registry-hierarchy-derive :traits :trust/full   :trust)
+      (api/registry-hierarchy-derive :traits :trust/normal :trust)
+      (api/registry-hierarchy-derive :traits :trust/low    :trust)
+      (api/registry-hierarchy-derive :traits :trust/none   :trust)
 
       ;; Step 2: Make existing trait categories inherit trust levels
       ;; :peg/fiat -> :trust/normal (fiat-pegged stablecoins are normally trusted)
-      (registry/hierarchy-derive :traits :peg/fiat :trust/normal)
+      (api/registry-hierarchy-derive :traits :peg/fiat :trust/normal)
 
       ;; :collateral/crypto -> :trust/low (crypto-collateralized = lower trust)
-      (registry/hierarchy-derive :traits :collateral/crypto :trust/low)
+      (api/registry-hierarchy-derive :traits :collateral/crypto :trust/low)
 
       ;; Step 3: Explicitly assign trust to major cryptocurrencies
-      (currency/add-traits :crypto/BTC #{:trust/full})
-      (currency/add-traits :crypto/ETH #{:trust/full})
-      (currency/add-traits :XXX        #{:trust/none})))
+      (api/currency-add-traits :crypto/BTC #{:trust/full})
+      (api/currency-add-traits :crypto/ETH #{:trust/full})
+      (api/currency-add-traits :XXX        #{:trust/none})))
 
 (defn trust-level
   "Returns the trust level of a currency (using of-trait? for hierarchy check)."
   [currency-id registry]
-  (let [curr (currency/of currency-id registry)]
+  (let [curr (api/currency-of currency-id registry)]
     (cond
-      (currency/of-trait? :trust/full   curr registry) :trust/full
-      (currency/of-trait? :trust/normal curr registry) :trust/normal
-      (currency/of-trait? :trust/low    curr registry) :trust/low
-      (currency/of-trait? :trust/none   curr registry) :trust/none
+      (api/currency-of-trait? :trust/full   curr registry) :trust/full
+      (api/currency-of-trait? :trust/normal curr registry) :trust/normal
+      (api/currency-of-trait? :trust/low    curr registry) :trust/low
+      (api/currency-of-trait? :trust/none   curr registry) :trust/none
       :else :trust/unknown)))
 
 (defn currencies-by-trust
@@ -672,7 +673,7 @@
   (def reg-basic (build-trust-hierarchy))
 
   ;; Check trust levels
-  (currency/with-registry reg-basic
+  (api/with-registry reg-basic
     {:btc-trust  (trust-level :crypto/BTC reg-basic)
      :usdt-trust (trust-level :crypto/USDT reg-basic)
      :xxx-trust  (trust-level :XXX reg-basic)})
@@ -681,8 +682,8 @@
   ;;     :xxx-trust :trust/none}
 
   ;; Query using of-trait? (respects hierarchy)
-  (currency/with-registry reg-basic
-    (currency/of-trait? :trust (currency/of :crypto/BTC)))
+  (api/with-registry reg-basic
+    (api/currency-of-trait? :trust (api/currency-of :crypto/BTC)))
   ;; => true (BTC has :trust/full which derives from :trust)
 
   ;; === Advanced: inheritance from existing traits ===
@@ -690,17 +691,17 @@
 
   ;; Now ANY currency with :peg/fiat trait automatically has :trust/normal!
   ;; USDT has :peg/fiat, so it inherits :trust/normal through hierarchy
-  (currency/with-registry reg-inherited
-    (let [usdt (currency/of :crypto/USDT)]
-      {:has-peg-fiat?     (currency/of-trait? :peg/fiat usdt)
-       :has-trust-normal? (currency/of-trait? :trust/normal usdt)
-       :has-trust?        (currency/of-trait? :trust usdt)}))
+  (api/with-registry reg-inherited
+    (let [usdt (api/currency-of :crypto/USDT)]
+      {:has-peg-fiat?     (api/currency-of-trait? :peg/fiat usdt)
+       :has-trust-normal? (api/currency-of-trait? :trust/normal usdt)
+       :has-trust?        (api/currency-of-trait? :trust usdt)}))
   ;; => {:has-peg-fiat? true
   ;;     :has-trust-normal? true   ; <-- inherited via :peg/fiat -> :trust/normal
   ;;     :has-trust? true}         ; <-- and :trust/normal -> :trust
 
   ;; Group currencies by trust
-  (currency/with-registry reg-inherited
+  (api/with-registry reg-inherited
     (currencies-by-trust [:crypto/BTC :crypto/ETH :crypto/USDT :crypto/USDC :XXX]
                          reg-inherited))
   ;; => {:trust/full   [:crypto/BTC :crypto/ETH]
@@ -729,7 +730,7 @@
 (defn acceptable-for-settlement?
   "Checks if currency meets minimum trust requirements for settlement."
   [currency-id min-trust-level registry]
-  (let [curr (currency/of currency-id registry)
+  (let [curr (api/currency-of currency-id registry)
         trust-order {:trust/full 4, :trust/normal 3, :trust/low 2, :trust/none 1}
         curr-level  (trust-level currency-id registry)
         curr-score  (get trust-order curr-level 0)

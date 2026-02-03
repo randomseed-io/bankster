@@ -3,7 +3,8 @@
 
    Key feature: the sum of allocated amounts ALWAYS equals the original
    amount - no 'lost pennies'."
-  (:require [io.randomseed.bankster.money :as money]))
+  (:require [io.randomseed.bankster.money :as money]
+            [io.randomseed.bankster.api :as api]))
 
 ;;; ---------------------------------------------------------------------------
 ;;; Example 1: Split a bill among friends
@@ -12,7 +13,7 @@
 (defn split-bill
   "Splits a bill equally among n people."
   [bill num-people]
-  (money/distribute bill num-people))
+  (api/money-distribute bill num-people))
 
 (comment
   ;; 100 PLN split among 3 people
@@ -20,7 +21,7 @@
   ;; => [#money[33.34 PLN] #money[33.33 PLN] #money[33.33 PLN]]
 
   ;; Verify: sum = exactly 100.00 PLN
-  (apply money/add (split-bill #money[100.00 PLN] 3))
+  (apply api/+ (split-bill #money[100.00 PLN] 3))
   ;; => #money[100.00 PLN]
   )
 
@@ -32,7 +33,7 @@
   "Splits amount according to given ratios.
    Ratios is a vector of numbers representing shares."
   [amount ratios]
-  (money/allocate amount ratios))
+  (api/money-allocate amount ratios))
 
 (comment
   ;; Bill of 157.43 PLN: 50% / 30% / 20%
@@ -40,7 +41,7 @@
   ;; => [#money[78.72 PLN] #money[47.23 PLN] #money[31.48 PLN]]
 
   ;; Verify sum
-  (apply money/add (split-by-shares #money[157.43 PLN] [5 3 2]))
+  (apply api/+ (split-by-shares #money[157.43 PLN] [5 3 2]))
   ;; => #money[157.43 PLN]
   )
 
@@ -59,7 +60,7 @@
   [dividend stakes]
   (let [names      (keys stakes)
         ratios     (vals stakes)
-        allocation (money/allocate dividend ratios)]
+        allocation (api/money-allocate dividend ratios)]
     (zipmap names allocation)))
 
 (comment
@@ -71,7 +72,7 @@
   ;; Verify: sum = dividend
   (->> (distribute-dividend #money[12500.00 PLN] shareholder-stakes)
        vals
-       (apply money/add))
+       (apply api/+))
   ;; => #money[12500.00 PLN]
   )
 
@@ -81,16 +82,16 @@
 
 (comment
   ;; 10 PLN split 3 ways - classic "10 / 3" problem
-  (money/allocate #money[10.00 PLN] [1 1 1])
+  (api/money-allocate #money[10.00 PLN] [1 1 1])
   ;; => [#money[3.34 PLN] #money[3.33 PLN] #money[3.33 PLN]]
   ;; Remainder (1 grosz) goes to first position
 
   ;; 1 cent split 3 ways
-  (money/allocate #money[0.01 PLN] [1 1 1])
+  (api/money-allocate #money[0.01 PLN] [1 1 1])
   ;; => [#money[0.01 PLN] #money[0.00 PLN] #money[0.00 PLN]]
 
   ;; Negative amount (e.g., refund correction)
-  (money/allocate #money[-100.00 PLN] [1 1])
+  (api/money-allocate #money[-100.00 PLN] [1 1])
   ;; => [#money[-50.00 PLN] #money[-50.00 PLN]]
   )
 
@@ -115,7 +116,7 @@
   [budget categories]
   (let [names      (keys categories)
         ratios     (vals categories)
-        allocation (money/allocate budget ratios)]
+        allocation (api/money-allocate budget ratios)]
     (zipmap names allocation)))
 
 (comment
@@ -136,7 +137,7 @@
   [bonus-pool performance-scores]
   (let [employees (keys performance-scores)
         scores    (vals performance-scores)
-        bonuses   (money/allocate bonus-pool scores)]
+        bonuses   (api/money-allocate bonus-pool scores)]
     (zipmap employees bonuses)))
 
 (comment

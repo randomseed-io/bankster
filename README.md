@@ -769,6 +769,11 @@ It allows to perform **math operations** on monetary amounts:
 
 (require '[io.randomseed.bankster.money.inter-ops :refer :all])
 
+;; NOTE: inter-ops is intentionally polymorphic (Money + numeric fallbacks),
+;; so boxed-math warnings are suppressed in that namespace.
+;; NOTE: avoid `:refer :all` on `io.randomseed.bankster.api` because it shadows
+;; core operators (e.g. `+`, `-`, `*`, `/`, `=`, comparisons).
+
 (+ 1 2 3)
 6
 
@@ -777,6 +782,55 @@ It allows to perform **math operations** on monetary amounts:
 
 (* 1 2 3 4 5 #money/crypto[0.7 ETH])
 #money/crypto[84.000000000000000000 ETH]
+
+;;
+;; using api (front API)
+;;
+
+(require '[io.randomseed.bankster.api :as api])
+
+;; NOTE: `api/amount` is an alias for `scale/amount`.
+;; NOTE: `api/scale` returns scale (Money amount scale / Currency nominal scale).
+
+(api/with-rescaling :HALF_UP
+  (api/auto-scaled? :XAU))
+;; => true
+
+(api/amount 12.30M)
+;; => 12.30M  ; BigDecimal
+
+(api/scale #money[12.30 EUR])
+;; => 2
+
+(api/scale :XAU)
+;; => nil  ; auto-scaled currency
+
+(api/currency-resolve-all :EUR)
+;; => #{#currency{:id :EUR, ...}}
+
+(api/currency-id-str :crypto/eth)
+;; => "crypto/ETH"
+
+(api/currency-code-str :crypto/eth)
+;; => "ETH"
+
+(api/currency-symbol :USD :en_US)
+;; => "$"
+
+(api/currency-name :EUR :en_US)
+;; => "Euro"
+
+(api/money-of-registry (api/default-registry) #money[10 EUR])
+;; => #money[10.00 EUR]
+
+(api/money-cast #money[10 EUR] :USD :HALF_UP)
+;; => #money[... USD]
+
+(api/money-cast-try #money[10 EUR] :NOPE)
+;; => nil
+
+(api/money-format #money[1234.50 PLN] :pl_PL)
+;; => "1 234,50 zl"
 ```
 
 It allows to perform **generic, polymorphic operations** on monetary amounts and
@@ -815,6 +869,12 @@ true
 
 (currency/auto-scaled? #money[12.34567 XXX])
 true
+
+(scale/auto? :XXX)
+true
+
+(scale/auto? #money[12.34567 XXX])
+false ; scale of the amount, not the currency
 
 (scale/apply #money[10 USD] 8) ;; use with caution
 #money[10.00000000 USD]
@@ -1055,5 +1115,5 @@ bin/repl
 
 Starts REPL (and optionally nREPL server with port number is stored in `.nrepl-port`).
 
-[LICENSE]:    https://github.com/randomseed-io/bankster/blob/master/LICENSE
-[CONTRACTS]:  https://github.com/randomseed-io/bankster/blob/master/CONTRACTS.md
+[LICENSE]:    https://github.com/randomseed-io/bankster/blob/main/LICENSE
+[CONTRACTS]:  https://github.com/randomseed-io/bankster/blob/main/CONTRACTS.md

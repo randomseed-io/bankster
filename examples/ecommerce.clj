@@ -4,6 +4,7 @@
    Demonstrates precise financial arithmetic without the rounding
    errors typical of float/double."
   (:require [io.randomseed.bankster.money :as m]
+            [io.randomseed.bankster.api   :as api]
             [io.randomseed.bankster.scale :as scale]))
 
 ;;; ---------------------------------------------------------------------------

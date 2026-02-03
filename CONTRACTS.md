@@ -283,8 +283,20 @@ Methods:
   - for `Currency`: returns a `Currency` with updated `:scale`.
 - `amount` -> BigDecimal:
   - for `Money`: returns the amount,
-  - for `Currency`: returns `nil` (a currency does not have an "amount"),
+  - for `Currency`: returns `0M` at nominal scale; returns `nil` for auto-scaled
+    currencies,
   - for numbers: returns a `BigDecimal` (after coercion).
+
+Helpers:
+
+- `scale/auto?` -> boolean/nil: checks whether `(scale/of x)` is auto-scaled; returns
+  `nil` when the value is not scalable (or not resolvable in a registry).
+
+Front API shortcuts (`io.randomseed.bankster.api`):
+
+- `api/amount` -> `scale/amount`.
+- `api/scale` -> scale for `Money` and `Currency` (Money amount scale / Currency
+  nominal scale; `nil` for auto-scaled currencies).
 
 Dynamic vars and rounding:
 
@@ -504,6 +516,8 @@ Tagged literals / readers:
   - if there is *no* `Money` argument, behaves 1:1 like `clojure.core`,
   - if there is any `Money` argument, it "taints" the operation and switches to
     Bankster semantics.
+  - this layer is intentionally polymorphic; boxed math warnings are suppressed in
+    that namespace to keep build output clean.
 
 ## 5. Recommendations and pitfalls (practical)
 
@@ -513,6 +527,8 @@ Tagged literals / readers:
   reflect non-semantic differences like currency extension keys). Prefer `money/eq?`
   (or `money/=`) / `money/eq-am?` (`money/==`), or the inter-op layer
   `io.randomseed.bankster.money.inter-ops/=` for mixed numeric expressions.
+- Avoid `:refer :all` on `io.randomseed.bankster.api`: it will shadow core operators
+  (e.g. `+`, `-`, `*`, `/`, `=`, comparisons, numeric casts), which may be surprising.
 - For untrusted input (e.g. from an API) prefer `to-id-str` / `to-code-str` and
   validate, instead of calling `keyword` (interning).
 - Be explicit about rounding: set `scale/*rounding-mode*` via `scale/with-rounding`
