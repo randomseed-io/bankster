@@ -223,8 +223,13 @@ Key methods and their contracts:
 - `unit` -> Currency:
   - strict: missing currency -> exception,
   - when the argument is a `Currency`: `registry=nil` means "return as-is",
-  - for maps: maps are treated as masks/constraints (match by key presence), and
-    when multiple matches exist, the best match is selected by weight (lower wins).
+  - for maps: maps are treated as masks/constraints (match by key presence); `:id`
+    and `:code` hints are normalized (upper-case name, namespace preserved; ISO-4217
+    namespace stripped) before matching, and when multiple matches exist, the best
+    match is selected by weight (lower wins).
+  - for `Currency` objects: field match is strict; `:domain`/`:kind` may be `nil`
+    wildcards, but scale must match exactly (including `auto-scaled`, which is not
+    a wildcard).
 - `defined?` -> boolean:
   - existence of a currency in a registry (by ID/numeric/code); this is a "does
     anything exist" check, without validating full field-level consistency.
@@ -237,6 +242,28 @@ Soft helpers:
 - `currency/attempt` and `currency/attempt*`:
   - soft coercion: returns a `Currency` or `nil`, does not throw.
   - preferred in predicates and "try" paths.
+- `currency/unit-try`:
+  - soft variant of `unit` with identical semantics; returns `nil` instead of throwing.
+
+#### Constructor quick reference (Currency/Money)
+
+| Function | Strictness | Description |
+| --- | --- | --- |
+| `currency/new` | hard | Create an ad-hoc `Currency` from ID/fields; may throw on invalid domain/namespace mismatch. |
+| `currency/map->new` | hard | Create an ad-hoc `Currency` from a map. |
+| `currency/of` (macro) | hard | Resolve via registry or create ad-hoc from a map; throws on missing when resolving. |
+| `currency/unit` | hard | Strict registry lookup (throws on missing). |
+| `currency/unit-try` | soft | Same as `unit`, but returns `nil` on failure. |
+| `currency/resolve` | soft | Registry lookup that returns `nil` when missing. |
+| `currency/attempt` | soft | Soft coercion; may return ad-hoc `Currency` without consulting registry. |
+| `currency/of-id` | hard | Strict lookup by currency ID. |
+| `money/value` | hard | Construct `Money`; may throw on missing currency or required rounding. |
+| `money/of` (macro) | hard | Macro constructor; throws on missing currency/rounding. |
+| `money/of-major` (macro) | hard | Like `money/of`, amount as the major part. |
+| `money/of-minor` (macro) | hard | Like `money/of`, amount as the minor part. |
+| `money/major-value` | hard | Function constructor for major part. |
+| `money/minor-value` | hard | Function constructor for minor part. |
+| `money/of-map` | hard | Construct `Money` from a map; throws on invalid input. |
 
 ### 3.2 `io.randomseed.bankster.scale/Scalable`
 
