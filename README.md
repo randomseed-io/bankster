@@ -469,6 +469,10 @@ containing these literals is read (otherwise you may see
 #currency XLM
 #currency{:id :crypto/XLM, :domain :CRYPTO, :kind :virtual/native, :scale 8}
 
+;; tagged literal accepts single-element vector (unwrapped)
+#currency [EUR]
+#currency{:id :EUR, :domain :ISO-4217, :kind :iso/fiat, :numeric 978, :scale 2}
+
 ;; global registry lookup using tagged literal with a namespaced identifier
 #currency crypto/XLM
 #currency{:id :crypto/XLM, :domain :CRYPTO, :kind :virtual/native, :scale 8}

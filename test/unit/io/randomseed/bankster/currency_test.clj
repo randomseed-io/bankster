@@ -110,6 +110,7 @@
     (is (= #currency nil nil))
     (is (= #currency {} nil)))
   (testing "when it returns a currency object"
+    (is (map= #currency [EUR] {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
     (is (map= #currency {:id :EUR :domain :ISO-4217} {:id :EUR :domain :ISO-4217 :kind nil :numeric -1 :scale -1 :weight 0}))
     (is (map= #currency {:id :crypto/EUR} {:id :crypto/EUR :domain :CRYPTO :kind nil :numeric -1 :scale -1 :weight 0}))
     (is (map= #currency {:id :EUR :numeric 1000} {:id :EUR :domain :ISO-4217 :kind nil :numeric 1000 :scale -1 :weight 0}))

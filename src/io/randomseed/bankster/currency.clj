@@ -1844,16 +1844,20 @@
   "Internal helper which transforms currency codes into keywords."
   {:no-doc true :added "1.0.2"}
   ([c]
-   (if (and (map? c) (contains? c :id))
-     (core-update c :id keyword)
-     (if (and (symbol? c) (present? c))
-       (keyword c) c)))
+   (if (and (vector? c) (== 1 (count c)))
+     (parse-currency-code (nth c 0))
+     (if (and (map? c) (contains? c :id))
+       (core-update c :id keyword)
+       (if (and (symbol? c) (present? c))
+         (keyword c) c))))
   ([c env]
-   (if (and (map? c) (contains? c :id))
-     (core-update c :id keyword)
-     (if-not (symbol? c) c
-             (if (or (contains? env c) (clojure.core/resolve c)) c
-                 (keyword c))))))
+   (if (and (vector? c) (== 1 (count c)))
+     (parse-currency-code (nth c 0) env)
+     (if (and (map? c) (contains? c :id))
+       (core-update c :id keyword)
+       (if-not (symbol? c) c
+               (if (or (contains? env c) (clojure.core/resolve c)) c
+                   (keyword c)))))))
 
 (defmacro attempt*
   "Soft currency coercion macro.
