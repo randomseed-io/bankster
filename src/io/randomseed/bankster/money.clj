@@ -846,6 +846,14 @@
   (^Currency [a b]   (when-some [m (value a b)]   (.currency ^Money m)))
   (^Currency [a b r] (when-some [m (value a b r)] (.currency ^Money m))))
 
+(defn info
+  "Returns a map with `:currency` and `:amount` for the given money-like input."
+  {:tag clojure.lang.IPersistentMap :added "2.2.0"}
+  [money]
+  (when-some [^Money m (value money)]
+    {:currency (.currency ^Money m)
+     :amount   (.amount ^Money m)}))
+
 (defn stripped-amount
   "Returns the amount of the given money with trailing zeros removed. For more than one
   argument the money is created ad-hoc using a and b objects passed to the function
