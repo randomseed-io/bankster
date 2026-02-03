@@ -163,7 +163,9 @@
     (testing "parse-currency-code branches"
       (is (= {:id :EUR} (c/parse-currency-code {:id 'EUR})))
       (is (= :EUR (c/parse-currency-code 'EUR)))
-      (is (= 'EUR (c/parse-currency-code 'EUR {'EUR 1}))))
+      (is (= 'EUR (c/parse-currency-code 'EUR {'EUR 1})))
+      (is (= :EUR (c/parse-currency-code ['EUR])))
+      (is (= 'EUR (c/parse-currency-code ['EUR] {'EUR 1}))))
 
     (testing "attempt, attempt*, and with-attempt cover both definitive and resolving branches"
       (registry/with r
@@ -989,6 +991,7 @@
 
     (testing "normalize helpers: parsing branches"
       (is (= :EUR (normalize-code-hint :eur)))
+      (is (= :EUR (normalize-code-hint :ISO-4217/EUR)))
       (is (identical? invalid-map-hint (normalize-scale-hint "NaN")))
       (is (= 7 (normalize-scale-hint "7")))
       (is (= :crypto/USDT (normalize-kind-hint "crypto/USDT")))
