@@ -1,5 +1,11 @@
 # History of Bankster releases
 
+## 2.1.2 (2026-02-03)
+
+Currency / registry:
+
+- Map-based currency lookup now normalizes `:id`/`:code` name casing (upper-case),
+  aligning map constraints with other currency coercions.
 ## 2.1.1 (2026-02-02)
 
 - Documentation fixes (dates, registry shape and contructors).

@@ -988,7 +988,7 @@
       (is (true? (c/same-ids? :EUR :EUR))))
 
     (testing "normalize helpers: parsing branches"
-      (is (= :eur (normalize-code-hint :eur)))
+      (is (= :EUR (normalize-code-hint :eur)))
       (is (identical? invalid-map-hint (normalize-scale-hint "NaN")))
       (is (= 7 (normalize-scale-hint "7")))
       (is (= :crypto/USDT (normalize-kind-hint "crypto/USDT")))
@@ -1175,7 +1175,7 @@
       (is (= :EUR (normalize-id-hint :ISO-4217/EUR)))
       (is (= :EUR (normalize-id-hint :EUR)))
       (is (nil? (normalize-id-hint 123)))
-      (is (= :eur (normalize-code-hint :eur)))
+      (is (= :EUR (normalize-code-hint :eur)))
       (is (= :ISO-4217 (normalize-domain-hint "iso-4217")))
       (is (= :CRYPTO (normalize-domain-hint :crypto)))
       (is (nil? (normalize-domain-hint nil)))

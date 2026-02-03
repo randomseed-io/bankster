@@ -223,8 +223,10 @@ Key methods and their contracts:
 - `unit` -> Currency:
   - strict: missing currency -> exception,
   - when the argument is a `Currency`: `registry=nil` means "return as-is",
-  - for maps: maps are treated as masks/constraints (match by key presence), and
-    when multiple matches exist, the best match is selected by weight (lower wins).
+  - for maps: maps are treated as masks/constraints (match by key presence); `:id`
+    and `:code` hints are normalized (upper-case name, namespace preserved; ISO-4217
+    namespace stripped) before matching, and when multiple matches exist, the best
+    match is selected by weight (lower wins).
 - `defined?` -> boolean:
   - existence of a currency in a registry (by ID/numeric/code); this is a "does
     anything exist" check, without validating full field-level consistency.

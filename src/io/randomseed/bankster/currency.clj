@@ -741,20 +741,30 @@
 (defn- normalize-id-hint
   "Best-effort, registry-free normalization of an ID hint.
 
-  Strips the ISO namespace (`ISO-4217`, case-insensitive) if present."
+  Upper-cases the name part (preserving namespace casing) and strips the ISO
+  namespace (`ISO-4217`, case-insensitive) if present.
+
+  Numeric inputs are not treated as IDs (use :nr/:numeric for that)."
   {:tag clojure.lang.Keyword :private true :added "2.0.0"}
   [x]
-  (when-some [^clojure.lang.Keyword kid (to-id x)]
-    (let [ns (some-> (namespace kid) bu/try-upper-case)]
-      (if (= ns "ISO-4217")
-        (keyword (core-name kid))
-        kid))))
+  (when-not (number? x)
+    (when-some [^clojure.lang.Keyword kid (normalize-id-input x)]
+      (let [ns (some-> (namespace kid) bu/try-upper-case)]
+        (if (= ns "ISO-4217")
+          (keyword (core-name kid))
+          kid)))))
 
 (defn- normalize-code-hint
-  "Best-effort, registry-free normalization of a currency code hint."
+  "Best-effort, registry-free normalization of a currency code hint.
+
+  Upper-cases the code and strips any namespace. Numeric inputs are rejected."
   {:tag clojure.lang.Keyword :private true :added "2.0.0"}
   [x]
-  (to-code x))
+  (when-not (number? x)
+    (when-some [^clojure.lang.Keyword kid (normalize-id-input x)]
+      (if (nil? (.getNamespace kid))
+        kid
+        (keyword (.getName kid))))))
 
 (defn- normalize-numeric-hint
   "Normalizes a numeric currency identifier hint.

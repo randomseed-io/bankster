@@ -177,7 +177,9 @@
     (is (= (c/id #currency PLN) :PLN))
     (is (= (c/id #currency crypto/ETH) :crypto/ETH)))
   (testing "when it can resolve currency from a map"
+    (is (map= (c/resolve {:id :eur}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
     (is (map= (c/resolve {:id :EUR}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
+    (is (map= (c/resolve {:code :eur}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
     (is (map= (c/resolve {:code "EUR"}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
     (is (map= (c/resolve {:numeric "978"}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
     (is (map= (c/resolve {:nr 978 :sc "2"}) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
@@ -198,6 +200,7 @@
     (is (map= (c/unit :EUR)          {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
     (is (map= (c/unit "EUR")         {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
     (is (map= (c/unit 978)           {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
+    (is (map= (c/unit {:id :eur})    {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
     (is (map= (c/unit {:id :EUR})    {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0})))
   (testing "when it checks if a currency is defined"
     (is (= (c/defined? :PLN) true))
