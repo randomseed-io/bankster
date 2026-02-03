@@ -18,6 +18,10 @@
             (java.math              MathContext
                                     RoundingMode)))
 
+;; Polymorphic wrappers intentionally box in some paths; silence warnings locally.
+(def ^{:no-doc true :private true} unchecked-math-prev *unchecked-math*)
+(set! *unchecked-math* false)
+
 (defn +
   "Calls `io.randomseed.bankster.money/add` when any argument is a kind of Money,
   otherwise delegates to `clojure.core/+`."
@@ -339,6 +343,8 @@
   (if (io.randomseed.bankster.money/money? a)
     (io.randomseed.bankster.money/is-neg? a)
     (clojure.core/neg? a)))
+
+(set! *unchecked-math* unchecked-math-prev)
 
 (def ^{:tag      BigDecimal
        :arglists '(^BigDecimal [^Money a]
