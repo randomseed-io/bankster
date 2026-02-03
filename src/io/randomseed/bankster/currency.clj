@@ -1068,11 +1068,8 @@
     (^Currency [^Currency currency]
      currency)
     (^Currency [^Currency currency ^Registry registry]
-     (cond
-       (nil? registry)
+     (if (nil? registry)
        currency
-
-       :else
        (let [^Registry registry (unit-registry registry)]
          (unit-resolve! currency registry)))))
 
@@ -1964,6 +1961,22 @@
   ([currency registry]
    (let [cur# (parse-currency-code currency &env)]
      `(unit ~cur# ~registry))))
+
+(defn unit-try
+  "Soft variant of `unit`.
+
+  Returns a `Currency` or `nil` instead of throwing when the currency cannot be
+  resolved. When the input is already a `Currency` and `registry` is `nil`, it is
+  returned as-is (matching `unit` semantics). When `registry` is non-`nil`, the
+  registry is consulted and `Currency` inputs are matched strictly by fields (same
+  as `unit`), but failures return `nil`.
+
+  Delegates to `resolve` for non-`Currency` inputs."
+  {:tag Currency :added "2.1.2"}
+  ([id]
+   (if (instance? Currency id) id (resolve id (registry/get))))
+  ([id registry]
+   (if (and (nil? registry) (instance? Currency id)) id (resolve id registry))))
 
 ;;
 ;; Currency properties.

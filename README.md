@@ -160,6 +160,7 @@ modified too.
 ;; Option A: pass the registry explicitly.
 
 (currency/unit :EUR my-registry)
+(currency/unit-try :EUR my-registry)  ; nil when missing
 
 ;; Option B: install it as the global registry.
 

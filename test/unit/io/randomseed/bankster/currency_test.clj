@@ -203,6 +203,14 @@
     (is (map= (c/unit 978)           {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
     (is (map= (c/unit {:id :eur})    {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
     (is (map= (c/unit {:id :EUR})    {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0})))
+  (testing "unit-try is soft but preserves unit semantics for Currency inputs"
+    (let [cur    (c/new :EUR 978 2 :iso/fiat :ISO-4217)
+          cur'   (c/new :EUR 978 3 :iso/fiat :ISO-4217)
+          reg    (registry/get)]
+      (is (map= (c/unit-try :EUR) {:id :EUR :domain :ISO-4217 :kind :iso/fiat :numeric 978 :scale 2 :weight 0}))
+      (is (nil? (c/unit-try :NOPE)))
+      (is (identical? cur (c/unit-try cur nil)))
+      (is (nil? (c/unit-try cur' reg))))))
   (testing "when it checks if a currency is defined"
     (is (= (c/defined? :PLN) true))
     (is (= (c/defined? :PPPP) false))
@@ -220,7 +228,7 @@
     (let [jc (java.util.Currency/getInstance "EUR")]
       (is (= (c/defined? jc) true))
       (is (= (c/present? jc) true))
-    (is (= (c/id jc) :EUR))))
+      (is (= (c/id jc) :EUR))))
   (testing "when it checks whether two currencies have the same IDs"
     (is (= (c/same-ids? :PLN :PLN) true))
     (is (= (c/same-ids? :PLN "PLN") true))
@@ -231,7 +239,7 @@
     (is (= (c/same-ids? :crypto/USDT :crypto/USDT) true))
     (is (= (c/same-ids? :crypto/USDT #currency crypto/USDT) true))
     (is (= (c/same-ids? :USDT #currency crypto/USDT) false))
-    (is (= (c/same-ids? #currency crypto/USDT :PLN) false))))
+    (is (= (c/same-ids? #currency crypto/USDT :PLN) false)))
 
 (deftest currency-java
   (testing "when it converts currency to java.util.Currency"
