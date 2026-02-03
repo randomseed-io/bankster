@@ -3980,6 +3980,12 @@
 ;; Scalable implementation.
 ;;
 
+(defn- scale-amount-for-currency
+  {:tag java.math.BigDecimal :private true :added "2.2.0"}
+  [sc]
+  (when (and (number? sc) (not (val-auto-scaled*? sc)))
+    (scale/apply 0M (long sc))))
+
 (extend-protocol scale/Scalable
 
   Currency
@@ -3995,9 +4001,14 @@
    (^Currency [c ^long scale ^RoundingMode _rounding-mode] (assoc c :scale (int scale))))
 
   (amount
-    ([_]     nil)
-    ([_ _]   nil)
-    ([_ _ _] nil))
+    ([c]
+     (scale-amount-for-currency (.scale ^Currency c)))
+    ([c scale]
+     (when-some [am (scale-amount-for-currency (.scale ^Currency c))]
+       (scale/apply am scale)))
+    ([c scale ^RoundingMode rounding-mode]
+     (when-some [am (scale-amount-for-currency (.scale ^Currency c))]
+       (scale/apply am scale rounding-mode))))
 
   java.util.Currency
 
@@ -4012,9 +4023,14 @@
    (^Currency [c ^long scale ^RoundingMode _rounding-mode] (assoc (unit c) :scale (int scale))))
 
   (amount
-    ([_]     nil)
-    ([_ _]   nil)
-    ([_ _ _] nil))
+    ([c]
+     (scale-amount-for-currency (.getDefaultFractionDigits ^java.util.Currency c)))
+    ([c scale]
+     (when-some [am (scale-amount-for-currency (.getDefaultFractionDigits ^java.util.Currency c))]
+       (scale/apply am scale)))
+    ([c scale ^RoundingMode rounding-mode]
+     (when-some [am (scale-amount-for-currency (.getDefaultFractionDigits ^java.util.Currency c))]
+       (scale/apply am scale rounding-mode))))
 
   clojure.lang.Keyword
 
@@ -4029,9 +4045,17 @@
    (^Currency [c ^long scale ^RoundingMode _rounding-mode] (assoc (unit c) :scale (int scale))))
 
   (amount
-    ([_]     nil)
-    ([_ _]   nil)
-    ([_ _ _] nil)))
+    ([c]
+     (when-some [^Currency cur (unit-try c)]
+       (scale-amount-for-currency (.scale ^Currency cur))))
+    ([c scale]
+     (when-some [^Currency cur (unit-try c)]
+       (when-some [am (scale-amount-for-currency (.scale ^Currency cur))]
+         (scale/apply am scale))))
+    ([c scale ^RoundingMode rounding-mode]
+     (when-some [^Currency cur (unit-try c)]
+       (when-some [am (scale-amount-for-currency (.scale ^Currency cur))]
+         (scale/apply am scale rounding-mode))))))
 
 ;;
 ;; Contextual macros.
