@@ -11,6 +11,7 @@
             [clojure.test.check.generators   :as tgen]
             [clojure.test.check.properties   :as prop]
             [clojure.test.check.clojure-test :as ctest]
+            [io.randomseed.bankster.currency :as currency]
             [io.randomseed.bankster.scale    :as scale])
 
   (:import (java.math BigDecimal BigInteger RoundingMode)))
@@ -574,6 +575,20 @@
           ^BigDecimal rr (.add i (.movePointLeft f (int sc)))]
       (bd= (scale/amount n) rr))))
 
+(ctest/defspec auto?-false-for-bigdecimals
+  200
+  (prop/for-all [n  (tgen/large-integer* {:min -1000000 :max 1000000})
+                 sc (tgen/choose 0 8)]
+    (let [^BigDecimal bd (.setScale (BigDecimal. (str n)) (int sc))]
+      (false? (scale/auto? bd)))))
+
+(ctest/defspec auto?-matches-currency-scale
+  200
+  (prop/for-all [sc (tgen/one-of [(tgen/return scale/auto-scaled)
+                                  (tgen/choose 0 8)])]
+    (let [cur (currency/new :TST 999 sc :iso/fiat :ISO-4217 0)]
+      (= (scale/auto-scaled? sc) (scale/auto? cur)))))
+
 (deftest monetary-scale-auto-scaled-non-bigdecimal
   (testing "monetary-scale applies conversion when auto-scaled and input is not BigDecimal"
     (let [sc (long scale/auto-scaled)]
@@ -582,3 +597,14 @@
       (is (= 12M (scale/monetary-scale "12" sc java.math.RoundingMode/HALF_UP)))
       (let [^java.math.BigDecimal bd (bigdec "12.00")]
         (is (identical? bd (scale/monetary-scale bd sc)))))))
+
+(deftest auto?-uses-scale-of
+  (testing "auto? derives scale via of"
+    (let [auto-cur (currency/new :XAU 959 scale/auto-scaled :iso/metal :ISO-4217 0)
+          nom-cur  (currency/new :EUR 978 2 :iso/fiat :ISO-4217 0)]
+      (is (true? (scale/auto? auto-cur)))
+      (is (false? (scale/auto? nom-cur))))
+    (is (false? (scale/auto? 12.3M)))
+    (is (false? (scale/auto? 12)))
+    (is (false? (scale/auto? "12.3")))
+    (is (nil? (scale/auto? nil)))))

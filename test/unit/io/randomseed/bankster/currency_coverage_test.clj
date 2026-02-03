@@ -2573,21 +2573,39 @@
         (is (number? (scale/of :XXX)))
         (is (instance? Currency (scale/apply :XXX 2)))
         (is (instance? Currency (scale/apply :XXX 2 RoundingMode/HALF_UP)))
-        (is (nil? (scale/amount :XXX)))
-        (is (nil? (scale/amount :XXX 2)))
-        (is (nil? (scale/amount :XXX 2 RoundingMode/HALF_UP))))
+        (let [am (scale/amount :XXX)]
+          (is (instance? java.math.BigDecimal am))
+          (is (= 2 (.scale ^java.math.BigDecimal am))))
+        (let [am (scale/amount :XXX 3)]
+          (is (= 3 (.scale ^java.math.BigDecimal am))))
+        (let [am (scale/amount :XXX 3 RoundingMode/HALF_UP)]
+          (is (= 3 (.scale ^java.math.BigDecimal am)))))
       (is (true? (scale/scalable? eur)))
       (is (true? (scale/applied? eur)))
       (is (number? (scale/of eur)))
       (is (instance? Currency (scale/apply eur 2)))
       (is (instance? Currency (scale/apply eur 2 RoundingMode/HALF_UP)))
+      (let [am (scale/amount eur)]
+        (is (instance? java.math.BigDecimal am))
+        (is (= 2 (.scale ^java.math.BigDecimal am))))
+      (let [am (scale/amount eur 3)]
+        (is (= 3 (.scale ^java.math.BigDecimal am))))
+      (let [am (scale/amount eur 3 RoundingMode/HALF_UP)]
+        (is (= 3 (.scale ^java.math.BigDecimal am))))
 
       (let [jc (java.util.Currency/getInstance "EUR")]
         (is (true? (scale/scalable? jc)))
         (is (true? (scale/applied? jc)))
         (is (number? (scale/of jc)))
         (is (instance? Currency (scale/apply jc 2)))
-        (is (instance? Currency (scale/apply jc 2 RoundingMode/HALF_UP)))))
+        (is (instance? Currency (scale/apply jc 2 RoundingMode/HALF_UP)))
+        (let [am (scale/amount jc)]
+          (is (instance? java.math.BigDecimal am))
+          (is (= 2 (.scale ^java.math.BigDecimal am))))
+        (let [am (scale/amount jc 3)]
+          (is (= 3 (.scale ^java.math.BigDecimal am))))
+        (let [am (scale/amount jc 3 RoundingMode/HALF_UP)]
+          (is (= 3 (.scale ^java.math.BigDecimal am))))))
 
     (testing "traits errors with Currency id"
       (let [r0 (registry/new)]
