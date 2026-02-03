@@ -208,6 +208,16 @@
    [num]
    "Returns true if the value can be converted to a scalable."))
 
+(defn auto?
+  "Returns `true` if the scale derived from `of` is auto-scaled.
+
+  Uses `scalable?` as a soft guard (avoids strict resolution on unknown inputs)."
+  {:tag Boolean :added "2.2.0"}
+  ^Boolean [x]
+  (when (scalable? x)
+    (when-some [sc (of x)]
+      (auto-scaled*? sc))))
+
 (extend-protocol Scalable
 
   BigDecimal
