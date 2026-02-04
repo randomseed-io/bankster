@@ -38,13 +38,13 @@ Examples:
 
 - `money`, `money-try` - front constructors for Money (strict/soft).
 - `currency` - front constructor for Currency (strict).
-- `amount`, `scale`, `auto-scaled?` - convenience helpers over `scale`.
+- `rounding-mode`, `scale-apply`, `amount`, `scale`, `auto-scaled?` - convenience helpers over `scale`.
 - `info` - polymorphic info helper (`currency/info` / `money/info`).
 
 ## `io.randomseed.bankster.api.currency`
 
 **Resolution / constructors**
-- `resolve`, `resolve-try`, `resolve-all`
+- `resolve`, `resolve-try`, `resolve-all`, `new`
 - `of` (macro alias), `normalize`
 - `with`, `with-default`, `with-registry`
 
@@ -66,6 +66,7 @@ Examples:
 - `resolve`, `resolve-try`
 - `major`, `minor`, `of-registry`, `cast`, `cast-try`
 - `amount`, `currency`, `info`, `normalize`
+ - `rounding-mode`, `scale-apply`
 
 **Arithmetic**
 - `add`, `sub`, `mul`, `div`
