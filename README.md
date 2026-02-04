@@ -72,7 +72,7 @@ thrown, how the protocols behave) for Bankster's core axis: `Currency`, `Money`,
 ## Front API
 
 Bankster provides a curated front API under `io.randomseed.bankster.api.*`
-(recommended for application code). See `API.md` for an overview.
+(recommended for application code). See [API][API] for an overview.
 
 For major-version stability there is a frozen API namespace:
 `io.randomseed.bankster.api.v2` and its sub-namespaces. It mirrors
@@ -1065,9 +1065,10 @@ scale-wide cryptocurrencies, like Ether or Ethereum tokens, having 18 decimal pl
 
 ## Documentation
 
-Full documentation including usage examples is available at:
+Full documentation is available at:
 
 * https://randomseed.io/software/bankster/
+* https://cljdoc.org/d/io.randomseed/bankster/
 
 ## Why?
 
@@ -1139,5 +1140,6 @@ bin/repl
 
 Starts REPL (and optionally nREPL server with port number is stored in `.nrepl-port`).
 
-[LICENSE]:    https://github.com/randomseed-io/bankster/blob/main/LICENSE
-[CONTRACTS]:  https://github.com/randomseed-io/bankster/blob/main/CONTRACTS.md
+[API]:        API.md
+[LICENSE]:    LICENSE
+[CONTRACTS]:  CONTRACTS.md
