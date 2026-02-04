@@ -92,11 +92,21 @@
     (is (= 10 (u/is-not pos? 10 123)))
     (is (= 123 (u/is-not pos? -10 123)))))
 
+(defn- auto-alias-in-temp-ns
+  [form]
+  (let [ns-sym (symbol (str "io.randomseed.bankster.util-test.auto-alias-" (gensym)))
+        ns-obj (create-ns ns-sym)]
+    (binding [*ns* ns-obj]
+      (eval '(clojure.core/require 'io.randomseed.bankster.util))
+      (eval '(clojure.core/require 'io.randomseed.bankster.api))
+      (eval form))
+    (ns-resolve ns-obj 'money)))
+
 (deftest auto-alias-macro-branches
   (testing "auto-alias accepts symbol, quoted symbol and keyword"
-    (is (some? (macroexpand '(u/auto-alias io.randomseed.bankster.api))))
-    (is (some? (macroexpand '(u/auto-alias 'io.randomseed.bankster.api))))
-    (is (some? (macroexpand '(u/auto-alias :io.randomseed.bankster.api))))))
+    (is (auto-alias-in-temp-ns '(io.randomseed.bankster.util/auto-alias io.randomseed.bankster.api)))
+    (is (auto-alias-in-temp-ns '(io.randomseed.bankster.util/auto-alias 'io.randomseed.bankster.api)))
+    (is (auto-alias-in-temp-ns '(io.randomseed.bankster.util/auto-alias :io.randomseed.bankster.api)))))
 
 (deftest numeric-utils
   (testing "count-digits"

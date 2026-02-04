@@ -1,1 +1,4 @@
-{:config-paths ["../dev/resources/clj-kondo"]}
+{:config-paths ["../dev/resources/clj-kondo"]
+ :hooks
+ {:macroexpand
+  {io.randomseed.bankster.currency/with-attempt hooks.io.randomseed.bankster/with-attempt}}}
