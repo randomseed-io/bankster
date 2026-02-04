@@ -28,8 +28,32 @@
 ;; Contextual helpers
 ;;
 
-(bu/defalias with-currency io.randomseed.bankster.currency/with)
-(bu/defalias with-registry api-registry/with)
+(bu/defalias with-currency  io.randomseed.bankster.currency/with)
+(bu/defalias with-registry  api-registry/with)
+(bu/defalias with-rounding  io.randomseed.bankster.scale/with-rounding)
+(bu/defalias with-rescaling io.randomseed.bankster.scale/with-rescaling)
+
+(defn rounding-mode
+  "Returns the current rounding mode.
+
+  Delegates to `io.randomseed.bankster.scale/rounding-mode`."
+  {:added "2.2.0"}
+  (^java.math.RoundingMode []
+   (scale/rounding-mode))
+  (^java.math.RoundingMode [default]
+   (scale/rounding-mode default)))
+
+(defn scale-apply
+  "Applies scaling to a value.
+
+  Delegates to `io.randomseed.bankster.scale/apply`."
+  {:added "2.2.0"}
+  ([x]
+   (scale/apply x))
+  ([x sc]
+   (scale/apply x sc))
+  ([x sc rounding]
+   (scale/apply x sc rounding)))
 
 (defn default-registry
   "Returns the default registry (honors `io.randomseed.bankster.registry/*default*`)."
@@ -43,9 +67,6 @@
   {:tag Registry :added "2.2.0"}
   [registry]
   (if (or (nil? registry) (true? registry)) (registry/get) registry))
-
-(bu/defalias with-rounding  io.randomseed.bankster.scale/with-rounding)
-(bu/defalias with-rescaling io.randomseed.bankster.scale/with-rescaling)
 
 (defn resolve
   "First-class Money constructor with amount-first argument order.
@@ -126,9 +147,6 @@
      (if-some [rounding (scale/post-parse-rounding rounding)]
        (money/value amount c rounding)
        (money/value amount c)))))
-
-
-
 
 (defn of-registry
   "Ensures that a currency of the given money originates from the given registry. If
