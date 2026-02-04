@@ -31,3 +31,6 @@ doc/10_introduction.md
 doc/10_introduction.md
 resources/io/randomseed/bankster/registry-export.edn
 /dev/resources/clj-kondo/.cache
+doc/LICENSE
+doc/12_api.md
+doc/15_contracts.md
