@@ -6,6 +6,8 @@
 
     io.randomseed.bankster.api.registry
 
+  (:refer-clojure :exclude [update])
+
   (:require [io.randomseed.bankster.util     :as       bu]
             [io.randomseed.bankster.registry :as registry])
 
@@ -38,6 +40,8 @@
 (bu/defalias with              io.randomseed.bankster.registry/with)
 (bu/defalias state             io.randomseed.bankster.registry/state)
 (bu/defalias hierarchy-derive! io.randomseed.bankster.registry/hierarchy-derive!)
+
+(bu/auto-alias 'io.randomseed.bankster.registry)
 
 (doseq [[_ v] (ns-interns *ns*)]
   (alter-meta! v assoc :auto-alias true))
