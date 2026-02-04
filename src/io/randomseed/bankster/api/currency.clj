@@ -24,6 +24,13 @@
 
 (bu/defalias with-registry api-registry/with)
 
+(defmacro with-default
+  "Sets the dynamic binding of `io.randomseed.bankster.currency/*default*` to
+  `currency` and evaluates body in an implicit `do`."
+  [currency & body]
+  `(binding [io.randomseed.bankster.currency/*default* ~currency]
+     ~@body))
+
 (defn default-registry
   "Returns the default registry (honors `io.randomseed.bankster.registry/*default*`)."
   {:tag Registry :added "2.2.0"}
