@@ -45,13 +45,29 @@
   (must-have-ns (ensure-keyword id) ns))
 
 (defmacro ^:no-doc defalias [name target]
-  (let [v        (clojure.core/resolve target)
-        m0       (meta v)
-        arglists (:arglists m0)
-        m        (-> m0
-                     (dissoc :ns :name :file :line :column)
-                     (assoc :added "2.2.0" :auto-alias true)
-                     (cond-> arglists (assoc :arglists (list 'quote arglists))))]
+  (let [v              (clojure.core/resolve target)
+        m0             (meta v)
+        arglists       (:arglists m0)
+        primitive-tags {'long    Long/TYPE
+                        'int     Integer/TYPE
+                        'double  Double/TYPE
+                        'float   Float/TYPE
+                        'short   Short/TYPE
+                        'byte    Byte/TYPE
+                        'boolean Boolean/TYPE
+                        'char    Character/TYPE}
+        tag0           (:tag m0)
+        tag            (cond
+                         (symbol? tag0) (get primitive-tags tag0 tag0)
+                         (class? tag0)  tag0
+                         (var? tag0)    (let [s (-> tag0 meta :name symbol)]
+                                          (get primitive-tags s s))
+                         :else          nil)
+        m              (-> m0
+                           (dissoc :ns :name :file :line :column :tag)
+                           (cond-> tag (assoc :tag tag))
+                           (assoc :added "2.2.0" :auto-alias true)
+                           (cond-> arglists (assoc :arglists (list 'quote arglists))))]
     (if (:macro m0)
       `(def ~(with-meta name m)
          (deref (var ~target)))
