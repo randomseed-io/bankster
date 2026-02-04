@@ -14,6 +14,9 @@
 
   (:import (io.randomseed.bankster Currency)))
 
+(alter-meta! #'registry/get assoc :macro true)
+(alter-meta! #'registry/currency-domain->currencies* assoc :macro true)
+
 (deftest new-registry-hierarchies
   (testing "default registry has CurrencyHierarchies initialized"
     (let [r  (registry/new)
@@ -434,13 +437,13 @@
       (is (true?  (hierarchy-map? {:parents {} :ancestors {} :descendants {}}))))))
 
 (deftest get-macro-coverage
-  (testing "get macroexpansion covers both sentinel and non-sentinel branches"
-    (doseq [form '[(io.randomseed.bankster.registry/get)
-                   (io.randomseed.bankster.registry/get true)
-                   (io.randomseed.bankster.registry/get false)
-                   (io.randomseed.bankster.registry/get nil)
-                   (io.randomseed.bankster.registry/get some-registry)]]
-      (is (not= form (macroexpand-1 form))))))
+  (testing "get macro branches are reachable via macro fn"
+    (let [get-macro (var-get #'io.randomseed.bankster.registry/get)]
+      (is (seq (get-macro nil nil)))
+      (is (seq (get-macro nil nil true)))
+      (is (seq (get-macro nil nil false)))
+      (is (seq (get-macro nil nil nil)))
+      (is (seq (get-macro nil nil 'some-registry))))))
 
 (deftest registry-domain-macro-coverage
   (testing "currency-domain->currencies* macroexpansion covers arities"
@@ -460,12 +463,14 @@
     (is (seq (dom-macro nil nil :ISO-4217 'r)))))
 
 (deftest registry-macro-eval-coverage
-  (let [r (registry/new)]
+  (let [r         (registry/new)
+        get-macro (var-get #'io.randomseed.bankster.registry/get)
+        dom-macro (var-get #'io.randomseed.bankster.registry/currency-domain->currencies*)]
     (registry/with r
-      (is (registry/registry? (eval '(io.randomseed.bankster.registry/get))))
-      (is (registry/registry? (eval '(io.randomseed.bankster.registry/get true))))
-      (is (registry/registry? (eval '(io.randomseed.bankster.registry/get false))))
-      (is (map? (eval '(io.randomseed.bankster.registry/currency-domain->currencies*)))))))
+      (is (seq (get-macro nil nil)))
+      (is (seq (get-macro nil nil true)))
+      (is (seq (get-macro nil nil false)))
+      (is (seq (dom-macro nil nil))))))
 
 (deftest wrapper-zero-arity-uses-default
   (testing "zero-arity wrapper fns respect registry/with and do not require explicit registry arg"

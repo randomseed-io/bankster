@@ -106,7 +106,12 @@
   (testing "auto-alias accepts symbol, quoted symbol and keyword"
     (is (auto-alias-in-temp-ns '(io.randomseed.bankster.util/auto-alias io.randomseed.bankster.api)))
     (is (auto-alias-in-temp-ns '(io.randomseed.bankster.util/auto-alias 'io.randomseed.bankster.api)))
-    (is (auto-alias-in-temp-ns '(io.randomseed.bankster.util/auto-alias :io.randomseed.bankster.api)))))
+    (is (auto-alias-in-temp-ns '(io.randomseed.bankster.util/auto-alias :io.randomseed.bankster.api)))
+    (is (auto-alias-in-temp-ns '(io.randomseed.bankster.util/auto-alias "io.randomseed.bankster.api"))))
+  (testing "auto-alias macro function execution"
+    (let [f     (deref #'io.randomseed.bankster.util/auto-alias)
+          forms (f nil nil 'io.randomseed.bankster.api)]
+      (is forms))))
 
 (deftest numeric-utils
   (testing "count-digits"

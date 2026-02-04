@@ -263,7 +263,7 @@
   (testing "when it's possible to get scale of a monetary amount"
     (is (= (c/sc #currency EUR) 2))
     (is (= (c/sc #currency crypto/ETH) 18))
-    (is (= (c/sc #currency XXX) nil))
+    (is (= (c/sc #currency XXX) c/auto-scaled))
     (is (= (c/sc #currency{:id :PLN :scale 1}) 1)))
   (testing "when it's possible to get the domain of a currency"
     (is (= (c/domain #currency EUR) :ISO-4217))
