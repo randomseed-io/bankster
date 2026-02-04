@@ -23,6 +23,7 @@
 ;;
 
 (bu/defalias with-registry api-registry/with)
+(bu/defalias new           io.randomseed.bankster.currency/new-currency)
 
 (defmacro with-default
   "Sets the dynamic binding of `io.randomseed.bankster.currency/*default*` to
