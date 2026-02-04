@@ -113,6 +113,26 @@
           forms (f nil nil 'io.randomseed.bankster.api)]
       (is forms))))
 
+(deftest defalias-nonstandard-tag
+  (testing "defalias ignores non-tag values in :tag metadata"
+    (let [ns-sym (symbol (str "io.randomseed.bankster.util-test.defalias-" (gensym)))
+          ns-obj (create-ns ns-sym)]
+      (binding [*ns* ns-obj]
+        (eval '(clojure.core/require 'io.randomseed.bankster.util))
+        (eval '(def ^{:tag 1} weird-tagged 42))
+        (eval '(io.randomseed.bankster.util/defalias weird-tagged-alias weird-tagged)))
+      (let [v (ns-resolve ns-obj 'weird-tagged-alias)]
+        (is (nil? (:tag (meta v)))))))
+  (testing "defalias maps var tags to primitive type hints"
+    (let [ns-sym (symbol (str "io.randomseed.bankster.util-test.defalias-var-tag-" (gensym)))
+          ns-obj (create-ns ns-sym)]
+      (binding [*ns* ns-obj]
+        (eval '(clojure.core/require 'io.randomseed.bankster.util))
+        (eval '(def ^{:tag #'clojure.core/long} tagged-var 42))
+        (eval '(io.randomseed.bankster.util/defalias tagged-var-alias tagged-var)))
+      (let [v (ns-resolve ns-obj 'tagged-var-alias)]
+        (is (= Long/TYPE (:tag (meta v))))))))
+
 (deftest numeric-utils
   (testing "count-digits"
     (is (= 1 (u/count-digits 0)))

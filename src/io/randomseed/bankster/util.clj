@@ -57,12 +57,11 @@
                         'boolean Boolean/TYPE
                         'char    Character/TYPE}
         tag0           (:tag m0)
-        tag            (cond
-                         (symbol? tag0) (get primitive-tags tag0 tag0)
-                         (class? tag0)  tag0
-                         (var? tag0)    (let [s (-> tag0 meta :name symbol)]
-                                          (get primitive-tags s s))
-                         :else          nil)
+        tag            (or (when (symbol? tag0) (get primitive-tags tag0 tag0))
+                           (when (class? tag0)  tag0)
+                           (when (var? tag0)
+                             (let [s (-> tag0 meta :name symbol)]
+                               (get primitive-tags s s))))
         m              (-> m0
                            (dissoc :ns :name :file :line :column :tag)
                            (cond-> tag (assoc :tag tag))
