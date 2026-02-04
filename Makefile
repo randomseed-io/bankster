@@ -4,7 +4,7 @@ DEPLOY      := bin/deploy
 DOCS        := bin/docs
 UPREADME    := bin/update-readme
 
-VERSION     ?= 2.1.1
+VERSION     ?= 2.2.0
 GROUP       ?= io.randomseed
 APPNAME     ?= bankster
 DESCRIPTION ?= Money as data, done right.
@@ -36,6 +36,7 @@ docs: readme
 	@echo "# Introduction" > doc/10_introduction.md
 	@tail -n +2 README.md >> doc/10_introduction.md
 	@cat     CONTRACTS.md  > doc/15_contracts.md
+	@cat     API.md        > doc/12_api.md
 	@$(DOCS) :version '"$(VERSION)"' :description '"$(DESCRIPTION)"'
 
 doc: docs
