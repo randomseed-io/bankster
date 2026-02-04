@@ -103,5 +103,5 @@ tag:
 
 clean:
 	@rm -f target/*.jar "$(POMFILE).asc" || true
-	@rm -rf .cpcache target/classes || true
+	@rm -rf target/classes target/tmp .cpcache || true
 	@find . -name .DS_Store -print0 | xargs -0 rm -f
