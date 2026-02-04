@@ -77,23 +77,23 @@
                   (symbol (name source-ns))
 
                   :else
-                  (symbol (str source-ns)))
-        _       (clojure.core/require ns-sym)
-        vars    (->> (ns-interns (the-ns ns-sym))
-                     (filter (fn [[_ v]] (:auto-alias (meta v)))))
-        aliases (->> vars
-                     (map first)
-                     (sort)
-                     (remove #(contains? (ns-interns *ns*) %))
-                     (map (fn [sym]
-                            `(io.randomseed.bankster.util/defalias
-                               ~sym
-                               ~(symbol (str ns-sym) (name sym)))))
-                     (vec))]
-    (cond
-      (empty? aliases) nil
-      (= 1 (count aliases)) (first aliases)
-      :else `(do ~@aliases))))
+                  (symbol (str source-ns)))]
+    (clojure.core/require ns-sym)
+    (let [vars    (->> (ns-interns (the-ns ns-sym))
+                       (filter (fn [[_ v]] (:auto-alias (meta v)))))
+          aliases (->> vars
+                       (map first)
+                       (sort)
+                       (remove #(contains? (ns-interns *ns*) %))
+                       (map (fn [sym]
+                              `(io.randomseed.bankster.util/defalias
+                                 ~sym
+                                 ~(symbol (str ns-sym) (name sym)))))
+                       (vec))]
+      (cond
+        (empty? aliases) nil
+        (= 1 (count aliases)) (first aliases)
+        :else `(do ~@aliases)))))
 
 (defmacro try-null
   "Evaluates body and if a NullPointerException is caught it returns nil. Otherwise
