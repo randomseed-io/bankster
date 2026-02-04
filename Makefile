@@ -33,14 +33,12 @@ readme:
 
 docs: readme
 	@echo "[doc]      -> docs/"
-	#@echo "# Introduction" > doc/10_introduction.md
-	#@tail -n +2 README.md >> doc/10_introduction.md
-	#@perl -pi -e 's|^\[API\]:\s*API\.md\s*$$|[API]: 12_api.md|' doc/10_introduction.md
-	#@perl -pi -e 's|^\[CONTRACTS\]:\s*CONTRACTS\.md\s*$$|[CONTRACTS]: 15_contracts.md|' doc/10_introduction.md
-	#@perl -pi -e 's|^\[LICENSE\]:\s*LICENSE\s*$$|[LICENSE]: docs/LICENSE|' doc/10_introduction.md
-	#@cat     CONTRACTS.md  > doc/15_contracts.md
-	#@cat           API.md  > doc/12_api.md
-	#@cat          LICENSE  > doc/LICENSE
+	@echo "# Introduction" > doc/10_introduction.md
+	@tail -n +2 README.md >> doc/10_introduction.md
+	@sed -i '' -e 's|(API.md)|(12_api.md)|g' -e 's|(CONTRACTS.md)|(15_contracts.md)|g' doc/10_introduction.md
+	@cat     CONTRACTS.md  > doc/15_contracts.md
+	@cat           API.md  > doc/12_api.md
+	@cat          LICENSE  > doc/LICENSE
 	@$(DOCS) :version '"$(VERSION)"' :description '"$(DESCRIPTION)"'
 
 doc: docs
