@@ -1,0 +1,9 @@
+{:lint-as
+ {io.randomseed.bankster.api.currency/defalias    clojure.core/def
+  io.randomseed.bankster.api.money/defalias       clojure.core/def
+  io.randomseed.bankster.api.v2/defalias          clojure.core/def
+  io.randomseed.bankster.api.v2.currency/defalias clojure.core/def
+  io.randomseed.bankster.api.v2.money/defalias    clojure.core/def
+  io.randomseed.bankster.api.v2.registry/defalias clojure.core/def
+  io.randomseed.bankster.api.v2.ops/defalias      clojure.core/def
+  io.randomseed.bankster.api.v2/auto-alias        clojure.core/do}}

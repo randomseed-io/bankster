@@ -30,3 +30,4 @@ resources/io/randomseed/bankster/registry-export-currency-oriented.edn
 doc/10_introduction.md
 doc/10_introduction.md
 resources/io/randomseed/bankster/registry-export.edn
+/dev/resources/clj-kondo/.cache
