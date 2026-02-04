@@ -1,5 +1,66 @@
 # History of Bankster releases
 
+## 2.2.0 (2026-02-04)
+
+Front API (new):
+
+- Added front API under `io.randomseed.bankster.api.*` namespaces (recommended
+  for application code):
+  - `io.randomseed.bankster.api` – umbrella facade (money/currency/scale helpers).
+  - `io.randomseed.bankster.api.currency` – currency resolution, predicates, registry
+    operations, serialization helpers.
+  - `io.randomseed.bankster.api.money` – money constructors, arithmetic,
+    parsing/formatting, serialization helpers.
+  - `io.randomseed.bankster.api.registry` – registry helpers (default/state/with,
+    hierarchy helpers).
+  - `io.randomseed.bankster.api.ops` – operator-style functions intended for
+    intentional `:refer :all`.
+- Added frozen API namespace `io.randomseed.bankster.api.v2.*` (and sub-namespaces)
+  mirroring `io.randomseed.bankster.api.*` for major-version stability. When Bankster
+  3 appears, the v2 API will remain available for compatibility.
+- Added API documentation describing the front API structure and usage patterns.
+- Soft vs strict convention: strict functions throw on missing currency/registry
+  matches, soft functions (with `-try` suffix) return `nil`.
+
+Currency / registry:
+
+- `currency/sc` now returns `-1` for auto-scaled currencies instead of `nil`.
+- Map-based currency coercion now normalizes `:id`/`:code` keys (case-insensitive).
+- `#currency` tagged literal now accepts single-element vectors (unwrapped before
+  parsing).
+- Added `currency/unit-try` (soft variant of `currency/unit`).
+
+Money:
+
+- Added `money/info?` predicate.
+
+Scale:
+
+- Added `scale/auto?` predicate.
+- Added `Scalable/amount` protocol implementation for `Currency` objects.
+
+Utilities / internals:
+
+- Added `defalias` macro for creating aliases with preserved metadata and proper
+  handling of primitive type tags.
+- Added `auto-alias` macro for automatic aliasing of Vars marked with `:auto-alias`
+  metadata.
+- Suppressed reflection warnings for polymorphic math operators in `money.inter-ops`.
+
+Documentation / examples:
+
+- Created `API.md` with front API description.
+- Updated `README.md` with front API references and version 2.2.0.
+- Updated `CONTRACTS.md` with soft vs strict conventions.
+- Examples updated to use front API where applicable.
+- Generated documentation (Codox) includes all API namespaces.
+
+Testing / tooling:
+
+- Added comprehensive tests for API namespaces.
+- Added clj-kondo hooks for aliasing macros (`defalias`, `auto-alias`).
+- Test coverage remains high: 97.58% lines, 100% forms.
+
 ## 2.1.2 (2026-02-03)
 
 Currency / registry:
