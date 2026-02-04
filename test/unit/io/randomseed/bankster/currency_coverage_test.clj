@@ -2096,7 +2096,7 @@
         (is (= 978 (c/nr :EUR)))
         (is (nil? (c/nr :crypto/USDT)))
         (is (= 2 (c/sc :EUR)))
-        (is (nil? (c/sc auto)))
+        (is (= c/auto-scaled (c/sc auto)))
         (is (= :ISO-4217 (c/domain :EUR)))
         (is (nil? (c/domain :NOPE)))
         (is (= :iso/fiat (c/kind :EUR)))

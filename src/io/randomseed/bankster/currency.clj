@@ -1972,7 +1972,7 @@
   as `unit`), but failures return `nil`.
 
   Delegates to `resolve` for non-`Currency` inputs."
-  {:tag Currency :added "2.1.2"}
+  {:tag Currency :added "2.2.0"}
   ([id]
    (if (instance? Currency id) id (resolve id (registry/get))))
   ([id registry]
@@ -2035,17 +2035,15 @@
 
 (defn sc
   "Returns currency scale (decimal places) as a number. For currencies without the
-  assigned decimal places it will return `nil` (the value of auto-scaled). Locale
-  argument is ignored."
+  assigned decimal places it will return `auto-scaled` (i.e. `-1`). Locale argument
+  is ignored."
   {:added "1.0.0"}
   ([c]
    (when-some [^Currency c (attempt c)]
-     (let [sc (unchecked-int (.scale ^Currency c))]
-       (when-not (== sc auto-scaled) (long sc)))))
+     (long (unchecked-int (.scale ^Currency c)))))
   ([c ^Registry registry]
    (when-some [^Currency c (attempt c registry)]
-     (let [sc (unchecked-int (.scale ^Currency c))]
-       (when-not (== sc auto-scaled) (long sc)))))
+     (long (unchecked-int (.scale ^Currency c)))))
   ([c _locale ^Registry registry]
    (sc c registry)))
 
