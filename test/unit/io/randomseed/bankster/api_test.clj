@@ -637,13 +637,33 @@
         (registry/set! orig)))))
 
 (deftest rounding-alias
+  (is (nil? (api/rounding-mode)))
+  (is (nil? (api-money/rounding-mode)))
+  (is (= java.math.RoundingMode/UP
+         (api/rounding-mode java.math.RoundingMode/UP)))
+  (is (= java.math.RoundingMode/UP
+         (api-money/rounding-mode java.math.RoundingMode/UP)))
   (is (= java.math.RoundingMode/HALF_UP
          (api/with-rounding :HALF_UP (scale/rounding-mode))))
   (is (= java.math.RoundingMode/HALF_UP
          (api-money/with-rounding :HALF_UP (scale/rounding-mode))))
   (is (= java.math.RoundingMode/HALF_UP
          (api-money/with-rescaling :HALF_UP (scale/rounding-mode))))
-  (is (true? (api-money/with-rescaling :HALF_UP scale/*each*))))
+  (is (true? (api-money/with-rescaling :HALF_UP scale/*each*)))
+  (let [v0 (api/scale-apply 1.20M)
+        v0m (api-money/scale-apply 1.20M)
+        v1 (api/scale-apply 1M 2)
+        v2 (api/scale-apply 1.234M 2 java.math.RoundingMode/HALF_UP)
+        v3 (api-money/scale-apply 1M 2)
+        v4 (api-money/scale-apply 1.234M 2 java.math.RoundingMode/HALF_UP)]
+    (is (= 2 (.scale ^BigDecimal v0)))
+    (is (= 2 (.scale ^BigDecimal v0m)))
+    (is (= 2 (.scale ^BigDecimal v1)))
+    (is (= 2 (.scale ^BigDecimal v2)))
+    (is (= 2 (.scale ^BigDecimal v3)))
+    (is (= 2 (.scale ^BigDecimal v4)))
+    (is (= 1.23M v2))
+    (is (= 1.23M v4))))
 
 (deftest inter-ops
   (let [r (mk-test-registry)]
