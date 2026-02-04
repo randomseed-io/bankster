@@ -800,9 +800,9 @@ It allows to perform **math operations** on monetary amounts:
 ;; using api (front API)
 ;;
 
-(require '[io.randomseed.bankster.api     :as api]
+(require '[io.randomseed.bankster.api          :as          api]
+         '[io.randomseed.bankster.api.money    :as    api-money]
          '[io.randomseed.bankster.api.currency :as api-currency]
-         '[io.randomseed.bankster.api.money    :as api-money]
          '[io.randomseed.bankster.api.registry :as api-registry])
 
 ;; NOTE: `api/amount` is an alias for `scale/amount`.
