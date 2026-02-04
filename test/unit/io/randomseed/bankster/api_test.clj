@@ -168,6 +168,10 @@
           (api-currency/with :EUR
             (is (= :EUR (api-currency/id (api/currency))))))
 
+        (testing "currency default context via api-currency/with-default"
+          (api-currency/with-default :PLN
+            (is (= :PLN (api-currency/id (api/currency))))))
+
         (testing "currency accessors and predicates"
           (is (= :EUR (api-currency/id :EUR)))
           (is (= :EUR (api-currency/id :EUR true)))

@@ -122,8 +122,9 @@ Contracts:
   layer).
 - `(.toString Money)` returns `"AMOUNT CODE"` (code comes from `Currency/toString`).
 - The amount scale in `Money` is part of the data (it may differ from the currency's
-  nominal scale). This is supported, but has consequences (see `money/rescaled?`,
-  `money/rescale`, `money/strip`).
+  nominal scale). For auto-scaled currencies it reflects the current value's scale
+  (it adapts to the amount). This is supported, but has consequences (see
+  `money/rescaled?`, `money/rescale`, `money/strip`).
 
 ### 2.3 `io.randomseed.bankster/Registry`
 
@@ -275,7 +276,7 @@ Methods:
 - `applied?` -> boolean: does the value already carry scale information (e.g.
   `BigDecimal`, `Money`, `Currency`)?
 - `of` -> long: scale (for `Money` it's the amount scale; for `Currency` it's the
-  currency scale).
+  currency scale; for auto-scaled currencies this is `-1`).
 - `apply` -> scaled value:
   - for numbers: returns a `BigDecimal`,
   - for `Money`: may rescale the amount; unary `apply` reapplies the currency's
@@ -292,11 +293,28 @@ Helpers:
 - `scale/auto?` -> boolean/nil: checks whether `(scale/of x)` is auto-scaled; returns
   `nil` when the value is not scalable (or not resolvable in a registry).
 
-Front API shortcuts (`io.randomseed.bankster.api`):
+Front API namespaces:
 
-- `api/amount` -> `scale/amount`.
-- `api/scale` -> scale for `Money` and `Currency` (Money amount scale / Currency
-  nominal scale; `nil` for auto-scaled currencies).
+- `API.md` contains an overview of the front API surface.
+- `io.randomseed.bankster.api`:
+  - `amount` -> `scale/amount`.
+  - `scale` -> scale for `Money` and `Currency` (Money amount scale / Currency
+    nominal scale; `-1` for auto-scaled currencies).
+- `io.randomseed.bankster.api.registry`:
+  - Registry helpers (`with`, `state`, `hierarchy-derive`, `hierarchy-derive!`,
+    `or-default`).
+    - `or-default` treats `nil` and `true` as "use default registry".
+- `io.randomseed.bankster.api.money`:
+  - Money-only arithmetic: `add`, `sub`, `mul`, `div`.
+  - Money-only comparisons/predicates: `eq?`, `ne?`, `gt?`, `ge?`, `lt?`, `le?`,
+    `compare`, `pos?`, `neg?`, `zero?`.
+- `io.randomseed.bankster.api.currency`:
+  - Currency helpers (unprefixed function set).
+- Operator namespace for intentional `:refer :all`: `io.randomseed.bankster.api.ops`.
+- Frozen API for major version 2: `io.randomseed.bankster.api.v2` and sub-namespaces.
+  It mirrors `io.randomseed.bankster.api` for the 2.x line and remains available
+  when Bankster 3 appears. In the current release the v2 API is equivalent to
+  `io.randomseed.bankster.api`.
 
 Dynamic vars and rounding:
 
@@ -527,8 +545,9 @@ Tagged literals / readers:
   reflect non-semantic differences like currency extension keys). Prefer `money/eq?`
   (or `money/=`) / `money/eq-am?` (`money/==`), or the inter-op layer
   `io.randomseed.bankster.money.inter-ops/=` for mixed numeric expressions.
-- Avoid `:refer :all` on `io.randomseed.bankster.api`: it will shadow core operators
-  (e.g. `+`, `-`, `*`, `/`, `=`, comparisons, numeric casts), which may be surprising.
+- Avoid `:refer :all` on `io.randomseed.bankster.api` (it adds noise).
+  Use `io.randomseed.bankster.api.ops` when you intentionally want money-aware
+  operators.
 - For untrusted input (e.g. from an API) prefer `to-id-str` / `to-code-str` and
   validate, instead of calling `keyword` (interning).
 - Be explicit about rounding: set `scale/*rounding-mode*` via `scale/with-rounding`

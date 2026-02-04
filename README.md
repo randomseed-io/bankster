@@ -69,6 +69,17 @@ what is "soft" vs "strict", how the default registry is chosen, when exceptions 
 thrown, how the protocols behave) for Bankster's core axis: `Currency`, `Money`,
 `Registry` records and the `Monetary`, `Scalable` and `Accountable` protocols.
 
+## Front API
+
+Bankster provides a curated front API under `io.randomseed.bankster.api.*`
+(recommended for application code). See `API.md` for an overview.
+
+For major-version stability there is a frozen API namespace:
+`io.randomseed.bankster.api.v2` and its sub-namespaces. It mirrors
+`io.randomseed.bankster.api` for the Bankster 2.x line. When Bankster 3 appears,
+the v2 API will remain available for compatibility. In the current release,
+`io.randomseed.bankster.api.v2.*` is equivalent to `io.randomseed.bankster.api.*`.
+
 ## Installation
 
 To use Bankster in your project, add the following to dependencies section of
@@ -771,8 +782,10 @@ It allows to perform **math operations** on monetary amounts:
 
 ;; NOTE: inter-ops is intentionally polymorphic (Money + numeric fallbacks),
 ;; so boxed-math warnings are suppressed in that namespace.
-;; NOTE: avoid `:refer :all` on `io.randomseed.bankster.api` because it shadows
-;; core operators (e.g. `+`, `-`, `*`, `/`, `=`, comparisons).
+;; NOTE: operator shadowing lives in `io.randomseed.bankster.api.ops`.
+;; Use `:refer :all` there intentionally if you want `+`, `-`, `*`, `/`, `=`, etc.
+;; to be money-aware.
+;; (require '[io.randomseed.bankster.api.ops :refer :all])
 
 (+ 1 2 3)
 6
@@ -787,10 +800,15 @@ It allows to perform **math operations** on monetary amounts:
 ;; using api (front API)
 ;;
 
-(require '[io.randomseed.bankster.api :as api])
+(require '[io.randomseed.bankster.api     :as api]
+         '[io.randomseed.bankster.api.currency :as api-currency]
+         '[io.randomseed.bankster.api.money    :as api-money]
+         '[io.randomseed.bankster.api.registry :as api-registry])
 
 ;; NOTE: `api/amount` is an alias for `scale/amount`.
 ;; NOTE: `api/scale` returns scale (Money amount scale / Currency nominal scale).
+;; For auto-scaled currencies, Money scale reflects the current amount's scale
+;; (it adapts to the value), not a nominal currency scale.
 
 (api/with-rescaling :HALF_UP
   (api/auto-scaled? :XAU))
@@ -803,34 +821,40 @@ It allows to perform **math operations** on monetary amounts:
 ;; => 2
 
 (api/scale :XAU)
-;; => nil  ; auto-scaled currency
+;; => -1  ; auto-scaled currency
 
-(api/currency-resolve-all :EUR)
+(api-money/add #money[10 EUR] #money[5 EUR])
+;; => #money[15 EUR]
+
+(api-money/gt? #money[10 EUR] #money[5 EUR])
+;; => true
+
+(api-currency/resolve-all :EUR)
 ;; => #{#currency{:id :EUR, ...}}
 
-(api/currency-id-str :crypto/eth)
+(api-currency/id-str :crypto/eth)
 ;; => "crypto/ETH"
 
-(api/currency-code-str :crypto/eth)
+(api-currency/code-str :crypto/eth)
 ;; => "ETH"
 
-(api/currency-symbol :USD :en_US)
+(api-currency/symbol :USD :en_US)
 ;; => "$"
 
-(api/currency-name :EUR :en_US)
+(api-currency/name :EUR :en_US)
 ;; => "Euro"
 
-(api/money-of-registry (api/default-registry) #money[10 EUR])
+(api-money/of-registry (api/default-registry) #money[10 EUR])
 ;; => #money[10.00 EUR]
 
-(api/money-cast #money[10 EUR] :USD :HALF_UP)
+(api-money/cast #money[10 EUR] :USD :HALF_UP)
 ;; => #money[... USD]
 
-(api/money-cast-try #money[10 EUR] :NOPE)
+(api-money/cast-try #money[10 EUR] :NOPE)
 ;; => nil
 
-(api/money-format #money[1234.50 PLN] :pl_PL)
-;; => "1 234,50 zl"
+(api-money/format #money[1234.50 PLN] :pl_PL)
+;; => "1 234,50 zł"
 ```
 
 It allows to perform **generic, polymorphic operations** on monetary amounts and
@@ -862,7 +886,7 @@ currencies:
 
 ;; nominal scale of the currency
 (currency/scale #money[12.34567 XXX])
-nil ; auto-scaled
+-1 ; auto-scaled
 
 (currency/auto-scaled? :XXX)
 true
