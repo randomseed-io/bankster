@@ -92,6 +92,12 @@
     (is (= 10 (u/is-not pos? 10 123)))
     (is (= 123 (u/is-not pos? -10 123)))))
 
+(deftest auto-alias-macro-branches
+  (testing "auto-alias accepts symbol, quoted symbol and keyword"
+    (is (some? (macroexpand '(u/auto-alias io.randomseed.bankster.api))))
+    (is (some? (macroexpand '(u/auto-alias 'io.randomseed.bankster.api))))
+    (is (some? (macroexpand '(u/auto-alias :io.randomseed.bankster.api))))))
+
 (deftest numeric-utils
   (testing "count-digits"
     (is (= 1 (u/count-digits 0)))

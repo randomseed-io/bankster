@@ -44,6 +44,57 @@
   [id ^String ns]
   (must-have-ns (ensure-keyword id) ns))
 
+(defmacro ^:no-doc defalias [name target]
+  (let [v        (clojure.core/resolve target)
+        m0       (meta v)
+        arglists (:arglists m0)
+        m        (-> m0
+                     (dissoc :ns :name :file :line :column)
+                     (assoc :added "2.2.0" :auto-alias true)
+                     (cond-> arglists (assoc :arglists (list 'quote arglists))))]
+    (if (:macro m0)
+      `(def ~(with-meta name m)
+         (deref (var ~target)))
+      `(def ~(with-meta name m)
+         ~target))))
+
+(defmacro auto-alias
+  "Creates aliases in the current namespace for all Vars in `source-ns` that have
+  truthy `:auto-alias` metadata, skipping symbols already defined."
+  {:added "2.2.0" :auto-alias true}
+  [source-ns]
+  (let [ns-sym  (cond
+                  (symbol? source-ns)
+                  source-ns
+
+                  (and (seq? source-ns)
+                       (= 'quote (first source-ns))
+                       (= 2 (count source-ns))
+                       (symbol? (second source-ns)))
+                  (second source-ns)
+
+                  (keyword? source-ns)
+                  (symbol (name source-ns))
+
+                  :else
+                  (symbol (str source-ns)))
+        _       (clojure.core/require ns-sym)
+        vars    (->> (ns-interns (the-ns ns-sym))
+                     (filter (fn [[_ v]] (:auto-alias (meta v)))))
+        aliases (->> vars
+                     (map first)
+                     (sort)
+                     (remove #(contains? (ns-interns *ns*) %))
+                     (map (fn [sym]
+                            `(io.randomseed.bankster.util/defalias
+                               ~sym
+                               ~(symbol (str ns-sym) (name sym)))))
+                     (vec))]
+    (cond
+      (empty? aliases) nil
+      (= 1 (count aliases)) (first aliases)
+      :else `(do ~@aliases))))
+
 (defmacro try-null
   "Evaluates body and if a NullPointerException is caught it returns nil. Otherwise
   it returns the value of the last expression in the body."
