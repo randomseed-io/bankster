@@ -1388,7 +1388,7 @@
    (scale/apply ^Money money (int scale) ^RoundingMode rounding-mode)))
 
 (defn rescale
-  "Same as scale but its unary variant will rescale an amount of the given money to
+  "Same as `scale` but its unary variant will rescale an amount of the given money to
   conform it to its currency settings instead of returning the scale. It has the same
   effect as calling `io.randomseed.bankster.scale/apply` on a Money object."
   {:tag Money :added "1.0.0"}

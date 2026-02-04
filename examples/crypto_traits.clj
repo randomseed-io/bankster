@@ -11,8 +11,7 @@
             [io.randomseed.bankster.api.currency :as api-currency]
             [io.randomseed.bankster.api.money    :as    api-money]
             [io.randomseed.bankster.api.ops      :as      api-ops]
-            [io.randomseed.bankster.api.registry :as api-registry]
-            [io.randomseed.bankster.registry     :as     registry]))
+            [io.randomseed.bankster.api.registry :as api-registry]))
 
 ;;; ---------------------------------------------------------------------------
 ;;; Example 1: Built-in KIND predicates (based on kind hierarchy)
@@ -710,7 +709,7 @@
   ;;     :trust/none   [:XXX]}
 
   ;; === Inspect the hierarchy ===
-  (def traits-h (registry/hierarchy :traits reg-inherited))
+  (def traits-h (api-registry/hierarchy :traits reg-inherited))
 
   ;; Verify :peg/fiat now derives from :trust/normal
   (isa? traits-h :peg/fiat :trust/normal)

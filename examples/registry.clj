@@ -7,7 +7,6 @@
             [io.randomseed.bankster.api.money    :as    api-money]
             [io.randomseed.bankster.api.ops      :as      api-ops]
             [io.randomseed.bankster.api.registry :as api-registry]
-            [io.randomseed.bankster.registry     :as     registry]
             [io.randomseed.bankster.init         :as         init]))
 
 ;;; ---------------------------------------------------------------------------
@@ -272,7 +271,7 @@
 (defn build-gaming-registry
   "Builds a complete registry for a gaming application."
   []
-  (-> (registry/new-registry)
+  (-> (api-registry/new-registry)
       ;; Add real currencies for purchases
       (api-currency/register (api-currency/of :USD))
       (api-currency/register (api-currency/of :EUR))
