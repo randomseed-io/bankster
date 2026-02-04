@@ -4,8 +4,7 @@
    Bankster provides fine-grained control over rounding behavior,
    essential for regulatory compliance and financial accuracy."
   (:require [io.randomseed.bankster.api.money :as api-money]
-            [io.randomseed.bankster.api.ops   :as   api-ops]
-            [io.randomseed.bankster.scale     :as     scale]))
+            [io.randomseed.bankster.api.ops   :as   api-ops]))
 
 ;;; ---------------------------------------------------------------------------
 ;;; Example 1: Available rounding modes
@@ -32,25 +31,25 @@
 
 (comment
   ;; Different rounding modes on same value
-  (scale/apply sample-amount 2 :HALF_UP)
+  (api-money/scale-apply sample-amount 2 :HALF_UP)
   ;; => #money[10.01 PLN]
 
-  (scale/apply sample-amount 2 :HALF_DOWN)
+  (api-money/scale-apply sample-amount 2 :HALF_DOWN)
   ;; => #money[10.00 PLN]
 
-  (scale/apply sample-amount 2 :HALF_EVEN)  ; banker's rounding
+  (api-money/scale-apply sample-amount 2 :HALF_EVEN)  ; banker's rounding
   ;; => #money[10.00 PLN]
 
-  (scale/apply sample-amount 2 :CEILING)
+  (api-money/scale-apply sample-amount 2 :CEILING)
   ;; => #money[10.01 PLN]
 
-  (scale/apply sample-amount 2 :FLOOR)
+  (api-money/scale-apply sample-amount 2 :FLOOR)
   ;; => #money[10.00 PLN]
 
-  (scale/apply sample-amount 2 :UP)
+  (api-money/scale-apply sample-amount 2 :UP)
   ;; => #money[10.01 PLN]
 
-  (scale/apply sample-amount 2 :DOWN)
+  (api-money/scale-apply sample-amount 2 :DOWN)
   ;; => #money[10.00 PLN]
   )
 
@@ -63,20 +62,20 @@
 
 (comment
   ;; Ties go to even digit
-  (scale/apply #money[10.005 PLN] 2 :HALF_EVEN)
+  (api-money/scale-apply #money[10.005 PLN] 2 :HALF_EVEN)
   ;; => #money[10.00 PLN] (0 is even)
 
-  (scale/apply #money[10.015 PLN] 2 :HALF_EVEN)
+  (api-money/scale-apply #money[10.015 PLN] 2 :HALF_EVEN)
   ;; => #money[10.02 PLN] (2 is even)
 
-  (scale/apply #money[10.025 PLN] 2 :HALF_EVEN)
+  (api-money/scale-apply #money[10.025 PLN] 2 :HALF_EVEN)
   ;; => #money[10.02 PLN] (2 is even)
 
-  (scale/apply #money[10.035 PLN] 2 :HALF_EVEN)
+  (api-money/scale-apply #money[10.035 PLN] 2 :HALF_EVEN)
   ;; => #money[10.04 PLN] (4 is even)
 
   ;; Non-ties round normally
-  (scale/apply #money[10.006 PLN] 2 :HALF_EVEN)
+  (api-money/scale-apply #money[10.006 PLN] 2 :HALF_EVEN)
   ;; => #money[10.01 PLN]
   )
 
@@ -86,18 +85,18 @@
 
 (comment
   ;; Set rounding mode for a block of operations
-  (scale/with-rounding :HALF_EVEN
+  (api-money/with-rounding :HALF_EVEN
     (api-ops// #money[100 PLN] 3))
   ;; => #money[33.33 PLN]
 
-  (scale/with-rounding :HALF_UP
+  (api-money/with-rounding :HALF_UP
     (api-ops// #money[100 PLN] 3))
   ;; => #money[33.33 PLN]
 
   ;; Nested scopes
-  (scale/with-rounding :HALF_UP
+  (api-money/with-rounding :HALF_UP
     (let [a (api-ops// #money[100 PLN] 3)]
-      (scale/with-rounding :FLOOR
+      (api-money/with-rounding :FLOOR
         (let [b (api-ops// #money[100 PLN] 3)]
           {:outer a :inner b}))))
   ;; => {:outer #money[33.33 PLN] :inner #money[33.33 PLN]}
@@ -110,7 +109,7 @@
 (defn safe-divide
   "Divides money with explicit rounding mode."
   [amount divisor rounding-mode]
-  (scale/with-rounding rounding-mode
+  (api-money/with-rounding rounding-mode
     (api-ops// amount divisor)))
 
 (comment
@@ -139,7 +138,7 @@
 (defn calculate-vat
   "Calculates VAT with configurable rounding (default: HALF_UP per Polish law)."
   [net-amount vat-rate & {:keys [rounding] :or {rounding :HALF_UP}}]
-  (scale/with-rounding rounding
+  (api-money/with-rounding rounding
     (let [vat (api-ops/* net-amount vat-rate)]
       {:net   net-amount
        :vat   vat
@@ -164,14 +163,14 @@
   "Calculates interest with specified precision and rounding."
   [principal rate periods & {:keys [precision rounding]
                              :or   {precision 2 rounding :HALF_EVEN}}]
-  (scale/with-rounding rounding
+  (api-money/with-rounding rounding
     (let [interest-factor (Math/pow (+ 1 (double (/ rate periods))) periods)
           final-amount    (api-ops/* principal (bigdec interest-factor))]
       {:principal    principal
        :rate         rate
        :periods      periods
-       :final-amount (scale/apply final-amount precision rounding)
-       :interest     (api-ops/- (scale/apply final-amount precision rounding)
+       :final-amount (api-money/scale-apply final-amount precision rounding)
+       :interest     (api-ops/- (api-money/scale-apply final-amount precision rounding)
                                 principal)})))
 
 (comment
@@ -191,7 +190,7 @@
 (defn convert-currency
   "Converts between currencies with specified rounding mode."
   [amount target-currency rate & {:keys [rounding] :or {rounding :HALF_UP}}]
-  (scale/with-rounding rounding
+  (api-money/with-rounding rounding
     (api-money/of target-currency
               (* (api-money/amount amount) rate))))
 
@@ -252,10 +251,10 @@
   ;; => #money[100.00 PLN]
 
   ;; Manual scale application
-  (scale/apply #money[100.12345 PLN] 4 :HALF_UP)
+  (api-money/scale-apply #money[100.12345 PLN] 4 :HALF_UP)
   ;; => #money[100.1235 PLN]
 
-  (scale/apply #money[100.12345 PLN] 0 :HALF_UP)
+  (api-money/scale-apply #money[100.12345 PLN] 0 :HALF_UP)
   ;; => #money[100 PLN]
   )
 
@@ -266,7 +265,7 @@
 (defn generate-financial-report
   "Generates financial report with consistent rounding throughout."
   [transactions rounding-mode]
-  (scale/with-rounding rounding-mode
+  (api-money/with-rounding rounding-mode
     (let [totals (reduce
                   (fn [acc {:keys [amount type]}]
                     (case type

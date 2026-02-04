@@ -45,7 +45,7 @@
 (defn create-loyalty-points
   "Creates a loyalty points currency."
   [company-code]
-  (api-currency/new-currency
+  (api-currency/new
    (keyword (str company-code "/POINTS"))
    0                                    ; no decimal places
    (keyword (str "loyalty/" company-code)))) ; kind
@@ -53,7 +53,7 @@
 (defn create-virtual-currency
   "Creates a virtual currency for games/apps."
   [name scale]
-  (api-currency/new-currency
+  (api-currency/new
    (keyword (str "virtual/" name))
    scale
    :virtual/token))
@@ -73,9 +73,9 @@
 (def custom-registry
   "Registry with custom currencies added."
   (-> (api-registry/state)
-      (api-currency/register (api-currency/new-currency :ACME/POINTS 0 :loyalty/points))
-      (api-currency/register (api-currency/new-currency :GAME/GOLD 2 :virtual/token))
-      (api-currency/register (api-currency/new-currency :GAME/GEMS 0 :virtual/token))))
+      (api-currency/register (api-currency/new :ACME/POINTS 0 :loyalty/points))
+      (api-currency/register (api-currency/new :GAME/GOLD 2 :virtual/token))
+      (api-currency/register (api-currency/new :GAME/GEMS 0 :virtual/token))))
 
 (comment
   ;; Use custom registry in scope
@@ -125,7 +125,7 @@
   [tenant-id custom-currencies]
   (reduce
    (fn [reg {:keys [id scale kind]}]
-     (api-currency/register reg (api-currency/new-currency id scale kind)))
+     (api-currency/register reg (api-currency/new id scale kind)))
    (api-registry/state)
    custom-currencies))
 
@@ -230,7 +230,7 @@
   ;; Use only for initialization or testing.
 
   ;; Register new currency globally
-  (api-currency/register! (api-currency/new-currency :TEST/COIN 8 :test/currency))
+  (api-currency/register! (api-currency/new :TEST/COIN 8 :test/currency))
 
   ;; Now available globally
   (api-money/of :TEST/COIN 1.23456789M)
@@ -258,7 +258,7 @@
     (-> (api-registry/state)
         (api-currency/register
          (api-currency/with-weight
-           (api-currency/new-currency :USD 2 :custom/usd)
+           (api-currency/new :USD 2 :custom/usd)
            100))))  ; higher weight = higher priority
 
   ;; In lookup, higher weight wins when codes conflict
@@ -277,12 +277,12 @@
       (api-currency/register (api-currency/of :EUR))
       (api-currency/register (api-currency/of :PLN))
       ;; Add game currencies
-      (api-currency/register (api-currency/new-currency :GAME/GOLD 2 :game/soft))
-      (api-currency/register (api-currency/new-currency :GAME/GEMS 0 :game/hard))
-      (api-currency/register (api-currency/new-currency :GAME/XP 0 :game/experience))
+      (api-currency/register (api-currency/new :GAME/GOLD 2 :game/soft))
+      (api-currency/register (api-currency/new :GAME/GEMS 0 :game/hard))
+      (api-currency/register (api-currency/new :GAME/XP 0 :game/experience))
       ;; Add seasonal currencies
-      (api-currency/register (api-currency/new-currency :GAME/SNOW 0 :game/seasonal))
-      (api-currency/register (api-currency/new-currency :GAME/HEARTS 0 :game/seasonal))))
+      (api-currency/register (api-currency/new :GAME/SNOW 0 :game/seasonal))
+      (api-currency/register (api-currency/new :GAME/HEARTS 0 :game/seasonal))))
 
 (comment
   (def gaming-registry (build-gaming-registry))

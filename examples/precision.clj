@@ -9,8 +9,7 @@
   (:require [io.randomseed.bankster.api          :as          api]
             [io.randomseed.bankster.api.currency :as api-currency]
             [io.randomseed.bankster.api.money    :as    api-money]
-            [io.randomseed.bankster.api.ops      :as      api-ops]
-            [io.randomseed.bankster.scale        :as        scale]))
+            [io.randomseed.bankster.api.ops      :as      api-ops]))
 
 ;;; ---------------------------------------------------------------------------
 ;;; Example 1: Fixed scale (nominal currency scale)
@@ -27,7 +26,7 @@
   ;; => #money[10.01 PLN] (uses default rounding)
 
   ;; With explicit rounding context
-  (scale/with-rounding :HALF_EVEN
+  (api/with-rounding :HALF_EVEN
     (fixed-scale #money[10.005 PLN]))
   ;; => #money[10.00 PLN]
   )
@@ -37,7 +36,7 @@
 ;;; ---------------------------------------------------------------------------
 
 (comment
-  (scale/with-rounding :HALF_UP
+  (api/with-rounding :HALF_UP
     (let [a (api-ops// #money[1 PLN] 3)
           b (api-ops/+ a #money[0.01 PLN])]
       (fixed-scale b)))
@@ -50,7 +49,7 @@
 
 (def auto-cur
   "Ad-hoc auto-scaled currency (scale = -1)."
-  (api-currency/new-currency :TEST/AUTO nil -1 :test/auto))
+  (api-currency/new :TEST/AUTO nil -1 :test/auto))
 
 (comment
   ;; Auto-scaled currency keeps the amount scale as needed.
@@ -78,6 +77,6 @@
   ;; => #money[1.25 PLN]
 
   ;; Direct scale application for a number
-  (scale/apply 12.3456M 2 :HALF_UP)
+  (api/scale-apply 12.3456M 2 :HALF_UP)
   ;; => 12.35M
   )
