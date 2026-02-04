@@ -3,11 +3,11 @@
 
    Bankster provides lossless roundtrip serialization to/from JSON,
    supporting both minimal and full representations."
-  (:require [io.randomseed.bankster.money              :as money]
-            [io.randomseed.bankster.api              :as api]
-            [io.randomseed.bankster.currency         :as currency]
-            [io.randomseed.bankster.serializers.json :as json]
-            [io.randomseed.bankster.serializers.edn  :as edn]))
+  (:require [io.randomseed.bankster.api.currency       :as api-currency]
+            [io.randomseed.bankster.api.money          :as    api-money]
+            [io.randomseed.bankster.api.ops            :as      api-ops]
+            [io.randomseed.bankster.serializers.json   :as         json]
+            [io.randomseed.bankster.serializers.edn    :as          edn]))
 
 ;;; ---------------------------------------------------------------------------
 ;;; Example 1: Basic JSON serialization
@@ -19,7 +19,7 @@
   ;; => {:amount "99.99", :currency "USD"}
 
   ;; Money to JSON map (full - with metadata)
-  (json/money->json-map #money[99.99 USD] :full)
+  (json/money->json-map #money[99.99 USD] {:full? true})
   ;; => {:amount "99.99", :currency "USD", :scale 2, :numeric 840}
 
   ;; Money to JSON string
@@ -50,11 +50,11 @@
 
 (comment
   ;; Currency to JSON map
-  (json/currency->json-map (api/currency-of :EUR))
+  (json/currency->json-map (api-currency/of :EUR))
   ;; => {:id "EUR", :numeric 978, :scale 2, :kind "iso/fiat", :domain "ISO-4217"}
 
   ;; Currency to JSON string
-  (json/currency->json-string (api/currency-of :PLN))
+  (json/currency->json-string (api-currency/of :PLN))
   ;; => "{\"id\":\"PLN\",\"numeric\":985,\"scale\":2,...}"
 
   ;; From JSON string
@@ -91,8 +91,8 @@
   (clojure.walk/postwalk
    (fn [x]
      (cond
-       (api/money? x)    (json/money->json-map x)
-       (api/currency? x) (json/currency->json-map x)
+       (api-money/money? x)    (json/money->json-map x)
+       (api-currency/currency? x) (json/currency->json-map x)
        :else x))
    data))
 
@@ -103,7 +103,7 @@
    (fn [d field]
      (if-let [money-data (get-in d field)]
        (assoc-in d field
-                 (api/money-of (keyword (:currency money-data))
+                 (api-money/of (keyword (:currency money-data))
                            (BigDecimal. (str (:amount money-data)))))
        d))
    data
@@ -173,7 +173,7 @@
   ;; => #money[100.50 PLN]
 
   ;; Currency EDN
-  (edn/currency->edn-map (api/currency-of :EUR))
+  (edn/currency->edn-map (api-currency/of :EUR))
   ;; => {:id :EUR, :numeric 978, :scale 2, :kind :iso/fiat, :domain :ISO-4217}
   )
 
@@ -186,7 +186,7 @@
   [money-value]
   (let [json-str  (json/money->json-string money-value)
         restored  (json/json-text->money json-str)
-        equal?    (api/= money-value restored)]
+        equal?    (api-ops/= money-value restored)]
     {:original  money-value
      :json      json-str
      :restored  restored
@@ -211,19 +211,19 @@
 (defn to-stripe-format
   "Converts Money to Stripe API format (amount in cents)."
   [money-value]
-  (let [curr (api/money-currency money-value)
-        scale (api/currency-scale curr)]
-    {:amount   (long (* (api/money-amount money-value)
+  (let [curr (api-money/currency money-value)
+        scale (api-currency/scale curr)]
+    {:amount   (long (* (api-money/amount money-value)
                         (Math/pow 10 scale)))
      :currency (clojure.string/lower-case
-                (name (api/currency-id curr)))}))
+                (name (api-currency/id curr)))}))
 
 (defn from-stripe-format
   "Converts Stripe API format to Money."
   [{:keys [amount currency]}]
-  (let [curr  (api/currency-of (keyword (clojure.string/upper-case currency)))
-        scale (api/currency-scale curr)]
-    (api/money-of curr (/ amount (Math/pow 10 scale)))))
+  (let [curr  (api-currency/of (keyword (clojure.string/upper-case currency)))
+        scale (api-currency/scale curr)]
+    (api-money/of curr (/ amount (Math/pow 10 scale)))))
 
 (comment
   ;; To Stripe format
@@ -252,7 +252,7 @@
      :metadata (:metadata payload)}
 
     :paypal
-    {:amount   (api/money-of (keyword (:currency_code payload))
+    {:amount   (api-money/of (keyword (:currency_code payload))
                          (BigDecimal. (:value payload)))
      :event    (:event_type payload)
      :metadata (:custom_id payload)}

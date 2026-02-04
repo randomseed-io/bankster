@@ -3,9 +3,9 @@
 
    Bankster provides fine-grained control over rounding behavior,
    essential for regulatory compliance and financial accuracy."
-  (:require [io.randomseed.bankster.money :as money]
-            [io.randomseed.bankster.api   :as api]
-            [io.randomseed.bankster.scale :as scale]))
+  (:require [io.randomseed.bankster.api.money :as api-money]
+            [io.randomseed.bankster.api.ops   :as   api-ops]
+            [io.randomseed.bankster.scale     :as     scale]))
 
 ;;; ---------------------------------------------------------------------------
 ;;; Example 1: Available rounding modes
@@ -87,18 +87,18 @@
 (comment
   ;; Set rounding mode for a block of operations
   (scale/with-rounding :HALF_EVEN
-    (api// #money[100 PLN] 3))
+    (api-ops// #money[100 PLN] 3))
   ;; => #money[33.33 PLN]
 
   (scale/with-rounding :HALF_UP
-    (api// #money[100 PLN] 3))
+    (api-ops// #money[100 PLN] 3))
   ;; => #money[33.33 PLN]
 
   ;; Nested scopes
   (scale/with-rounding :HALF_UP
-    (let [a (api// #money[100 PLN] 3)]
+    (let [a (api-ops// #money[100 PLN] 3)]
       (scale/with-rounding :FLOOR
-        (let [b (api// #money[100 PLN] 3)]
+        (let [b (api-ops// #money[100 PLN] 3)]
           {:outer a :inner b}))))
   ;; => {:outer #money[33.33 PLN] :inner #money[33.33 PLN]}
   )
@@ -111,7 +111,7 @@
   "Divides money with explicit rounding mode."
   [amount divisor rounding-mode]
   (scale/with-rounding rounding-mode
-    (api// amount divisor)))
+    (api-ops// amount divisor)))
 
 (comment
   ;; 100 / 3 with different rounding
@@ -140,10 +140,10 @@
   "Calculates VAT with configurable rounding (default: HALF_UP per Polish law)."
   [net-amount vat-rate & {:keys [rounding] :or {rounding :HALF_UP}}]
   (scale/with-rounding rounding
-    (let [vat (api/* net-amount vat-rate)]
+    (let [vat (api-ops/* net-amount vat-rate)]
       {:net   net-amount
        :vat   vat
-       :gross (api/+ net-amount vat)})))
+       :gross (api-ops/+ net-amount vat)})))
 
 (comment
   ;; Standard VAT calculation
@@ -166,12 +166,12 @@
                              :or   {precision 2 rounding :HALF_EVEN}}]
   (scale/with-rounding rounding
     (let [interest-factor (Math/pow (+ 1 (double (/ rate periods))) periods)
-          final-amount    (api/* principal (bigdec interest-factor))]
+          final-amount    (api-ops/* principal (bigdec interest-factor))]
       {:principal    principal
        :rate         rate
        :periods      periods
        :final-amount (scale/apply final-amount precision rounding)
-       :interest     (api/- (scale/apply final-amount precision rounding)
+       :interest     (api-ops/- (scale/apply final-amount precision rounding)
                                 principal)})))
 
 (comment
@@ -192,8 +192,8 @@
   "Converts between currencies with specified rounding mode."
   [amount target-currency rate & {:keys [rounding] :or {rounding :HALF_UP}}]
   (scale/with-rounding rounding
-    (api/money-of target-currency
-              (* (api/money-amount amount) rate))))
+    (api-money/of target-currency
+              (* (api-money/amount amount) rate))))
 
 (comment
   ;; EUR to PLN at 4.35
@@ -214,21 +214,21 @@
 
 (comment
   ;; Round to nearest 0.05 (nickel rounding - common in some countries)
-  (api/money-round-to #money[1.23 PLN] 0.05M)
+  (api-money/round-to #money[1.23 PLN] 0.05M)
   ;; => #money[1.25 PLN]
 
-  (api/money-round-to #money[1.22 PLN] 0.05M)
+  (api-money/round-to #money[1.22 PLN] 0.05M)
   ;; => #money[1.20 PLN]
 
   ;; Round to nearest 0.10
-  (api/money-round-to #money[1.24 PLN] 0.10M)
+  (api-money/round-to #money[1.24 PLN] 0.10M)
   ;; => #money[1.20 PLN]
 
-  (api/money-round-to #money[1.25 PLN] 0.10M)
+  (api-money/round-to #money[1.25 PLN] 0.10M)
   ;; => #money[1.30 PLN]
 
   ;; Round to nearest whole unit
-  (api/money-round-to #money[99.50 PLN] 1M)
+  (api-money/round-to #money[99.50 PLN] 1M)
   ;; => #money[100 PLN]
   )
 
@@ -238,17 +238,17 @@
 
 (comment
   ;; Check if money is at currency's nominal scale
-  (money/rescaled? #money[100.00 PLN])
+  (api-money/rescaled? #money[100.00 PLN])
   ;; => true
 
-  (money/rescaled? #money[100.001 PLN])
+  (api-money/rescaled? #money[100.001 PLN])
   ;; => false (PLN has scale 2)
 
   ;; Rescale to currency's nominal scale
-  (money/rescale #money[100.005 PLN])
+  (api-money/rescale #money[100.005 PLN])
   ;; => #money[100.01 PLN] (uses default rounding)
 
-  (money/rescale #money[100.005 PLN] :FLOOR)
+  (api-money/rescale #money[100.005 PLN] :FLOOR)
   ;; => #money[100.00 PLN]
 
   ;; Manual scale application
@@ -270,14 +270,14 @@
     (let [totals (reduce
                   (fn [acc {:keys [amount type]}]
                     (case type
-                      :income  (update acc :income api/+ amount)
-                      :expense (update acc :expense api/+ amount)
+                      :income  (update acc :income api-ops/+ amount)
+                      :expense (update acc :expense api-ops/+ amount)
                       acc))
                   {:income  #money[0 PLN]
                    :expense #money[0 PLN]}
                   transactions)]
       (assoc totals
-             :balance (api/- (:income totals) (:expense totals))
+             :balance (api-ops/- (:income totals) (:expense totals))
              :rounding-mode rounding-mode))))
 
 (comment

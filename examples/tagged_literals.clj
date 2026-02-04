@@ -3,9 +3,10 @@
 
    Bankster provides tagged literals that make code more readable
    and enable data-as-code for financial values."
-  (:require [io.randomseed.bankster.money    :as money]
-            [io.randomseed.bankster.api      :as api]
-            [io.randomseed.bankster.currency :as currency]))
+  (:require [io.randomseed.bankster.api          :as       api]
+            [io.randomseed.bankster.api.money    :as api-money]
+            [io.randomseed.bankster.api.ops      :as   api-ops]
+            [io.randomseed.bankster.api.currency :as api-currency]))
 
 ;;; ---------------------------------------------------------------------------
 ;;; Example 1: Basic money literals
@@ -96,7 +97,7 @@
   ;; => #money[29.99 PLN]
 
   ;; Operations work directly
-  (api/+ (:widget-a price-list) (:widget-b price-list))
+  (api-ops/+ (:widget-a price-list) (:widget-b price-list))
   ;; => #money[79.98 PLN]
   )
 
@@ -115,9 +116,9 @@
 (defn calculate-total
   "Calculates order total with shipping."
   [subtotal]
-  (if (api/>= subtotal minimum-order-value)
+  (if (api-ops/>= subtotal minimum-order-value)
     subtotal
-    (api/+ subtotal shipping-cost)))
+    (api-ops/+ subtotal shipping-cost)))
 
 (comment
   (calculate-total #money[50 PLN])
@@ -137,11 +138,11 @@
 
   (deftest allocation-test
     (is (= [#money[33.34 PLN] #money[33.33 PLN] #money[33.33 PLN]]
-           (api/money-allocate #money[100 PLN] [1 1 1]))))
+           (api-money/allocate #money[100 PLN] [1 1 1]))))
 
   (deftest arithmetic-test
-    (is (api/= #money[150 PLN]
-                   (api/+ #money[100 PLN] #money[50 PLN]))))
+    (is (api-ops/= #money[150 PLN]
+                   (api-ops/+ #money[100 PLN] #money[50 PLN]))))
   )
 
 ;;; ---------------------------------------------------------------------------
@@ -163,14 +164,14 @@
   [config-path]
   ;; EDN reader automatically handles #money literals
   (clojure.edn/read-string
-   {:readers {'money    io.randomseed.bankster.money/data-literal
-              'currency io.randomseed.bankster.currency/data-literal}}
+   {:readers {'money    io.randomseed.bankster.api.money/data-literal
+              'currency io.randomseed.bankster.api.currency/data-literal}}
    (slurp config-path)))
 
 (comment
   ;; Reading EDN with literals
   (clojure.edn/read-string
-   {:readers {'money io.randomseed.bankster.money/data-literal}}
+   {:readers {'money io.randomseed.bankster.api.money/data-literal}}
    "#money[100 PLN]")
   ;; => #money[100.00 PLN]
   )
@@ -205,21 +206,21 @@
   #money[100 PLN]
 
   ;; Macro (programmatic, allows variables)
-  (api/money-of :PLN 100)
+  (api-money/of :PLN 100)
 
   ;; Function (fully dynamic)
-  (money/value :PLN 100)
+  (api/money :PLN 100)
 
   ;; All produce equivalent results
-  (api/= #money[100 PLN]
-             (api/money-of :PLN 100))
+  (api-ops/= #money[100 PLN]
+             (api-money/of :PLN 100))
   ;; => true
 
   ;; Tagged literals are compile-time - currency must be literal
   ;; For runtime currency, use of/value:
   (let [currency :PLN
         amount 100]
-    (api/money-of currency amount))
+    (api-money/of currency amount))
   )
 
 ;;; ---------------------------------------------------------------------------
@@ -244,13 +245,13 @@
   [template]
   (let [items (:items template)
         line-totals (map (fn [{:keys [unit-price quantity]}]
-                           (api/* unit-price quantity))
+                           (api-ops/* unit-price quantity))
                          items)
-        subtotal (apply api/+ line-totals)]
+        subtotal (apply api-ops/+ line-totals)]
     {:items items
      :subtotal subtotal
-     :vat (api/* subtotal 0.23M)
-     :total (api/* subtotal 1.23M)}))
+     :vat (api-ops/* subtotal 0.23M)
+     :total (api-ops/* subtotal 1.23M)}))
 
 (comment
   (calculate-invoice invoice-template)

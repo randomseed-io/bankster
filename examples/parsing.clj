@@ -3,11 +3,10 @@
 
    Bankster handles various input formats: strings with currency,
    major/minor units, and type conversions."
-  (:require [io.randomseed.bankster.money    :as money]
-            [io.randomseed.bankster.api      :as api]
-            [io.randomseed.bankster.currency :as currency]
-            [io.randomseed.bankster.scale    :as scale]
-            [clojure.string                  :as str]))
+  (:require [io.randomseed.bankster.api.currency :as api-currency]
+            [io.randomseed.bankster.api.money    :as    api-money]
+            [io.randomseed.bankster.api.ops      :as      api-ops]
+            [clojure.string                      :as          str]))
 
 ;;; ---------------------------------------------------------------------------
 ;;; Example 1: Basic string parsing
@@ -15,19 +14,19 @@
 
 (comment
   ;; Format: "amount currency"
-  (api/money-parse "100.50 EUR")
+  (api-money/parse "100.50 EUR")
   ;; => #money[100.50 EUR]
 
   ;; Format: "currency amount"
-  (api/money-parse "PLN 1234.56")
+  (api-money/parse "PLN 1234.56")
   ;; => #money[1234.56 PLN]
 
   ;; With comma as decimal separator
-  (api/money-parse "PLN 1234,56")
+  (api-money/parse "PLN 1234,56")
   ;; => #money[1234.56 PLN]
 
   ;; Large numbers
-  (api/money-parse "1000000.00 USD")
+  (api-money/parse "1000000.00 USD")
   ;; => #money[1000000.00 USD]
   )
 
@@ -37,20 +36,20 @@
 
 (comment
   ;; Major units (dollars, euros, zloty)
-  (api/money-parse-major "1234" :PLN)
+  (api-money/parse-major "1234" :PLN)
   ;; => #money[1234.00 PLN]
 
   ;; Minor units (cents, grosze)
-  (api/money-parse-minor "12345" :PLN)
+  (api-money/parse-minor "12345" :PLN)
   ;; => #money[123.45 PLN]
 
   ;; Useful when importing from banking systems
   ;; that store amounts in cents
-  (api/money-parse-minor "999" :EUR)
+  (api-money/parse-minor "999" :EUR)
   ;; => #money[9.99 EUR]
 
   ;; JPY has no minor units
-  (api/money-parse-minor "1000" :JPY)
+  (api-money/parse-minor "1000" :JPY)
   ;; => #money[1000 JPY]
   )
 
@@ -62,7 +61,7 @@
   "Parses amount returning nil for invalid data."
   [input]
   (try
-    (api/money-parse input)
+    (api-money/parse input)
     (catch Exception _
       nil)))
 
@@ -101,21 +100,21 @@
       (nil? parsed)
       {:error "Invalid amount format"}
 
-      (api/neg? parsed)
+      (api-ops/neg? parsed)
       {:error "Amount cannot be negative"}
 
-      (api/money-is-zero? parsed)
+      (api-money/zero? parsed)
       {:error "Amount must be greater than zero"}
 
-      (and min-amount (api/< parsed min-amount))
-      {:error (str "Minimum amount is " (api/money-format min-amount :en_US))}
+      (and min-amount (api-ops/< parsed min-amount))
+      {:error (str "Minimum amount is " (api-money/format min-amount :en_US))}
 
-      (and max-amount (api/> parsed max-amount))
-      {:error (str "Maximum amount is " (api/money-format max-amount :en_US))}
+      (and max-amount (api-ops/> parsed max-amount))
+      {:error (str "Maximum amount is " (api-money/format max-amount :en_US))}
 
       (and allowed-currencies
            (not (contains? allowed-currencies
-                           (api/currency-id (api/money-currency parsed)))))
+                           (api-currency/id (api-money/currency parsed)))))
       {:error (str "Allowed currencies: " (pr-str allowed-currencies))}
 
       :else
@@ -147,9 +146,9 @@
   (when (and amount-str currency-str
              (not (empty? amount-str))
              (not (empty? currency-str)))
-    (let [curr   (api/currency-of (keyword currency-str))
+    (let [curr   (api-currency/of (keyword currency-str))
           amount (BigDecimal. (str/replace amount-str "," "."))]
-      (api/money-of curr amount))))
+      (api-money/of curr amount))))
 
 (defn import-csv-transactions
   "Imports transactions from CSV data."
@@ -182,23 +181,23 @@
   (cond
     ;; Format: {:amount "100.50", :currency "EUR"}
     (and (:amount response) (:currency response))
-    (api/money-of (keyword (:currency response))
+    (api-money/of (keyword (:currency response))
               (BigDecimal. (str (:amount response))))
 
     ;; Format: {:value 10050, :currency "EUR", :decimals 2}
     (and (:value response) (:currency response) (:decimals response))
     (let [divisor (Math/pow 10 (:decimals response))]
-      (api/money-of (keyword (:currency response))
+      (api-money/of (keyword (:currency response))
                 (/ (:value response) divisor)))
 
     ;; Format: {:amount_cents 10050, :currency_code "EUR"}
     (and (:amount_cents response) (:currency_code response))
-    (api/money-parse-minor (str (:amount_cents response))
+    (api-money/parse-minor (str (:amount_cents response))
                        (keyword (:currency_code response)))
 
     ;; Format ISO: "EUR 100.50"
     (string? response)
-    (api/money-parse response)
+    (api-money/parse response)
 
     :else
     (throw (ex-info "Unknown API format" {:response response}))))
@@ -224,18 +223,18 @@
 (comment
   ;; From Money to components
   (let [m #money[1234.56 PLN]]
-    {:amount      (api/money-amount m)           ; BigDecimal
-     :currency-id (api/currency-id (api/money-currency m)) ; :PLN
-     :major       (money/major m)            ; 1234
-     :minor       (money/minor m)            ; 56
-     :major-minor (money/major-minor m)})    ; [1234 56]
+    {:amount      (api-money/amount m)           ; BigDecimal
+     :currency-id (api-currency/id (api-money/currency m)) ; :PLN
+     :major       (api-money/major m)            ; 1234
+     :minor       (api-money/minor m)            ; 56
+     :major-minor (api-money/major-minor m)})    ; [1234 56]
 
   ;; Convert to primitive types
-  (money/major->long #money[1234.56 PLN])   ; => 1234
-  (money/minor->int #money[1234.56 PLN])    ; => 56
+  (api-money/major->long #money[1234.56 PLN])   ; => 1234
+  (api-money/minor->int #money[1234.56 PLN])    ; => 56
 
   ;; To symbols (for display)
-  (money/unparse #money[100.50 PLN])
+  (api-money/unparse #money[100.50 PLN])
   ;; => [100.50M PLN]
   )
 

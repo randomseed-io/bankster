@@ -3,10 +3,9 @@
 
    Bankster has built-in support for popular cryptocurrencies with
    appropriate precision (e.g., 18 decimal places for ETH, 8 for BTC)."
-  (:require [io.randomseed.bankster.money    :as money]
-            [io.randomseed.bankster.api      :as api]
-            [io.randomseed.bankster.currency :as currency]
-            [io.randomseed.bankster.scale    :as scale]))
+  (:require [io.randomseed.bankster.api.currency :as api-currency]
+            [io.randomseed.bankster.api.money    :as    api-money]
+            [io.randomseed.bankster.api.ops      :as      api-ops]))
 
 ;;; ---------------------------------------------------------------------------
 ;;; Example 1: Basic cryptocurrency operations
@@ -18,14 +17,14 @@
   #money/crypto[0.00123456 BTC]
 
   ;; Or via function
-  (api/money-of :crypto/ETH 2.5M)
-  (api/money-of :crypto/BTC 0.001M)
+  (api-money/of :crypto/ETH 2.5M)
+  (api-money/of :crypto/BTC 0.001M)
 
   ;; Check if currency is crypto
-  (api/currency-crypto? (api/currency-of :crypto/ETH))
+  (api-currency/crypto? (api-currency/of :crypto/ETH))
   ;; => true
 
-  (api/currency-crypto? (api/currency-of :PLN))
+  (api-currency/crypto? (api-currency/of :PLN))
   ;; => false
   )
 
@@ -43,15 +42,15 @@
 
 (comment
   ;; Arithmetic on minimal units
-  (api/* one-wei 1000000000000000000M)
+  (api-ops/* one-wei 1000000000000000000M)
   ;; => #money/crypto[1 ETH]
 
-  (api/* one-satoshi 100000000M)
+  (api-ops/* one-satoshi 100000000M)
   ;; => #money/crypto[1 BTC]
 
   ;; Convert satoshi -> BTC
   (defn satoshi->btc [satoshi]
-    (api/money-of :crypto/BTC (/ satoshi 100000000M)))
+    (api-money/of :crypto/BTC (/ satoshi 100000000M)))
 
   (satoshi->btc 50000000)
   ;; => #money/crypto[0.5 BTC]
@@ -64,16 +63,16 @@
 (defn portfolio
   "Creates a cryptocurrency portfolio."
   [& balances]
-  (into {} (map (fn [m] [(api/currency-id (api/money-currency m)) m]) balances)))
+  (into {} (map (fn [m] [(api-currency/id (api-money/currency m)) m]) balances)))
 
 (defn portfolio-value
   "Calculates portfolio value in target currency."
   [portfolio rates target-currency]
   (let [values (for [[currency balance] portfolio
                      :let [rate (get rates currency 0M)]]
-                 (api/* (api/money-of target-currency rate)
-                            (api/money-amount balance)))]
-    (apply api/+ values)))
+                 (api-ops/* (api-money/of target-currency rate)
+                            (api-money/amount balance)))]
+    (apply api-ops/+ values)))
 
 (comment
   (def my-portfolio
@@ -102,7 +101,7 @@
   [gas-limit gas-price-gwei]
   (let [gwei-to-eth 0.000000001M
         gas-price-eth (* gas-price-gwei gwei-to-eth)]
-    (api/money-of :crypto/ETH (* gas-limit gas-price-eth))))
+    (api-money/of :crypto/ETH (* gas-limit gas-price-eth))))
 
 (comment
   ;; Typical ETH transfer: 21000 gas × 30 gwei
@@ -124,12 +123,11 @@
   (let [purchases (for [rate historical-rates]
                     {:rate   rate
                      :amount monthly-amount
-                     :btc    (api/money-of :crypto/BTC
-                                       (with-precision 8
-                                         (/ (api/money-amount monthly-amount) rate)))})]
+                     :btc    (api-money/of :crypto/BTC
+                                       (/ (api-money/amount monthly-amount) rate))})]
     {:purchases      purchases
-     :total-spent    (api/* monthly-amount (count historical-rates))
-     :total-btc      (apply api/+ (map :btc purchases))
+     :total-spent    (api-ops/* monthly-amount (count historical-rates))
+     :total-btc      (apply api-ops/+ (map :btc purchases))
      :average-rate   (/ (reduce + historical-rates)
                         (count historical-rates))}))
 
@@ -153,9 +151,9 @@
   (let [sorted     (sort-by :price exchange-prices)
         cheapest   (first sorted)
         expensive  (last sorted)
-        spread     (api/- (:price expensive) (:price cheapest))
-        percent    (* 100M (/ (api/money-amount spread)
-                              (api/money-amount (:price cheapest))))]
+        spread     (api-ops/- (:price expensive) (:price cheapest))
+        percent    (* 100M (/ (api-money/amount spread)
+                              (api-money/amount (:price cheapest))))]
     {:buy-on       (:exchange cheapest)
      :buy-price    (:price cheapest)
      :sell-on      (:exchange expensive)
@@ -189,12 +187,12 @@
   [staked-amount apy days]
   (let [daily-rate (/ apy 365M)
         multiplier (Math/pow (+ 1 (double daily-rate)) days)
-        final-val  (api/* staked-amount (bigdec multiplier))]
+        final-val  (api-ops/* staked-amount (bigdec multiplier))]
     {:staked      staked-amount
      :apy         (str (* 100 apy) "%")
      :days        days
      :final-value final-val
-     :reward      (api/- final-val staked-amount)}))
+     :reward      (api-ops/- final-val staked-amount)}))
 
 (comment
   ;; 32 ETH staked for 365 days at 4.5% APY
@@ -212,16 +210,16 @@
 
 (comment
   ;; List all cryptocurrencies in default registry
-  (api/currency-of-domain :CRYPTO)
+  (api-currency/of-domain :CRYPTO)
 
   ;; Or via predicate
-  (->> (api/currency-all)
-       (filter api/currency-crypto?)
-       (map api/currency-id))
+  (->> (api-currency/all)
+       (filter api-currency/crypto?)
+       (map api-currency/id))
   ;; => (:crypto/ETH :crypto/BTC :crypto/USDT :crypto/USDC ...)
 
   ;; Currency details
-  (api/currency-of :crypto/ETH)
+  (api-currency/of :crypto/ETH)
   ;; => #currency{:id :crypto/ETH, :numeric nil, :scale 18,
-  ;;              :kind :crypto/coin, :domain :CRYPTO}
+  ;;              :kind :virtual/native, :domain :CRYPTO}
   )

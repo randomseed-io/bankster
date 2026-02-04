@@ -3,9 +3,8 @@
 
    Bankster provides type-safe comparisons that ensure amounts
    are in the same currency before comparing."
-  (:require [io.randomseed.bankster.money    :as money]
-            [io.randomseed.bankster.api      :as api]
-            [io.randomseed.bankster.currency :as currency]))
+  (:require [io.randomseed.bankster.api.money   :as api-money]
+            [io.randomseed.bankster.api.ops     :as   api-ops]))
 
 ;;; ---------------------------------------------------------------------------
 ;;; Example 1: Basic comparisons
@@ -13,28 +12,28 @@
 
 (comment
   ;; Equality
-  (api/= #money[100.00 PLN] #money[100 PLN])
+  (api-ops/= #money[100.00 PLN] #money[100 PLN])
   ;; => true (same value, different scale representation)
 
-  (api/= #money[100 PLN] #money[100 EUR])
+  (api-ops/= #money[100 PLN] #money[100 EUR])
   ;; => false (different currencies)
 
   ;; Inequality
-  (api/not= #money[100 PLN] #money[99 PLN])
+  (api-ops/not= #money[100 PLN] #money[99 PLN])
   ;; => true
 
   ;; Greater than / less than
-  (api/> #money[100 PLN] #money[50 PLN])
+  (api-ops/> #money[100 PLN] #money[50 PLN])
   ;; => true
 
-  (api/< #money[50 PLN] #money[100 PLN])
+  (api-ops/< #money[50 PLN] #money[100 PLN])
   ;; => true
 
   ;; Greater/less than or equal
-  (api/>= #money[100 PLN] #money[100 PLN])
+  (api-ops/>= #money[100 PLN] #money[100 PLN])
   ;; => true
 
-  (api/<= #money[100 PLN] #money[100 PLN])
+  (api-ops/<= #money[100 PLN] #money[100 PLN])
   ;; => true
   )
 
@@ -44,24 +43,24 @@
 
 (comment
   ;; Zero check
-  (api/money-is-zero? #money[0 PLN])
+  (api-money/zero? #money[0 PLN])
   ;; => true
 
-  (api/money-is-zero? #money[0.00 PLN])
+  (api-money/zero? #money[0.00 PLN])
   ;; => true
 
   ;; Positive/negative
-  (api/pos? #money[100 PLN])
+  (api-ops/pos? #money[100 PLN])
   ;; => true
 
-  (api/neg? #money[-50 PLN])
+  (api-ops/neg? #money[-50 PLN])
   ;; => true
 
   ;; Combined predicates
-  (money/is-pos-or-zero? #money[0 PLN])
+  (api-money/is-pos-or-zero? #money[0 PLN])
   ;; => true
 
-  (money/is-neg-or-zero? #money[-10 PLN])
+  (api-money/is-neg-or-zero? #money[-10 PLN])
   ;; => true
   )
 
@@ -71,17 +70,17 @@
 
 (comment
   ;; Returns -1, 0, or 1
-  (api/compare #money[50 PLN] #money[100 PLN])
+  (api-ops/compare #money[50 PLN] #money[100 PLN])
   ;; => -1
 
-  (api/compare #money[100 PLN] #money[100 PLN])
+  (api-ops/compare #money[100 PLN] #money[100 PLN])
   ;; => 0
 
-  (api/compare #money[150 PLN] #money[100 PLN])
+  (api-ops/compare #money[150 PLN] #money[100 PLN])
   ;; => 1
 
   ;; Compare amounts only (ignores currency for comparison)
-  (money/compare-amounts #money[100 PLN] #money[100 EUR])
+  (api-money/compare-amounts #money[100 PLN] #money[100 EUR])
   ;; => 0 (same numeric value)
   )
 
@@ -98,7 +97,7 @@
 
 (comment
   ;; Sort ascending
-  (sort api/compare prices)
+  (sort api-ops/compare prices)
   ;; => (#money[49.00 PLN]
   ;;     #money[79.50 PLN]
   ;;     #money[99.99 PLN]
@@ -106,7 +105,7 @@
   ;;     #money[199.99 PLN])
 
   ;; Sort descending
-  (sort (fn [a b] (api/compare b a)) prices)
+  (sort (fn [a b] (api-ops/compare b a)) prices)
   ;; => (#money[199.99 PLN]
   ;;     #money[149.00 PLN]
   ;;     #money[99.99 PLN]
@@ -114,7 +113,7 @@
   ;;     #money[49.00 PLN])
 
   ;; Using sort-by with amount extraction
-  (sort-by api/money-amount prices)
+  (sort-by api-money/amount prices)
   ;; => sorted by BigDecimal value
   )
 
@@ -125,12 +124,12 @@
 (defn find-min
   "Finds minimum amount in collection."
   [amounts]
-  (reduce (fn [a b] (if (api/< a b) a b)) amounts))
+  (reduce (fn [a b] (if (api-ops/< a b) a b)) amounts))
 
 (defn find-max
   "Finds maximum amount in collection."
   [amounts]
-  (reduce (fn [a b] (if (api/> a b) a b)) amounts))
+  (reduce (fn [a b] (if (api-ops/> a b) a b)) amounts))
 
 (comment
   (find-min prices)
@@ -140,17 +139,17 @@
   ;; => #money[199.99 PLN]
 
   ;; Alternative using sort
-  (first (sort api/compare prices))
+  (first (sort api-ops/compare prices))
   ;; => #money[49.00 PLN]
 
-  (last (sort api/compare prices))
+  (last (sort api-ops/compare prices))
   ;; => #money[199.99 PLN]
 
   ;; Using apply with min-key/max-key
-  (apply min-key api/money-amount prices)
+  (apply min-key api-money/amount prices)
   ;; => #money[49.00 PLN]
 
-  (apply max-key api/money-amount prices)
+  (apply max-key api-money/amount prices)
   ;; => #money[199.99 PLN]
   )
 
@@ -161,14 +160,14 @@
 (defn same-currency?
   "Checks if all amounts are in the same currency."
   [& amounts]
-  (apply api/money-same-currencies? amounts))
+  (apply api-money/same-currencies? amounts))
 
 (defn compare-safe
   "Compares amounts only if they're in the same currency."
   [a b]
-  (if (api/money-same-currencies? a b)
+  (if (api-money/same-currencies? a b)
     {:comparable true
-     :result     (api/compare a b)}
+     :result     (api-ops/compare a b)}
     {:comparable false
      :error      "Cannot compare amounts in different currencies"}))
 
@@ -193,18 +192,18 @@
 (defn in-range?
   "Checks if amount is within specified range (inclusive)."
   [amount min-val max-val]
-  (and (api/>= amount min-val)
-       (api/<= amount max-val)))
+  (and (api-ops/>= amount min-val)
+       (api-ops/<= amount max-val)))
 
 (defn above-threshold?
   "Checks if amount exceeds threshold."
   [amount threshold]
-  (api/> amount threshold))
+  (api-ops/> amount threshold))
 
 (defn below-limit?
   "Checks if amount is below limit."
   [amount limit]
-  (api/< amount limit))
+  (api-ops/< amount limit))
 
 (comment
   (in-range? #money[100 PLN] #money[50 PLN] #money[150 PLN])
@@ -236,8 +235,8 @@
   [txs {:keys [min-amount max-amount]}]
   (filter
    (fn [{:keys [amount]}]
-     (and (or (nil? min-amount) (api/>= amount min-amount))
-          (or (nil? max-amount) (api/<= amount max-amount))))
+     (and (or (nil? min-amount) (api-ops/>= amount min-amount))
+          (or (nil? max-amount) (api-ops/<= amount max-amount))))
    txs))
 
 (comment
@@ -260,9 +259,9 @@
   "Categorizes amount into tiers."
   [amount]
   (cond
-    (api/< amount #money[100 PLN])  :small
-    (api/< amount #money[500 PLN])  :medium
-    (api/< amount #money[1000 PLN]) :large
+    (api-ops/< amount #money[100 PLN])  :small
+    (api-ops/< amount #money[500 PLN])  :medium
+    (api-ops/< amount #money[1000 PLN]) :large
     :else                                :enterprise))
 
 (defn group-by-tier
@@ -297,16 +296,16 @@
 (defn cheapest-products
   "Finds the cheapest product(s)."
   [products]
-  (let [min-price (apply min-key (comp api/money-amount :price) products)
+  (let [min-price (apply min-key (comp api-money/amount :price) products)
         min-amount (:price min-price)]
-    (filter #(api/= (:price %) min-amount) products)))
+    (filter #(api-ops/= (:price %) min-amount) products)))
 
 (defn price-sorted
   "Returns products sorted by price."
   [products direction]
   (let [comparator (if (= direction :asc)
-                     (fn [a b] (api/compare (:price a) (:price b)))
-                     (fn [a b] (api/compare (:price b) (:price a))))]
+                     (fn [a b] (api-ops/compare (:price a) (:price b)))
+                     (fn [a b] (api-ops/compare (:price b) (:price a))))]
     (sort comparator products)))
 
 (comment
@@ -328,8 +327,8 @@
 ;;; ---------------------------------------------------------------------------
 
 (comment
-  ;; The money.inter-ops namespace provides operator-like functions
-  (require '[io.randomseed.bankster.money.inter-ops :as ops])
+  ;; The api.ops namespace provides operator-like functions
+  (require '[io.randomseed.bankster.api.ops :as ops])
 
   ;; These work with both Money and regular numbers
   (ops/> #money[100 PLN] #money[50 PLN])
