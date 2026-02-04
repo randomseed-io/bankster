@@ -39,6 +39,16 @@
 ;; Scale
 ;;
 
+(defn rounding-mode
+  "Returns the current rounding mode.
+
+  Delegates to `io.randomseed.bankster.scale/rounding-mode`."
+  {:added "2.2.0"}
+  (^java.math.RoundingMode []
+   (scale/rounding-mode))
+  (^java.math.RoundingMode [default]
+   (scale/rounding-mode default)))
+
 (defmacro with-rounding
   "Alias for `io.randomseed.bankster.scale/with-rounding`.
 
@@ -80,6 +90,18 @@
   {:added "2.2.0"}
   [rounding-mode & body]
   `(scale/with-rescaling ~rounding-mode ~@body))
+
+(defn scale-apply
+  "Applies scaling to a value.
+
+  Delegates to `io.randomseed.bankster.scale/apply`."
+  {:added "2.2.0"}
+  ([x]
+   (scale/apply x))
+  ([x sc]
+   (scale/apply x sc))
+  ([x sc rounding]
+   (scale/apply x sc rounding)))
 
 (defn amount
   "Returns the amount of a scalable as a `BigDecimal`.
