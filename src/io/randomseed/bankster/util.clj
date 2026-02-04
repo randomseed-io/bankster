@@ -297,7 +297,7 @@
 
 (defn gen-digits
   "Generates the given number of random digits and converts all into a single string.
-  When the second argument is present it should be an instance of random number
+  When a second argument is present, it should be an instance of a random number
   generator used to get the digits."
   {:added "1.0.0" :tag String}
   ([^long num]
@@ -310,8 +310,8 @@
        (apply str (repeatedly num #(.nextInt rng 10)))))))
 
 (defn get-rand-nth
-  "Returns a random element of the given vector. When the second argument is present it
-  should be an instance of random number generator used to get the random position."
+  "Returns a random element of the given vector. When a second argument is present, it
+  should be an instance of a random number generator used to get the random position."
   {:added "1.0.0" :tag clojure.lang.Keyword}
   ([^clojure.lang.IPersistentVector v]
    (when-not-empty v (rand-nth v)))

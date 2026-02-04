@@ -2495,7 +2495,7 @@
   and it has decimal parts, they will be truncated. If the major component comes from
   a money object, its currency must match the given money. This check is performed to
   prevent mistakes; if you need to subtract minor parts of money with different
-  currencies, use (minor x) on the second argument."
+  currencies, use `(minor x)` on the second argument."
   {:tag Money :added "1.0.0"}
   [^Money a b]
   (let [^BigDecimal am (.amount ^Money a)]

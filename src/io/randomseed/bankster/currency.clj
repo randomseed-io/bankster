@@ -2836,7 +2836,7 @@
 
 (defn remove-localized-properties
   "Removes localized properties assigned to a currency in a registry. Returns updated
-  registry. Expects currency ID (or equivalent) to be passed as a second argument."
+  registry. Expects currency ID (or equivalent) to be passed as the second argument."
   {:tag Registry :added "1.0.0"}
   [^Registry registry currency-id]
   (when registry
@@ -3443,8 +3443,8 @@
          (and (seq reg-traits) (contains? reg-traits tag)))))))
 
 (defn of-trait?
-  "Checks if any trait of the given currency `c` equals to the one given as a second
-  argument `tag`, or if it belongs to a `tag` (checked with `clojure.core/isa?`)."
+  "Checks whether currency `c` has the given trait `tag` (directly or via
+  `clojure.core/isa?`)."
   {:tag Boolean :added "1.0.0"}
   ([^clojure.lang.Keyword tag c]
    (of-trait? tag c (registry/get)))

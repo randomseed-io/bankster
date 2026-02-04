@@ -100,8 +100,8 @@
 (defn map-vals-by-k
   "For each key and value of the given map m calls a function passed as the first
   argument (passing successive keys during calls to it) and generates a map with
-  values updated by results returned by the function. When the third argument is
-  given it should be a map on which operations are performed instead of using the
+  values updated by results returned by the function. When a third argument is given,
+  it should be a map on which operations are performed instead of using the
   original map. This may be helpful when we want to avoid merging the results with
   another map."
   {:added "1.0.0" :tag clojure.lang.Associative}
@@ -136,8 +136,8 @@
 (defn map-vals
   "For each key and value of the given map m calls a function passed as the first
   argument (passing successive values during calls to it) and generates a map with
-  values updated by results returned by the function. When the third argument is
-  given it should be a map on which operations are performed instead of using the
+  values updated by results returned by the function. When a third argument is given,
+  it should be a map on which operations are performed instead of using the
   original map. This may be helpful when we want to avoid merging the results with
   another map."
   {:added "1.0.0" :tag clojure.lang.Associative}
@@ -154,8 +154,8 @@
 (defn map-keys-by-v
   "For each key and value of the given map m calls a function passed as the first
   argument (passing successive values during calls to it) and generates a map with
-  keys updated by results returned by the function. When the third argument is
-  given then it should be a map on which operations are performed instead of using
+  keys updated by results returned by the function. When a third argument is given,
+  it should be a map on which operations are performed instead of using
   an empty map."
   {:added "1.0.0" :tag clojure.lang.Associative}
   ([^clojure.lang.IFn f
@@ -171,8 +171,8 @@
 (defn map-keys
   "For each key and value of the given map m calls a function passed as the first
   argument (passing successive keys during calls to it) and generates a map with keys
-  updated by results returned by the function. When the third argument is given then
-  it should be a map on which operations are performed instead of using an empty
+  updated by results returned by the function. When a third argument is given, it
+  should be a map on which operations are performed instead of using an empty
   map."
   {:added "1.0.0" :tag clojure.lang.Associative}
   ([^clojure.lang.IFn f
@@ -191,8 +191,8 @@
   updated by results returned by the function and values also updated by results of
   the same function. The function should return a sequential collection of 2
   elements: first containing a new value of a key and second containing a new value
-  of a transformed value associated with that key. When the third argument is given
-  then it should be a map on which operations are performed instead of using an empty
+  of a transformed value associated with that key. When a third argument is given,
+  it should be a map on which operations are performed instead of using an empty
   map."
   {:added "1.0.0" :tag clojure.lang.Associative}
   ([^clojure.lang.IFn f
