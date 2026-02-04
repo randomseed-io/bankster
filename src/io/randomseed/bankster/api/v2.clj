@@ -24,5 +24,4 @@
   auto-alias
   (deref #'io.randomseed.bankster.util/auto-alias))
 
-(def ^:private _auto-alias-loaded
-  (do (auto-alias 'io.randomseed.bankster.api) true))
+(auto-alias 'io.randomseed.bankster.api)

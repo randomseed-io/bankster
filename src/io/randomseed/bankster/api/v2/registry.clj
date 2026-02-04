@@ -13,5 +13,4 @@
 
   (:import (io.randomseed.bankster Registry)))
 
-(def ^:private _auto-alias-loaded
-  (do (auto-alias 'io.randomseed.bankster.api.registry) true))
+(auto-alias 'io.randomseed.bankster.api.registry)

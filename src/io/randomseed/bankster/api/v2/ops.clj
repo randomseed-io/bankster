@@ -11,5 +11,4 @@
   (:require [io.randomseed.bankster.util    :refer [auto-alias]]
             [io.randomseed.bankster.api.ops :as        api-ops]))
 
-(def ^:private _auto-alias-loaded
-  (do (auto-alias 'io.randomseed.bankster.api.ops) true))
+(auto-alias 'io.randomseed.bankster.api.ops)

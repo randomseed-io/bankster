@@ -24,5 +24,4 @@
                                     Money)
             (java.math              BigDecimal)))
 
-(def ^:private _auto-alias-loaded
-  (do (auto-alias 'io.randomseed.bankster.api.money) true))
+(auto-alias 'io.randomseed.bankster.api.money)
