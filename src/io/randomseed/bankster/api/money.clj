@@ -6,11 +6,13 @@
 
     io.randomseed.bankster.api.money
 
-  (:refer-clojure :exclude [resolve cast format compare pos? neg? zero?])
+  (:refer-clojure :exclude [* + - / < <= = == > >= abs apply max min not= rem
+                            resolve cast format compare pos? neg? zero?])
 
   (:require [io.randomseed.bankster.api.registry     :as     api-registry]
             [io.randomseed.bankster.api.currency     :as     api-currency]
             [io.randomseed.bankster.registry         :as         registry]
+            [io.randomseed.bankster.currency         :as         currency]
             [io.randomseed.bankster.money            :as            money]
             [io.randomseed.bankster.scale            :as            scale]
             [io.randomseed.bankster.util             :as               bu]
@@ -20,7 +22,7 @@
   (:import  (io.randomseed.bankster Currency
                                     Registry
                                     Money)
-            (java.math            BigDecimal)))
+            (java.math              BigDecimal)))
 
 ;;
 ;; Contextual helpers
@@ -409,7 +411,7 @@
                                 :else         (money/parse amount))
       (clojure.core/> argc 2) (throw (clojure.lang.ArityException. (inc argc) "normalize"))
       :else                   (let [currency (nth args 0)]
-                                (if (== 2 argc)
+                                (if (clojure.core/== 2 argc)
                                   (money/parse currency amount (scale/post-parse-rounding (nth args 1)))
                                   (money/parse currency amount))))))
 
