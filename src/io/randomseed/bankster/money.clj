@@ -1373,9 +1373,9 @@
 (defn scale
   "Re-scales the given money using a scale (number of decimal places) and an optional
   rounding mode (required when downscaling). The internal scale for a currency object
-  is NOT updated. If no scale is given, returns a current scale of an amount (not
-  the nominal scale of a currency – which is important in rescaled amount or
-  auto-scaled currencies).
+  is NOT updated. If no scale is given, returns the current scale of the amount (not
+  the nominal scale of a currency). For auto-scaled currencies this means the scale
+  tracks the current value (it grows/shrinks to fit the amount).
 
   Use with caution since it can make money object no longer compliant with a scale of
   the currency."
@@ -3060,3 +3060,123 @@
    (serializers-json/json-string->money s))
   (^Money [s opts]
    (serializers-json/json-string->money s opts)))
+
+;; Auto-alias markers for front API (io.randomseed.bankster.money)
+(doseq [v [#'io.randomseed.bankster.money/of
+           #'io.randomseed.bankster.money/of-major
+           #'io.randomseed.bankster.money/of-minor
+
+           #'io.randomseed.bankster.money/scale
+           #'io.randomseed.bankster.money/split-scale-int
+
+           #'io.randomseed.bankster.money/to-units
+
+           #'io.randomseed.bankster.money/Accountable
+
+           #'io.randomseed.bankster.money/*
+           #'io.randomseed.bankster.money/+
+           #'io.randomseed.bankster.money/-
+           #'io.randomseed.bankster.money//
+           #'io.randomseed.bankster.money/<
+           #'io.randomseed.bankster.money/<=
+           #'io.randomseed.bankster.money/=
+           #'io.randomseed.bankster.money/==
+           #'io.randomseed.bankster.money/>
+           #'io.randomseed.bankster.money/>=
+
+           #'io.randomseed.bankster.money/->LastMoney
+           #'io.randomseed.bankster.money/->clojure-symbol
+           #'io.randomseed.bankster.money/->double
+           #'io.randomseed.bankster.money/->float
+           #'io.randomseed.bankster.money/->symbol
+
+           #'io.randomseed.bankster.money/abs
+
+           #'io.randomseed.bankster.money/add-major
+           #'io.randomseed.bankster.money/add-minor
+           #'io.randomseed.bankster.money/add-scaled
+
+           #'io.randomseed.bankster.money/apply
+
+           #'io.randomseed.bankster.money/code-literal
+           #'io.randomseed.bankster.money/code-readers
+
+           #'io.randomseed.bankster.money/compare-amounts
+
+           #'io.randomseed.bankster.money/convert
+           #'io.randomseed.bankster.money/data-literal
+
+           #'io.randomseed.bankster.money/data-readers
+           #'io.randomseed.bankster.money/dec-major
+           #'io.randomseed.bankster.money/dec-minor
+           #'io.randomseed.bankster.money/defliteral
+
+           #'io.randomseed.bankster.money/div-rem
+           #'io.randomseed.bankster.money/div-scaled
+           #'io.randomseed.bankster.money/eq-am?
+           #'io.randomseed.bankster.money/format-with
+
+           #'io.randomseed.bankster.money/from-json-map
+           #'io.randomseed.bankster.money/from-json-string
+           #'io.randomseed.bankster.money/inc-major
+           #'io.randomseed.bankster.money/inc-minor
+
+           #'io.randomseed.bankster.money/is-neg-or-zero?
+           #'io.randomseed.bankster.money/is-neg?
+           #'io.randomseed.bankster.money/is-pos-or-zero?
+           #'io.randomseed.bankster.money/is-pos?
+
+           #'io.randomseed.bankster.money/is-zero?
+           #'io.randomseed.bankster.money/major->int
+           #'io.randomseed.bankster.money/major->long
+           #'io.randomseed.bankster.money/major-minor
+
+           #'io.randomseed.bankster.money/major-minor->int
+           #'io.randomseed.bankster.money/major-minor->long
+           #'io.randomseed.bankster.money/major-value
+           #'io.randomseed.bankster.money/map->LastMoney
+
+           #'io.randomseed.bankster.money/max
+           #'io.randomseed.bankster.money/max-amount
+           #'io.randomseed.bankster.money/min
+           #'io.randomseed.bankster.money/min-amount
+
+           #'io.randomseed.bankster.money/minor->int
+           #'io.randomseed.bankster.money/minor->long
+           #'io.randomseed.bankster.money/minor-value
+           #'io.randomseed.bankster.money/mul-scaled
+
+           #'io.randomseed.bankster.money/ne-am?
+           #'io.randomseed.bankster.money/not=
+           #'io.randomseed.bankster.money/not==
+           #'io.randomseed.bankster.money/neg
+
+           #'io.randomseed.bankster.money/neg-or-zero?
+           #'io.randomseed.bankster.money/of-gen
+           #'io.randomseed.bankster.money/of-map
+           #'io.randomseed.bankster.money/on-amount
+
+           #'io.randomseed.bankster.money/pos
+           #'io.randomseed.bankster.money/pos-or-zero?
+           #'io.randomseed.bankster.money/readers
+           #'io.randomseed.bankster.money/rem
+
+           #'io.randomseed.bankster.money/rescale
+           #'io.randomseed.bankster.money/rescaled?
+           #'io.randomseed.bankster.money/round
+           #'io.randomseed.bankster.money/same-currency-ids?
+
+           #'io.randomseed.bankster.money/set-amount
+           #'io.randomseed.bankster.money/stripped-amount
+           #'io.randomseed.bankster.money/sub-major
+           #'io.randomseed.bankster.money/sub-minor
+
+           #'io.randomseed.bankster.money/sub-scaled
+           #'io.randomseed.bankster.money/to-json-map
+           #'io.randomseed.bankster.money/to-json-string
+           #'io.randomseed.bankster.money/to-map
+
+           #'io.randomseed.bankster.money/unparse
+           #'io.randomseed.bankster.money/value
+           ]]
+  (alter-meta! v assoc :auto-alias true))

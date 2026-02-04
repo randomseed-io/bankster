@@ -4317,6 +4317,147 @@
       c opts))))
 
 ;;
+
+;; Auto-alias markers for front API (io.randomseed.bankster.currency)
+(doseq [v [#'io.randomseed.bankster.currency/of
+           #'io.randomseed.bankster.currency/with
+           #'io.randomseed.bankster.currency/scale
+
+           #'io.randomseed.bankster.currency/attempt*
+           #'io.randomseed.bankster.currency/with-attempt
+
+           #'io.randomseed.bankster.currency/val-auto-scaled*?
+
+           #'io.randomseed.bankster.currency/has-trait?
+           #'io.randomseed.bankster.currency/of-trait?
+
+           #'io.randomseed.bankster.currency/register
+           #'io.randomseed.bankster.currency/unregister
+           #'io.randomseed.bankster.currency/register!
+           #'io.randomseed.bankster.currency/unregister!
+
+           #'io.randomseed.bankster.currency/set-traits
+           #'io.randomseed.bankster.currency/set-traits!
+           #'io.randomseed.bankster.currency/add-traits
+           #'io.randomseed.bankster.currency/add-traits!
+           #'io.randomseed.bankster.currency/remove-traits
+           #'io.randomseed.bankster.currency/remove-traits!
+
+           #'io.randomseed.bankster.currency/Monetary
+
+           #'io.randomseed.bankster.currency/add-countries
+           #'io.randomseed.bankster.currency/add-countries!
+           #'io.randomseed.bankster.currency/add-localized-properties
+           #'io.randomseed.bankster.currency/add-localized-props!
+           #'io.randomseed.bankster.currency/add-weighted-code
+
+           #'io.randomseed.bankster.currency/asset?
+           #'io.randomseed.bankster.currency/attempt
+           #'io.randomseed.bankster.currency/auto-scaled
+           #'io.randomseed.bankster.currency/big?
+           #'io.randomseed.bankster.currency/claim?
+           #'io.randomseed.bankster.currency/clear-weight
+           #'io.randomseed.bankster.currency/clear-weight!
+           #'io.randomseed.bankster.currency/code-literal
+           #'io.randomseed.bankster.currency/codes
+           #'io.randomseed.bankster.currency/commodity?
+           #'io.randomseed.bankster.currency/config->registry
+           #'io.randomseed.bankster.currency/countries
+           #'io.randomseed.bankster.currency/credit?
+           #'io.randomseed.bankster.currency/data-literal
+           #'io.randomseed.bankster.currency/decentralised?
+           #'io.randomseed.bankster.currency/display-name
+           #'io.randomseed.bankster.currency/display-name-native
+           #'io.randomseed.bankster.currency/domains
+           #'io.randomseed.bankster.currency/experimental?
+           #'io.randomseed.bankster.currency/fiat?
+           #'io.randomseed.bankster.currency/fiduciary?
+           #'io.randomseed.bankster.currency/formatter
+           #'io.randomseed.bankster.currency/formatter-extended
+           #'io.randomseed.bankster.currency/formatter-instance
+           #'io.randomseed.bankster.currency/funds?
+           #'io.randomseed.bankster.currency/has-country?
+           #'io.randomseed.bankster.currency/has-domain?
+           #'io.randomseed.bankster.currency/has-kind?
+           #'io.randomseed.bankster.currency/has-numeric-id?
+           #'io.randomseed.bankster.currency/ids
+           #'io.randomseed.bankster.currency/in-domain?
+           #'io.randomseed.bankster.currency/iso-legacy?
+           #'io.randomseed.bankster.currency/iso-possible?
+           #'io.randomseed.bankster.currency/iso-strict-code?
+           #'io.randomseed.bankster.currency/iso-strict?
+           #'io.randomseed.bankster.currency/iso?
+           #'io.randomseed.bankster.currency/java
+           #'io.randomseed.bankster.currency/java-all-set
+           #'io.randomseed.bankster.currency/kinds
+           #'io.randomseed.bankster.currency/legacy?
+           #'io.randomseed.bankster.currency/localized-properties
+           #'io.randomseed.bankster.currency/localized-property
+           #'io.randomseed.bankster.currency/map->new
+           #'io.randomseed.bankster.currency/metal?
+           #'io.randomseed.bankster.currency/name-native
+           #'io.randomseed.bankster.currency/new
+           #'io.randomseed.bankster.currency/new-currency
+           #'io.randomseed.bankster.currency/no-numeric-id
+           #'io.randomseed.bankster.currency/none?
+           #'io.randomseed.bankster.currency/ns
+           #'io.randomseed.bankster.currency/ns-code
+           #'io.randomseed.bankster.currency/null?
+           #'io.randomseed.bankster.currency/numeric
+           #'io.randomseed.bankster.currency/numeric-id
+           #'io.randomseed.bankster.currency/numeric-ids
+           #'io.randomseed.bankster.currency/numerics
+           #'io.randomseed.bankster.currency/of-country
+           #'io.randomseed.bankster.currency/of-domain?
+           #'io.randomseed.bankster.currency/of-id
+           #'io.randomseed.bankster.currency/of-kind?
+           #'io.randomseed.bankster.currency/official?
+           #'io.randomseed.bankster.currency/old?
+           #'io.randomseed.bankster.currency/parse-currency-code
+           #'io.randomseed.bankster.currency/peg?
+           #'io.randomseed.bankster.currency/real?
+           #'io.randomseed.bankster.currency/referenced?
+           #'io.randomseed.bankster.currency/remove-countries
+           #'io.randomseed.bankster.currency/remove-countries!
+           #'io.randomseed.bankster.currency/remove-localized-properties
+           #'io.randomseed.bankster.currency/remove-localized-props!
+           #'io.randomseed.bankster.currency/same-ids?
+           #'io.randomseed.bankster.currency/sc
+           #'io.randomseed.bankster.currency/set-default!
+           #'io.randomseed.bankster.currency/set-default-registry!
+           #'io.randomseed.bankster.currency/set-weight
+           #'io.randomseed.bankster.currency/set-weight!
+           #'io.randomseed.bankster.currency/special?
+           #'io.randomseed.bankster.currency/staked?
+           #'io.randomseed.bankster.currency/standard?
+           #'io.randomseed.bankster.currency/symbol-native
+           #'io.randomseed.bankster.currency/test?
+           #'io.randomseed.bankster.currency/to-code
+           #'io.randomseed.bankster.currency/to-code-str
+           #'io.randomseed.bankster.currency/to-currency
+           #'io.randomseed.bankster.currency/to-edn-map
+           #'io.randomseed.bankster.currency/to-edn-string
+           #'io.randomseed.bankster.currency/to-id
+           #'io.randomseed.bankster.currency/to-id-str
+           #'io.randomseed.bankster.currency/to-json-map
+           #'io.randomseed.bankster.currency/to-json-string
+           #'io.randomseed.bankster.currency/to-map
+           #'io.randomseed.bankster.currency/to-numeric-id
+           #'io.randomseed.bankster.currency/traits
+           #'io.randomseed.bankster.currency/traits-expanded
+           #'io.randomseed.bankster.currency/unit
+           #'io.randomseed.bankster.currency/unit-try
+           #'io.randomseed.bankster.currency/unset-default!
+           #'io.randomseed.bankster.currency/update
+           #'io.randomseed.bankster.currency/update!
+           #'io.randomseed.bankster.currency/val-auto-scaled?
+           #'io.randomseed.bankster.currency/virtual?
+           #'io.randomseed.bankster.currency/weight
+           #'io.randomseed.bankster.currency/with-weight
+           #'io.randomseed.bankster.currency/wrapped?
+           ]]
+  (alter-meta! v assoc :auto-alias true))
+
 ;; Populating registry with defaults.
 ;;
 

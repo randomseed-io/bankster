@@ -249,7 +249,8 @@
 ;;
 
 (defn default-version
-  {:tag String :added "1.0.0"}
+  "Returns a proposed version for a registry based on current date and time."
+  {:tag String :added "1.0.0" :auto-alias true}
   []
   (. (LocalDateTime/now) format (DateTimeFormatter/ofPattern "yyyyMMddHHmmssSS")))
 
@@ -270,7 +271,7 @@
 
 (defn state
   "Returns current state of a global registry."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :added "1.0.0" :auto-alias true}
   []
   (deref R))
 
@@ -310,6 +311,8 @@
         r#)
      `(let [^io.randomseed.bankster.Registry r# (or ~registry *default* (deref R))]
         r#))))
+
+(alter-meta! #'get assoc :macro true)
 
 ;;
 ;; Diagnostics.
@@ -466,7 +469,7 @@
 
 (defn registry?
   "Returns true if the given object is a registry."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :auto-alias true}
   [obj]
   (instance? Registry obj))
 
@@ -474,7 +477,7 @@
   "Updates a registry with a function that should take a registry as its first argument
   and return the updated one. It is a simple apply-based implementation provided for
   the sake of symmetry with update! which operates on a global registry object."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :added "1.0.0" :auto-alias true}
   [^Registry r ^clojure.lang.IFn fun & more]
   (apply fun r more))
 
@@ -486,8 +489,9 @@
      (reset! R ^Registry registry)
      (reset! R (new-registry ^clojure.lang.PersistentHashMap registry)))))
 
-(def ^{:tag      Registry :added "1.0.0"
-       :arglists '(^Registry [^Registry registry])}
+(def ^{:auto-alias true
+       :tag        Registry :added "1.0.0"
+       :arglists   '(^Registry [^Registry registry])}
   set!
   "Sets current state of a global registry."
   set-state)
@@ -495,7 +499,7 @@
 (defn update!
   "Updates a global registry using a function that should take a registry and return
   the updated version of it."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :added "1.0.0" :auto-alias true}
   [^clojure.lang.IFn fun & more]
   (apply swap! R fun more))
 
@@ -506,7 +510,7 @@
 (defmacro with
   "Sets a registry in a lexical context of the body to be used instead of a global one
   in functions which require the registry and it was not passed as an argument."
-  {:added "1.0.0"}
+  {:added "1.0.0" :auto-alias true}
   [^Registry registry & body]
   `(binding [*default* ^io.randomseed.bankster.Registry ~registry]
      ~@body))
@@ -564,6 +568,8 @@
          (.cur-dom->curs r#)))
   ([registry] `(.cur-dom->curs ^io.randomseed.bankster.Registry ~registry))
   ([domain registry] `(clojure.core/get (.cur-dom->curs ^io.randomseed.bankster.Registry ~registry) ~domain)))
+
+(alter-meta! #'currency-domain->currencies* assoc :macro true)
 
 (defmacro country-id->currency*
   "Returns the country ID to currency map from a registry. If the registry is not given
@@ -623,7 +629,7 @@
   When `k` is given the macro will extract a specific hierarchy from a record
   field. it should be a simple keyword. If it is a constant form of a keyword
   field-access byte code will be generated."
-  {:added "2.0.0"}
+  {:added "2.0.0" :auto-alias true}
   ([]
    `(let [^io.randomseed.bankster.Registry r# (get)]
       (.hierarchies r#)))
@@ -645,7 +651,7 @@
 
   When `k` is given it should be a simple keyword. If it is a constant form of a
   keyword field-access byte code will be generated."
-  {:added "2.0.0"}
+  {:added "2.0.0" :auto-alias true}
   ([k] `(hierarchies* ~k (get)))
   ([k registry] `(hierarchies* ~k ~registry)))
 
@@ -653,7 +659,7 @@
   "Returns extra data map of a registry. If the registry is not given the dynamic
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
   current state of a global registry is used instead."
-  {:added "2.0.0"}
+  {:added "2.0.0" :auto-alias true}
   ([] `(let [^io.randomseed.bankster.Registry r# (get)]
          (.ext r#)))
   ([registry] `(.ext ^io.randomseed.bankster.Registry ~registry))
@@ -663,7 +669,7 @@
   "Returns a version string of a registry. If the registry is not given the dynamic
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
   current state of a global registry is used instead."
-  {:added "2.0.0"}
+  {:added "2.0.0" :auto-alias true}
   ([] `(let [^io.randomseed.bankster.Registry r# (get)]
          (.version r#)))
   ([registry] `(.version ^io.randomseed.bankster.Registry ~registry)))
@@ -762,7 +768,7 @@
   "Returns hierarchies map of a registry. If the registry is not given the dynamic
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
   current state of a global registry is used instead."
-  {:tag CurrencyHierarchies :added "2.0.0"}
+  {:tag CurrencyHierarchies :added "2.0.0" :auto-alias true}
   (^CurrencyHierarchies [] (hierarchies*))
   (^CurrencyHierarchies [registry] (hierarchies* (get registry)))
   (^CurrencyHierarchies [k registry] (hierarchies* k (get registry))))
@@ -775,7 +781,7 @@
 
   For static keywords it is advised to use `hierarchy*` macro whenever possible as it
   compiles to a field-access byte code."
-  {:tag clojure.lang.Associative :added "2.0.0"}
+  {:tag clojure.lang.Associative :added "2.0.0" :auto-alias true}
   ([k] (hierarchy* k))
   ([k registry] (hierarchy* k (get registry))))
 
@@ -804,7 +810,7 @@
 (defn hierarchy-derive!
   "Updates global registry by deriving `tag` from `parent` inside a hierarchy
   identified by `hierarchy-name`."
-  {:tag Registry :added "2.0.0"}
+  {:tag Registry :added "2.0.0" :auto-alias true}
   [hierarchy-name tag parent]
   (update! hierarchy-derive* hierarchy-name tag parent))
 
@@ -812,7 +818,7 @@
   "Returns extra data map of a registry. If the registry is not given the dynamic
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
   current state of a global registry is used instead."
-  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0" :auto-alias true}
   (^clojure.lang.PersistentHashMap [] (ext*))
   (^clojure.lang.PersistentHashMap [^Registry registry] (ext* registry))
   (^clojure.lang.PersistentHashMap [k ^Registry registry] (ext* k registry)))
@@ -821,7 +827,7 @@
   "Returns a version string of a registry. If the registry is not given the dynamic
   variable `io.randomseed.bankster.registry/*default*` is tried. If it is not set,
   current state of a global registry is used instead."
-  {:tag clojure.lang.PersistentHashMap :added "2.0.0"}
+  {:tag clojure.lang.PersistentHashMap :added "2.0.0" :auto-alias true}
   (^String [] (version*))
   (^String [^Registry registry] (version* registry)))
 
