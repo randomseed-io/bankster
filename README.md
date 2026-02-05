@@ -62,12 +62,49 @@ representing currency + amount and doing safe operations around that.
 * Customizable currency and money **formatting** with **locale support**.
 * **JSON and EDN serialization** with per-format protocols, minimal/full representations, and Cheshire integration.
 
-## Contracts
+## Quickstart
 
-See [Bankster Contracts](doc/15_contracts.md) for practical contracts (what is guaranteed,
-what is "soft" vs "strict", how the default registry is chosen, when exceptions are
-thrown, how the protocols behave) for Bankster's core axis: `Currency`, `Money`,
-`Registry` records and the `Monetary`, `Scalable` and `Accountable` protocols.
+Bankster models currencies and monetary amounts. The recommended entrypoint is the
+Front API (`io.randomseed.bankster.api.*`) and the default registry.
+
+```clojure
+;; deps.edn
+
+{io.randomseed/bankster {:mvn/version "2.2.2"}}
+
+;; Leiningen
+
+[io.randomseed/bankster "2.2.2"]
+```
+
+You can also download JAR from [Clojars](https://clojars.org/io.randomseed/bankster).
+
+
+```clojure
+(require
+  '[io.randomseed.bankster.api          :as   b]
+  '[io.randomseed.bankster.api.money    :as   m]
+  '[io.randomseed.bankster.api.currency :as   c]
+  '[io.randomseed.bankster.api.ops      :as ops])
+```
+
+```clojure
+(def usd (c/resolve "USD"))
+(def pln (c/resolve "PLN"))
+(def a   (m/resolve 12.34M usd))
+(def b   (m/resolve 10M pln))
+(ops/+ a (m/resolve 1.66M usd))
+(c/resolve-try "NOT_A_CURRENCY") ; => nil
+```
+
+**Strict** variants throw on missing currency/match; **soft** variants (usually
+`-try`) return `nil`. Use soft at boundaries (parsing/import), strict in core
+domain logic. Quickstart uses the default registry; registry scoping options are
+described in the docs.
+
+* For demonstrative snippets see [Sneak Peeks](doc/11_sneak-peeks.md).
+* For more complete, runnable examples see the `examples/` directory in the [source
+  repository](https://github.com/randomseed-io/bankster/tree/main/examples).
 
 ## Front API
 
@@ -80,23 +117,12 @@ For major-version stability there is a frozen API namespace:
 the v2 API will remain available for compatibility. In the current release,
 `io.randomseed.bankster.api.v2.*` is equivalent to `io.randomseed.bankster.api.*`.
 
-## Installation
+## Contracts
 
-To use Bankster in your project, add the following to dependencies section of
-`project.clj` or `build.boot`:
-
-```clojure
-[io.randomseed/bankster "2.2.2"]
-```
-
-For `deps.edn` add the following as an element of a map under `:deps` or
-`:extra-deps` key:
-
-```clojure
-io.randomseed/bankster {:mvn/version "2.2.2"}
-```
-
-You can also download JAR from [Clojars](https://clojars.org/io.randomseed/bankster).
+See [Bankster Contracts](doc/15_contracts.md) for practical contracts (what is guaranteed,
+what is "soft" vs "strict", how the default registry is chosen, when exceptions are
+thrown, how the protocols behave) for Bankster's core axis: `Currency`, `Money`,
+`Registry` records and the `Monetary`, `Scalable` and `Accountable` protocols.
 
 ## Design
 
@@ -443,52 +469,6 @@ Clojure semantic bridge inspired by JSR-354 (JavaMoney). It is not a Java
 implementation/interface of the standard. The goal is to progressively cover more
 of JSR-354 semantics in future Bankster releases; until then, treat this namespace
 as unstable.
-
-## Quickstart
-
-Bankster models currencies and monetary amounts. The recommended entrypoint is the
-Front API (`io.randomseed.bankster.api.*`) and the default registry.
-
-```clojure
-;; deps.edn
-
-{io.randomseed/bankster {:mvn/version "2.2.2"}}
-
-;; Leiningen
-
-[io.randomseed/bankster "2.2.2"]
-```
-
-```clojure
-(require
-  '[io.randomseed.bankster.api          :as   b]
-  '[io.randomseed.bankster.api.money    :as   m]
-  '[io.randomseed.bankster.api.currency :as   c]
-  '[io.randomseed.bankster.api.ops      :as ops])
-```
-
-```clojure
-(def usd (c/resolve "USD"))
-(def pln (c/resolve "PLN"))
-(def a   (m/resolve 12.34M usd))
-(def b   (m/resolve 10M pln))
-(ops/+ a (m/resolve 1.66M usd))
-(c/resolve-try "NOT_A_CURRENCY") ; => nil
-```
-
-**Strict** variants throw on missing currency/match; **soft** variants (usually
-`-try`) return `nil`. Use soft at boundaries (parsing/import), strict in core
-domain logic. Quickstart uses the default registry; registry scoping options are
-described in the docs.
-
-* For demonstrative snippets see [Sneak Peeks](doc/11_sneak-peeks.md).
-
-* For more complete, runnable examples see the `examples/` directory in the [source
-  repository](https://github.com/randomseed-io/bankster/tree/main/examples).
-
-* To get the list of available Front API forms visit [API](doc/12_api.md).
-
-* To know contracts governing the library see [Bankster Contracts](doc/15_contracts.md).
 
 ## Pitfalls
 
