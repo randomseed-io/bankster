@@ -336,8 +336,8 @@ API functions, so doing `(currency/of-kind :fiat :PLN)` will return `true` since
 currency has its kind set to `:iso/fiat`.
 
 The default kind taxonomy and its relationships (as shipped in the default
-`config.edn`) are documented in `doc/30_currency-kinds.md`. The default traits
-taxonomy is documented in `doc/32_currency_traits.md`.
+`config.edn`) are documented in [Currency Kinds](doc/30_currency-kinds.md).
+The default traits taxonomy is documented in [Currency Traits](doc/32_currency_traits.md).
 
 **Currency scale** is the nominal scale of a currency. If it is not set, the
 automatic scale will be used on monetary amounts using such a currency.
