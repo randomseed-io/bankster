@@ -48,15 +48,6 @@
   (let [v              (clojure.core/resolve target)
         m0             (meta v)
         arglists       (:arglists m0)
-        has-registry?  (and (sequential? arglists)
-                            (some registry-arglist? arglists))
-        doc0           (:doc m0)
-        doc            (when (and has-registry? (string? doc0))
-                         (if (re-find #"registry` is `true`" doc0)
-                           doc0
-                           (str doc0
-                                "\n\nWhen `registry` is `true`, the default registry "
-                                "(global or dynamically bound) is used.")))
         primitive-tags {'long    Long/TYPE
                         'int     Integer/TYPE
                         'double  Double/TYPE
@@ -77,7 +68,6 @@
                            (assoc :added "2.2.0"
                                   :auto-alias true
                                   :cloverage/ignore true)
-                           (cond-> doc (assoc :doc doc))
                            (cond-> arglists (assoc :arglists (list 'quote arglists))))]
     (if (:macro m0)
       `(def ~(with-meta name m)
@@ -148,6 +138,15 @@
   (let [v              (clojure.core/resolve target)
         m0             (meta v)
         arglists       (:arglists m0)
+        has-registry?  (and (sequential? arglists)
+                            (some registry-arglist? arglists))
+        doc0           (:doc m0)
+        doc            (when (and has-registry? (string? doc0))
+                         (if (re-find #"registry` is `true`" doc0)
+                           doc0
+                           (str doc0
+                                "\n\nWhen `registry` is `true`, the default registry "
+                                "(global or dynamically bound) is used.")))
         primitive-tags {'long    Long/TYPE
                         'int     Integer/TYPE
                         'double  Double/TYPE
@@ -171,6 +170,7 @@
                            (assoc :added "2.2.0"
                                   :auto-alias true
                                   :cloverage/ignore true)
+                           (cond-> doc (assoc :doc doc))
                            (cond-> arglists (assoc :arglists (list 'quote arglists))))]
     (when (:macro m0)
       (throw (ex-info "defalias-reg does not support macros" {:target target})))
