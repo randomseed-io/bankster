@@ -180,18 +180,14 @@
        (when (seq matches) (set matches))))))
 
 (defn id
-  "Returns currency ID (keyword).
+  "Returns currency ID (keyword). Delegates to `io.randomseed.bankster.currency/id`.
 
-  Delegates to `io.randomseed.bankster.currency/id`.
-
-  - `([currency])` is registry-light: it may return a keyword even if the currency
-    is not registered.
+  - `([currency])` is registry-light and may return a keyword even if the currency is
+   not registered;
   - `([currency registry])` is strict when `registry` is non-nil."
   {:tag clojure.lang.Keyword :added "2.2.0" :ex/strict true}
-  (^clojure.lang.Keyword [currency]
-   (currency/id currency))
-  (^clojure.lang.Keyword [currency registry]
-   (currency/id currency (registry-or-default registry))))
+  (^clojure.lang.Keyword [currency] (currency/id currency))
+  (^clojure.lang.Keyword [currency registry] (currency/id currency (registry-or-default registry))))
 
 (defn id-str
   "Returns a currency identifier string without interning keywords.
