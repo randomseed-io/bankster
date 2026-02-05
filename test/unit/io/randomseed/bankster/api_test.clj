@@ -651,6 +651,66 @@
       (is (identical? r (api/default-registry)))
       (is (= :EUR (.id ^Currency (api/currency :EUR)))))))
 
+(deftest registry-true-uses-global
+  (let [r    (mk-test-registry)
+        orig (registry/state)
+        ids  (fn [coll] (set (map currency/id coll)))]
+    (try
+      (registry/set! r)
+      (binding [registry/*default* nil]
+        (testing "currency registry true uses global"
+          (is (= (ids (api-currency/resolve-all :EUR true))
+                 (ids (api-currency/resolve-all :EUR r))))
+          (is (= (ids (api-currency/all true))
+                 (ids (api-currency/all r))))
+          (is (= (ids (api-currency/of-domain :ISO-4217 true))
+                 (ids (api-currency/of-domain :ISO-4217 r))))
+          (is (= (ids (api-currency/of-kind :iso/fiat true))
+                 (ids (api-currency/of-kind :iso/fiat r))))
+          (is (= (api-currency/code :EUR true)
+                 (api-currency/code :EUR r)))
+          (is (= (api-currency/nr :EUR true)
+                 (api-currency/nr :EUR r)))
+          (is (= (api-currency/auto-scaled? :XAU true)
+                 (api-currency/auto-scaled? :XAU r)))
+          (is (= (api-currency/info :EUR true)
+                 (api-currency/info :EUR r)))
+          (is (= (api-currency/domain :EUR true)
+                 (api-currency/domain :EUR r)))
+          (is (= (api-currency/kind :EUR true)
+                 (api-currency/kind :EUR r)))
+          (is (= (api-currency/symbol :EUR java.util.Locale/US true)
+                 (api-currency/symbol :EUR java.util.Locale/US r)))
+          (is (= (api-currency/name :EUR java.util.Locale/US true)
+                 (api-currency/name :EUR java.util.Locale/US r)))
+          (is (= (api-currency/defined? :EUR true)
+                 (api-currency/defined? :EUR r)))
+          (is (= (api-currency/present? :EUR true)
+                 (api-currency/present? :EUR r)))
+          (is (= (api-currency/possible? :EUR true)
+                 (api-currency/possible? :EUR r)))
+          (is (= (api-currency/crypto? :EUR true)
+                 (api-currency/crypto? :EUR r)))
+          (is (= (api-currency/stable? :EUR true)
+                 (api-currency/stable? :EUR r)))
+          (is (= (api-currency/decentralized? :EUR true)
+                 (api-currency/decentralized? :EUR r))))
+
+        (testing "money registry true uses global"
+          (is (= :EUR (.id ^Currency
+                           (.currency ^Money (api-money/resolve 1 :EUR true)))))
+          (is (= :EUR (.id ^Currency
+                           (.currency ^Money (api-money/resolve-try 1 :EUR true)))))
+          (let [m (api/money 1 :EUR r)]
+            (is (= (api-money/of-registry true m)
+                   (api-money/of-registry r m))))
+          (is (= :EUR (.id ^Currency
+                           (.currency ^Money (api-money/major 1 :EUR true)))))
+          (is (= :EUR (.id ^Currency
+                           (.currency ^Money (api-money/minor 1 :EUR true)))))))
+      (finally
+        (registry/set! orig)))))
+
 (deftest registry-api
   (let [orig (registry/state)
         r    (mk-test-registry)]
