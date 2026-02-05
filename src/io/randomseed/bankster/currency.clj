@@ -3102,7 +3102,7 @@
   "Loads currencies and countries from an EDN file. First argument should be a string
   with path to the EDN resource file containing registry data, second should be a
   registry. Returns a registry initialized using values from the EDN file."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :added "1.0.0" :auto-alias true}
   (^Registry []
    (config->registry config/default-resource-path (registry/new-registry)))
   (^Registry [^String resource-path]
