@@ -138,7 +138,7 @@ monetary units and currencies will accept a registry object as their additional
 argument. The exceptions are math operations (especially variadic) for which the only
 way to use different registry is to set a dynamic variable
 `io.randomseed.bankster.registry/*default*` (which can be done using the macro
-`io.randomseed.bankster.currency/with-registry`).
+`io.randomseed.bankster.api.registry/with`).
 
 `registry/new-registry` expects *base maps* (e.g. `:cur-id->cur`, `:ctr-id->cur`,
 `:cur-id->localized`, `:cur-id->traits`, `:cur-id->weight`) and builds all derived
@@ -159,8 +159,10 @@ modified too.
 ;; to fully control which registry is used.
 
 (binding [io.randomseed.bankster/*initialize-registry* false]
-  (require '[io.randomseed.bankster.currency :as currency]
-           '[io.randomseed.bankster.registry :as registry]))
+  (require '[io.randomseed.bankster.currency     :as     currency]
+           '[io.randomseed.bankster.registry     :as     registry]
+           '[io.randomseed.bankster.api.currency :as api-currency]
+           '[io.randomseed.bankster.api.registry :as api-registry]))
 
 ;; Load your registry from a classpath resource
 ;; (e.g. resources/my/app/currencies.edn).
@@ -168,14 +170,14 @@ modified too.
 (def my-registry
   (currency/config->registry "my/app/currencies.edn" (registry/new-registry)))
 
-;; Option A: pass the registry explicitly.
+;; Option A: pass the registry explicitly (front API).
 
-(currency/unit :EUR my-registry)
-(currency/unit-try :EUR my-registry)  ; nil when missing
+(api-currency/resolve :EUR my-registry)
+(api-currency/resolve-try :EUR my-registry)  ; nil when missing
 
 ;; Option B: install it as the global registry.
 
-(registry/set! my-registry)
+(api-registry/set! my-registry)
 ```
 
 #### Registry loader helpers (`io.randomseed.bankster.init`)
@@ -237,8 +239,9 @@ of keywords). They are intentionally *not* part of currency identity and do not
 affect money equality or arithmetic.
 
 ```clojure
-(require '[io.randomseed.bankster.registry :as registry]
-         '[io.randomseed.bankster.currency :as currency])
+(require '[io.randomseed.bankster.registry     :as     registry]
+         '[io.randomseed.bankster.currency     :as     currency]
+         '[io.randomseed.bankster.api.currency :as api-currency])
 
 (def r
   (assoc (registry/new
@@ -251,17 +254,17 @@ affect money equality or arithmetic.
 
 ;; Domains can be queried using a hierarchy-aware predicate.
 
-(currency/of-domain? :ISO-4217 (currency/new :iso-4217-legacy/ADP) r)
+(api-currency/of-domain? :ISO-4217 (api-currency/new :iso-4217-legacy/ADP) r)
 ;; => true
 
 ;; Traits can be queried via the traits hierarchy.
 
-(currency/of-trait? :token/fungible :crypto/USDC r)
+(api-currency/of-trait? :token/fungible :crypto/USDC r)
 ;; => true
 ```
 
-To extend a hierarchy programmatically use `registry/hierarchy-derive` (pure) or
-`registry/hierarchy-derive!` (mutates the global registry).
+To extend a hierarchy programmatically use `api-registry/hierarchy-derive` (pure) or
+`api-registry/hierarchy-derive!` (mutates the global registry).
 
 ### Currency
 
@@ -281,11 +284,11 @@ or numeric ID (lower weight wins).
 The source of truth for weights is the registry base map `:cur-id->weight` (exported
 to EDN under top-level `:weights`). Currency instances stored in registries carry the
 weight in metadata as an optimization (hot-path: weighted buckets), but weight does
-not affect `=` / `hash` semantics. Use `currency/weight` to read it.
+not affect `=` / `hash` semantics. Use `api-currency/weight` to read it.
 
 To mutate weights and traits (which are registry attributes) use:
-`currency/set-weight`/`currency/clear-weight` and
-`currency/set-traits`/`currency/add-traits`/`currency/remove-traits` (plus `!`
+`api-currency/set-weight`/`api-currency/clear-weight` and
+`api-currency/set-traits`/`api-currency/add-traits`/`api-currency/remove-traits` (plus `!`
 variants operating on the global registry).
 
 **Currency ID** is a unique identifier of a currency within a registry. Internally it
@@ -309,9 +312,9 @@ default it is derived from the namespace of currency ID (upper-cased), e.g.
 it is stripped (case-insensitive) and implies `:domain :ISO-4217`. Additionally,
 ISO-like currencies may get `:ISO-4217` inferred from their code + numeric ID.
 
-Domains can be organized in a registry hierarchy (`registry/hierarchy :domain`) and
-queried with `currency/of-domain?`. To list or select currencies by domain, use
-`currency/domains` and `currency/of-domain`.
+Domains can be organized in a registry hierarchy (`api-registry/hierarchy :domain`) and
+queried with `api-currency/of-domain?`. To list or select currencies by domain, use
+`api-currency/domains` and `api-currency/of-domain`.
 
 **Currency kind** is a case-sensitive keyword that should describe what the currency
 is. It can be set to anything, even nil. Some common values are:
@@ -328,11 +331,11 @@ is. It can be set to anything, even nil. Some common values are:
 In new code it is recommended to use namespaced kinds (for example: `:iso/fiat`,
 `:iso/funds`, `:virtual/native`, `:virtual/token`, `:virtual.stable.peg/fiat`).
 
-Kinds can be organized in a registry hierarchy (`registry/hierarchy :kind`) and
-queried with `currency/of-kind?`.
+Kinds can be organized in a registry hierarchy (`api-registry/hierarchy :kind`) and
+queried with `api-currency/of-kind?`.
 
 Currencies can can be tested against their ancestors in a hierarchy of kinds using
-API functions, so doing `(currency/of-kind :fiat :PLN)` will return `true` since this
+API functions, so doing `(api-currency/of-kind :fiat :PLN)` will return `true` since this
 currency has its kind set to `:iso/fiat`.
 
 The default kind taxonomy and its relationships (as shipped in the default
@@ -351,7 +354,7 @@ Currencies can also have **additional**, external properties, like relations to
 countries, localized (l10n) settings etc. They are stored in registries too.
 
 To inspect a currency including registry-associated metadata (countries, localized
-properties, traits) use `currency/info`.
+properties, traits) use `api-currency/info`.
 
 ### Money
 
@@ -374,8 +377,8 @@ Rounding in Bankster is controlled by dynamic vars from `io.randomseed.bankster.
 
 Prefer using Bankster macros:
 
-* `money/with-rounding` (alias for `scale/with-rounding`) to set the rounding mode;
-* `money/with-rescaling` / `scale/with-rescaling` to also rescale after each step.
+* `api-money/with-rounding` (alias for `scale/with-rounding`) to set the rounding mode;
+* `api-money/with-rescaling` / `scale/with-rescaling` to also rescale after each step.
 
 These macros keep semantics consistent with a plain `binding`, but they also set an
 internal thread-local fast path for rounding-mode lookups. Direct `binding` of
@@ -456,6 +459,9 @@ containing these literals is read (otherwise you may see
 * It **shows information** about a currency:
 
 ```clojure
+;; front API helpers
+(require '[io.randomseed.bankster.api.currency :as currency])
+
 ;; global registry lookup with a keyword
 (currency/of :PLN)
 #currency{:id :PLN, :domain :ISO-4217, :kind :iso/fiat, :numeric 985, :scale 2}
@@ -518,6 +524,9 @@ containing these literals is read (otherwise you may see
 * It allows to **create a currency** and **register it**:
 
 ```clojure
+;; front API helpers
+(require '[io.randomseed.bankster.api.currency :as currency])
+
 ;; ad hoc currency creation using constructor function
 (currency/new :petro/USD 999 2 :COMBANK)
 #currency{:id :petro/USD, :domain :PETRO, :kind :COMBANK, :numeric 999, :scale 2}
@@ -550,6 +559,10 @@ containing these literals is read (otherwise you may see
 * It allows to create **monetary amounts**:
 
 ```clojure
+;; front API helpers
+(require '[io.randomseed.bankster.api.money    :as    money]
+         '[io.randomseed.bankster.api.currency :as currency])
+
 ;; using money/of macro with keyword ID and an amount
 (money/of :EUR 25)
 #money[25.00 EUR]
@@ -634,6 +647,9 @@ containing these literals is read (otherwise you may see
 It allows to perform **logical operations** on monetary amounts:
 
 ``` clojure
+;; front API helper
+(require '[io.randomseed.bankster.api.money :as money])
+
 (money/eq? #money[5 GBP] #money[GBP 5])
 true
 
@@ -668,6 +684,10 @@ false
 It allows to perform **math operations** on monetary amounts:
 
 ``` clojure
+;; front API helpers
+(require '[io.randomseed.bankster.api       :as   api]
+         '[io.randomseed.bankster.api.money :as money])
+
 ;; adding money expressed with tagged literals and with a macro call
 (money/add #money[EUR 7] #money[0.54 EUR] (money/of 4.40 EUR))
 #money[11.94 EUR]
@@ -681,7 +701,7 @@ It allows to perform **math operations** on monetary amounts:
 #money[0.25 GBP]
 
 ;; dividing money by numbers with rounding after each consecutive calculation
-(money/with-rescaling HALF_UP
+(api/with-rescaling :HALF_UP
   (money/div #money[1 GBP] 8 0.5))
 #money[0.26 GBP]
 
@@ -695,27 +715,27 @@ It allows to perform **math operations** on monetary amounts:
 #money[0.25 PLN]
 
 ;; dividing, scaled and rounded with each operation
-(scale/with-rounding HALF_UP
+(api/with-rounding :HALF_UP
   (money/div-scaled #money[1 PLN] 8 0.5))
 #money[0.26 PLN]
 
 ;; same as the above but shorter
-(scale/with-rescaling HALF_UP
+(api/with-rescaling :HALF_UP
   (money/div #money[1 PLN] 8 0.5))
 #money[0.26 PLN]
 
 ;; handling non-terminating decimal expansion
-(scale/with-rounding HALF_UP
+(api/with-rounding :HALF_UP
   (money/div #money[1 PLN] 3))
 #money[0.33 PLN]
 
 ;; rounding with unit reduction
-(scale/with-rounding HALF_UP
+(api/with-rounding :HALF_UP
   (money/div #money[1 PLN] #money[3 PLN]))
 0.33M
 
 ;; rounding and unit reduction (regular numbers, dynamic scale)
-(scale/with-rounding HALF_UP
+(api/with-rounding :HALF_UP
   (money/div 1 3))
 0.33333M
 
@@ -737,9 +757,9 @@ It allows to perform **math operations** on monetary amounts:
 
 ;; comparing
 (sort money/compare [(money/of 10    PLN)
-                     (money/of  0    PLN)
-                     (money/of 30    PLN)
-                     (money/of  1.23 PLN)])
+                         (money/of  0    PLN)
+                         (money/of 30    PLN)
+                         (money/of  1.23 PLN)])
 (#money[0.00 PLN]
  #money[1.23 PLN]
  #money[10.00 PLN]
@@ -775,17 +795,13 @@ It allows to perform **math operations** on monetary amounts:
  #money[1.00 PLN]]
 
 ;;
-;; using inter-ops
+;; using API ops (money-aware operators)
 ;;
 
-(require '[io.randomseed.bankster.money.inter-ops :refer :all])
+(require '[io.randomseed.bankster.api.ops :refer :all])
 
-;; NOTE: inter-ops is intentionally polymorphic (Money + numeric fallbacks),
-;; so boxed-math warnings are suppressed in that namespace.
-;; NOTE: operator shadowing lives in `io.randomseed.bankster.api.ops`.
-;; Use `:refer :all` there intentionally if you want `+`, `-`, `*`, `/`, `=`, etc.
-;; to be money-aware.
-;; (require '[io.randomseed.bankster.api.ops :refer :all])
+;; NOTE: `api.ops` is intentionally polymorphic (Money + numeric fallbacks).
+;; If you need the lower-level namespace, use `io.randomseed.bankster.money.inter-ops`.
 
 (+ 1 2 3)
 6
@@ -800,13 +816,14 @@ It allows to perform **math operations** on monetary amounts:
 ;; using api (front API)
 ;;
 
-(require '[io.randomseed.bankster.api          :as          api]
-         '[io.randomseed.bankster.api.money    :as    api-money]
-         '[io.randomseed.bankster.api.currency :as api-currency]
-         '[io.randomseed.bankster.api.registry :as api-registry])
+(require '[io.randomseed.bankster.api          :as      api]
+         '[io.randomseed.bankster.api.money    :as    money]
+         '[io.randomseed.bankster.api.currency :as currency]
+         '[io.randomseed.bankster.api.registry :as registry])
 
 ;; NOTE: `api/amount` is an alias for `scale/amount`.
 ;; NOTE: `api/scale` returns scale (Money amount scale / Currency nominal scale).
+
 ;; For auto-scaled currencies, Money scale reflects the current amount's scale
 ;; (it adapts to the value), not a nominal currency scale.
 
@@ -823,37 +840,37 @@ It allows to perform **math operations** on monetary amounts:
 (api/scale :XAU)
 ;; => -1  ; auto-scaled currency
 
-(api-money/add #money[10 EUR] #money[5 EUR])
+(money/add #money[10 EUR] #money[5 EUR])
 ;; => #money[15 EUR]
 
-(api-money/gt? #money[10 EUR] #money[5 EUR])
+(money/gt? #money[10 EUR] #money[5 EUR])
 ;; => true
 
-(api-currency/resolve-all :EUR)
+(currency/resolve-all :EUR)
 ;; => #{#currency{:id :EUR, ...}}
 
-(api-currency/id-str :crypto/eth)
+(currency/id-str :crypto/eth)
 ;; => "crypto/ETH"
 
-(api-currency/code-str :crypto/eth)
+(currency/code-str :crypto/eth)
 ;; => "ETH"
 
-(api-currency/symbol :USD :en_US)
+(currency/symbol :USD :en_US)
 ;; => "$"
 
-(api-currency/name :EUR :en_US)
+(currency/name :EUR :en_US)
 ;; => "Euro"
 
-(api-money/of-registry (api/default-registry) #money[10 EUR])
+(money/of-registry (api/default-registry) #money[10 EUR])
 ;; => #money[10.00 EUR]
 
-(api-money/cast #money[10 EUR] :USD :HALF_UP)
+(money/cast #money[10 EUR] :USD :HALF_UP)
 ;; => #money[... USD]
 
-(api-money/cast-try #money[10 EUR] :NOPE)
+(money/cast-try #money[10 EUR] :NOPE)
 ;; => nil
 
-(api-money/format #money[1234.50 PLN] :pl_PL)
+(money/format #money[1234.50 PLN] :pl_PL)
 ;; => "1 234,50 zł"
 ```
 
@@ -861,27 +878,32 @@ It allows to perform **generic, polymorphic operations** on monetary amounts and
 currencies:
 
 ```clojure
-(scale/of #currency PLN)
+;; front API helpers
+(require '[io.randomseed.bankster.api          :as      api]
+         '[io.randomseed.bankster.api.money    :as    money]
+         '[io.randomseed.bankster.api.currency :as currency])
+
+(api/scale #currency PLN)
 2
 
-(scale/of #currency crypto/ETH)
+(api/scale #currency crypto/ETH)
 18
 
-(scale/of 123.45)
+(api/scale 123.45)
 2
 
-(scale/of #money[100 EUR])
+(api/scale #money[100 EUR])
 2
 
-(scale/of :GBP)
+(api/scale :GBP)
 2
 
 ;; scale of the currency (low-level)
-(scale/of :XXX)
+(api/scale :XXX)
 -1
 
 ;; scale of the amount
-(scale/of #money[12.34567 XXX])
+(api/scale #money[12.34567 XXX])
 5 ; current scale
 
 ;; nominal scale of the currency
@@ -894,16 +916,16 @@ true
 (currency/auto-scaled? #money[12.34567 XXX])
 true
 
-(scale/auto? :XXX)
+(api/auto-scaled? :XXX)
 true
 
-(scale/auto? #money[12.34567 XXX])
+(api/auto-scaled? #money[12.34567 XXX])
 false ; scale of the amount, not the currency
 
-(scale/apply #money[10 USD] 8) ;; use with caution
+(api/scale-apply #money[10 USD] 8) ;; use with caution
 #money[10.00000000 USD]
 
-(scale/apply #currency USD 8)  ;; use with caution
+(api/scale-apply #currency USD 8)  ;; use with caution
 #currency{:id :USD, :domain :ISO-4217, :kind :iso/fiat, :numeric 840, :scale 8}
 
 (money/rescale #money[10 USD] 8)
@@ -915,7 +937,7 @@ false ; scale of the amount, not the currency
  (money/rescale #money[10 USD] 8))
 #money[10.00 USD]
 
-(scale/amount #money[108.11 CHF])
+(api/amount #money[108.11 CHF])
 108.11M
 
 (scale/integer #money[108.11 CHF])
@@ -1050,11 +1072,11 @@ become the amount of money which probably is not what you want:
 
 To work around that you should:
 
-* Use **big decimal literals** (e.g. `(money/of XXX 1234.56789101112M)` – note the `M`).
-* Use **strings** (e.g. `(money/of "1234.56789101112 XXX")`).
-* Use `money/of` macro or `#money` tagged literal with amount and currency in joint
+* Use **big decimal literals** (e.g. `(api-money/of XXX 1234.56789101112M)` – note the `M`).
+* Use **strings** (e.g. `(api-money/of "1234.56789101112 XXX")`).
+* Use `api-money/of` macro or `#money` tagged literal with amount and currency in joint
   form (or with the above tactics applied), e.g.:
-  * `(money/of XXX123.45678)`,
+  * `(api-money/of XXX123.45678)`,
   * `#money XXX123.45678`,
   * `#money "XXX123.45678"`,
   * `#money "123.456789101112 XXX"`,
