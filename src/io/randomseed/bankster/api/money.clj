@@ -107,7 +107,7 @@
   (^Money [amount c]
    (money/value amount (api-currency/resolve c)))
   (^Money [amount c rounding-or-registry]
-   (if (instance? Registry rounding-or-registry)
+   (if (or (instance? Registry rounding-or-registry) (true? rounding-or-registry))
      (money/value amount (api-currency/resolve c rounding-or-registry))
      (if rounding-or-registry
        (money/value amount (api-currency/resolve c) (scale/post-parse-rounding rounding-or-registry))
@@ -137,7 +137,7 @@
   ([amount c]
    (some->> c api-currency/resolve-try (money/value amount)))
   ([amount c rounding-or-registry]
-   (if (instance? Registry rounding-or-registry)
+   (if (or (instance? Registry rounding-or-registry) (true? rounding-or-registry))
      (when (some? c) (some->> (api-currency/resolve-try c rounding-or-registry) (money/value amount)))
      (if-some [rounding (scale/post-parse-rounding rounding-or-registry)]
        (when-some [c (api-currency/resolve-try c)] (money/value amount c rounding))
@@ -228,7 +228,7 @@
   (^Money [amount c]
    (money/major-value (api-currency/resolve c) amount))
   (^Money [amount c rounding-or-registry]
-   (if (instance? Registry rounding-or-registry)
+   (if (or (instance? Registry rounding-or-registry) (true? rounding-or-registry))
      (money/major-value (api-currency/resolve c rounding-or-registry) amount)
      (if rounding-or-registry
        (money/major-value (api-currency/resolve c) amount (scale/post-parse-rounding rounding-or-registry))
@@ -254,7 +254,7 @@
   (^Money [amount c]
    (money/minor-value (api-currency/resolve c) amount))
   (^Money [amount c rounding-or-registry]
-   (if (instance? Registry rounding-or-registry)
+   (if (or (instance? Registry rounding-or-registry) (true? rounding-or-registry))
      (money/minor-value (api-currency/resolve c rounding-or-registry) amount)
      (if rounding-or-registry
        (money/minor-value (api-currency/resolve c) amount (scale/post-parse-rounding rounding-or-registry))
