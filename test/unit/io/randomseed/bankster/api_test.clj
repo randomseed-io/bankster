@@ -173,6 +173,7 @@
             (is (= :PLN (api-currency/id (api/currency))))))
 
         (testing "currency accessors and predicates"
+          (is (registry/registry? (api-currency/default-registry)))
           (is (= :EUR (api-currency/id :EUR)))
           (is (= :EUR (api-currency/id :EUR true)))
           (is (= :EUR (api-currency/id :EUR r)))
@@ -498,6 +499,18 @@
             (is (instance? Money m))))
 
         (testing "money rounding and allocation"
+          (scale/with-rounding java.math.RoundingMode/HALF_UP
+            (is (= java.math.RoundingMode/HALF_UP (api-money/rounding-mode))))
+          (is (= java.math.RoundingMode/HALF_UP
+                 (api-money/rounding-mode java.math.RoundingMode/HALF_UP)))
+          (is (registry/registry? (api-money/default-registry)))
+          (is (registry/registry? (api-money/registry-or-default nil)))
+          (is (registry/registry? (api-money/registry-or-default true)))
+          (is (identical? r (api-money/registry-or-default r)))
+          (is (instance? java.math.BigDecimal (api-money/scale-apply 1.23M)))
+          (is (= 2 (.scale ^java.math.BigDecimal (api-money/scale-apply 1.23M 2))))
+          (is (= 2 (.scale ^java.math.BigDecimal
+                           (api-money/scale-apply 1.23M 2 java.math.RoundingMode/HALF_UP))))
           (let [m (api/money 1.23M :EUR r)]
             (is (instance? Money (api-money/round-to m)))
             (is (instance? Money (api-money/round-to m 0.05M)))
