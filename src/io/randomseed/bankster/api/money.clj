@@ -60,7 +60,6 @@
   {:tag Registry :added "2.2.0"}
   []
   (registry/get))
-
 (defn registry-or-default
   "Resolves `true` or `nil` into the current default registry, otherwise returns the
   given value."
@@ -178,12 +177,12 @@
   `of-registry`.
 
   Delegates to `io.randomseed.bankster.money/cast`."
-  {:tag      Money
-   :added    "2.2.0"
-   :arglists '(^Money [money]
-               ^Money [money currency]
-               ^Money [money currency rounding])
-   :ex/strict true}
+  {:tag       Money
+   :added     "2.2.0"
+   :ex/strict true
+   :arglists  '(^Money [money]
+                ^Money [money currency]
+                ^Money [money currency rounding])}
   (^Money [money]
    (money/cast money))
   (^Money [money currency]
