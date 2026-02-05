@@ -1,0 +1,17 @@
+LGPL-3.0-or-later OR Apache-2.0
+
+Copyright © 2021–2026 Paweł Wilk
+
+This project is dual-licensed: you may use it under the terms of either
+
+- the GNU Lesser General Public License v3.0 or later (LGPL-3.0-or-later), or
+- the Apache License, Version 2.0 (Apache-2.0),
+
+at your option.
+
+See the license texts in:
+
+- [`LICENSES/LGPL-3.0-or-later.txt`](LICENSES/LGPL-3.0-or-later.txt)
+- [`LICENSES/Apache-2.0.txt`](LICENSES/Apache-2.0.txt)
+
+SPDX-License-Identifier: LGPL-3.0-or-later OR Apache-2.0
