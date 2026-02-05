@@ -159,25 +159,23 @@ modified too.
 ;; to fully control which registry is used.
 
 (binding [io.randomseed.bankster/*initialize-registry* false]
-  (require '[io.randomseed.bankster.currency     :as     currency]
-           '[io.randomseed.bankster.registry     :as     registry]
-           '[io.randomseed.bankster.api.currency :as api-currency]
-           '[io.randomseed.bankster.api.registry :as api-registry]))
+  (require '[io.randomseed.bankster.api.currency :as currency]
+           '[io.randomseed.bankster.api.registry :as registry]))
 
 ;; Load your registry from a classpath resource
 ;; (e.g. resources/my/app/currencies.edn).
 
 (def my-registry
-  (currency/config->registry "my/app/currencies.edn" (registry/new-registry)))
+  (currency/config->registry "my/app/currencies.edn"))
 
 ;; Option A: pass the registry explicitly (front API).
 
-(api-currency/resolve :EUR my-registry)
-(api-currency/resolve-try :EUR my-registry)  ; nil when missing
+(currency/resolve     :EUR my-registry)
+(currency/resolve-try :EUR my-registry)  ; nil when missing
 
 ;; Option B: install it as the global registry.
 
-(api-registry/set! my-registry)
+(registry/set! my-registry)
 ```
 
 #### Registry loader helpers (`io.randomseed.bankster.init`)
@@ -239,9 +237,8 @@ of keywords). They are intentionally *not* part of currency identity and do not
 affect money equality or arithmetic.
 
 ```clojure
-(require '[io.randomseed.bankster.registry     :as     registry]
-         '[io.randomseed.bankster.currency     :as     currency]
-         '[io.randomseed.bankster.api.currency :as api-currency])
+(require '[io.randomseed.bankster.api.registry :as registry]
+         '[io.randomseed.bankster.api.currency :as currency])
 
 (def r
   (assoc (registry/new
@@ -254,12 +251,12 @@ affect money equality or arithmetic.
 
 ;; Domains can be queried using a hierarchy-aware predicate.
 
-(api-currency/of-domain? :ISO-4217 (api-currency/new :iso-4217-legacy/ADP) r)
+(currency/of-domain? :ISO-4217 (currency/new :iso-4217-legacy/ADP) r)
 ;; => true
 
 ;; Traits can be queried via the traits hierarchy.
 
-(api-currency/of-trait? :token/fungible :crypto/USDC r)
+(currency/of-trait? :token/fungible :crypto/USDC r)
 ;; => true
 ```
 
@@ -818,8 +815,7 @@ It allows to perform **math operations** on monetary amounts:
 
 (require '[io.randomseed.bankster.api          :as      api]
          '[io.randomseed.bankster.api.money    :as    money]
-         '[io.randomseed.bankster.api.currency :as currency]
-         '[io.randomseed.bankster.api.registry :as registry])
+         '[io.randomseed.bankster.api.currency :as currency])
 
 ;; NOTE: `api/amount` is an alias for `scale/amount`.
 ;; NOTE: `api/scale` returns scale (Money amount scale / Currency nominal scale).

@@ -93,25 +93,23 @@ and optional per-currency <strong>traits</strong>.</li>
 ;; to fully control which registry is used.
 
 (binding [io.randomseed.bankster/*initialize-registry* false]
-  (require '[io.randomseed.bankster.currency     :as     currency]
-           '[io.randomseed.bankster.registry     :as     registry]
-           '[io.randomseed.bankster.api.currency :as api-currency]
-           '[io.randomseed.bankster.api.registry :as api-registry]))
+  (require '[io.randomseed.bankster.api.currency :as currency]
+           '[io.randomseed.bankster.api.registry :as registry]))
 
 ;; Load your registry from a classpath resource
 ;; (e.g. resources/my/app/currencies.edn).
 
 (def my-registry
-  (currency/config-&gt;registry "my/app/currencies.edn" (registry/new-registry)))
+  (currency/config-&gt;registry "my/app/currencies.edn"))
 
 ;; Option A: pass the registry explicitly (front API).
 
-(api-currency/resolve :EUR my-registry)
-(api-currency/resolve-try :EUR my-registry)  ; nil when missing
+(currency/resolve     :EUR my-registry)
+(currency/resolve-try :EUR my-registry)  ; nil when missing
 
 ;; Option B: install it as the global registry.
 
-(api-registry/set! my-registry)
+(registry/set! my-registry)
 </code></pre>
 <h4><a href="#registry-loader-helpers-iorandomseedbanksterinit" id="registry-loader-helpers-iorandomseedbanksterinit"></a>Registry loader helpers (<code>io.randomseed.bankster.init</code>)</h4>
 <p>If you want to load a registry in a single call (optionally overlaying Bankster’s distribution config), use <code>io.randomseed.bankster.init</code>:</p>
@@ -146,9 +144,8 @@ and optional per-currency <strong>traits</strong>.</li>
 </ul>
 <p>Hierarchy specs are expressed as a parent-map <code>{child parent}</code> and may also use a vector/set of parents for multiple inheritance.</p>
 <p>Traits are stored separately as a registry map <code>currency-id -&gt; traits</code> (sets/vectors of keywords). They are intentionally <em>not</em> part of currency identity and do not affect money equality or arithmetic.</p>
-<pre><code class="language-clojure">(require '[io.randomseed.bankster.registry     :as     registry]
-         '[io.randomseed.bankster.currency     :as     currency]
-         '[io.randomseed.bankster.api.currency :as api-currency])
+<pre><code class="language-clojure">(require '[io.randomseed.bankster.api.registry :as registry]
+         '[io.randomseed.bankster.api.currency :as currency])
 
 (def r
   (assoc (registry/new
@@ -161,12 +158,12 @@ and optional per-currency <strong>traits</strong>.</li>
 
 ;; Domains can be queried using a hierarchy-aware predicate.
 
-(api-currency/of-domain? :ISO-4217 (api-currency/new :iso-4217-legacy/ADP) r)
+(currency/of-domain? :ISO-4217 (currency/new :iso-4217-legacy/ADP) r)
 ;; =&gt; true
 
 ;; Traits can be queried via the traits hierarchy.
 
-(api-currency/of-trait? :token/fungible :crypto/USDC r)
+(currency/of-trait? :token/fungible :crypto/USDC r)
 ;; =&gt; true
 </code></pre>
 <p>To extend a hierarchy programmatically use <code>api-registry/hierarchy-derive</code> (pure) or <code>api-registry/hierarchy-derive!</code> (mutates the global registry).</p>
@@ -622,8 +619,7 @@ false
 
 (require '[io.randomseed.bankster.api          :as      api]
          '[io.randomseed.bankster.api.money    :as    money]
-         '[io.randomseed.bankster.api.currency :as currency]
-         '[io.randomseed.bankster.api.registry :as registry])
+         '[io.randomseed.bankster.api.currency :as currency])
 
 ;; NOTE: `api/amount` is an alias for `scale/amount`.
 ;; NOTE: `api/scale` returns scale (Money amount scale / Currency nominal scale).
