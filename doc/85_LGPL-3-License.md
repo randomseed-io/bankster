@@ -1,4 +1,4 @@
-# License
+# LGPL License, v3 or later
 
 ```
                    GNU LESSER GENERAL PUBLIC LICENSE

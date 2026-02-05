@@ -36,6 +36,8 @@ docs: readme
 	@echo "# Introduction" > doc/10_introduction.md
 	@tail -n +2 README.md >> doc/10_introduction.md
 	@perl -pi -e 's/\[([^\]]+)\]\(doc\/([^\)]+)\)/[$$1]($$2)/g' doc/10_introduction.md
+	@perl -pi -e 's/\[([^\]]+)\]\(LICENSES\/Apache-2\.0\.txt\)/[$$1](80_Apache-2-License.md)/g' doc/10_introduction.md
+	@perl -pi -e 's/\[([^\]]+)\]\(LICENSES\/LGPL-3\.0\-or-later\.txt\)/[$$1](85_LGPL-3-License.md)/g' doc/10_introduction.md
 	@$(DOCS) :version '"$(VERSION)"' :description '"$(DESCRIPTION)"'
 
 doc: docs

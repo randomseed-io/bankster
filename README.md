@@ -1086,19 +1086,22 @@ final and the support for currencies is limited to the "official" ones.
 
 Copyright © 2021–2026 Paweł Wilk
 
-Bankster is copyrighted software owned by Paweł Wilk (pw@gnu.org). You may
-redistribute and/or modify this software as long as you comply with the terms of
-the [GNU Lesser General Public License](doc/80_license.md) (version 3).
+This project is dual-licensed: you may use it under the terms of either
+
+- the GNU Lesser General Public License v3.0 or later (LGPL-3.0-or-later), or
+- the Apache License, Version 2.0 (Apache-2.0),
+
+at your option.
+
+See the license texts in:
+
+- [`LICENSES/LGPL-3.0-or-later.txt`](LICENSES/LGPL-3.0-or-later.txt)
+- [`LICENSES/Apache-2.0.txt`](LICENSES/Apache-2.0.txt)
+
+SPDX-License-Identifier: LGPL-3.0-or-later OR Apache-2.0
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
-
-THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS
-FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR
-COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER
-IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
 ## Development
 
