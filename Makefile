@@ -35,10 +35,7 @@ docs: readme
 	@echo "[doc]      -> docs/"
 	@echo "# Introduction" > doc/10_introduction.md
 	@tail -n +2 README.md >> doc/10_introduction.md
-	@perl -pi -e 's/\[([^\]]+)\]\(API\.md\)/[$$1](12_api.md)/g; s/\[([^\]]+)\]\(CONTRACTS\.md\)/[$$1](15_contracts.md)/g' doc/10_introduction.md
-	@cat     CONTRACTS.md  > doc/15_contracts.md
-	@cat           API.md  > doc/12_api.md
-	@cat          LICENSE  > doc/LICENSE
+	@perl -pi -e 's/\[([^\]]+)\]\(doc\/([^\)]+)\)/[$$1]($$2)/g' doc/10_introduction.md
 	@$(DOCS) :version '"$(VERSION)"' :description '"$(DESCRIPTION)"'
 
 doc: docs

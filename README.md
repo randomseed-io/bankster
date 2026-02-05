@@ -64,7 +64,7 @@ representing currency + amount and doing safe operations around that.
 
 ## Contracts
 
-See [Bankster Contracts](CONTRACTS.md) for practical contracts (what is guaranteed,
+See [Bankster Contracts](doc/15_contracts.md) for practical contracts (what is guaranteed,
 what is "soft" vs "strict", how the default registry is chosen, when exceptions are
 thrown, how the protocols behave) for Bankster's core axis: `Currency`, `Money`,
 `Registry` records and the `Monetary`, `Scalable` and `Accountable` protocols.
@@ -72,7 +72,7 @@ thrown, how the protocols behave) for Bankster's core axis: `Currency`, `Money`,
 ## Front API
 
 Bankster provides a curated front API under `io.randomseed.bankster.api.*`
-(recommended for application code). See [API](API.md) for an overview.
+(recommended for application code). See [API](doc/12_api.md) for an overview.
 
 For major-version stability there is a frozen API namespace:
 `io.randomseed.bankster.api.v2` and its sub-namespaces. It mirrors
@@ -1088,7 +1088,7 @@ Copyright © 2021–2026 Paweł Wilk
 
 Bankster is copyrighted software owned by Paweł Wilk (pw@gnu.org). You may
 redistribute and/or modify this software as long as you comply with the terms of
-the [GNU Lesser General Public License][LICENSE] (version 3).
+the [GNU Lesser General Public License](doc/80_license.md) (version 3).
 
 The above copyright notice and this permission notice shall be included in all
 copies or substantial portions of the Software.
@@ -1139,5 +1139,3 @@ bin/repl
 ```
 
 Starts REPL (and optionally nREPL server with port number is stored in `.nrepl-port`).
-
-[LICENSE]:    LICENSE
