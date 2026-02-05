@@ -46,9 +46,14 @@
   [id ^String ns]
   (must-have-ns (ensure-keyword id) ns))
 
-(defmacro ^:no-doc defalias [name target]
+(defmacro ^:no-doc defalias [name target & [added]]
   (let [v              (clojure.core/resolve target)
         m0             (meta v)
+        added          (cond
+                         (nil? added) "2.2.0"
+                         (string? added) added
+                         :else (throw (ex-info "defalias requires :added string"
+                                               {:name name :target target :added added})))
         arglists       (:arglists m0)
         primitive-tags {'long    Long/TYPE
                         'int     Integer/TYPE
@@ -67,7 +72,7 @@
         m              (-> m0
                            (dissoc :ns :name :file :line :column :tag)
                            (cond-> tag (assoc :tag tag))
-                           (assoc :added "2.2.0"
+                           (assoc :added added
                                   :auto-alias true
                                   :cloverage/ignore true)
                            (cond-> arglists (assoc :arglists (list 'quote arglists))))]
@@ -136,9 +141,14 @@
             arg))
         args))
 
-(defmacro ^:no-doc defalias-reg [name target]
+(defmacro ^:no-doc defalias-reg [name target & [added]]
   (let [v              (clojure.core/resolve target)
         m0             (meta v)
+        added          (cond
+                         (nil? added) "2.2.0"
+                         (string? added) added
+                         :else (throw (ex-info "defalias-reg requires :added string"
+                                               {:name name :target target :added added})))
         arglists       (:arglists m0)
         has-registry?  (and (sequential? arglists)
                             (some registry-arglist? arglists))
@@ -169,7 +179,7 @@
         m              (-> m0
                            (dissoc :ns :name :file :line :column :tag)
                            (cond-> tag (assoc :tag tag))
-                           (assoc :added "2.2.0"
+                           (assoc :added added
                                   :auto-alias true
                                   :cloverage/ignore true)
                            (cond-> doc (assoc :doc doc))

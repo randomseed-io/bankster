@@ -114,6 +114,45 @@
           forms (f nil nil 'io.randomseed.bankster.api)]
       (is forms))))
 
+(deftest auto-alias-metadata-and-rename
+  (let [src-ns (the-ns 'io.randomseed.bankster.util-test)
+        tgt-sym (symbol (str "io.randomseed.bankster.util-test.auto-alias-tgt-" (gensym)))
+        tgt-ns  (create-ns tgt-sym)
+        v-str   (symbol (str "auto-alias-src-str-" (gensym)))
+        v-sym   (symbol (str "auto-alias-src-sym-" (gensym)))
+        v-kw    (symbol (str "auto-alias-src-kw-" (gensym)))
+        v-kw-ns (symbol (str "auto-alias-src-kw-ns-" (gensym)))
+        v-str-as (symbol (str "auto-alias-src-str-as-" (gensym)))
+        v-nil   (symbol (str "auto-alias-src-nil-" (gensym)))
+        v-else  (symbol (str "auto-alias-src-else-" (gensym)))
+        v-str-ns (symbol (str "auto-alias-src-str-ns-" (gensym)))
+        syms    [v-str v-sym v-kw v-kw-ns v-str-as v-nil v-else v-str-ns]]
+    (letfn [(intern-auto [sym val auto]
+              (let [v (intern src-ns sym val)]
+                (alter-meta! v assoc :auto-alias auto)
+                v))]
+      (intern-auto v-str 1 "str-alias")
+      (intern-auto v-sym 2 {:alias/as 'sym-alias :doc "sym-doc"})
+      (intern-auto v-kw 3 {:alias/as :kw-alias})
+      (intern-auto v-kw-ns 4 {:alias/as :tgt/kw-ns-alias})
+      (intern-auto v-str-as 5 {:alias/as "str-as"})
+      (intern-auto v-nil 6 {:alias/as nil})
+      (intern-auto v-else 7 {:alias/as \x})
+      (intern-auto v-str-ns 8 {:alias/as "foo/bar"}))
+    (binding [*ns* tgt-ns]
+      (eval '(clojure.core/require 'io.randomseed.bankster.util))
+      (eval '(io.randomseed.bankster.util/auto-alias 'io.randomseed.bankster.util-test)))
+    (is (ns-resolve tgt-ns 'str-alias))
+    (is (= "sym-doc" (:doc (meta (ns-resolve tgt-ns 'sym-alias)))))
+    (is (ns-resolve tgt-ns 'kw-alias))
+    (is (ns-resolve tgt-ns 'kw-ns-alias))
+    (is (ns-resolve tgt-ns 'str-as))
+    (is (ns-resolve tgt-ns v-nil))
+    (is (ns-resolve tgt-ns 'x))
+    (is (ns-resolve tgt-ns 'bar))
+    (doseq [sym syms]
+      (ns-unmap src-ns sym))))
+
 (deftest defalias-nonstandard-tag
   (testing "defalias ignores non-tag values in :tag metadata"
     (let [ns-sym (symbol (str "io.randomseed.bankster.util-test.defalias-" (gensym)))
@@ -124,6 +163,32 @@
         (eval '(io.randomseed.bankster.util/defalias weird-tagged-alias weird-tagged)))
       (let [v (ns-resolve ns-obj 'weird-tagged-alias)]
         (is (nil? (:tag (meta v)))))))
+  (testing "defalias accepts :added string"
+    (let [ns-sym (symbol (str "io.randomseed.bankster.util-test.defalias-added-" (gensym)))
+          ns-obj (create-ns ns-sym)]
+      (binding [*ns* ns-obj]
+        (eval '(clojure.core/require 'io.randomseed.bankster.util))
+        (eval '(clojure.core/defn f [] 1))
+        (eval '(io.randomseed.bankster.util/defalias f-alias f "2.2.1")))
+      (let [v (ns-resolve ns-obj 'f-alias)]
+        (is (= "2.2.1" (:added (meta v)))))))
+  (testing "defalias rejects non-string :added"
+    (let [ns-sym (symbol (str "io.randomseed.bankster.util-test.defalias-added-err-" (gensym)))
+          ns-obj (create-ns ns-sym)]
+      (binding [*ns* ns-obj]
+        (eval '(clojure.core/require 'io.randomseed.bankster.util))
+        (eval '(clojure.core/defn f [] 1)))
+      (letfn [(compiler-ex [form]
+                (try
+                  (binding [*ns* ns-obj]
+                    (eval form))
+                  nil
+                  (catch clojure.lang.Compiler$CompilerException e
+                    e)))]
+        (let [ex (compiler-ex '(io.randomseed.bankster.util/defalias f-alias f 123))]
+          (is (instance? clojure.lang.Compiler$CompilerException ex))
+          (is (= {:name 'f-alias :target 'f :added 123}
+                 (some-> ex ex-cause ex-data)))))))
   (testing "defalias maps var tags to primitive type hints"
     (let [ns-sym (symbol (str "io.randomseed.bankster.util-test.defalias-var-tag-" (gensym)))
           ns-obj (create-ns ns-sym)]
@@ -200,11 +265,16 @@
             (is (= 'd (:target (some-> ex ex-cause ex-data)))))
           (let [ex (compiler-ex '(io.randomseed.bankster.util/defalias-reg g-alias g))]
             (is (instance? clojure.lang.Compiler$CompilerException ex))
-            (is (= 'g (:target (some-> ex ex-cause ex-data))))))
-        (binding [*ns* ns-obj]
-          (eval '(io.randomseed.bankster.util/defalias-reg tagged-var-alias tagged-var)))
-        (let [v (ns-resolve ns-obj 'tagged-var-alias)]
-          (is (= Long/TYPE (:tag (meta v)))))))))
+            (is (= 'g (:target (some-> ex ex-cause ex-data)))))
+          (let [ex (compiler-ex '(io.randomseed.bankster.util/defalias-reg g-alias g 123))]
+            (is (instance? clojure.lang.Compiler$CompilerException ex))
+            (is (= {:name 'g-alias :target 'g :added 123}
+                   (some-> ex ex-cause ex-data)))))
+          (binding [*ns* ns-obj]
+            (eval '(io.randomseed.bankster.util/defalias-reg tagged-var-alias tagged-var "2.2.1")))
+          (let [v (ns-resolve ns-obj 'tagged-var-alias)]
+            (is (= Long/TYPE (:tag (meta v))))
+            (is (= "2.2.1" (:added (meta v)))))))))
 (deftest defalias-reg-default-registry
   (testing "defalias-reg resolves registry true to default"
     (let [ns-sym (symbol (str "io.randomseed.bankster.util-test.defalias-reg-" (gensym)))
