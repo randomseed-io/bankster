@@ -1,5 +1,24 @@
 # History of Bankster releases
 
+## 2.2.2 (2026-02-05)
+
+Licensing:
+
+- Switched to dual-licensed model (Apache-2.0 OR LGPL v3 or later).
+
+Front API:
+
+- Added `api.registry/new` as an alias for `registry/new-registry`.
+- Marked `currency/config->registry` as auto-aliased into the front API.
+
+Documentation:
+
+- README examples now prefer front API helpers where available.
+
+Testing:
+
+- Added sanity test for `api.registry/new`.
+
 ## 2.2.1 (2026-02-05)
 
 Front API:

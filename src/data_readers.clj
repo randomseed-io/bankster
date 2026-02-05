@@ -1,5 +1,3 @@
-;; SPDX-License-Identifier: LGPL-3.0-or-later OR Apache-2.0
-
 {bankster.currency io.randomseed.bankster.currency/code-literal,
  bankster.money io.randomseed.bankster.money/code-literal,
  currency io.randomseed.bankster.currency/code-literal,
