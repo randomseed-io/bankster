@@ -1,5 +1,26 @@
 # History of Bankster releases
 
+## 2.2.1 (2026-02-05)
+
+Front API:
+
+- Extended support for `true` as value for the `registry` argument in multiple
+  functions.
+
+Utilities / internals:
+
+- Added `defalias-reg` macro for registry-aware aliases (wraps `registry` argument,
+  resolves `true` to the default registry).
+- `defalias-reg` now appends a note to docstrings when a `registry` argument is
+  present, clarifying the `true` sentinel behavior.
+
+Testing / tooling:
+
+- Added tests that verify `registry=true` uses the global registry across front API
+  currency/money helpers (including rounding-or-registry arities).
+- Excluded `auto-alias` call sites from Cloverage instrumentation to avoid false
+  partial-coverage on generated alias forms.
+
 ## 2.2.0 (2026-02-04)
 
 Front API (new):
