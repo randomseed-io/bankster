@@ -65,7 +65,9 @@
         m              (-> m0
                            (dissoc :ns :name :file :line :column :tag)
                            (cond-> tag (assoc :tag tag))
-                           (assoc :added "2.2.0" :auto-alias true)
+                           (assoc :added "2.2.0"
+                                  :auto-alias true
+                                  :cloverage/ignore true)
                            (cond-> arglists (assoc :arglists (list 'quote arglists))))]
     (if (:macro m0)
       `(def ~(with-meta name m)
@@ -156,7 +158,9 @@
         m              (-> m0
                            (dissoc :ns :name :file :line :column :tag)
                            (cond-> tag (assoc :tag tag))
-                           (assoc :added "2.2.0" :auto-alias true)
+                           (assoc :added "2.2.0"
+                                  :auto-alias true
+                                  :cloverage/ignore true)
                            (cond-> arglists (assoc :arglists (list 'quote arglists))))]
     (when (:macro m0)
       (throw (ex-info "defalias-reg does not support macros" {:target target})))
