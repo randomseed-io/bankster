@@ -40,6 +40,7 @@
     (registry/hierarchy-derive hierarchy-name tag parent registry)))
 
 (bu/defalias with              io.randomseed.bankster.registry/with)
+(bu/defalias new               io.randomseed.bankster.registry/new-registry)
 (bu/defalias state             io.randomseed.bankster.registry/state)
 (bu/defalias hierarchy-derive! io.randomseed.bankster.registry/hierarchy-derive!)
 

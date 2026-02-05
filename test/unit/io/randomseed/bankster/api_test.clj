@@ -715,6 +715,7 @@
   (let [orig (registry/state)
         r    (mk-test-registry)]
     (try
+      (is (= (registry/new-registry) (api-registry/new)))
       (is (identical? (api-registry/state) (registry/state)))
       (let [r1 (api-registry/hierarchy-derive :traits :test/a :test/b r)]
         (is (isa? (registry/hierarchy :traits r1) :test/a :test/b)))
