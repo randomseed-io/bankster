@@ -3102,7 +3102,7 @@
   "Loads currencies and countries from an EDN file. First argument should be a string
   with path to the EDN resource file containing registry data, second should be a
   registry. Returns a registry initialized using values from the EDN file."
-  {:tag Registry :added "1.0.0" :auto-alias true}
+  {:tag Registry :added "1.0.0" :auto-alias {:added "2.2.1"}}
   (^Registry []
    (config->registry config/default-resource-path (registry/new-registry)))
   (^Registry [^String resource-path]
@@ -4321,9 +4321,8 @@
      ((requiring-resolve 'io.randomseed.bankster.serializers.edn/currency->edn-string)
       c opts))))
 
-;;
-
 ;; Auto-alias markers for front API (io.randomseed.bankster.currency)
+
 (doseq [v [#'io.randomseed.bankster.currency/of
            #'io.randomseed.bankster.currency/with
            #'io.randomseed.bankster.currency/scale
@@ -4461,7 +4460,7 @@
            #'io.randomseed.bankster.currency/with-weight
            #'io.randomseed.bankster.currency/wrapped?
            ]]
-  (alter-meta! v assoc :auto-alias true))
+  (alter-meta! v assoc :auto-alias {:added "2.2.0"}))
 
 ;; Populating registry with defaults.
 ;;

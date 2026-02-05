@@ -3186,4 +3186,4 @@
            #'io.randomseed.bankster.money/unparse
            #'io.randomseed.bankster.money/value
            ]]
-  (alter-meta! v assoc :auto-alias true))
+  (alter-meta! v assoc :auto-alias {:added "2.2.0"}))
