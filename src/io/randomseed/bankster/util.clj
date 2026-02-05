@@ -73,6 +73,124 @@
       `(def ~(with-meta name m)
          ~target))))
 
+(defn- simple-arglist?
+  [args]
+  (and (vector? args)
+       (every? symbol? args)
+       (let [amp-idx (.indexOf ^clojure.lang.APersistentVector args '&)]
+         (or (neg? amp-idx)
+             (and (< amp-idx (dec (count args)))
+                  (= amp-idx (- (count args) 2)))))))
+
+(defn- registry-arglist?
+  [args]
+  (some #{'registry} (remove #{'&} args)))
+
+(defn- arglist-varargs?
+  [args]
+  (some #{'&} args))
+
+(defn- fixed-arity
+  [args]
+  (let [argsv   (vec args)
+        amp-idx (.indexOf ^clojure.lang.APersistentVector argsv '&)]
+    (if (neg? amp-idx) (count argsv) amp-idx)))
+
+(defn- distinct-arities?
+  [arglists]
+  (let [arglists     (map vec arglists)
+        variadics    (filter arglist-varargs? arglists)
+        fixed-args   (remove arglist-varargs? arglists)
+        fixed-counts (map fixed-arity fixed-args)]
+    (and (<= (count variadics) 1)
+         (= (count fixed-counts) (count (distinct fixed-counts))))))
+
+(defn- qualify-tag
+  [tag ns-obj primitive-tags]
+  (cond
+    (nil? tag) nil
+    (symbol? tag)
+    (or (get primitive-tags tag)
+        (when (namespace tag) tag)
+        (let [resolved (ns-resolve ns-obj tag)]
+          (cond
+            (class? resolved) resolved
+            (var? resolved)   (let [vtag (-> resolved meta :tag)]
+                                (or (get primitive-tags vtag) vtag))
+            :else             tag)))
+    :else tag))
+
+(defn- qualify-arglist
+  [args ns-obj primitive-tags]
+  (mapv (fn [arg]
+          (if (symbol? arg)
+            (let [m   (meta arg)
+                  tag (qualify-tag (:tag m) ns-obj primitive-tags)]
+              (if (and m (contains? m :tag))
+                (with-meta arg (assoc m :tag tag))
+                arg))
+            arg))
+        args))
+
+(defmacro ^:no-doc defalias-reg [name target]
+  (let [v              (clojure.core/resolve target)
+        m0             (meta v)
+        arglists       (:arglists m0)
+        primitive-tags {'long    Long/TYPE
+                        'int     Integer/TYPE
+                        'double  Double/TYPE
+                        'float   Float/TYPE
+                        'short   Short/TYPE
+                        'byte    Byte/TYPE
+                        'boolean Boolean/TYPE
+                        'char    Character/TYPE}
+        ns-obj         (:ns m0)
+        tag0           (:tag m0)
+        tag            (or (when (symbol? tag0) (get primitive-tags tag0 tag0))
+                           (when (class? tag0)  tag0)
+                           (when (var? tag0)
+                             (let [s (-> tag0 meta :name symbol)]
+                               (get primitive-tags s s))))
+        arglists*      (when (seq arglists)
+                         (mapv #(qualify-arglist % ns-obj primitive-tags) arglists))
+        m              (-> m0
+                           (dissoc :ns :name :file :line :column :tag)
+                           (cond-> tag (assoc :tag tag))
+                           (assoc :added "2.2.0" :auto-alias true)
+                           (cond-> arglists (assoc :arglists (list 'quote arglists))))]
+    (when (:macro m0)
+      (throw (ex-info "defalias-reg does not support macros" {:target target})))
+    (when (seq arglists*)
+      (doseq [args arglists*]
+        (when-not (simple-arglist? (vec args))
+          (throw (ex-info "defalias-reg requires simple arglists" {:target target :args args})))))
+    (when-not (distinct-arities? arglists*)
+      (throw (ex-info "defalias-reg requires distinct non-variadic arities"
+                      {:target target :arglists arglists})))
+    (if (seq arglists*)
+      `(defn ~(with-meta name m)
+         ~@(for [args arglists*]
+             (let [argsv   (vec args)
+                   amp-idx (.indexOf ^clojure.lang.APersistentVector argsv '&)
+                   fixed   (if (neg? amp-idx) argsv (subvec argsv 0 amp-idx))
+                   rest-s  (when (>= amp-idx 0) (nth argsv (inc amp-idx)))
+                   has-reg (registry-arglist? fixed)
+                   call    (if rest-s
+                             (if (seq fixed)
+                               `(apply ~target ~@fixed ~rest-s)
+                               `(apply ~target ~rest-s))
+                             `(~target ~@fixed))]
+               (if has-reg
+                 `(~argsv
+                   (let [~'registry (if (true? ~'registry)
+                                      (or io.randomseed.bankster.registry/*default*
+                                          (io.randomseed.bankster.registry/state))
+                                      ~'registry)]
+                     ~call))
+                 `(~argsv ~call)))))
+      `(def ~(with-meta name m)
+         ~target))))
+
 (defmacro auto-alias
   "Creates aliases in the current namespace for all Vars in `source-ns` that have
   truthy `:auto-alias` metadata, skipping symbols already defined."
@@ -96,14 +214,26 @@
     (clojure.core/require ns-sym)
     (let [vars    (->> (ns-interns (the-ns ns-sym))
                        (filter (fn [[_ v]] (:auto-alias (meta v)))))
+          existing (ns-interns *ns*)
           aliases (->> vars
-                       (map first)
-                       (sort)
-                       (remove #(contains? (ns-interns *ns*) %))
-                       (map (fn [sym]
-                              `(io.randomseed.bankster.util/defalias
-                                 ~sym
-                                 ~(symbol (str ns-sym) (name sym)))))
+                       (sort-by (comp str first))
+                       (remove #(contains? existing (first %)))
+                       (map (fn [[sym v]]
+                              (let [m        (meta v)
+                                    arglists (:arglists m)
+                                    arglists (when (and (sequential? arglists)
+                                                        (every? sequential? arglists))
+                                               (mapv vec arglists))
+                                    use-reg? (and (not (:macro m))
+                                                  (seq arglists)
+                                                  (every? simple-arglist? arglists)
+                                                  (distinct-arities? arglists)
+                                                  (some registry-arglist? arglists))
+                                    alias-sym (symbol "io.randomseed.bankster.util"
+                                                      (if use-reg? "defalias-reg" "defalias"))]
+                                `(~alias-sym
+                                  ~sym
+                                  ~(symbol (str ns-sym) (name sym))))))
                        (vec))]
       (cond
         (empty? aliases) nil

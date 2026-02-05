@@ -9,6 +9,7 @@
 
   (:require [clojure.test                 :refer [deftest testing is]]
             [clojure.spec.alpha           :as s]
+            [io.randomseed.bankster.registry :as registry]
             [io.randomseed.bankster.util  :as u])
 
   (:import (java.util ArrayList)))
@@ -132,6 +133,108 @@
         (eval '(io.randomseed.bankster.util/defalias tagged-var-alias tagged-var)))
       (let [v (ns-resolve ns-obj 'tagged-var-alias)]
         (is (= Long/TYPE (:tag (meta v))))))))
+
+(deftest defalias-reg-behavior
+  (testing "helper arglist predicates"
+    (is (true? (#'u/simple-arglist? ['a 'b])))
+    (is (true? (#'u/simple-arglist? ['a '& 'more])))
+    (is (false? (#'u/simple-arglist? (vector 'a '{:keys [x]}))))
+    (is (false? (#'u/simple-arglist? ['a '& 'more 'x])))
+    (is (#'u/registry-arglist? ['registry]))
+    (is (#'u/registry-arglist? ['a 'registry 'b]))
+    (is (nil? (#'u/registry-arglist? ['a])))
+    (is (#'u/arglist-varargs? ['a '& 'more]))
+    (is (nil? (#'u/arglist-varargs? ['a 'b])))
+    (is (= 2 (#'u/fixed-arity ['a 'b])))
+    (is (= 1 (#'u/fixed-arity ['a '& 'more])))
+    (is (true? (#'u/distinct-arities? [['a] ['a 'b] ['a '& 'more]])))
+    (is (false? (#'u/distinct-arities? [['a 'b] ['c 'd]])))))
+
+(deftest defalias-reg-branches
+  (let [primitive-tags {'long    Long/TYPE
+                        'int     Integer/TYPE
+                        'double  Double/TYPE
+                        'float   Float/TYPE
+                        'short   Short/TYPE
+                        'byte    Byte/TYPE
+                        'boolean Boolean/TYPE
+                        'char    Character/TYPE}]
+    (testing "qualify-tag branches"
+      (is (nil? (#'u/qualify-tag nil (the-ns 'io.randomseed.bankster.util-test) primitive-tags)))
+      (is (= Long/TYPE (#'u/qualify-tag 'long (the-ns 'io.randomseed.bankster.util-test) primitive-tags)))
+      (is (= 'foo/bar (#'u/qualify-tag 'foo/bar (the-ns 'io.randomseed.bankster.util-test) primitive-tags)))
+      (is (= 'nope (#'u/qualify-tag 'nope (the-ns 'io.randomseed.bankster.util-test) primitive-tags)))
+      (let [ns-sym (symbol (str "io.randomseed.bankster.util-test.qualify-tag-" (gensym)))
+            ns-obj (create-ns ns-sym)]
+        (binding [*ns* ns-obj]
+          (eval '(def ^{:tag 'long} v 1)))
+        (is (= Long/TYPE (#'u/qualify-tag 'v ns-obj primitive-tags)))))
+    (testing "qualify-arglist branches"
+      (let [ns-obj (the-ns 'io.randomseed.bankster.currency)
+            args   [(with-meta 'registry {:tag 'Registry}) :x]
+            out    (#'u/qualify-arglist args ns-obj primitive-tags)]
+        (is (class? (:tag (meta (first out)))))
+        (is (= :x (second out)))))
+    (testing "defalias-reg error branches"
+      (let [ns-sym (symbol (str "io.randomseed.bankster.util-test.defalias-reg-err-" (gensym)))
+            ns-obj (create-ns ns-sym)]
+        (binding [*ns* ns-obj]
+          (eval '(clojure.core/require 'io.randomseed.bankster.util))
+          (eval '(clojure.core/defmacro m [] nil))
+          (eval '(clojure.core/defn d [{:keys [a]}] a))
+          (eval '(clojure.core/defn g [a] a))
+          (eval '(def ^{:tag #'clojure.core/long} tagged-var 1))
+          (eval '(clojure.core/alter-meta! #'g clojure.core/assoc :arglists '([a] [b]))))
+        (letfn [(compiler-ex [form]
+                  (try
+                    (binding [*ns* ns-obj]
+                      (eval form))
+                    nil
+                    (catch clojure.lang.Compiler$CompilerException e
+                      e)))]
+          (let [ex (compiler-ex '(io.randomseed.bankster.util/defalias-reg m-alias m))]
+            (is (instance? clojure.lang.Compiler$CompilerException ex))
+            (is (= {:target 'm} (some-> ex ex-cause ex-data))))
+          (let [ex (compiler-ex '(io.randomseed.bankster.util/defalias-reg d-alias d))]
+            (is (instance? clojure.lang.Compiler$CompilerException ex))
+            (is (= 'd (:target (some-> ex ex-cause ex-data)))))
+          (let [ex (compiler-ex '(io.randomseed.bankster.util/defalias-reg g-alias g))]
+            (is (instance? clojure.lang.Compiler$CompilerException ex))
+            (is (= 'g (:target (some-> ex ex-cause ex-data))))))
+        (binding [*ns* ns-obj]
+          (eval '(io.randomseed.bankster.util/defalias-reg tagged-var-alias tagged-var)))
+        (let [v (ns-resolve ns-obj 'tagged-var-alias)]
+          (is (= Long/TYPE (:tag (meta v)))))))))
+(deftest defalias-reg-default-registry
+  (testing "defalias-reg resolves registry true to default"
+    (let [ns-sym (symbol (str "io.randomseed.bankster.util-test.defalias-reg-" (gensym)))
+          ns-obj (create-ns ns-sym)]
+      (binding [*ns* ns-obj]
+        (eval '(clojure.core/require 'io.randomseed.bankster.util))
+        (eval '(clojure.core/require 'io.randomseed.bankster.registry))
+        (eval '(clojure.core/defn target [registry] registry))
+        (eval '(io.randomseed.bankster.util/defalias-reg target-alias target)))
+      (let [f (ns-resolve ns-obj 'target-alias)]
+        (is (registry/registry? (f true)))
+        (is (identical? (registry/get) (f true)))
+        (is (= :x (f :x)))
+        (is (nil? (f nil)))))))
+
+(deftest defalias-reg-varargs-coverage
+  (testing "defalias-reg handles varargs with and without fixed args"
+    (let [ns-sym (symbol (str "io.randomseed.bankster.util-test.defalias-reg-varargs-" (gensym)))
+          ns-obj (create-ns ns-sym)]
+      (binding [*ns* ns-obj]
+        (eval '(clojure.core/require 'io.randomseed.bankster.util))
+        (eval '(clojure.core/defn v1 [a & more] (clojure.core/cons a more)))
+        (eval '(io.randomseed.bankster.util/defalias-reg v1-alias v1))
+        (eval '(clojure.core/defn v2 [& more] more))
+        (eval '(clojure.core/alter-meta! #'v2 clojure.core/assoc :arglists '([& more])))
+        (eval '(io.randomseed.bankster.util/defalias-reg v2-alias v2)))
+      (let [v1 (ns-resolve ns-obj 'v1-alias)
+            v2 (ns-resolve ns-obj 'v2-alias)]
+        (is (= '(1 2 3) (v1 1 2 3)))
+        (is (= '(2 3) (v2 2 3)))))))
 
 (deftest numeric-utils
   (testing "count-digits"
