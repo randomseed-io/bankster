@@ -1,3 +1,4 @@
 {:lint-as
  {io.randomseed.bankster.util/defalias            clojure.core/def
+  io.randomseed.bankster.util/defalias-reg        clojure.core/defn
   io.randomseed.bankster.util/auto-alias          clojure.core/identity}}
