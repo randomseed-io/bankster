@@ -179,7 +179,7 @@
                         (filter #(currency/of-kind? kind % registry) currencies))]
        (when (seq matches) (set matches))))))
 
-(defn id
+(defn ^:cloverage/ignore id
   "Returns currency ID (keyword). Delegates to `io.randomseed.bankster.currency/id`.
 
   - `([currency])` is registry-light and may return a keyword even if the currency is
@@ -189,7 +189,7 @@
   (^clojure.lang.Keyword [currency] (currency/id currency))
   (^clojure.lang.Keyword [currency registry] (currency/id currency (registry-or-default registry))))
 
-(defn id-str
+(defn ^:cloverage/ignore id-str
   "Returns a currency identifier string without interning keywords.
 
   Delegates to `io.randomseed.bankster.currency/to-id-str`."
@@ -468,5 +468,5 @@
 
 (bu/auto-alias 'io.randomseed.bankster.currency)
 
-(doseq [[_ v] (ns-interns *ns*)]
-  (alter-meta! v assoc :auto-alias true))
+(run! #(alter-meta! % assoc :auto-alias true)
+      (vals (ns-interns *ns*)))

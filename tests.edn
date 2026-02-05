@@ -21,7 +21,8 @@
  :kaocha.plugin.randomize/randomize?           true
  :kaocha.plugin.notifier/command               "bin/test-notifier %{message} %{title} %{icon} %{failed?}"
  :cloverage/opts                               {:ns-exclude-regex []
-                                                :exclude-call     [clojure.core/ns]
+                                                :exclude-call     [clojure.core/ns
+                                                                   io.randomseed.bankster.util/auto-alias]
                                                 :text?            false
                                                 :lcov?            false
                                                 :high-watermark   80

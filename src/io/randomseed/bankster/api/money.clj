@@ -169,7 +169,7 @@
      (money/of-registry (registry-or-default registry) money rounding)
      (money/of-registry (registry-or-default registry) money))))
 
-(defn cast
+(defn ^:cloverage/ignore cast
   "Casts an existing Money object to another having a different currency, rescaling
   the amount and optionally rounding it. This is useful when operating on multiple
   currency registries compatible with different data sources or processing engines.
@@ -680,5 +680,5 @@
 
 (bu/auto-alias 'io.randomseed.bankster.money)
 
-(doseq [[_ v] (ns-interns *ns*)]
-  (alter-meta! v assoc :auto-alias true))
+(run! #(alter-meta! % assoc :auto-alias true)
+      (vals (ns-interns *ns*)))

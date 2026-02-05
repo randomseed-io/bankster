@@ -174,7 +174,11 @@
 
         (testing "currency accessors and predicates"
           (is (registry/registry? (api-currency/default-registry)))
+          (is (registry/registry? (api-currency/registry-or-default nil)))
+          (is (registry/registry? (api-currency/registry-or-default true)))
+          (is (identical? r (api-currency/registry-or-default r)))
           (is (= :EUR (api-currency/id :EUR)))
+          (is (= :EUR (api-currency/id :EUR nil)))
           (is (= :EUR (api-currency/id :EUR true)))
           (is (= :EUR (api-currency/id :EUR r)))
           (is (= "EUR" (api-currency/id-str :EUR)))
@@ -326,7 +330,16 @@
             (is (thrown? clojure.lang.ExceptionInfo (api-currency/from-edn 42)))
             (is (thrown? clojure.lang.ExceptionInfo (api-currency/from-edn-text 42)))
             (is (thrown? clojure.lang.ExceptionInfo (api-currency/from-json 42)))
-            (is (thrown? clojure.lang.ExceptionInfo (api-currency/from-json-text 42))))))))) 
+            (is (thrown? clojure.lang.ExceptionInfo (api-currency/from-json-text 42)))))))) 
+
+    (testing "currency registry true without default binding"
+      (binding [registry/*default* nil]
+        (is (instance? Currency (api-currency/resolve-try :EUR true)))
+        (is (contains? (set (map currency/id (api-currency/resolve-all :EUR true))) :EUR))
+        (is (contains? (set (map currency/id (api-currency/all true))) :EUR))
+        (is (contains? (set (map currency/id (api-currency/of-domain :ISO-4217 true))) :EUR))
+        (is (contains? (set (map currency/id (api-currency/of-kind :iso/fiat true))) :EUR))
+        (is (= :EUR (api-currency/id :EUR true))))))
 
 (deftest money-api
   (let [r (mk-test-registry)]
@@ -589,7 +602,13 @@
             (is (thrown? clojure.lang.ExceptionInfo (api-money/from-edn 42)))
             (is (thrown? clojure.lang.ExceptionInfo (api-money/from-edn-text 42)))
             (is (thrown? clojure.lang.ExceptionInfo (api-money/from-json 42)))
-            (is (thrown? clojure.lang.ExceptionInfo (api-money/from-json-text 42)))))))))
+            (is (thrown? clojure.lang.ExceptionInfo (api-money/from-json-text 42))))))))
+
+    (testing "money registry true without default binding"
+      (binding [registry/*default* nil]
+        (is (registry/registry? (api-money/registry-or-default true)))
+        (is (instance? Money (api-money/resolve 1 :EUR true)))
+        (is (instance? Money (api-money/resolve-try 1 :EUR true))))))
 
 (deftest try-money-without-default
   (currency/unset-default!)
