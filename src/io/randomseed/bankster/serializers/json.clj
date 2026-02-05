@@ -31,14 +31,14 @@
   - `:keys`       - vector of keys to include; supports nested opts via map elements
   - `:rescale`    - integer scale to rescale amounts to (requires `:rounding-mode` for downscaling)"
 
-  (^{:tag clojure.lang.IPersistentMap :added "2.1.0"}
+  (^{:tag clojure.lang.IPersistentMap :added "2.1.0" :ex/soft true}
    to-json-map
    [this] [this opts]
    "Serializes the value to a minimal JSON-friendly map.
    For Money: {:currency \"PLN\", :amount \"12.30\"}
    For Currency: {:id \"PLN\"}")
 
-  (^{:tag clojure.lang.IPersistentMap :added "2.1.0"}
+  (^{:tag clojure.lang.IPersistentMap :added "2.1.0" :ex/soft true}
    to-json-full-map
    [this] [this opts]
    "Serializes the value to a full JSON-friendly map with all available fields.
@@ -49,7 +49,7 @@
    - `:keys` - vector of keys to include; nested opts via map elements
               e.g. {:keys [:amount {:currency {:keys [:id :numeric]}}]}")
 
-  (^{:tag String :added "2.1.0"}
+  (^{:tag String :added "2.1.0" :ex/soft true}
    to-json-string
    [this] [this opts]
    "Serializes the value to a canonical JSON string."))
@@ -65,12 +65,12 @@
                         before creating Money. This prevents data loss when the registry
                         currency has a smaller scale than the incoming data."
 
-  (^{:added "2.1.0"}
+  (^{:added "2.1.0" :ex/soft true}
    from-json-map
    [type-token m] [type-token m opts]
    "Deserializes a value from a JSON-friendly map.")
 
-  (^{:added "2.1.0"}
+  (^{:added "2.1.0" :ex/soft true}
    from-json-string
    [type-token s] [type-token s opts]
    "Deserializes a value from a JSON string."))
@@ -221,7 +221,7 @@
 
   Options:
   - `:registry` - registry to use for lookup (default: `registry/get`)"
-  {:tag Currency :added "2.1.0"}
+  {:tag Currency :added "2.1.0" :ex/strict true}
   (^Currency [s]
    (json-string->currency s nil))
   (^Currency [s opts]
@@ -236,7 +236,7 @@
 
   Options:
   - `:registry` - registry to use for lookup (default: `registry/get`)"
-  {:tag Currency :added "2.1.0"}
+  {:tag Currency :added "2.1.0" :ex/strict true}
   (^Currency [m]
    (json-map->currency m nil))
   (^Currency [m opts]
@@ -361,7 +361,7 @@
                        creating Money. This prevents data loss when the registry
                        currency has a smaller scale than the incoming data.
                        Downscaling requires `:rounding-mode` or `scale/*rounding-mode*`."
-  {:tag Money :added "2.1.0"}
+  {:tag Money :added "2.1.0" :ex/strict true}
   (^Money [m]
    (json-map->money m nil))
   (^Money [m opts]
@@ -543,7 +543,7 @@
                        currency has a smaller scale than the incoming data.
 
   For scale-sensitive workflows prefer map representation."
-  {:tag Money :added "2.1.0"}
+  {:tag Money :added "2.1.0" :ex/strict true}
   (^Money [s]
    (json-string->money s nil))
   (^Money [s opts]
@@ -611,7 +611,7 @@
   - `:registry`       - registry to use for currency lookup (default: `registry/get`)
   - `:rounding-mode`  - rounding mode for rescaling
   - `:rescale`        - integer scale override"
-  {:tag Money :added "2.1.0"}
+  {:tag Money :added "2.1.0" :ex/strict true}
   (^Money [s]
    (json-text->money s nil))
   (^Money [s opts]

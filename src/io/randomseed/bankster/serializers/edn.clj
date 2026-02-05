@@ -32,14 +32,14 @@
   - `:keys`       - vector of keys to include; supports nested opts via map elements
   - `:rescale`    - integer scale to rescale amounts to (requires `:rounding-mode` for downscaling)"
 
-  (^{:tag clojure.lang.IPersistentMap :added "2.1.0"}
+  (^{:tag clojure.lang.IPersistentMap :added "2.1.0" :ex/soft true}
    to-edn-map
    [this] [this opts]
    "Serializes the value to a minimal EDN-friendly map.
    For Money: {:currency :PLN, :amount 12.30M}
    For Currency: {:id :PLN}")
 
-  (^{:tag clojure.lang.IPersistentMap :added "2.1.0"}
+  (^{:tag clojure.lang.IPersistentMap :added "2.1.0" :ex/soft true}
    to-edn-full-map
    [this] [this opts]
    "Serializes the value to a full EDN-friendly map with all available fields.
@@ -50,7 +50,7 @@
    - `:keys` - vector of keys to include; nested opts via map elements
               e.g. {:keys [:amount {:currency {:keys [:id :numeric]}}]}")
 
-  (^{:tag String :added "2.1.0"}
+  (^{:tag String :added "2.1.0" :ex/soft true}
    to-edn-string
    [this] [this opts]
    "Serializes the value to an EDN string (tagged literal format)."))
@@ -66,12 +66,12 @@
                         before creating Money. This prevents data loss when the registry
                         currency has a smaller scale than the incoming data."
 
-  (^{:added "2.1.0"}
+  (^{:added "2.1.0" :ex/soft true}
    from-edn-map
    [type-token m] [type-token m opts]
    "Deserializes a value from an EDN map.")
 
-  (^{:added "2.1.0"}
+  (^{:added "2.1.0" :ex/soft true}
    from-edn-string
    [type-token s] [type-token s opts]
    "Deserializes a value from an EDN string (tagged literal format)."))
@@ -216,7 +216,7 @@
 
   Options:
   - `:registry` - registry to use for lookup (default: `registry/get`)"
-  {:tag Currency :added "2.1.0"}
+  {:tag Currency :added "2.1.0" :ex/strict true}
   (^Currency [k]
    (edn-keyword->currency k nil))
   (^Currency [k opts]
@@ -231,7 +231,7 @@
 
   Options:
   - `:registry` - registry to use for lookup (default: `registry/get`)"
-  {:tag Currency :added "2.1.0"}
+  {:tag Currency :added "2.1.0" :ex/strict true}
   (^Currency [m]
    (edn-map->currency m nil))
   (^Currency [m opts]
@@ -257,7 +257,7 @@
 
   Options:
   - `:registry` - registry to use for lookup (default: `registry/get`)"
-  {:tag Currency :added "2.1.0"}
+  {:tag Currency :added "2.1.0" :ex/strict true}
   (^Currency [s]
    (edn-string->currency s nil))
   (^Currency [s opts]
@@ -367,7 +367,7 @@
                        When provided, the Currency is cloned with this scale before
                        creating Money. This prevents data loss when the registry
                        currency has a smaller scale than the incoming data."
-  {:tag Money :added "2.1.0"}
+  {:tag Money :added "2.1.0" :ex/strict true}
   (^Money [m]
    (edn-map->money m nil))
   (^Money [m opts]
@@ -440,7 +440,7 @@
   - `:registry`      - registry to use for currency lookup (default: `registry/get`)
   - `:rounding-mode` - rounding mode for rescaling (RoundingMode, keyword, or string)
   - `:rescale`       - integer scale to use instead of currency's nominal scale"
-  {:tag Money :added "2.1.0"}
+  {:tag Money :added "2.1.0" :ex/strict true}
   (^Money [s]
    (edn-string->money s nil))
   (^Money [s opts]

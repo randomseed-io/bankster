@@ -40,7 +40,7 @@
   "This protocol is used to express (monetary) values using various numeric types and
   currency representations."
 
-  (^{:tag io.randomseed.bankster.Money :added "1.0.0"}
+  (^{:tag io.randomseed.bankster.Money :added "1.0.0" :ex/strict true}
    value
    [num] [currency num] [currency num rounding-mode]
    "Creates new `Money` object for the given value `num` which will become an
@@ -59,7 +59,7 @@
   Be careful about using number literals for big-scale amounts (16–17 digits). Use
   either big decimal literals, e.g. 1234.45689101112M, or strings.")
 
-  (^{:tag io.randomseed.bankster.Money :added "1.1.0"}
+  (^{:tag io.randomseed.bankster.Money :added "1.1.0" :ex/strict true}
    cast
    [money] [money currency] [money currency rounding-mode]
    "Casts an existing Money object to another having a different currency, rescaling
@@ -417,21 +417,21 @@
 
 (defn parse
   "Internal parser without amount modifier."
-  {:tag Money :no-doc :true :added "1.0.0"}
+  {:tag Money :no-doc :true :added "1.0.0" :ex/strict true}
   (^Money [amount] (parse-int identity amount))
   (^Money [currency amount] (parse-int identity currency amount))
   (^Money [currency amount ^RoundingMode rounding-mode] (parse-int identity currency amount rounding-mode)))
 
 (defn parse-major
   "Internal parser with `scale/integer` as an amount modifier."
-  {:tag Money :no-doc :true :added "1.0.0"}
+  {:tag Money :no-doc :true :added "1.0.0" :ex/strict true}
   (^Money [amount] (parse-int scale/integer amount))
   (^Money [currency amount] (parse-int scale/integer currency amount))
   (^Money [currency amount ^RoundingMode rounding-mode] (parse-int scale/integer currency amount rounding-mode)))
 
 (defn parse-minor
   "Internal parser with `scale/fractional` as an amount modifier."
-  {:tag Money :no-doc :true :added "1.0.0"}
+  {:tag Money :no-doc :true :added "1.0.0" :ex/strict true}
   (^Money [amount] (parse-int scale/fractional amount))
   (^Money [currency amount] (parse-int scale/fractional currency amount))
   (^Money [currency amount ^RoundingMode rounding-mode] (parse-int scale/fractional currency amount rounding-mode)))
@@ -513,6 +513,7 @@
 
   Be careful about using number literals for big-scale amounts (16–17 digits). Use
   either big decimal literals, e.g. 1234.45689101112M, or strings."
+  {:ex/strict true}
   ([]    (of-gen parse))
   ([a]   (of-gen parse a))
   ([a b] (of-gen parse a b))
@@ -520,6 +521,7 @@
 
 (defmacro of-major
   "Like `io.randomseed.bankster.money/of` but sets the amount of major part only."
+  {:ex/strict true}
   ([]    (of-gen parse))
   ([a]   (of-gen parse-major a))
   ([a b] (of-gen parse-major a b))
@@ -527,6 +529,7 @@
 
 (defmacro of-minor
   "Like `io.randomseed.bankster.money/of` but sets the amount of minor part only."
+  {:ex/strict true}
   ([]    (of-gen parse))
   ([a]   (of-gen parse-minor a))
   ([a b] (of-gen parse-minor a b))
@@ -685,6 +688,7 @@
 
   For simple money creation the following macros may be a convenient way to go: of,
   of-major, of-minor."
+  {:ex/strict true}
   (^Money [a]     (when-some [v (value a)] (major-value (.currency ^Money v) (.amount ^Money v))))
   (^Money [currency amount]   (value currency (scale/integer amount)))
   (^Money [currency amount rounding-mode] (value currency (scale/integer amount) rounding-mode)))
@@ -699,6 +703,7 @@
 
   For simple money creation the following macros may be a convenient way to go: of,
   of-major, of-minor."
+  {:ex/strict true}
   (^Money [a]     (when-some [v (value a)] (minor-value (.currency ^Money v) (.amount ^Money v))))
   (^Money [currency amount]   (value currency (scale/fractional amount)))
   (^Money [currency amount rounding-mode] (value currency (scale/fractional amount) rounding-mode)))
@@ -717,7 +722,7 @@
 
   Money can be expressed as a `Money` object or any other object that will create
   `Money` when passed to the `value` function. Returns money."
-  {:tag Money :added "1.1.2"}
+  {:tag Money :added "1.1.2" :ex/strict true}
   (^Money [money]
    (of-registry (registry/get) money))
   (^Money [^Registry registry money]
@@ -746,7 +751,7 @@
   amount updated. The function `f` must return a number. Short-circuits on `nil` as
   an argument. Rescales the result to the existing scale of an amount, not the
   nominal scale of a currency."
-  {:tag Money :added "1.1.2"}
+  {:tag Money :added "1.1.2" :ex/strict true}
   (^Money [money f]
    (when-some [money (value money)]
      (let [^BigDecimal am (.amount ^Money money)]
@@ -784,7 +789,7 @@
 (defn set-amount
   "Sets the amount of the given monetary object. Rescales value `v` to a scale of the
   given monetary object, not the nominal scale of its currency."
-  {:tag Money :added "1.2.7"}
+  {:tag Money :added "1.2.7" :ex/strict true}
   (^Money [money v]
    (when-some [money (value money)]
      (let [^BigDecimal v (scale/apply v)]
@@ -833,7 +838,7 @@
 (defn amount
   "Returns the amount of the given money. For more than one argument the money is
   created ad-hoc using a and b objects passed to the function named value."
-  {:tag BigDecimal :added "1.0.0"}
+  {:tag BigDecimal :added "1.0.0" :ex/strict true}
   (^BigDecimal [money] (when-some [m (value money)] (.amount ^Money m)))
   (^BigDecimal [a b]   (when-some [m (value a b)]   (.amount ^Money m)))
   (^BigDecimal [a b r] (when-some [m (value a b r)] (.amount ^Money m))))
@@ -841,14 +846,14 @@
 (defn currency
   "Returns the currency of the given money. For more than one argument the money is
   created ad-hoc using a and b objects passed to the function named value."
-  {:tag Currency :added "1.0.0"}
+  {:tag Currency :added "1.0.0" :ex/strict true}
   (^Currency [money] (when-some [m (value money)] (.currency ^Money m)))
   (^Currency [a b]   (when-some [m (value a b)]   (.currency ^Money m)))
   (^Currency [a b r] (when-some [m (value a b r)] (.currency ^Money m))))
 
 (defn info
   "Returns a map with `:currency` and `:amount` for the given money-like input."
-  {:tag clojure.lang.IPersistentMap :added "2.2.0"}
+  {:tag clojure.lang.IPersistentMap :added "2.2.0" :ex/strict true}
   [money]
   (when-some [^Money m (value money)]
     {:currency (.currency ^Money m)
@@ -858,7 +863,7 @@
   "Returns the amount of the given money with trailing zeros removed. For more than one
   argument the money is created ad-hoc using a and b objects passed to the function
   named value."
-  {:tag BigDecimal :added "1.0.0"}
+  {:tag BigDecimal :added "1.0.0" :ex/strict true}
   (^BigDecimal [money] (when-some [m (value money)] (.stripTrailingZeros ^BigDecimal (.amount ^Money m))))
   (^BigDecimal [a b]   (when-some [m (value a b)]   (.stripTrailingZeros ^BigDecimal (.amount ^Money m))))
   (^BigDecimal [a b r] (when-some [m (value a b r)] (.stripTrailingZeros ^BigDecimal (.amount ^Money m)))))
@@ -868,7 +873,7 @@
   printing to EDN or displaying on a console. The letter M will be added to the
   amount if its precision exceeds 15. For more than one argument the money is created
   ad-hoc using a and b objects passed to the function named value."
-  {:tag clojure.lang.IPersistentVector :added "1.0.7"}
+  {:tag clojure.lang.IPersistentVector :added "1.0.7" :ex/strict true}
   ([money]
    (when-some [m (value money)]
      [(scale/to-clojure-symbol ^BigDecimal (.amount ^Money m))
@@ -2697,7 +2702,7 @@
 (defmacro with-currency
   "Sets a default currency in a lexical context of the body. Has the same effect as
   `io.randomseed.bankster.currency/with`."
-  {:added "1.0.0"}
+  {:added "1.0.0" :ex/strict true}
   [currency & body]
   (let [cur# (if (symbol? currency) (keyword currency) currency)]
     `(binding [currency/*default* (currency/unit ~cur#)]
@@ -2728,7 +2733,7 @@
   "Tagged literal handler for Money objects expressed as tagged literals in Clojure
   code. Returns compound forms (parsing function invocations that can be influenced
   by the runtime environment, e.g. dynamic variables like `scale/*rounding-mode*`)."
-  {:added "1.2.4"}
+  {:added "1.2.4" :ex/strict true}
   [arg]
   (if (nil? arg)
     (lit-parse nil)
@@ -2744,7 +2749,7 @@
 (defn data-literal
   "Data reader for Money objects expressed as tagged literals in EDN data
   files."
-  {:added "1.2.4" :tag io.randomseed.bankster.Money}
+  {:added "1.2.4" :tag io.randomseed.bankster.Money :ex/strict true}
   [arg]
   (let [r (code-literal arg)]
     (if (seq? r)
@@ -2758,7 +2763,7 @@
   will handle the literal.
 
   The literals will be bound to *data-readers* in a local thread."
-  {:added "1.0.0"}
+  {:added "1.0.0" :ex/strict true}
   [c]
   (when-some [^Currency c (currency/unit c)]
     (let [cush (currency/code c)
@@ -2950,7 +2955,7 @@
   This is intended as a stable, data-oriented representation (close to what Bankster
   already supports in `#money{...}` literals). For JSON wire formats see
   `to-json-map` / `to-json-string`."
-  {:tag clojure.lang.IPersistentMap :added "2.1.0"}
+  {:tag clojure.lang.IPersistentMap :added "2.1.0" :ex/strict true}
   ^clojure.lang.IPersistentMap [money]
   (when-some [^Money m (value money)]
     {:currency (currency/id ^Currency (.currency m))
@@ -2966,7 +2971,7 @@
 
   This is a general-purpose helper meant for EDN-like data. It accepts keyword/symbol
   rounding-mode names (e.g. `:HALF_UP`), not only `java.math.RoundingMode`."
-  {:tag Money :added "2.1.0"}
+  {:tag Money :added "2.1.0" :ex/strict true}
   ^Money [m]
   (when (some? m)
     (when-not (map? m)
@@ -3016,7 +3021,7 @@
 
   Options:
   - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `\"ETH\"`"
-  {:tag clojure.lang.IPersistentMap :added "2.1.0"}
+  {:tag clojure.lang.IPersistentMap :added "2.1.0" :ex/strict true}
   (^clojure.lang.IPersistentMap [money]
    (when-some [m (value money)]
      (serializers-json/money->json-map m)))
@@ -3029,7 +3034,7 @@
 
   Options:
   - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `\"ETH\"`"
-  {:tag String :added "2.1.0"}
+  {:tag String :added "2.1.0" :ex/strict true}
   (^String [money]
    (when-some [m (value money)]
      (serializers-json/money->json-string m)))
@@ -3043,7 +3048,7 @@
   Options:
   - `:registry`      - registry to use for currency lookup (default: `registry/get`)
   - `:rounding-mode` - `java.math.RoundingMode` for rescaling"
-  {:tag Money :added "2.1.0"}
+  {:tag Money :added "2.1.0" :ex/strict true}
   (^Money [m]
    (serializers-json/json-map->money m))
   (^Money [m opts]
@@ -3055,7 +3060,7 @@
   Options:
   - `:registry`      - registry to use for currency lookup (default: `registry/get`)
   - `:rounding-mode` - `java.math.RoundingMode` for rescaling"
-  {:tag Money :added "2.1.0"}
+  {:tag Money :added "2.1.0" :ex/strict true}
   (^Money [s]
    (serializers-json/json-string->money s))
   (^Money [s opts]

@@ -138,7 +138,7 @@
 
 (defn iso-currency?
   "Returns `true` when the given currency is a kind of ISO currency."
-  {:tag Boolean :added "2.2.0"}
+  {:tag Boolean :added "2.2.0" :ex/soft true}
   ([currency]
    (currency/iso? currency))
   ([currency registry]
@@ -151,7 +151,8 @@
 (def ^{:tag      Money
        :added    "2.2.0"
        :doc      (:doc (meta #'api-money/resolve))
-       :arglists (:arglists (meta #'api-money/resolve))}
+       :arglists (:arglists (meta #'api-money/resolve))
+       :ex/strict true}
   money
   api-money/resolve)
 
@@ -159,7 +160,8 @@
 (def ^{:tag      Money
        :added    "2.2.0"
        :doc      (:doc (meta #'api-money/resolve-try))
-       :arglists (:arglists (meta #'api-money/resolve-try))}
+       :arglists (:arglists (meta #'api-money/resolve-try))
+       :ex/soft true}
   money-try
   api-money/resolve-try)
 
@@ -170,14 +172,16 @@
 (def ^{:tag      Currency
        :added    "2.2.0"
        :doc      (:doc (meta #'api-currency/resolve))
-       :arglists (:arglists (meta #'api-currency/resolve))}
+       :arglists (:arglists (meta #'api-currency/resolve))
+       :ex/strict true}
   currency
   api-currency/resolve)
 
 (def ^{:tag      Currency
        :added    "2.2.0"
        :doc      (:doc (meta #'api-currency/resolve-try))
-       :arglists (:arglists (meta #'api-currency/resolve-try))}
+       :arglists (:arglists (meta #'api-currency/resolve-try))
+       :ex/soft true}
   currency-try
   api-currency/resolve-try)
 
@@ -193,7 +197,7 @@
 
   Registry arguments are ignored for `Money`. When `registry` is `true`, the default
   registry is used."
-  {:tag clojure.lang.IPersistentMap :added "2.2.0"}
+  {:tag clojure.lang.IPersistentMap :added "2.2.0" :ex/soft true}
   ([x]
    (if (money/money? x)
      (money/info x)

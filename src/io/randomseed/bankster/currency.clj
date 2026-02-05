@@ -387,19 +387,19 @@
   Methods `resolve` and `resolve-all` consult a registry to map hints to concrete
   registered currencies."
 
-  (^{:tag clojure.lang.Keyword :added "2.0.0"}
+  (^{:tag clojure.lang.Keyword :added "2.0.0" :ex/soft true}
    to-id
    [this]
    "Coerces a currency representation to a currency identifier (keyword).
   Registry-free. May return `nil` if the identifier cannot be derived.")
 
-  (^{:tag clojure.lang.Keyword :added "2.0.0"}
+  (^{:tag clojure.lang.Keyword :added "2.0.0" :ex/soft true}
    to-code
    [this]
    "Coerces a currency representation to a currency code (unqualified keyword).
   Registry-free. May return `nil` if the code cannot be derived.")
 
-  (^{:tag String :added "2.0.0"}
+  (^{:tag String :added "2.0.0" :ex/soft true}
    to-id-str
    [this]
    "Coerces a currency representation to a currency identifier string.
@@ -412,7 +412,7 @@
   - qualified IDs: original namespace + `/` + upper-case name
     (e.g. `\"crypto/USDT\"` or `\"CrYpTo/USDT\"`).")
 
-  (^{:tag String :added "2.0.0"}
+  (^{:tag String :added "2.0.0" :ex/soft true}
    to-code-str
    [this]
    "Coerces a currency representation to a currency code string.
@@ -420,7 +420,7 @@
   Registry-free. Must not intern keywords. Typically the upper-cased name part
   without a namespace (e.g. `\"USDT\"`).")
 
-  (^{:tag long :added "2.0.0"}
+  (^{:tag long :added "2.0.0" :ex/soft true}
    to-numeric-id
    [this]
    "Coerces a currency representation to its numeric identifier (ISO 4217 numeric
@@ -429,7 +429,7 @@
   Registry-free. Implementations should return a number when it can be derived,
   otherwise they may return `nil` or a sentinel numeric value.")
 
-  (^{:tag io.randomseed.bankster.Currency :added "2.0.0"}
+  (^{:tag io.randomseed.bankster.Currency :added "2.0.0" :ex/soft true}
    to-currency
    [this]
    "Coerces a currency representation to a `Currency` object without consulting a
@@ -437,13 +437,13 @@
 
   Returns a `Currency` instance or `nil` when it cannot be constructed.")
 
-  (^{:tag clojure.lang.IPersistentMap :added "2.0.0"}
+  (^{:tag clojure.lang.IPersistentMap :added "2.0.0" :ex/soft true}
    to-map
    [this]
    "Coerces a currency representation to a map of currency fields.
   Registry-free. Returns a map (possibly partial) or `nil`.")
 
-  (^{:tag Boolean :added "2.0.0"}
+  (^{:tag Boolean :added "2.0.0" :ex/soft true}
    definitive?
    [this]
    "Returns `true` when the given value is a *definitive* currency representation: it
@@ -462,7 +462,7 @@
 
   This method is registry-free.")
 
-  (^{:tag io.randomseed.bankster.Currency :added "2.0.0"}
+  (^{:tag io.randomseed.bankster.Currency :added "2.0.0" :ex/soft true}
    resolve
    [this] [this registry]
    "Resolves a currency representation to a registered `Currency` by consulting a
@@ -472,7 +472,7 @@
   `io.randomseed.bankster.registry/*default*` when bound). Returns the resolved
   `Currency` or `nil` when it cannot be resolved.")
 
-  (^{:tag clojure.lang.IPersistentSet :added "2.0.0"}
+  (^{:tag clojure.lang.IPersistentSet :added "2.0.0" :ex/soft true}
    resolve-all
    [this] [this registry]
    "Resolves a currency representation to all matching registered currencies by
@@ -482,7 +482,7 @@
   `io.randomseed.bankster.registry/*default*` when bound). Returns a set of resolved
   currencies or `nil` when nothing matches.")
 
-  (^{:tag clojure.lang.Keyword :added "1.0.0"}
+  (^{:tag clojure.lang.Keyword :added "1.0.0" :ex/strict true}
    id
    [id] [id registry]
    "Returns a unique identifier of the given currency as a keyword. The currency can
@@ -501,7 +501,7 @@
   If a registry is given (non-`nil`), then trying to use a non-existing currency will
   cause an exception to be thrown.")
 
-  (^{:tag io.randomseed.bankster.Currency :added "1.0.0"}
+  (^{:tag io.randomseed.bankster.Currency :added "1.0.0" :ex/strict true}
    of-id
    [id] [id registry]
    "Returns a currency object for the given ID and registry.
@@ -516,7 +516,7 @@
   is (or created out of currency-like object and returned) without consulting any
   registry.")
 
-  (^{:tag io.randomseed.bankster.Currency :added "1.0.2"}
+  (^{:tag io.randomseed.bankster.Currency :added "1.0.2" :ex/strict true}
    unit
    [id] [id registry]
    "Returns a `Currency` object for the given ID, currency code, numeric ID, or
@@ -546,7 +546,7 @@
   If the registry is consulted and the currency does not exist in a registry, an
   exception will be thrown.")
 
-  (^{:tag Boolean :added "1.0.0"}
+  (^{:tag Boolean :added "1.0.0" :ex/soft true}
    defined?
    [id] [id registry]
    "Returns `true` if *any* currency can be resolved from `id` in the registry.
@@ -563,7 +563,7 @@
   If `registry` is not provided, the global registry is used, preferring the dynamic
   `io.randomseed.bankster.registry/*default*` when bound.")
 
-  (^{:tag Boolean :added "1.0.2"}
+  (^{:tag Boolean :added "1.0.2" :ex/soft true}
    present?
    [id] [id registry]
    "Returns `true` if the registry contains a currency consistent with `id`.
@@ -1870,7 +1870,7 @@
 
   When `registry` is not provided, the default registry is used (preferring
   `io.randomseed.bankster.registry/*default*` when bound)."
-  {:added "2.0.0"}
+  {:added "2.0.0" :ex/soft true}
   ([c]
    `(let [c# ~c]
       (cond (instance? Currency c#) c#
@@ -1899,7 +1899,7 @@
 
   This is intended for \"non-throwing\" code paths (e.g. property predicates) and
   complements `unit` and `of-id` which may throw when a currency is missing."
-  {:added "2.0.0"}
+  {:added "2.0.0" :ex/soft true}
   ([c]
    (cond
      (instance? Currency c) c
@@ -1926,7 +1926,7 @@
 
   (with-attempt x registry c   (.id c))
   (with-attempt x registry [c] (.id c))"
-  {:added "2.0.0"}
+  {:added "2.0.0" :ex/soft true}
   [c registry binding & body]
   (let [sym (cond (symbol? binding)
                   binding
@@ -1951,7 +1951,7 @@
   registry, which may be shadowed by the value of
   `io.randomseed.bankster.registry/*default* (see
   ``io.randomseed.bankster.registry/with`` or `with-registry`)."
-  {:added "1.0.0"}
+  {:added "1.0.0" :ex/strict true}
   ([currency]
    (if (map? currency)
      (let [cur# (parse-currency-code currency &env)]
@@ -1972,7 +1972,7 @@
   as `unit`), but failures return `nil`.
 
   Delegates to `resolve` for non-`Currency` inputs."
-  {:tag Currency :added "2.2.0"}
+  {:tag Currency :added "2.2.0" :ex/soft true}
   ([id]
    (if (instance? Currency id) id (resolve id (registry/get))))
   ([id registry]
@@ -1985,7 +1985,7 @@
 (defn nr
   "Returns currency numeric ID as a long number. For currencies without an assigned
   number it will return nil. Locale argument is ignored."
-  {:added "1.0.0"}
+  {:added "1.0.0" :ex/soft true}
   ([c]
    (when-some [^Currency c (attempt c)]
      (let [n (long (.numeric ^Currency c))]
@@ -2015,7 +2015,7 @@
   "Returns a lazy sequence of `Currency` objects for all numeric identifiers of
   currencies in a registry or `nil` if there are no currencies with numeric
   identifiers. When registry is not given or `nil`, the default is used."
-  {:tag clojure.lang.LazySeq :added "2.1.0"}
+  {:tag clojure.lang.LazySeq :added "2.1.0" :ex/soft true}
   ([]
    (when-some [v (vals (registry/currency-nr->currency*))]
      (distinct (apply concat v))))
@@ -2027,7 +2027,7 @@
   "Returns a sequence of long values for all currencies in a registry having numeric
   identifiers or `nil` if there are no currencies with numeric identifiers. When
   registry is not given or `nil`, the default is used."
-  {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0"}
+  {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0" :ex/soft true}
   ([]
    (keys (registry/currency-nr->currency*)))
   ([^Registry registry]
@@ -2037,7 +2037,7 @@
   "Returns currency scale (decimal places) as a number. For currencies without the
   assigned decimal places it will return `auto-scaled` (i.e. `-1`). Locale argument
   is ignored."
-  {:added "1.0.0"}
+  {:added "1.0.0" :ex/soft true}
   ([c]
    (when-some [^Currency c (attempt c)]
      (long (unchecked-int (.scale ^Currency c)))))
@@ -2060,7 +2060,7 @@
   `:ISO-4217`. For currencies with namespace-qualified identifiers it will be the
   upper-cased namespace name (e.g. `:CRYPTO`) set during creation of a currency
   object. Locale argument is ignored."
-  {:tag clojure.lang.Keyword :added "1.0.0"}
+  {:tag clojure.lang.Keyword :added "1.0.0" :ex/soft true}
   (^clojure.lang.Keyword [c]
    (when-some [^Currency c (attempt c)] (.domain ^Currency c)))
   (^clojure.lang.Keyword [c ^Registry registry]
@@ -2081,7 +2081,7 @@
   "Returns a sequence of keywords for all currency domains in a registry or `nil` if
   there are no currencies with domains. When registry is not given or `nil`, the
   default is used."
-  {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0"}
+  {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0" :ex/soft true}
   ([]
    (keys (registry/currency-domain->currencies*)))
   ([^Registry registry]
@@ -2091,7 +2091,7 @@
   "Returns a map of all registered currency kinds as keys and their ancestors as
   sets. It will not contain ad-hoc kinds that wasn't added to a registry's
   hierarchy. Uses the given `registry` or a global one."
-  {:added "2.0.0" :tag clojure.lang.IPersistentMap}
+  {:added "2.0.0" :tag clojure.lang.IPersistentMap :ex/soft true}
   ([]
    (kinds nil))
   ([^Registry registry]
@@ -2114,7 +2114,7 @@
 
   The function may return `nil` if the currency is a no-currency. Locale argument is
   ignored. To list all known kinds use `kinds`."
-  {:tag clojure.lang.Keyword :added "1.0.0"}
+  {:tag clojure.lang.Keyword :added "1.0.0" :ex/soft true}
   (^clojure.lang.Keyword [c]
    (when-some [c (attempt c)] (.kind ^Currency c)))
   (^clojure.lang.Keyword [c ^Registry registry]
@@ -2127,7 +2127,7 @@
   "Returns currency traits as a set of keywords. The function may return `nil` if the
   currency has no traits. Locale argument is ignored. To list all known kinds use
   `kinds`."
-  {:tag clojure.lang.IPersistentSet :added "2.1.0"}
+  {:tag clojure.lang.IPersistentSet :added "2.1.0" :ex/soft true}
   ([c]
    (traits c (registry/get)))
   ([c ^Registry registry]
@@ -2145,7 +2145,7 @@
   "Returns currency traits as a set of keywords and expands them with all ancestors
   from the registry :traits hierarchy. The function may return `nil` if the currency
   has no traits. Locale argument is ignored."
-  {:tag clojure.lang.IPersistentSet :added "2.1.0"}
+  {:tag clojure.lang.IPersistentSet :added "2.1.0" :ex/soft true}
   ([c]
    (traits-expanded c (registry/get)))
   ([c ^Registry registry]
@@ -2162,7 +2162,7 @@
   "Returns a currency code as a string for the given currency object. If the currency
   identifier is namespaced the namespace will be used as a prefix and slash character
   as a separator. Locale argument is ignored."
-  {:tag String :added "1.0.0"}
+  {:tag String :added "1.0.0" :ex/strict true}
   (^String [c]
    (when-some [cids (not-empty (str (id c)))] (subs cids 1)))
   (^String [c ^Registry registry]
@@ -2175,7 +2175,7 @@
   "Returns a currency code as a string for the given currency object. If the currency
   identifier is namespaced only the base code (without a namespace) will be
   returned. Locale argument is ignored."
-  {:tag String :added "1.0.0"}
+  {:tag String :added "1.0.0" :ex/strict true}
   (^String [c] (when-some [cid (id c)] (core-name cid)))
   (^String [c ^Registry registry]
    (let [^Registry registry (unit-registry registry)]
@@ -2187,7 +2187,7 @@
   "Returns a sequence of keywords for all currency codes (without namespaces!) in a
   registry or `nil` if there are no currencies with codes. When registry is not given
   or `nil`, the default is used."
-  {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0"}
+  {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0" :ex/soft true}
   ([]
    (keys (registry/currency-code->currencies*)))
   ([^Registry registry]
@@ -2196,7 +2196,7 @@
 (defn weight
   "Returns weight of the given currency (used to resolve conflicts when getting
   currencies having conflicting currency codes)."
-  {:tag Long :added "1.0.2"}
+  {:tag Long :added "1.0.2" :ex/soft true}
   ([c] (when-some [^Currency c (attempt c)] (currency-weight c)))
   ([c ^Registry registry]
    (when (some? c)
@@ -2339,7 +2339,7 @@
 
   Returns `nil` when the given value points to a registry currency but cannot be
   resolved. Locale argument is ignored."
-  {:tag clojure.lang.IPersistentMap :added "2.0.0"}
+  {:tag clojure.lang.IPersistentMap :added "2.0.0" :ex/soft true}
   ([c]
    (info c (registry/get)))
   ([c ^Registry registry]
@@ -2385,7 +2385,7 @@
 
   Throws when a currency cannot be resolved in the registry. This lets consumers
   distinguish \"no countries\" (`nil`) from \"unknown currency\" (exception)."
-  {:tag clojure.lang.PersistentHashSet :added "1.0.0"}
+  {:tag clojure.lang.PersistentHashSet :added "1.0.0" :ex/strict true}
   (^clojure.lang.PersistentHashSet [c]
    (countries c (registry/get)))
   (^clojure.lang.PersistentHashSet [c ^Registry registry]
@@ -2407,7 +2407,7 @@
   "Returns a currency for the given country identified by a country ID (which should be
   a keyword). If there is no currency or country of the given ID does not exist,
   returns nil. Locale argument is ignored."
-  {:tag Currency :added "1.0.0"}
+  {:tag Currency :added "1.0.0" :ex/soft true}
   (^Currency [^clojure.lang.Keyword country-id]
    (of-country country-id (registry/get)))
   (^Currency [^clojure.lang.Keyword country-id ^Registry registry]
@@ -2418,7 +2418,7 @@
 (defn of-domain
   "Returns a set of currencies assigned to the given domain or `nil` if none exist.
   Locale argument is ignored."
-  {:tag clojure.lang.PersistentTreeSet :added "2.1.0"}
+  {:tag clojure.lang.PersistentTreeSet :added "2.1.0" :ex/soft true}
   ([domain]
    (of-domain domain (registry/get)))
   ([domain ^Registry registry]
@@ -2434,7 +2434,7 @@
 (defn all
   "Returns a sequence of all `Currency` objects in a registry or `nil` if there are no
   currencies. When registry is not given or `nil`, the default is used."
-  {:tag clojure.lang.APersistentMap$ValSeq :added "2.1.0"}
+  {:tag clojure.lang.APersistentMap$ValSeq :added "2.1.0" :ex/soft true}
   ([]
    (vals (registry/currency-id->currency*)))
   ([^Registry registry]
@@ -2443,7 +2443,7 @@
 (defn ids
   "Returns a sequence of keywords for all currencies in a registry or `nil` if there
   are no currencies. When registry is not given or `nil`, the default is used."
-  {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0"}
+  {:tag clojure.lang.APersistentMap$KeySeq :added "2.1.0" :ex/soft true}
   ([]
    (keys (registry/currency-id->currency*)))
   ([^Registry registry]
@@ -2457,7 +2457,7 @@
   "For ISO-standardized currency, returns corresponding `java.util.Currency` object. If
   the currency does not exist, is not ISO (its `:domain` is not `:ISO-4217`), has a
   different scale (fraction digits), or a different numeric code, `nil` is returned."
-  {:tag java.util.Currency :added "1.0.0"}
+  {:tag java.util.Currency :added "1.0.0" :ex/soft true}
   (^java.util.Currency [currency]
    (java currency nil))
   (^java.util.Currency [currency ^Registry registry]
@@ -2757,7 +2757,7 @@
   - removes the currency from `:cur-nr->curs` (shared numeric IDs bucket)
   - updates `:cur-nr->cur` to the canonical currency (first in bucket), or removes the
     numeric entry if bucket becomes empty."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :added "1.0.0" :ex/strict true}
   [^Registry registry currency]
   (when registry
     (let [^Currency cur        (if (instance? Currency currency) currency (of-id currency registry))
@@ -2817,7 +2817,7 @@
   exists and equals to the given in any aspect, country associations are added. Links
   from other countries to the currency are not removed unless the country is already
   linked with some other currency; in this case it will be unlinked first."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :added "1.0.0" :ex/strict true}
   [^Registry registry currency-id country-ids]
   (when (some? registry)
     (when-not (defined? currency-id registry)
@@ -2837,7 +2837,7 @@
 (defn remove-localized-properties
   "Removes localized properties assigned to a currency in a registry. Returns updated
   registry. Expects currency ID (or equivalent) to be passed as the second argument."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :added "1.0.0" :ex/strict true}
   [^Registry registry currency-id]
   (when registry
     (if (nil? currency-id)
@@ -2847,7 +2847,7 @@
 (defn add-localized-properties
   "Adds localized properties of a currency to the given registry. Overwrites existing
   properties."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :added "1.0.0" :ex/strict true}
   [^Registry registry ^Currency currency-id properties]
   (when (some? registry)
     (when-not (defined? currency-id registry)
@@ -2876,7 +2876,7 @@
   This is a low-level function used to ensure that a code-to-currency mapping is
   created within a registry. To simply update currency's weight, use the update
   or update! function."
-  {:tag Registry :added "1.2.5"}
+  {:tag Registry :added "1.2.5" :ex/strict true}
   [^Registry registry currency-id]
   (when (some? registry)
     (when-not (defined? currency-id registry)
@@ -2925,7 +2925,7 @@
   currency are removed and replaced with the provided ones. To simply add new
   countries, use add-countries. Also note that update mode removes localized
   properties so new one must be provided."
-  {:tag      Registry :added "1.0.0"
+  {:tag      Registry :added "1.0.0" :ex/strict true
    :arglists '(^Registry [^Registry registry currency]
                ^Registry [^Registry registry currency country-ids]
                ^Registry [^Registry registry currency update-mode?]
@@ -2994,7 +2994,7 @@
   "Replaces a currency in the given registry by a new one, preserving localized
   properties, relation to countries and code if not explicitly given. Returns updated
   registry. If the currency does not exist in a registry yet, it will be registered."
-  {:tag Registry :added "1.1.0"}
+  {:tag Registry :added "1.1.0" :ex/strict true}
   ([^Registry registry currency]
    (update registry currency nil nil))
   ([^Registry registry currency country-ids]
@@ -3017,7 +3017,7 @@
   localized properties, relation to countries and code if not explicitly
   given. Returns updated registry. If the currency does not exist in a registry yet,
   it will be registered."
-  {:tag Registry :added "1.1.0"}
+  {:tag Registry :added "1.1.0" :ex/strict true}
   ([currency]
    (swap! registry/R update currency nil nil))
   ([currency country-ids]
@@ -3029,7 +3029,7 @@
   "Adds currency and (optional) country to the global registry. Returns updated
   registry. When the currency is nil, returns current state of the global, shared
   registry (but not a dynamic registry, even if it is set)."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :added "1.0.0" :ex/strict true}
   (^Registry [^Currency currency]
    (if (nil? currency) @registry/R (swap! registry/R register currency)))
   (^Registry [^Currency currency ^clojure.lang.Keyword country-id-or-update?]
@@ -3044,7 +3044,7 @@
 
   If the currency is nil, returns current state of a global registry (but not a
   dynamic registry, even if it is set)."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :added "1.0.0" :ex/strict true}
   [^Currency currency]
   (if (nil? currency) @registry/R (swap! registry/R unregister currency)))
 
@@ -3059,7 +3059,7 @@
 
   If the currency is nil, returns current state of a global registry (but not a
   dynamic registry, even if it is set)."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :added "1.0.0" :ex/strict true}
   [^Currency currency country-ids]
   (if (nil? currency) @registry/R (swap! registry/R add-countries currency country-ids)))
 
@@ -3070,7 +3070,7 @@
 
   If the country-ids is nil, returns current state of a global registry (but not a
   dynamic registry, even if it is set)."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :added "1.0.0" :ex/strict true}
   [country-ids]
   (if (nil? country-ids) @registry/R (swap! registry/R remove-countries country-ids)))
 
@@ -3079,7 +3079,7 @@
 
   If the currency is nil, returns current state of a global registry (but not a
   dynamic registry, even if it is set)."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :added "1.0.0" :ex/strict true}
   [^Currency currency properties]
   (if (nil? currency) @registry/R (swap! registry/R add-localized-properties currency properties)))
 
@@ -3088,7 +3088,7 @@
 
   If the currency is nil, returns current state of a global registry (but not a
   dynamic registry, even if it is set)."
-  {:tag Registry :added "1.0.0"}
+  {:tag Registry :added "1.0.0" :ex/strict true}
   [^Currency currency]
   (if (nil? currency) @registry/R (swap! registry/R remove-localized-properties currency)))
 
@@ -3177,7 +3177,7 @@
 
 (defn currency?
   "Returns `true` if the given value is a currency. Registry argument is ignored."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (instance? Currency c))
   ([c _registry] (instance? Currency c)))
 
@@ -3195,7 +3195,7 @@
   hit).
 
   If `registry` is not given or is `nil`, the default one is used."
-  {:tag Boolean :added "2.0.0"}
+  {:tag Boolean :added "2.0.0" :ex/soft true}
   ([c]
    (and (some? c)
         (some? (or (to-currency c) (attempt* c nil)))))
@@ -3217,7 +3217,7 @@
   was a hit).
 
   If `registry` is not given or is `nil`, the default one is used."
-  {:tag Boolean :added "2.0.0"}
+  {:tag Boolean :added "2.0.0" :ex/soft true}
   ([c]
    (and (some? c)
         (or (iso-strict-currency? (to-currency c))
@@ -3229,7 +3229,7 @@
 
 (defn has-numeric-id?
   "Returns `true` if the given currency has a numeric ID."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c]
    (with-attempt c nil [c]
      (not (== no-numeric-id (.numeric ^Currency c)))))
@@ -3240,7 +3240,7 @@
 (defn has-country?
   "Returns `true` if the given currency has at least one country for which it is an
   official currency."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c]
    (let [^Registry registry (registry/get)]
      (with-attempt c registry [c]
@@ -3252,7 +3252,7 @@
 
 (defn in-domain?
   "Returns `true` if the given currency has a domain set to the first given argument."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([ns c]
    (with-attempt c nil [c] (identical? ns (.domain ^Currency c))))
   ([ns c ^Registry registry]
@@ -3264,7 +3264,8 @@
   has its domain set to be the exact keyword given."
   {:tag      Boolean
    :added    "2.0.0"
-   :arglists '([c] [c ^Registry registry] [c ns] [c ns ^Registry registry])}
+   :arglists '([c] [c ^Registry registry] [c ns] [c ns ^Registry registry])
+   :ex/soft  true}
   ([c]
    (with-attempt c nil [c] (some? (.domain ^Currency c))))
   ([c registry-or-ns]
@@ -3280,7 +3281,7 @@
 (defn of-domain?
   "Checks if a domain of the given currency `c` equals to the one given as a first
   argument `domain` or if it belongs to a `domain` (checked with `clojure.core/isa?`)."
-  {:tag Boolean :added "2.0.0"}
+  {:tag Boolean :added "2.0.0" :ex/soft true}
   ([^clojure.lang.Keyword domain c]
    (let [^Registry registry (registry/get)
          h                  (some-> registry .hierarchies :domain)]
@@ -3298,7 +3299,7 @@
 
 (defn big?
   "Returns `true` if the given currency has an automatic scale (decimal places)."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c]
    (with-attempt c nil [c]
      (val-auto-scaled*? (.scale ^Currency c))))
@@ -3315,7 +3316,7 @@
 (defn crypto?
   "Returns `true` if the given currency is a cryptocurrency. It is just a helper that
   check if the domain of a currency equals to `:CRYPTO`."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (in-domain? :CRYPTO c))
   ([c ^Registry registry] (in-domain? :CRYPTO c registry)))
 
@@ -3323,7 +3324,7 @@
   "Returns `true` if the given currency is an official currency which is currently in
   use (not a legacy money) and its both identifier and numerical identifier is
   compliant with the ISO standard."
-  {:tag Boolean :added "2.0.0"}
+  {:tag Boolean :added "2.0.0" :ex/soft true}
   ([c] (with-attempt c nil [c] (iso-strict-currency? c)))
   ([c ^Registry registry] (with-attempt c registry [c] (iso-strict-currency? c))))
 
@@ -3332,7 +3333,7 @@
   legacy currency having an identifier compliant with the ISO standard. It is just a
   helper which checks if the `:domain` field of a currency equals to
   `:ISO-4217-LEGACY`."
-  {:tag Boolean :added "2.0.0"}
+  {:tag Boolean :added "2.0.0" :ex/soft true}
   ([c] (in-domain? :ISO-4217-LEGACY c))
   ([c ^Registry registry] (in-domain? :ISO-4217-LEGACY c registry)))
 
@@ -3370,7 +3371,8 @@
   currency has its kind set to be the exact keyword given."
   {:tag      Boolean
    :added    "2.0.0"
-   :arglists '([c] [c ^Registry registry] [c tag ^Registry registry])}
+   :arglists '([c] [c ^Registry registry] [c tag ^Registry registry])
+   :ex/soft  true}
   ([c]
    (with-attempt c nil [c] (some? (.kind ^Currency c))))
   ([c registry-or-tag]
@@ -3392,7 +3394,7 @@
 (defn of-kind?
   "Checks if a kind of the given currency `c` equals to the one given as a second
   argument `kind` or if it belongs to a `kind` (checked with `clojure.core/isa?`)."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([^clojure.lang.Keyword kind c]
    (of-kind? kind c (registry/get)))
   ([^clojure.lang.Keyword kind c ^Registry registry]
@@ -3415,7 +3417,8 @@
   extension field present on ad-hoc `Currency` values is ignored."
   {:tag      Boolean
    :added    "2.0.0"
-   :arglists '([c] [c registry] [c tag] [c tag registry])}
+   :arglists '([c] [c registry] [c tag] [c tag registry])
+   :ex/soft  true}
   ([c]
    (let [^Registry registry (registry/get)]
      (with-attempt c registry [c]
@@ -3445,7 +3448,7 @@
 (defn of-trait?
   "Checks whether currency `c` has the given trait `tag` (directly or via
   `clojure.core/isa?`)."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([^clojure.lang.Keyword tag c]
    (of-trait? tag c (registry/get)))
   ([^clojure.lang.Keyword tag c ^Registry registry]
@@ -3465,7 +3468,7 @@
   traits entry.
 
   Throws when the currency cannot be resolved in the registry."
-  {:tag Registry :added "2.0.0"}
+  {:tag Registry :added "2.0.0" :ex/strict true}
   [^Registry registry currency-id traits]
   (when (some? registry)
     (when-not (defined? currency-id registry)
@@ -3483,7 +3486,7 @@
 
 (defn set-traits!
   "Sets traits for the given currency in the global registry. See `set-traits`."
-  {:tag Registry :added "2.0.0"}
+  {:tag Registry :added "2.0.0" :ex/strict true}
   [currency-id traits]
   (swap! registry/R set-traits currency-id traits))
 
@@ -3493,7 +3496,7 @@
   Passing `nil` or an empty collection is a no-op.
 
   Throws when the currency cannot be resolved in the registry."
-  {:tag Registry :added "2.0.0"}
+  {:tag Registry :added "2.0.0" :ex/strict true}
   [^Registry registry currency-id traits]
   (when (some? registry)
     (when-not (defined? currency-id registry)
@@ -3511,7 +3514,7 @@
 
 (defn add-traits!
   "Adds traits for the given currency in the global registry. See `add-traits`."
-  {:tag Registry :added "2.0.0"}
+  {:tag Registry :added "2.0.0" :ex/strict true}
   [currency-id traits]
   (swap! registry/R add-traits currency-id traits))
 
@@ -3522,7 +3525,7 @@
   becomes empty.
 
   Throws when the currency cannot be resolved in the registry."
-  {:tag Registry :added "2.0.0"}
+  {:tag Registry :added "2.0.0" :ex/strict true}
   [^Registry registry currency-id traits]
   (when (some? registry)
     (when-not (defined? currency-id registry)
@@ -3544,7 +3547,7 @@
 
 (defn remove-traits!
   "Removes traits for the given currency in the global registry. See `remove-traits`."
-  {:tag Registry :added "2.0.0"}
+  {:tag Registry :added "2.0.0" :ex/strict true}
   [currency-id traits]
   (swap! registry/R remove-traits currency-id traits))
 
@@ -3552,122 +3555,122 @@
   "Returns `true` if the given currency is classified as ISO because its kind is set to
   `:iso` or its descendants. It may include not just current ISO currencies but also
   legacy ones. See also `io.randomseed.bankster.currency/iso-strict?`."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :iso c))
   ([c ^Registry registry] (of-kind? :iso c registry)))
 
 (defn virtual?
   "Returns `true` if the given currency is a kind of virtual currency."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :virtual c))
   ([c ^Registry registry] (of-kind? :virtual c registry)))
 
 (defn asset?
   "Returns `true` if the given currency is a kind of asset."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :asset c))
   ([c ^Registry registry] (of-kind? :asset c registry)))
 
 (defn claim?
   "Returns `true` if the given currency is a kind of claim."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :claim c))
   ([c ^Registry registry] (of-kind? :claim c registry)))
 
 (defn credit?
   "Returns `true` if the given currency is a kind of credit."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :credit c))
   ([c ^Registry registry] (of-kind? :credit c registry)))
 
 (defn fiat?
   "Returns `true` if the given currency is a kind of fiat currency."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :fiat c))
   ([c ^Registry registry] (of-kind? :fiat c registry)))
 
 (defn real?
   "Returns `true` if the given currency is a kind of real currency (has its `:kind` set
   to `:currency` or its descendants."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :currency c))
   ([c ^Registry registry] (of-kind? :currency c registry)))
 
 (defn fiduciary?
   "Returns `true` if the given currency is a kind of fiduciary currency."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :fiduciary c))
   ([c ^Registry registry] (of-kind? :fiduciary c registry)))
 
 (defn funds?
   "Returns `true` if the given currency is a kind of funds/settlement currency."
-  {:tag Boolean :added "2.0.0"}
+  {:tag Boolean :added "2.0.0" :ex/soft true}
   ([c] (of-kind? :funds c))
   ([c ^Registry registry] (of-kind? :funds c registry)))
 
 (defn metal?
   "Returns `true` if the given currency is a kind of precious metal."
-  {:tag Boolean :added "2.0.0"}
+  {:tag Boolean :added "2.0.0" :ex/soft true}
   ([c] (of-kind? :metal c))
   ([c ^Registry registry] (of-kind? :metal c registry)))
 
 (defn commodity?
   "Returns `true` if the given currency is a kind of commodity currency."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :commodity c))
   ([c ^Registry registry] (of-kind? :commodity c registry)))
 
 (defn peg?
   "Returns `true` if the given currency is a kind of PEG currency."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :peg c))
   ([c ^Registry registry] (of-kind? :peg c registry)))
 
 (defn stable?
   "Returns `true` if the given currency is a kind of stable currency."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :stable c))
   ([c ^Registry registry] (of-kind? :stable c registry)))
 
 (defn staked?
   "Returns `true` if the given currency is a kind of staked currency."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :staked c))
   ([c ^Registry registry] (of-kind? :staked c registry)))
 
 (defn wrapped?
   "Returns `true` if the given currency is a kind of wrapped currency."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :wrapped c))
   ([c ^Registry registry] (of-kind? :wrapped c registry)))
 
 (defn referenced?
   "Returns `true` if the given currency is a kind of referenced currency."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :referenced c))
   ([c ^Registry registry] (of-kind? :referenced c registry)))
 
 (defn experimental?
   "Returns `true` if the given currency is a kind of experimental currency."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :experimental c))
   ([c ^Registry registry] (of-kind? :experimental c registry)))
 
 (defn special?
   "Returns `true` if the given currency is a kind of special currency."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :special c))
   ([c ^Registry registry] (of-kind? :special c registry)))
 
 (defn test?
   "Returns `true` if the given currency is a kind of test currency."
-  {:tag Boolean :added "1.0.0"}
+  {:tag Boolean :added "1.0.0" :ex/soft true}
   ([c] (of-kind? :test c))
   ([c ^Registry registry] (of-kind? :test c registry)))
 
 (defn null?
   "Returns `true` if the given currency is a kind of null currency."
-  {:tag Boolean :added "2.0.0"}
+  {:tag Boolean :added "2.0.0" :ex/soft true}
   ([c] (of-kind? :NULL c))
   ([c ^Registry registry] (of-kind? :NULL c registry)))
 
@@ -3675,7 +3678,7 @@
   "Returns `true` if the given currency does not exist, or there is no currency (value
   is `nil`, `false`, an empty collection), or it is a pseudo-currency with its kind
   set to `:NULL` or its descendants."
-  {:tag Boolean :added "2.0.0"}
+  {:tag Boolean :added "2.0.0" :ex/soft true}
   ([c]
    (none? c nil))
   ([c ^Registry registry]
@@ -3689,7 +3692,7 @@
   "Returns `true` if the given currency is a kind of decentralized currency. It uses
   currency traits database in a registry to find a trait named
   `:control/decentralized`."
-  {:tag Boolean :added "2.0.0"}
+  {:tag Boolean :added "2.0.0" :ex/soft true}
   ([c] (of-trait? :control/decentralized c))
   ([c ^Registry registry] (of-trait? :control/decentralized c registry)))
 
@@ -3722,7 +3725,7 @@
 
   Throws when a currency cannot be resolved in the registry. Returns `nil` when there
   are no localized properties for the currency."
-  {:tag clojure.lang.PersistentHashMap :added "1.0.8"}
+  {:tag clojure.lang.PersistentHashMap :added "1.0.8" :ex/strict true}
   ([c]
    (localized-properties c (registry/get)))
   ([c ^Registry registry]
@@ -3796,7 +3799,7 @@
   localized-property and if it fails it will fall back to Java methods (if the
   currency is ISO-standardized). If that will fail too then it will return a currency
   code."
-  {:tag clojure.lang.IPersistentMap :added "1.0.0"}
+  {:tag clojure.lang.IPersistentMap :added "1.0.0" :ex/strict true}
   ([property currency-id] (localized-property property
                                               currency-id
                                               (Locale/getDefault)
@@ -3828,7 +3831,7 @@
                    (sm/all-prefixes locale-seps (str locale)))
              (get (get m :*) property)))))))
 
-(def ^{:tag      String :added "1.0.0"
+(def ^{:tag      String :added "1.0.0" :ex/strict true
        :arglists '(^String [currency]
                    ^String [currency locale]
                    ^String [currency locale ^Registry registry])}
@@ -3873,7 +3876,7 @@
 (defn symbol-native
   "Like symbol but for ISO-standardized currencies uses locale assigned to the first
   country where a currency is the default. When locale is given it is ignored."
-  {:tag      String :added "1.0.0"
+  {:tag      String :added "1.0.0" :ex/strict true
    :arglists '(^String [currency]
                ^String [currency ^Registry registry])}
   ([c]
@@ -3893,7 +3896,7 @@
   ([c _locale registry]
    (symbol-native c registry)))
 
-(def ^{:tag      String :added "1.0.0"
+(def ^{:tag      String :added "1.0.0" :ex/strict true
        :arglists '(^String [currency]
                    ^String [currency locale]
                    ^String [currency locale ^Registry registry])}
@@ -3939,7 +3942,7 @@
 (defn display-name-native
   "Like display-name but for ISO-standardized currencies uses locale assigned to the
   first country where a currency is the default. When locale is given it is ignored."
-  {:tag      String :added "1.0.0"
+  {:tag      String :added "1.0.0" :ex/strict true
    :arglists '(^String [currency]
                ^String [currency ^Registry registry])}
   ([c]
@@ -3959,7 +3962,7 @@
   ([c _locale registry]
    (display-name-native c registry)))
 
-(def ^{:tag      String :added "1.0.0"
+(def ^{:tag      String :added "1.0.0" :ex/strict true
        :arglists '(^String [currency]
                    ^String [currency locale]
                    ^String [currency locale ^Registry registry])}
@@ -3967,7 +3970,7 @@
   "Alias for display-name."
   display-name)
 
-(def ^{:tag      String :added "1.0.0"
+(def ^{:tag      String :added "1.0.0" :ex/strict true
        :arglists '(^String [currency]
                    ^String [currency ^Registry registry])}
   name-native
@@ -4061,7 +4064,7 @@
 
 (defmacro with
   "Sets a default currency in a lexical context of the body."
-  {:added "1.0.0"}
+  {:added "1.0.0" :ex/strict true}
   [currency & body]
   `(binding [*default* (of ~currency)]
      ~@body))
@@ -4082,7 +4085,7 @@
 (defn code-literal
   "Tagged literal handler for Clojure code. Emits compound forms that are going to be
   evaluated."
-  {:added "1.2.4"}
+  {:added "1.2.4" :ex/strict true}
   [arg]
   (if (or (nil? arg) (and (map? arg) (< (count arg) 1)))
     '(quote nil)
@@ -4090,7 +4093,7 @@
 
 (defn data-literal
   "Tagged literal handler for EDN data files. Emits Currency objects or nil values."
-  {:added "1.2.4"}
+  {:added "1.2.4" :ex/strict true}
   [arg]
   (if (or (nil? arg) (and (map? arg) (< (count arg) 1)))
     '(quote nil)
@@ -4269,7 +4272,7 @@
 
   Options:
   - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `\"ETH\"`"
-  {:tag clojure.lang.IPersistentMap :added "2.1.0"}
+  {:tag clojure.lang.IPersistentMap :added "2.1.0" :ex/strict true}
   (^clojure.lang.IPersistentMap [currency]
    (to-json-map currency nil))
   (^clojure.lang.IPersistentMap [currency opts]
@@ -4282,7 +4285,7 @@
 
   Options:
   - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `\"ETH\"`"
-  {:tag String :added "2.1.0"}
+  {:tag String :added "2.1.0" :ex/strict true}
   (^String [currency]
    (to-json-string currency nil))
   (^String [currency opts]
@@ -4295,7 +4298,7 @@
 
   Options:
   - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `:ETH`"
-  {:tag clojure.lang.IPersistentMap :added "2.1.0"}
+  {:tag clojure.lang.IPersistentMap :added "2.1.0" :ex/strict true}
   (^clojure.lang.IPersistentMap [currency]
    (to-edn-map currency nil))
   (^clojure.lang.IPersistentMap [currency opts]
@@ -4308,7 +4311,7 @@
 
   Options:
   - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `:ETH`"
-  {:tag String :added "2.1.0"}
+  {:tag String :added "2.1.0" :ex/strict true}
   (^String [currency]
    (to-edn-string currency nil))
   (^String [currency opts]

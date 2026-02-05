@@ -71,7 +71,8 @@
   Setting registry to `true` will cause a default registry to be used and lookup
   enforced."
   {:tag   Currency
-   :added "2.2.0"}
+   :added "2.2.0"
+   :ex/strict true}
   (^Currency []                  (currency/unit currency/*default*))
   (^Currency [currency]          (currency/unit currency))
   (^Currency [currency registry] (if (nil? registry)
@@ -105,7 +106,7 @@
 
   Setting registry to `true` will cause a default registry to be used and lookup
   enforced."
-  {:added "2.2.0"}
+  {:added "2.2.0" :ex/soft true}
   (^Currency []                            (currency/unit-try currency/*default*))
   (^Currency [currency]                    (currency/unit-try currency))
   (^Currency [currency ^Registry registry] (if (nil? registry)
@@ -121,7 +122,7 @@
   no match).
 
   `registry` may be `true` to force the default registry."
-  {:tag clojure.lang.IPersistentSet :added "2.2.0"}
+  {:tag clojure.lang.IPersistentSet :added "2.2.0" :ex/soft true}
   (^clojure.lang.IPersistentSet [currency]
    (currency/resolve-all currency))
   (^clojure.lang.IPersistentSet [currency registry]
@@ -136,7 +137,7 @@
   no currencies.
 
   Delegates to `io.randomseed.bankster.currency/all`."
-  {:tag clojure.lang.APersistentMap$ValSeq :added "2.2.0"}
+  {:tag clojure.lang.APersistentMap$ValSeq :added "2.2.0" :ex/soft true}
   (^clojure.lang.APersistentMap$ValSeq []
    (currency/all))
   (^clojure.lang.APersistentMap$ValSeq [registry]
@@ -150,7 +151,7 @@
   "Returns a set of currencies assigned to the given domain or `nil` if none exist.
 
   Delegates to `io.randomseed.bankster.currency/of-domain`."
-  {:tag clojure.lang.PersistentTreeSet :added "2.2.0"}
+  {:tag clojure.lang.PersistentTreeSet :added "2.2.0" :ex/soft true}
   (^clojure.lang.PersistentTreeSet [domain]
    (currency/of-domain domain))
   (^clojure.lang.PersistentTreeSet [domain registry]
@@ -164,7 +165,7 @@
   "Returns a set of currencies of the given kind or `nil` if none exist.
 
   Uses `io.randomseed.bankster.currency/of-kind?` to filter `currency/all`."
-  {:tag clojure.lang.IPersistentSet :added "2.2.0"}
+  {:tag clojure.lang.IPersistentSet :added "2.2.0" :ex/soft true}
   (^clojure.lang.IPersistentSet [kind]
    (when-some [currencies (currency/all)]
      (let [matches (filter #(currency/of-kind? kind %) currencies)]
@@ -186,7 +187,7 @@
   - `([currency])` is registry-light: it may return a keyword even if the currency
     is not registered.
   - `([currency registry])` is strict when `registry` is non-nil."
-  {:tag clojure.lang.Keyword :added "2.2.0"}
+  {:tag clojure.lang.Keyword :added "2.2.0" :ex/strict true}
   (^clojure.lang.Keyword [currency]
    (currency/id currency))
   (^clojure.lang.Keyword [currency registry]
@@ -196,7 +197,7 @@
   "Returns a currency identifier string without interning keywords.
 
   Delegates to `io.randomseed.bankster.currency/to-id-str`."
-  {:tag String :added "2.2.0"}
+  {:tag String :added "2.2.0" :ex/soft true}
   (^String [currency]
    (currency/to-id-str currency)))
 
@@ -204,7 +205,7 @@
   "Returns currency code as a string (without namespace).
 
   Delegates to `io.randomseed.bankster.currency/code`."
-  {:tag String :added "2.2.0"}
+  {:tag String :added "2.2.0" :ex/strict true}
   (^String [currency]
    (currency/code currency))
   (^String [currency registry]
@@ -214,13 +215,13 @@
   "Returns a currency code string without interning keywords.
 
   Delegates to `io.randomseed.bankster.currency/to-code-str`."
-  {:tag String :added "2.2.0"}
+  {:tag String :added "2.2.0" :ex/soft true}
   (^String [currency]
    (currency/to-code-str currency)))
 
 (defn nr
   "Returns currency numeric ID (ISO 4217 numeric code) as a long number or `nil`."
-  {:tag Long :added "2.2.0"}
+  {:tag Long :added "2.2.0" :ex/soft true}
   (^Long [currency]
    (currency/nr currency))
   (^Long [currency registry]
@@ -231,7 +232,7 @@
   "Returns `true` if the currency scale is auto-scaled.
 
   Delegates to `io.randomseed.bankster.currency/auto-scaled?`."
-  {:tag Boolean :added "2.2.0"}
+  {:tag Boolean :added "2.2.0" :ex/soft true}
   ([currency]
    (currency/auto-scaled? currency))
   ([currency registry]
@@ -253,7 +254,7 @@
   resolved. Locale argument is ignored.
 
   When `registry` is `true`, the default registry is used."
-  {:tag clojure.lang.IPersistentMap :added "2.2.0"}
+  {:tag clojure.lang.IPersistentMap :added "2.2.0" :ex/soft true}
   ([currency]
    (currency/info currency))
   ([currency registry]
@@ -263,7 +264,7 @@
 
 (defn domain
   "Returns currency domain as a keyword or `nil`."
-  {:tag clojure.lang.Keyword :added "2.2.0"}
+  {:tag clojure.lang.Keyword :added "2.2.0" :ex/soft true}
   (^clojure.lang.Keyword [currency]
    (currency/domain currency))
   (^clojure.lang.Keyword [currency registry]
@@ -271,7 +272,7 @@
 
 (defn kind
   "Returns currency kind as a keyword or `nil`."
-  {:tag clojure.lang.Keyword :added "2.2.0"}
+  {:tag clojure.lang.Keyword :added "2.2.0" :ex/soft true}
   (^clojure.lang.Keyword [currency]
    (currency/kind currency))
   (^clojure.lang.Keyword [currency registry]
@@ -281,7 +282,7 @@
   "Returns a currency symbol for the given currency and locale.
 
   Delegates to `io.randomseed.bankster.currency/symbol`."
-  {:tag String :added "2.2.0"}
+  {:tag String :added "2.2.0" :ex/strict true}
   (^String [currency]
    (currency/symbol currency))
   (^String [currency locale]
@@ -293,7 +294,7 @@
   "Returns a currency display name for the given currency and locale.
 
   Delegates to `io.randomseed.bankster.currency/display-name`."
-  {:tag String :added "2.2.0"}
+  {:tag String :added "2.2.0" :ex/strict true}
   (^String [currency]
    (currency/display-name currency))
   (^String [currency locale]
@@ -303,7 +304,7 @@
 
 (defn defined?
   "Returns `true` if any currency can be resolved from the given value."
-  {:tag Boolean :added "2.2.0"}
+  {:tag Boolean :added "2.2.0" :ex/soft true}
   (^Boolean [currency]
    (currency/defined? currency))
   (^Boolean [currency registry]
@@ -311,7 +312,7 @@
 
 (defn present?
   "Returns `true` if a currency can be resolved and is present in a registry."
-  {:tag Boolean :added "2.2.0"}
+  {:tag Boolean :added "2.2.0" :ex/soft true}
   (^Boolean [currency]
    (currency/present? currency))
   (^Boolean [currency registry]
@@ -319,7 +320,7 @@
 
 (defn possible?
   "Returns `true` if the given value is a possible currency representation."
-  {:tag Boolean :added "2.2.0"}
+  {:tag Boolean :added "2.2.0" :ex/soft true}
   (^Boolean [currency]
    (currency/possible? currency))
   (^Boolean [currency registry]
@@ -327,7 +328,7 @@
 
 (defn definitive?
   "Returns `true` if the given value is a definitive currency representation."
-  {:tag Boolean :added "2.2.0"}
+  {:tag Boolean :added "2.2.0" :ex/soft true}
   ^Boolean [currency]
   (currency/definitive? currency))
 
@@ -336,13 +337,13 @@
 
   Unwraps single-element vectors, keywordizes `:id` in maps, and normalizes symbols
   to keywords when possible. Delegates to `currency/parse-currency-code`."
-  {:added "2.2.0"}
+  {:added "2.2.0" :ex/soft true}
   [currency]
   (currency/parse-currency-code currency))
 
 (defn currency?
   "Returns `true` when `x` is an instance of `io.randomseed.bankster.Currency`."
-  {:tag Boolean :added "2.2.0"}
+  {:tag Boolean :added "2.2.0" :ex/soft true}
   [x]
   (currency/currency? x))
 
@@ -350,7 +351,7 @@
   "Returns `true` if the given currency is a cryptocurrency.
 
   Delegates to `io.randomseed.bankster.currency/crypto?`."
-  {:tag Boolean :added "2.2.0"}
+  {:tag Boolean :added "2.2.0" :ex/soft true}
   ([currency]
    (currency/crypto? currency))
   ([currency registry]
@@ -360,7 +361,7 @@
   "Returns `true` if the given currency is a kind of stable currency.
 
   Delegates to `io.randomseed.bankster.currency/stable?`."
-  {:tag Boolean :added "2.2.0"}
+  {:tag Boolean :added "2.2.0" :ex/soft true}
   ([currency]
    (currency/stable? currency))
   ([currency registry]
@@ -370,7 +371,7 @@
   "Returns `true` if the given currency is a kind of decentralized currency.
 
   Delegates to `io.randomseed.bankster.currency/decentralized?`."
-  {:tag Boolean :added "2.2.0"}
+  {:tag Boolean :added "2.2.0" :ex/soft true}
   ([currency]
    (currency/decentralized? currency))
   ([currency registry]
@@ -378,13 +379,13 @@
 
 (defn ->map
   "Coerces a currency representation to a map of fields."
-  {:tag clojure.lang.IPersistentMap :added "2.2.0"}
+  {:tag clojure.lang.IPersistentMap :added "2.2.0" :ex/soft true}
   [currency]
   (currency/to-map currency))
 
 (defn ->edn
   "Serializes currency to an EDN tagged literal string."
-  {:tag String :added "2.2.0"}
+  {:tag String :added "2.2.0" :ex/strict true}
   (^String [currency]
    (currency/to-edn-string currency))
   (^String [currency opts]
@@ -392,7 +393,7 @@
 
 (defn ->json
   "Serializes currency to a JSON string identifier."
-  {:tag String :added "2.2.0"}
+  {:tag String :added "2.2.0" :ex/strict true}
   (^String [currency]
    (currency/to-json-string currency))
   (^String [currency opts]
@@ -400,7 +401,7 @@
 
 (defn from-edn
   "Deserializes Currency from EDN string, keyword, or map."
-  {:tag Currency :added "2.2.0"}
+  {:tag Currency :added "2.2.0" :ex/strict true}
   (^Currency [x]
    (from-edn x nil))
   (^Currency [x opts]
@@ -419,7 +420,7 @@
 
 (defn from-edn-text
   "Deserializes Currency from raw EDN text."
-  {:tag Currency :added "2.2.0"}
+  {:tag Currency :added "2.2.0" :ex/strict true}
   (^Currency [x]
    (from-edn-text x nil))
   (^Currency [x opts]
@@ -436,7 +437,7 @@
 
 (defn from-json
   "Deserializes Currency from JSON string or map."
-  {:tag Currency :added "2.2.0"}
+  {:tag Currency :added "2.2.0" :ex/strict true}
   (^Currency [x]
    (from-json x nil))
   (^Currency [x opts]
@@ -454,7 +455,7 @@
 
 (defn from-json-text
   "Deserializes Currency from raw JSON text."
-  {:tag Currency :added "2.2.0"}
+  {:tag Currency :added "2.2.0" :ex/strict true}
   (^Currency [x]
    (from-json-text x nil))
   (^Currency [x opts]

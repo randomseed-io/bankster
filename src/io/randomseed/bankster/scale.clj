@@ -174,13 +174,14 @@
 (defprotocol ^{:added "1.0.0"} Scalable
   "The Scalable protocol describes values that can be scaled."
 
-  (^{:added "1.0.0"}
+  (^{:added "1.0.0" :ex/strict true}
    of
    [num]
    "Returns a scale. If the given value is not of type that scales (or is used to
   produce scaled types) it will be converted to such.")
 
-  (apply
+  (^{:added "1.0.0" :ex/strict true}
+   apply
     [num] [num scale] [num scale rounding-mode]
     "Converts the given value to a scalable with or without changing its scale. For
   values that already are scalable it changes their scales if called with a second
@@ -191,19 +192,19 @@
   When operating on Money objects and called with a single argument, it reapplies
   the nominal currency scale.")
 
-  (^{:tag BigDecimal :added "1.0.0"}
+  (^{:tag BigDecimal :added "1.0.0" :ex/soft true}
    amount
    [num] [num scale] [num scale rounding-mode]
    "Returns the amount of a scalable as a BigDecimal number. Some scalables may not
     be purely numeric so this function is to get the actual, calculable value out of
     them.")
 
-  (^{:tag Boolean :added "1.0.0"}
+  (^{:tag Boolean :added "1.0.0" :ex/soft true}
    applied?
    [num]
    "Returns true if the value is of a type that contains scaling information.")
 
-  (^{:tag Boolean :added "1.0.0"}
+  (^{:tag Boolean :added "1.0.0" :ex/soft true}
    scalable?
    [num]
    "Returns true if the value can be converted to a scalable."))

@@ -236,7 +236,7 @@
   - `registry`      - Registry to use for currency lookup
   - `rounding-mode` - optional rounding mode (RoundingMode, keyword, or string)
   - `rescale`       - optional target scale (overrides currency's nominal scale)"
-  {:tag Money :added "2.1.0"}
+  {:tag Money :added "2.1.0" :ex/strict true}
   (^Money [currency amount ^Registry registry]
    (let [^Currency c (if (instance? Currency currency)
                        currency

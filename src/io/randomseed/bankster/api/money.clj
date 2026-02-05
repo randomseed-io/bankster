@@ -92,14 +92,15 @@
   `rounding` may be a `java.math.RoundingMode` or a keyword/symbol/string like
   \"HALF_UP\" (see `scale/post-parse-rounding`). If no default currency is configured
   and the amount does not encode one, `money/value` will throw."
-  {:added    "2.2.0"
-   :tag      Money
-   :arglists '(^Money []
-               ^Money [amount]
-               ^Money [amount currency]
-               ^Money [amount currency rounding]
-               ^Money [amount currency registry]
-               ^Money [amount currency rounding registry])}
+  {:added     "2.2.0"
+   :tag       Money
+   :arglists  '(^Money []
+                ^Money [amount]
+                ^Money [amount currency]
+                ^Money [amount currency rounding]
+                ^Money [amount currency registry]
+                ^Money [amount currency rounding registry])
+   :ex/strict true}
   (^Money []
    (money/value 0))
   (^Money [amount]
@@ -129,7 +130,8 @@
                [amount currency]
                [amount currency rounding]
                [amount currency registry]
-               [amount currency rounding registry])}
+               [amount currency rounding registry])
+   :ex/soft  true}
   ([]
    (some->> (api-currency/resolve-try) (money/value 0)))
   ([amount]
@@ -158,7 +160,7 @@
 
   Money can be expressed as a `Money` object or any other object that will create
   `Money` when passed to the `value` function. Returns money."
-  {:tag Money :added "2.2.0"}
+  {:tag Money :added "2.2.0" :ex/strict true}
   (^Money [money]
    (money/of-registry money))
   (^Money [registry money]
@@ -180,7 +182,8 @@
    :added    "2.2.0"
    :arglists '(^Money [money]
                ^Money [money currency]
-               ^Money [money currency rounding])}
+               ^Money [money currency rounding])
+   :ex/strict true}
   (^Money [money]
    (money/cast money))
   (^Money [money currency]
@@ -198,7 +201,8 @@
    :added    "2.2.0"
    :arglists '(^Money [money]
                ^Money [money currency]
-               ^Money [money currency rounding])}
+               ^Money [money currency rounding])
+   :ex/soft true}
   (^Money [money]
    (money/cast money))
   (^Money [money currency]
@@ -216,13 +220,14 @@
   "First-class constructor for major-part amounts (amount-first).
 
   Delegates to `io.randomseed.bankster.money/major-value`."
-  {:added    "2.2.0"
-   :tag      Money
-   :arglists '(^Money [amount]
-               ^Money [amount currency]
-               ^Money [amount currency rounding]
-               ^Money [amount currency registry]
-               ^Money [amount currency rounding registry])}
+  {:added     "2.2.0"
+   :tag       Money
+   :arglists  '(^Money [amount]
+                ^Money [amount currency]
+                ^Money [amount currency rounding]
+                ^Money [amount currency registry]
+                ^Money [amount currency rounding registry])
+   :ex/strict true}
   (^Money [amount]
    (money/major-value amount))
   (^Money [amount c]
@@ -242,13 +247,14 @@
   "First-class constructor for minor-part amounts (amount-first).
 
   Delegates to `io.randomseed.bankster.money/minor-value`."
-  {:added    "2.2.0"
-   :tag      Money
-   :arglists '(^Money [amount]
-               ^Money [amount currency]
-               ^Money [amount currency rounding]
-               ^Money [amount currency registry]
-               ^Money [amount currency rounding registry])}
+  {:added     "2.2.0"
+   :tag       Money
+   :arglists  '(^Money [amount]
+                ^Money [amount currency]
+                ^Money [amount currency rounding]
+                ^Money [amount currency registry]
+                ^Money [amount currency rounding registry])
+   :ex/strict true}
   (^Money [amount]
    (money/minor-value amount))
   (^Money [amount c]
@@ -266,7 +272,7 @@
 
 (defn amount
   "Returns Money amount as `BigDecimal`."
-  {:tag BigDecimal :added "2.2.0"}
+  {:tag BigDecimal :added "2.2.0" :ex/strict true}
   (^BigDecimal [money]
    (money/amount money))
   (^BigDecimal [a b]
@@ -276,7 +282,7 @@
 
 (defn currency
   "Returns Money currency."
-  {:tag Currency :added "2.2.0"}
+  {:tag Currency :added "2.2.0" :ex/strict true}
   (^Currency [money]
    (money/currency money))
   (^Currency [a b]
@@ -288,7 +294,7 @@
   "Returns a map with `:currency` and `:amount` for the given money-like input.
 
   Delegates to `io.randomseed.bankster.money/info`."
-  {:tag clojure.lang.IPersistentMap :added "2.2.0"}
+  {:tag clojure.lang.IPersistentMap :added "2.2.0" :ex/strict true}
   [money]
   (money/info money))
 
@@ -303,7 +309,7 @@
 
 (defn strip
   "Strips trailing zeros from a `Money` amount."
-  {:tag Money :added "2.2.0"}
+  {:tag Money :added "2.2.0" :ex/strict true}
   [money]
   (when-some [^Money m (money/value money)]
     (money/strip m)))
@@ -361,7 +367,8 @@
    :added    "2.2.0"
    :arglists '(^Money [amount]
                ^Money [currency amount]
-               ^Money [currency amount rounding])}
+               ^Money [currency amount rounding])
+   :ex/strict true}
   (^Money [amount]
    (money/parse amount))
   (^Money [currency amount]
@@ -380,7 +387,8 @@
    :added    "2.2.0"
    :arglists '(^Money [amount]
                ^Money [currency amount]
-               ^Money [currency amount rounding])}
+               ^Money [currency amount rounding])
+   :ex/strict true}
   (^Money [amount]
    (money/parse-major amount))
   (^Money [currency amount]
@@ -399,7 +407,8 @@
    :added    "2.2.0"
    :arglists '(^Money [amount]
                ^Money [currency amount]
-               ^Money [currency amount rounding])}
+               ^Money [currency amount rounding])
+   :ex/strict true}
   (^Money [amount]
    (money/parse-minor amount))
   (^Money [currency amount]
@@ -419,7 +428,8 @@
     `scale/post-parse-rounding`."
   {:tag      Money
    :added    "2.2.0"
-   :arglists '([amount] [amount currency] [amount currency rounding])}
+   :arglists '([amount] [amount currency] [amount currency rounding])
+   :ex/strict true}
   [amount & args]
   (let [argc (count args)]
     (cond
@@ -574,13 +584,13 @@
 ;; Serialization
 (defn ->map
   "Coerces a money-like value into an EDN-friendly map."
-  {:tag clojure.lang.IPersistentMap :added "2.2.0"}
+  {:tag clojure.lang.IPersistentMap :added "2.2.0" :ex/strict true}
   [money]
   (money/to-map money))
 
 (defn ->edn
   "Serializes money-like value to an EDN tagged literal string."
-  {:tag String :added "2.2.0"}
+  {:tag String :added "2.2.0" :ex/strict true}
   (^String [money]
    (when-some [^Money m (money/value money)]
      (serializers-edn/money->edn-string m)))
@@ -590,7 +600,7 @@
 
 (defn ->json
   "Serializes money-like value to a JSON string."
-  {:tag String :added "2.2.0"}
+  {:tag String :added "2.2.0" :ex/strict true}
   (^String [money]
    (money/to-json-string money))
   (^String [money opts]
@@ -598,7 +608,7 @@
 
 (defn from-edn
   "Deserializes Money from EDN string or map."
-  {:tag Money :added "2.2.0"}
+  {:tag Money :added "2.2.0" :ex/strict true}
   (^Money [x]
    (from-edn x nil))
   (^Money [x opts]
@@ -616,7 +626,7 @@
 
 (defn from-edn-text
   "Deserializes Money from raw EDN text."
-  {:tag Money :added "2.2.0"}
+  {:tag Money :added "2.2.0" :ex/strict true}
   (^Money [x]
    (from-edn-text x nil))
   (^Money [x opts]
@@ -633,7 +643,7 @@
 
 (defn from-json
   "Deserializes Money from JSON string or map."
-  {:tag Money :added "2.2.0"}
+  {:tag Money :added "2.2.0" :ex/strict true}
   (^Money [x]
    (from-json x nil))
   (^Money [x opts]
@@ -651,7 +661,7 @@
 
 (defn from-json-text
   "Deserializes Money from raw JSON text."
-  {:tag Money :added "2.2.0"}
+  {:tag Money :added "2.2.0" :ex/strict true}
   (^Money [x]
    (from-json-text x nil))
   (^Money [x opts]
