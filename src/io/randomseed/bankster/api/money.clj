@@ -60,6 +60,7 @@
   {:tag Registry :added "2.2.0"}
   []
   (registry/get))
+
 (defn registry-or-default
   "Resolves `true` or `nil` into the current default registry, otherwise returns the
   given value."
@@ -88,6 +89,9 @@
   When a registry is consulted and the currency cannot be resolved, it
   throws.
 
+  When registry is `true`, the default registry (global or dynamically bound) is
+  used.
+
   `rounding` may be a `java.math.RoundingMode` or a keyword/symbol/string like
   \"HALF_UP\" (see `scale/post-parse-rounding`). If no default currency is configured
   and the amount does not encode one, `money/value` will throw."
@@ -107,11 +111,13 @@
   (^Money [amount c]
    (money/value amount (api-currency/resolve c)))
   (^Money [amount c rounding-or-registry]
-   (if (or (instance? Registry rounding-or-registry) (true? rounding-or-registry))
-     (money/value amount (api-currency/resolve c rounding-or-registry))
-     (if rounding-or-registry
-       (money/value amount (api-currency/resolve c) (scale/post-parse-rounding rounding-or-registry))
-       (money/value amount (api-currency/resolve c)))))
+   (if (true? rounding-or-registry)
+     (money/value amount (api-currency/resolve c))
+     (if (instance? Registry rounding-or-registry)
+       (money/value amount (api-currency/resolve c rounding-or-registry))
+       (if rounding-or-registry
+         (money/value amount (api-currency/resolve c) (scale/post-parse-rounding rounding-or-registry))
+         (money/value amount (api-currency/resolve c))))))
   (^Money [amount c rounding ^Registry registry]
    (if rounding
      (money/value amount (api-currency/resolve c registry) (scale/post-parse-rounding rounding))
@@ -122,7 +128,10 @@
 
   Uses `io.randomseed.bankster.currency/unit-try` and returns `nil` when the
   currency cannot be resolved in the given (or default) registry. Accepts the same
-  argument shapes as `resolve`. Rounding is parsed."
+  argument shapes as `resolve`. Rounding is parsed.
+
+  When registry is `true`, the default registry (global or dynamically bound) is
+  used."
   {:tag      Money
    :arglists '([]
                [amount]
@@ -138,11 +147,13 @@
   ([amount c]
    (some->> c api-currency/resolve-try (money/value amount)))
   ([amount c rounding-or-registry]
-   (if (or (instance? Registry rounding-or-registry) (true? rounding-or-registry))
-     (when (some? c) (some->> (api-currency/resolve-try c rounding-or-registry) (money/value amount)))
-     (if-some [rounding (scale/post-parse-rounding rounding-or-registry)]
-       (when-some [c (api-currency/resolve-try c)] (money/value amount c rounding))
-       (some->> c api-currency/resolve-try (money/value amount)))))
+   (if (true? rounding-or-registry)
+     (when (some? c) (some->> (api-currency/resolve-try c) (money/value amount)))
+     (if (instance? Registry rounding-or-registry)
+       (when (some? c) (some->> (api-currency/resolve-try c rounding-or-registry) (money/value amount)))
+       (if-some [rounding (scale/post-parse-rounding rounding-or-registry)]
+         (when-some [c (api-currency/resolve-try c)] (money/value amount c rounding))
+         (some->> c api-currency/resolve-try (money/value amount))))))
   ([amount c rounding ^Registry registry]
    (when-some [c (if registry (api-currency/resolve-try c registry) (api-currency/resolve-try c))]
      (if-some [rounding (scale/post-parse-rounding rounding)]
@@ -158,7 +169,10 @@
   money).
 
   Money can be expressed as a `Money` object or any other object that will create
-  `Money` when passed to the `value` function. Returns money."
+  `Money` when passed to the `value` function. Returns money.
+
+  When registry is `true`, the default registry (global or dynamically bound) is
+  used."
   {:tag Money :added "2.2.0" :ex/strict true}
   (^Money [money]
    (money/of-registry money))
@@ -218,7 +232,10 @@
 (defn major
   "First-class constructor for major-part amounts (amount-first).
 
-  Delegates to `io.randomseed.bankster.money/major-value`."
+  Delegates to `io.randomseed.bankster.money/major-value`.
+
+  When registry is `true`, the default registry (global or dynamically bound) is
+  used."
   {:added     "2.2.0"
    :tag       Money
    :arglists  '(^Money [amount]
@@ -232,11 +249,13 @@
   (^Money [amount c]
    (money/major-value (api-currency/resolve c) amount))
   (^Money [amount c rounding-or-registry]
-   (if (or (instance? Registry rounding-or-registry) (true? rounding-or-registry))
-     (money/major-value (api-currency/resolve c rounding-or-registry) amount)
-     (if rounding-or-registry
-       (money/major-value (api-currency/resolve c) amount (scale/post-parse-rounding rounding-or-registry))
-       (money/major-value (api-currency/resolve c) amount))))
+   (if (true? rounding-or-registry)
+     (money/major-value (api-currency/resolve c) amount)
+     (if (instance? Registry rounding-or-registry)
+       (money/major-value (api-currency/resolve c rounding-or-registry) amount)
+       (if rounding-or-registry
+         (money/major-value (api-currency/resolve c) amount (scale/post-parse-rounding rounding-or-registry))
+         (money/major-value (api-currency/resolve c) amount)))))
   (^Money [amount c rounding ^Registry registry]
    (if rounding
      (money/major-value (api-currency/resolve c registry) amount (scale/post-parse-rounding rounding))
@@ -245,7 +264,10 @@
 (defn minor
   "First-class constructor for minor-part amounts (amount-first).
 
-  Delegates to `io.randomseed.bankster.money/minor-value`."
+  Delegates to `io.randomseed.bankster.money/minor-value`.
+
+  When registry is `true`, the default registry (global or dynamically bound) is
+  used."
   {:added     "2.2.0"
    :tag       Money
    :arglists  '(^Money [amount]
@@ -259,11 +281,13 @@
   (^Money [amount c]
    (money/minor-value (api-currency/resolve c) amount))
   (^Money [amount c rounding-or-registry]
-   (if (or (instance? Registry rounding-or-registry) (true? rounding-or-registry))
-     (money/minor-value (api-currency/resolve c rounding-or-registry) amount)
-     (if rounding-or-registry
-       (money/minor-value (api-currency/resolve c) amount (scale/post-parse-rounding rounding-or-registry))
-       (money/minor-value (api-currency/resolve c) amount))))
+   (if (true? rounding-or-registry)
+     (money/minor-value (api-currency/resolve c) amount)
+     (if (instance? Registry rounding-or-registry)
+       (money/minor-value (api-currency/resolve c rounding-or-registry) amount)
+       (if rounding-or-registry
+         (money/minor-value (api-currency/resolve c) amount (scale/post-parse-rounding rounding-or-registry))
+         (money/minor-value (api-currency/resolve c) amount)))))
   (^Money [amount c rounding ^Registry registry]
    (if rounding
      (money/minor-value (api-currency/resolve c registry) amount (scale/post-parse-rounding rounding))
@@ -296,7 +320,6 @@
   {:tag clojure.lang.IPersistentMap :added "2.2.0" :ex/strict true}
   [money]
   (money/info money))
-
 
 (defn auto-scaled?
   "Returns `true` if the scale returned by `scale` is auto-scaled.
