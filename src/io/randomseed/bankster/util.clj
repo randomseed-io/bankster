@@ -228,29 +228,53 @@
                   :else
                   (symbol (str source-ns)))]
     (clojure.core/require ns-sym)
-    (let [vars    (->> (ns-interns (the-ns ns-sym))
-                       (filter (fn [[_ v]] (:auto-alias (meta v)))))
+    (let [vars     (->> (ns-interns (the-ns ns-sym))
+                        (keep (fn [[sym v]]
+                                (let [auto (:auto-alias (meta v))]
+                                  (when auto
+                                    {:sym sym :var v :auto auto})))))
           existing (ns-interns *ns*)
-          aliases (->> vars
-                       (sort-by (comp str first))
-                       (remove #(contains? existing (first %)))
-                       (map (fn [[sym v]]
-                              (let [m        (meta v)
-                                    arglists (:arglists m)
-                                    arglists (when (and (sequential? arglists)
-                                                        (every? sequential? arglists))
-                                               (mapv vec arglists))
-                                    use-reg? (and (not (:macro m))
-                                                  (seq arglists)
-                                                  (every? simple-arglist? arglists)
-                                                  (distinct-arities? arglists)
-                                                  (some registry-arglist? arglists))
-                                    alias-sym (symbol "io.randomseed.bankster.util"
-                                                      (if use-reg? "defalias-reg" "defalias"))]
-                                `(~alias-sym
-                                  ~sym
-                                  ~(symbol (str ns-sym) (name sym))))))
-                       (vec))]
+          aliases  (->> vars
+                        (sort-by (comp str :sym))
+                        (map (fn [{:keys [sym var auto]}]
+                               (let [m            (meta var)
+                                     arglists     (:arglists m)
+                                     arglists     (when (and (sequential? arglists)
+                                                             (every? sequential? arglists))
+                                                    (mapv vec arglists))
+                                     use-reg?     (and (not (:macro m))
+                                                       (seq arglists)
+                                                       (every? simple-arglist? arglists)
+                                                       (distinct-arities? arglists)
+                                                       (some registry-arglist? arglists))
+                                     alias-sym    (symbol "io.randomseed.bankster.util"
+                                                         (if use-reg? "defalias-reg" "defalias"))
+                                     alias-meta   (when (map? auto) (dissoc auto :alias/as))
+                                     alias-as     (when (map? auto) (:alias/as auto))
+                                     alias-name   (let [->sym (fn [v]
+                                                               (let [s (cond
+                                                                         (symbol? v)  v
+                                                                         (keyword? v) (symbol (name v))
+                                                                         (string? v)  (symbol v)
+                                                                         :else        (symbol (str v)))]
+                                                                 (if (namespace s)
+                                                                   (symbol (name s))
+                                                                   s)))]
+                                                    (cond
+                                                      (string? auto) (->sym auto)
+                                                      (map? auto)    (if (nil? alias-as) sym (->sym alias-as))
+                                                      :else          sym))
+                                     def-form     `(~alias-sym
+                                                    ~alias-name
+                                                    ~(symbol (str ns-sym) (name sym)))]
+                                 {:alias-name alias-name
+                                  :form       (if (seq alias-meta)
+                                                `(do ~def-form
+                                                     (alter-meta! (var ~alias-name) merge ~alias-meta))
+                                                def-form)})))
+                        (remove #(contains? existing (:alias-name %)))
+                        (map :form)
+                        (vec))]
       (cond
         (empty? aliases) nil
         (= 1 (count aliases)) (first aliases)
