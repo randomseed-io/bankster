@@ -21,6 +21,7 @@
                                     RoundingMode)))
 
 ;; Polymorphic wrappers intentionally box in some paths; silence warnings locally.
+
 (def ^{:no-doc true :private true} unchecked-math-prev *unchecked-math*)
 (set! *unchecked-math* false)
 

@@ -1148,7 +1148,7 @@
        (eq? b (first more)))
      false)))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Boolean [^Money a]
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
@@ -1180,7 +1180,7 @@
        (eq-am? b (first more)))
      false)))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Boolean [^Money a]
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
@@ -1198,7 +1198,7 @@
   (^Boolean [^Money a ^Money b & more]
    (not (clojure.core/apply eq? ^Money a ^Money b more))))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Boolean [^Money a]
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
@@ -1216,7 +1216,7 @@
   (^Boolean [^Money a ^Money b & more]
    (not (clojure.core/apply eq-am? ^Money a ^Money b more))))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Boolean [^Money a]
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
@@ -1238,7 +1238,7 @@
        (gt? b (first more)))
      false)))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Boolean [^Money a]
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
@@ -1260,7 +1260,7 @@
        (ge? b (first more)))
      false)))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Boolean [^Money a]
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
@@ -1282,7 +1282,7 @@
        (lt? b (first more)))
      false)))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Boolean [^Money a]
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
@@ -1304,7 +1304,7 @@
        (le? b (first more)))
      false)))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Boolean [^Money a]
                    ^Boolean [^Money a ^Money b]
                    ^Boolean [^Money a ^Money b & more])}
@@ -1318,7 +1318,7 @@
   [^Money a]
   (clojure.core/zero? (.compareTo ^BigDecimal (.amount ^Money a) 0M)))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Boolean [^Money a])}
   zero?
   "Alias for is-zero?."
@@ -1330,7 +1330,7 @@
   [^Money a]
   (neg-int? (.compareTo ^BigDecimal (.amount ^Money a) 0M)))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Boolean [^Money a])}
   neg?
   "Alias for is-neg?."
@@ -1343,7 +1343,7 @@
   (pos-int? (.compareTo ^BigDecimal (.amount ^Money a) 0M)))
 
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Boolean [^Money a])}
   pos?
   "Alias for is-pos?."
@@ -1355,7 +1355,7 @@
   [^Money a]
   (clojure.core/<= (.compareTo ^BigDecimal (.amount ^Money a) 0M) 0))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Boolean [^Money a])}
   neg-or-zero?
   "Alias for is-neg-or-zero?."
@@ -1367,7 +1367,7 @@
   [^Money a]
   (clojure.core/>= (.compareTo ^BigDecimal (.amount ^Money a) 0M) 0))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Boolean [^Money a])}
   pos-or-zero?
   "Alias for is-pos-or-zero?."
@@ -1454,7 +1454,7 @@
   "Alias for add."
   add)
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Money []
                    ^Money [^Money a]
                    ^Money [^Money a ^Money b]
@@ -1510,7 +1510,7 @@
   "Alias for sub."
   sub)
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Money [^Money a]
                    ^Money [^Money a ^Money b]
                    ^Money [^Money a ^Money b & more])}
@@ -1708,7 +1708,7 @@
                                    {:money m :currency c}))))
          ^BigDecimal res)))))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '([]
                    [a]
                    [a b]
@@ -2097,7 +2097,7 @@
                              ^BigDecimal x
                              ^BigDecimal (scale/apply x (.scale ^BigDecimal am)))))))))))))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '([a]
                    [a b]
                    [a b & more])}
@@ -2117,7 +2117,7 @@
   (^Money  [^Money a ^Money b & more]
    (reduce min-amount (min-amount ^Money a ^Money b) more)))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Money [^Money a]
                    ^Money [^Money a ^Money b]
                    ^Money [^Money a ^Money b & more])}
@@ -2137,7 +2137,7 @@
   (^Money [^Money a ^Money b & more]
    (reduce max-amount (max-amount a b) more)))
 
-(def ^{:tag      Money :added "1.2.0"
+(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
        :arglists '(^Money [^Money a]
                    ^Money [^Money a ^Money b]
                    ^Money [^Money a ^Money b & more])}
