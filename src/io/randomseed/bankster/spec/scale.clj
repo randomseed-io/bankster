@@ -4,7 +4,7 @@
 
     ^{:doc    "Scale specs for Bankster."
       :author "Paweł Wilk"
-      :added  "1.0.0"
+      :added  "2.2.3"
       :no-doc true}
 
     io.randomseed.bankster.spec.scale

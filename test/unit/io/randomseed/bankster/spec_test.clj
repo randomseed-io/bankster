@@ -20,19 +20,19 @@
 (deftest currency-scale-spec-test
   (testing "Currency scale specification"
     (testing "auto-scaled sentinel"
-      (is (s/valid? :io.randomseed.bankster.spec/currency-scale -1))
+      (is (s/valid? :io.randomseed.bankster.spec.primitives/currency-scale -1))
       (is (= [:auto-scaled -1]
-             (s/conform :io.randomseed.bankster.spec/currency-scale -1))))
+             (s/conform :io.randomseed.bankster.spec.primitives/currency-scale -1))))
 
     (testing "fixed scales"
-      (are [scale] (s/valid? :io.randomseed.bankster.spec/currency-scale scale)
+      (are [scale] (s/valid? :io.randomseed.bankster.spec.primitives/currency-scale scale)
         0
         2
         4
         8))
 
     (testing "invalid scales"
-      (are [scale] (not (s/valid? :io.randomseed.bankster.spec/currency-scale scale))
+      (are [scale] (not (s/valid? :io.randomseed.bankster.spec.primitives/currency-scale scale))
         -2
         -10
         "2"))))
@@ -40,19 +40,19 @@
 (deftest currency-numeric-id-spec-test
   (testing "Currency numeric ID specification"
     (testing "no-numeric-id sentinel"
-      (is (s/valid? :io.randomseed.bankster.spec/currency-numeric-id -1))
+      (is (s/valid? :io.randomseed.bankster.spec.primitives/currency-numeric-id -1))
       (is (= [:no-numeric -1]
-             (s/conform :io.randomseed.bankster.spec/currency-numeric-id -1))))
+             (s/conform :io.randomseed.bankster.spec.primitives/currency-numeric-id -1))))
 
     (testing "valid numeric IDs"
-      (are [nr] (s/valid? :io.randomseed.bankster.spec/currency-numeric-id nr)
+      (are [nr] (s/valid? :io.randomseed.bankster.spec.primitives/currency-numeric-id nr)
         978   ;; EUR
         840   ;; USD
         1     ;; minimum valid
         999))
 
     (testing "invalid numeric IDs"
-      (are [nr] (not (s/valid? :io.randomseed.bankster.spec/currency-numeric-id nr))
+      (are [nr] (not (s/valid? :io.randomseed.bankster.spec.primitives/currency-numeric-id nr))
         0
         -2
         -100
@@ -232,7 +232,7 @@
 (deftest spec-explain-test
   (testing "Spec explain provides useful error messages"
     (testing "invalid currency scale"
-      (let [result (s/explain-data :io.randomseed.bankster.spec/currency-scale -5)]
+      (let [result (s/explain-data :io.randomseed.bankster.spec.primitives/currency-scale -5)]
         (is (some? result))
         (is (contains? result ::s/problems))))
 
@@ -247,17 +247,17 @@
 
 (deftest currency-scale-generative-test
   (testing "Generated currency scales are valid"
-    (let [samples (s/exercise :io.randomseed.bankster.spec/currency-scale 20)]
+    (let [samples (s/exercise :io.randomseed.bankster.spec.primitives/currency-scale 20)]
       (doseq [[value conformed] samples]
-        (is (s/valid? :io.randomseed.bankster.spec/currency-scale value))
+        (is (s/valid? :io.randomseed.bankster.spec.primitives/currency-scale value))
         (is (or (= :auto-scaled (first conformed))
                 (= :fixed-scale (first conformed))))))))
 
 (deftest currency-numeric-id-generative-test
   (testing "Generated currency numeric IDs are valid"
-    (let [samples (s/exercise :io.randomseed.bankster.spec/currency-numeric-id 20)]
+    (let [samples (s/exercise :io.randomseed.bankster.spec.primitives/currency-numeric-id 20)]
       (doseq [[value conformed] samples]
-        (is (s/valid? :io.randomseed.bankster.spec/currency-numeric-id value))
+        (is (s/valid? :io.randomseed.bankster.spec.primitives/currency-numeric-id value))
         (is (or (= :no-numeric (first conformed))
                 (= :numeric-id (first conformed))))))))
 
@@ -280,12 +280,12 @@
 ;;
 
 (defspec currency-scale-property-test 100
-  (prop/for-all [scale (s/gen :io.randomseed.bankster.spec/currency-scale)]
-    (s/valid? :io.randomseed.bankster.spec/currency-scale scale)))
+  (prop/for-all [scale (s/gen :io.randomseed.bankster.spec.primitives/currency-scale)]
+    (s/valid? :io.randomseed.bankster.spec.primitives/currency-scale scale)))
 
 (defspec currency-numeric-id-property-test 100
-  (prop/for-all [numeric-id (s/gen :io.randomseed.bankster.spec/currency-numeric-id)]
-    (s/valid? :io.randomseed.bankster.spec/currency-numeric-id numeric-id)))
+  (prop/for-all [numeric-id (s/gen :io.randomseed.bankster.spec.primitives/currency-numeric-id)]
+    (s/valid? :io.randomseed.bankster.spec.primitives/currency-numeric-id numeric-id)))
 
 (defspec currency-id-property-test 50
   (prop/for-all [id (s/gen :io.randomseed.bankster.Currency/id)]
@@ -306,7 +306,7 @@
 
 (deftest currency-scale-conform-roundtrip-test
   (testing "Currency scale conform/unform roundtrip"
-    (let [samples (s/exercise :io.randomseed.bankster.spec/currency-scale 20)]
+    (let [samples (s/exercise :io.randomseed.bankster.spec.primitives/currency-scale 20)]
       (doseq [[original conformed] samples]
-        (let [unformed (s/unform :io.randomseed.bankster.spec/currency-scale conformed)]
+        (let [unformed (s/unform :io.randomseed.bankster.spec.primitives/currency-scale conformed)]
           (is (= original unformed)))))))
