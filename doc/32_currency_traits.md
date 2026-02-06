@@ -14,7 +14,7 @@ This document reflects the default traits hierarchy shipped in `seed.edn` (see
 
 ## `:all`
 
-**Parents:** -
+**Parents:** -  
 **Meaning:** Global root tag for the entire traits taxonomy.
 
 ### `:legacy`
