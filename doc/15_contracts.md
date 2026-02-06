@@ -41,8 +41,8 @@ This is not an API reference (it does not list all arities), but a guide to beha
 - Traits: advisory tags/features associated with a currency (stored in a registry),
   independent from currency identity and `Money` semantics.
 - Scale:
-  - for a currency: nominal number of decimal places,
-  - for `Money`: the scale of the amount (`BigDecimal` scale).
+     - for a currency: nominal number of decimal places,
+     - for `Money`: the scale of the amount (`BigDecimal` scale).
 - Auto-scaled currency: a currency with an "automatic" scale (no fixed nominal
   scale; the amount carries scale).
 - Weight: an integer where *lower weight wins* when resolving code / numeric-ID
@@ -81,13 +81,13 @@ Non-inherent attribute:
 
 - `:weight` (int) - weight used to resolve conflicts when resolving by code and/or
   numeric ID (lower wins).
-  - Source of truth: registry base map `:cur-id->weight` (`:weights` in EDN config).
-  - Registry `Currency` instances carry weight in metadata for hot paths
-    (bucket sorting), accessible via `currency/weight`.
-  - In EDN config `:weight` may be omitted (implicit 0).
-  - Branch-oriented export (`importer/registry->map`) emits weights under top-level
+    - Source of truth: registry base map `:cur-id->weight` (`:weights` in EDN config).
+    - Registry `Currency` instances carry weight in metadata for hot paths
+      (bucket sorting), accessible via `currency/weight`.
+    - In EDN config `:weight` may be omitted (implicit 0).
+    - Branch-oriented export (`importer/registry->map`) emits weights under top-level
     `:weights` (presence is meaningful; explicit `0` is supported).
-  - Currency-oriented export embeds per-currency `:weight` into `:currencies` while
+    - Currency-oriented export embeds per-currency `:weight` into `:currencies` while
     keeping orphaned `:weights` entries.
 
 Contracts:
@@ -100,14 +100,14 @@ Contracts:
 - `Currency` values may carry an extension map (extra keys) because they are Clojure
   records. Bankster itself keeps core semantics in record fields and treats
   extension keys as non-semantic metadata.
-  - When loading currencies from EDN configuration, extra keys present in currency
-    maps are ignored by default.
-  - To allow selected extra keys to be preserved on `Currency` objects, use
-    `:propagate-keys` (global allowlist) and/or per-currency `:propagate-keys`
-    (override). Keys reserved by core currency construction and configuration
-    pre-population (e.g. `:id`, `:kind`, `:scale`, `:numeric`, `:domain`, `:weight`,
-    `:countries`, `:localized`, `:traits`, and the directive `:propagate-keys`) are
-    never propagated.
+    - When loading currencies from EDN configuration, extra keys present in currency
+      maps are ignored by default.
+    - To allow selected extra keys to be preserved on `Currency` objects, use
+      `:propagate-keys` (global allowlist) and/or per-currency `:propagate-keys`
+      (override). Keys reserved by core currency construction and configuration
+      pre-population (e.g. `:id`, `:kind`, `:scale`, `:numeric`, `:domain`, `:weight`,
+      `:countries`, `:localized`, `:traits`, and the directive `:propagate-keys`) are
+      never propagated.
 
 ### 2.2 `io.randomseed.bankster/Money`
 
@@ -179,72 +179,71 @@ General rule:
 Key methods and their contracts:
 
 - `to-id` -> keyword:
-  - registry-free,
-  - may intern keywords (e.g. from a string) - do not use on untrusted input.
+   - registry-free,
+   - may intern keywords (e.g. from a string) - do not use on untrusted input.
 - `to-code` -> keyword:
-  - registry-free,
-  - returns an unqualified code.
+   - registry-free,
+   - returns an unqualified code.
 - `to-id-str` / `to-code-str` -> String:
-  - registry-free,
-  - should not intern keywords (safer for untrusted input),
-  - canonicalization: upper-case name, namespace preserved (for ID).
+   - registry-free,
+   - should not intern keywords (safer for untrusted input),
+   - canonicalization: upper-case name, namespace preserved (for ID).
 - `to-numeric-id` -> long/nil:
-  - registry-free hint (for objects that carry a numeric id).
+   - registry-free hint (for objects that carry a numeric id).
 - `to-currency` -> Currency/nil:
-  - registry-free; may create an ad-hoc `Currency` (e.g. from a map).
+   - registry-free; may create an ad-hoc `Currency` (e.g. from a map).
 - `to-map` -> map/nil:
-  - registry-free; the map may be partial.
+   - registry-free; the map may be partial.
 - `definitive?` -> boolean:
-  - whether the representation carries enough information to make meaningful negative
+   - whether the representation carries enough information to make meaningful negative
     property checks (e.g. "definitely not ISO").
 - `resolve` -> Currency/nil:
-  - soft: returns `nil` when it cannot be resolved.
-  - when `registry` is `nil`, uses the default registry.
+   - soft: returns `nil` when it cannot be resolved.
+   - when `registry` is `nil`, uses the default registry.
 - `resolve-all` -> set/nil:
-  - soft; returns a set of matches or `nil`.
+   - soft; returns a set of matches or `nil`.
 - `id` -> keyword:
-  - unary:
-    - advisory / soft: returns what it can infer locally,
-    - may consult the default registry to disambiguate unqualified currency codes
-      (e.g. `:BTC` -> `:crypto/BTC` when such currency exists),
-    - does not throw on missing currencies (note: numeric IDs are different - see below).
-  - binary: `registry=nil` means "do not consult a registry" (return local
-    ID/coercion).
-  - binary: when a registry is actually consulted, missing currency -> exception.
-    For already constructed `Currency` values the registry is ignored and `.id` is
-    returned.
-  - binary: `registry` should be a `Registry` (or `nil` as above). The boolean
-    sentinel `true` works only syntactically via `(registry/get true)` (macro-level);
-    passing `true` as a runtime value is not supported.
-  - note: for numeric IDs (numbers), `id` always consults a registry and throws when
-    the mapping is missing.
+   - unary:
+     - advisory / soft: returns what it can infer locally,
+     - may consult the default registry to disambiguate unqualified currency codes
+       (e.g. `:BTC` -> `:crypto/BTC` when such currency exists),
+     - does not throw on missing currencies (note: numeric IDs are different - see below).
+   - binary: `registry=nil` means "do not consult a registry" (return local ID/coercion).
+   - binary: when a registry is actually consulted, missing currency -> exception.
+     For already constructed `Currency` values the registry is ignored and `.id` is
+     returned.
+   - binary: `registry` should be a `Registry` (or `nil` as above). The boolean
+     sentinel `true` works only syntactically via `(registry/get true)` (macro-level);
+     passing `true` as a runtime value is not supported.
+   - note: for numeric IDs (numbers), `id` always consults a registry and throws when
+     the mapping is missing.
 - `of-id` -> Currency:
-  - strict: missing currency -> exception,
-  - when the argument is a `Currency`: `registry=nil` means "return as-is".
+   - strict: missing currency -> exception,
+   - when the argument is a `Currency`: `registry=nil` means "return as-is".
 - `unit` -> Currency:
-  - strict: missing currency -> exception,
-  - when the argument is a `Currency`: `registry=nil` means "return as-is",
-  - for maps: maps are treated as masks/constraints (match by key presence); `:id`
-    and `:code` hints are normalized (upper-case name, namespace preserved; ISO-4217
-    namespace stripped) before matching, and when multiple matches exist, the best
-    match is selected by weight (lower wins).
-  - for `Currency` objects: field match is strict; `:domain`/`:kind` may be `nil`
-    wildcards, but scale must match exactly (including `auto-scaled`, which is not
-    a wildcard).
+   - strict: missing currency -> exception,
+   - when the argument is a `Currency`: `registry=nil` means "return as-is",
+   - for maps: maps are treated as masks/constraints (match by key presence); `:id`
+     and `:code` hints are normalized (upper-case name, namespace preserved; ISO-4217
+     namespace stripped) before matching, and when multiple matches exist, the best
+     match is selected by weight (lower wins).
+   - for `Currency` objects: field match is strict; `:domain`/`:kind` may be `nil`
+     wildcards, but scale must match exactly (including `auto-scaled`, which is not
+     a wildcard).
 - `defined?` -> boolean:
-  - existence of a currency in a registry (by ID/numeric/code); this is a "does
-    anything exist" check, without validating full field-level consistency.
+   - existence of a currency in a registry (by ID/numeric/code); this is a "does
+     anything exist" check, without validating full field-level consistency.
 - `present?` -> boolean:
-  - checks whether the representation is consistent with the entry in the registry
-    (field match).
+   - checks whether the representation is consistent with the entry in the registry
+     (field match).
 
 Soft helpers:
 
 - `currency/attempt` and `currency/attempt*`:
-  - soft coercion: returns a `Currency` or `nil`, does not throw.
-  - preferred in predicates and "try" paths.
+   - soft coercion: returns a `Currency` or `nil`, does not throw.
+   - preferred in predicates and "try" paths.
 - `currency/unit-try`:
-  - soft variant of `unit` with identical semantics; returns `nil` instead of throwing.
+   - soft variant of `unit` with identical semantics; returns `nil` instead of throwing.
 
 #### Constructor quick reference (Currency/Money)
 
@@ -278,15 +277,15 @@ Methods:
 - `of` -> long: scale (for `Money` it's the amount scale; for `Currency` it's the
   currency scale; for auto-scaled currencies this is `-1`).
 - `apply` -> scaled value:
-  - for numbers: returns a `BigDecimal`,
-  - for `Money`: may rescale the amount; unary `apply` reapplies the currency's
-    nominal scale (when the currency is not auto-scaled).
-  - for `Currency`: returns a `Currency` with updated `:scale`.
+   - for numbers: returns a `BigDecimal`,
+   - for `Money`: may rescale the amount; unary `apply` reapplies the currency's
+     nominal scale (when the currency is not auto-scaled).
+   - for `Currency`: returns a `Currency` with updated `:scale`.
 - `amount` -> BigDecimal:
-  - for `Money`: returns the amount,
-  - for `Currency`: returns `0M` at nominal scale; returns `nil` for auto-scaled
-    currencies,
-  - for numbers: returns a `BigDecimal` (after coercion).
+   - for `Money`: returns the amount,
+   - for `Currency`: returns `0M` at nominal scale; returns `nil` for auto-scaled
+     currencies,
+   - for numbers: returns a `BigDecimal` (after coercion).
 
 Helpers:
 
@@ -297,19 +296,19 @@ Front API namespaces:
 
 - `API.md` contains an overview of the front API surface.
 - `io.randomseed.bankster.api`:
-  - `amount` -> `scale/amount`.
-  - `scale` -> scale for `Money` and `Currency` (Money amount scale / Currency
-    nominal scale; `-1` for auto-scaled currencies).
+   - `amount` -> `scale/amount`.
+   - `scale` -> scale for `Money` and `Currency` (Money amount scale / Currency
+     nominal scale; `-1` for auto-scaled currencies).
 - `io.randomseed.bankster.api.registry`:
-  - Registry helpers (`with`, `state`, `hierarchy-derive`, `hierarchy-derive!`,
-    `or-default`).
-    - `or-default` treats `nil` and `true` as "use default registry".
+   - Registry helpers (`with`, `state`, `hierarchy-derive`, `hierarchy-derive!`,
+     `or-default`).
+     - `or-default` treats `nil` and `true` as "use default registry".
 - `io.randomseed.bankster.api.money`:
-  - Money-only arithmetic: `add`, `sub`, `mul`, `div`.
-  - Money-only comparisons/predicates: `eq?`, `ne?`, `gt?`, `ge?`, `lt?`, `le?`,
-    `compare`, `pos?`, `neg?`, `zero?`.
+   - Money-only arithmetic: `add`, `sub`, `mul`, `div`.
+   - Money-only comparisons/predicates: `eq?`, `ne?`, `gt?`, `ge?`, `lt?`, `le?`,
+     `compare`, `pos?`, `neg?`, `zero?`.
 - `io.randomseed.bankster.api.currency`:
-  - Currency helpers (unprefixed function set).
+   - Currency helpers (unprefixed function set).
 - Operator namespace for intentional `:refer :all`: `io.randomseed.bankster.api.ops`.
 - Frozen API for major version 2: `io.randomseed.bankster.api.v2` and sub-namespaces.
   It mirrors `io.randomseed.bankster.api` for the 2.x line and remains available
@@ -319,16 +318,16 @@ Front API namespaces:
 Dynamic vars and rounding:
 
 - `scale/*rounding-mode*`:
-  - default rounding mode used by scaling operations when rounding is needed.
+   - default rounding mode used by scaling operations when rounding is needed.
 - `scale/*each*`:
-  - when true, some operations (e.g. multi-arg division in money) rescale after each
-    step.
+   - when true, some operations (e.g. multi-arg division in money) rescale after each
+     step.
 - `scale/with-rounding`:
-  - binds `*rounding-mode*` and sets a thread-local fast path for rounding-mode
-    lookups (performance).
+   - binds `*rounding-mode*` and sets a thread-local fast path for rounding-mode
+     lookups (performance).
 - `scale/with-rescaling`:
-  - binds `*each*` + `*rounding-mode*` and sets a thread-local fast path for
-    rounding-mode lookups (performance).
+   - binds `*each*` + `*rounding-mode*` and sets a thread-local fast path for
+     rounding-mode lookups (performance).
 
 Recommendation:
 
@@ -346,15 +345,15 @@ currencies/registries" layer.
 Methods:
 
 - `value` -> Money/nil:
-  - builds a `Money` from numbers/strings/currency identifiers, etc.,
-  - when the amount is `nil` it typically returns `nil`,
-  - when currency is missing and cannot be inferred, it throws,
-  - a rounding mode is required when coercion/scaling needs rounding and there is no
-    explicit rounding mode and `scale/*rounding-mode*` is not set.
+   - builds a `Money` from numbers/strings/currency identifiers, etc.,
+   - when the amount is `nil` it typically returns `nil`,
+   - when currency is missing and cannot be inferred, it throws,
+   - a rounding mode is required when coercion/scaling needs rounding and there is no
+     explicit rounding mode and `scale/*rounding-mode*` is not set.
 - `cast` -> Money:
-  - changes currency (with rescaling/rounding preserved),
-  - if you only need to ensure the currency comes from a given registry, prefer
-    `money/of-registry`.
+   - changes currency (with rescaling/rounding preserved),
+   - if you only need to ensure the currency comes from a given registry, prefer
+     `money/of-registry`.
 
 ## 4. Public function families (practical classification)
 
@@ -365,16 +364,16 @@ Creation and global state:
 - `registry/new`, `registry/new-registry` - create a new registry.
 - `registry/R` - Atom holding the global registry.
 - `registry/get` - returns a registry:
-  - `(registry/get)` uses the default registry (dynamic or global),
-  - `(registry/get registry)` prefers the provided registry unless it is `nil` or `false`,
-  - `(registry/get true)` works as a syntactic sentinel (macro-level): use the default registry.
+   - `(registry/get)` uses the default registry (dynamic or global),
+   - `(registry/get registry)` prefers the provided registry unless it is `nil` or `false`,
+   - `(registry/get true)` works as a syntactic sentinel (macro-level): use the default registry.
 - `registry/state` - `@R` (global).
 - `registry/set!` - sets the global registry.
 - `registry/update`, `registry/update!` - functional / global update.
 - `registry/with` - lexically binds the default registry (`registry/*default*`).
 - `registry/hierarchies`, `registry/hierarchy` - access registry hierarchies.
 - `registry/hierarchy-derive`, `registry/hierarchy-derive!` - update a selected
-  hierarchy axis in a registry (pure / global mutation).
+   hierarchy axis in a registry (pure / global mutation).
 
 Read-only indices:
 
@@ -393,10 +392,10 @@ Diagnostics:
 Construction:
 
 - `currency/new-currency`, `currency/new`, `currency/map->new`:
-  - canonicalize IDs (upper-case name; namespace preserved, except `ISO-4217` which
-    is stripped),
-  - may infer `:domain` as `:ISO-4217` under typical conditions,
-  - `:weight` defaults to 0.
+   - canonicalize IDs (upper-case name; namespace preserved, except `ISO-4217` which
+     is stripped),
+   - may infer `:domain` as `:ISO-4217` under typical conditions,
+   - `:weight` defaults to 0.
 
 Default currency / registry:
 
@@ -485,21 +484,21 @@ Arithmetic (general rule: currencies must be "the same currency", but weight is
 ignored):
 
 - `money/add` (`+`), `money/sub` (`-`):
-  - accept `Money` and require matching currency,
-  - do not allow adding/subtracting plain numbers to/from `Money`.
+   - accept `Money` and require matching currency,
+   - do not allow adding/subtracting plain numbers to/from `Money`.
 - `money/mul` (`*`):
-  - allows `Money` * numbers,
-  - supports at most one `Money` argument in the whole expression; otherwise throws
+   - allows `Money` * numbers,
+   - supports at most one `Money` argument in the whole expression; otherwise throws
     `ExceptionInfo`.
 - `money/div` (`/`):
-  - `Money / number` -> Money,
-  - `Money / Money` (same currency) -> `BigDecimal`,
-  - `number / Money` -> exception.
-  - unary `money/div` works like `clojure.core//` for numbers, but throws for `Money`
-    (because it would be equivalent to `number / Money`).
+   - `Money / number` -> Money,
+   - `Money / Money` (same currency) -> `BigDecimal`,
+   - `number / Money` -> exception.
+   - unary `money/div` works like `clojure.core//` for numbers, but throws for `Money`
+     (because it would be equivalent to `number / Money`).
 - `money/rem`:
-  - analogous to `div`: for `Money/Money` the result is `BigDecimal`, for
-    `Money/number` the result is `Money`.
+   - analogous to `div`: for `Money/Money` the result is `BigDecimal`, for
+     `Money/number` the result is `Money`.
 
 Scaling / rounding:
 
@@ -511,11 +510,11 @@ Scaling / rounding:
 Allocation:
 
 - `money/allocate`:
-  - splits the amount into parts according to integer-like ratios,
-  - the sum of parts equals the original exactly (sum-preserving),
-  - the remainder is distributed deterministically left-to-right.
+   - splits the amount into parts according to integer-like ratios,
+   - the sum of parts equals the original exactly (sum-preserving),
+   - the remainder is distributed deterministically left-to-right.
 - `money/distribute`:
-  - `allocate` with ratios `(repeat n 1)`.
+   - `allocate` with ratios `(repeat n 1)`.
 
 Formatting:
 
@@ -529,13 +528,13 @@ Tagged literals / readers:
 ### 4.4 Inter-op layers (operators)
 
 - `io.randomseed.bankster.money.ops`:
-  - operator aliases (`+`, `-`, `*`, `/`, `=`, etc.) that always mean Money semantics.
+   - operator aliases (`+`, `-`, `*`, `/`, `=`, etc.) that always mean Money semantics.
 - `io.randomseed.bankster.money.inter-ops`:
-  - if there is *no* `Money` argument, behaves 1:1 like `clojure.core`,
-  - if there is any `Money` argument, it "taints" the operation and switches to
-    Bankster semantics.
-  - this layer is intentionally polymorphic; boxed math warnings are suppressed in
-    that namespace to keep build output clean.
+   - if there is *no* `Money` argument, behaves 1:1 like `clojure.core`,
+   - if there is any `Money` argument, it "taints" the operation and switches to
+     Bankster semantics.
+   - this layer is intentionally polymorphic; boxed math warnings are suppressed in
+     that namespace to keep build output clean.
 
 ## 5. Recommendations and pitfalls (practical)
 
@@ -566,10 +565,12 @@ usage and examples see `doc/50_serialization.md`.
 ### 6.1 Protocols
 
 JSON (`io.randomseed.bankster.serializers.json`):
+
 - `JsonSerializable`: `to-json-map`, `to-json-full-map`, `to-json-string`
 - `JsonDeserializable`: `from-json-map`, `from-json-string`
 
 EDN (`io.randomseed.bankster.serializers.edn`):
+
 - `EdnSerializable`: `to-edn-map`, `to-edn-full-map`, `to-edn-string`
 - `EdnDeserializable`: `from-edn-map`, `from-edn-string`
 
@@ -578,37 +579,37 @@ Implementations: `Money`, `Currency`, `Class` (type token for deserialization).
 ### 6.2 Serialization contracts
 
 - `to-*-map` -> map/nil:
-  - returns **minimal** representation by default (currency ID + amount only),
-  - with `:full? true` delegates to `to-*-full-map`,
-  - returns `nil` when input is `nil`.
+   - returns **minimal** representation by default (currency ID + amount only),
+   - with `:full? true` delegates to `to-*-full-map`,
+   - returns `nil` when input is `nil`.
 - `to-*-full-map` -> map/nil:
-  - returns **full** representation with all fields,
-  - for `Money`: currency is serialized as a nested map (not string ID),
-  - for `Money`: includes extended fields (from record extension map),
-  - accepts `:keys` option for filtering; supports nested opts via map elements,
-  - returns `nil` when input is `nil`.
+   - returns **full** representation with all fields,
+   - for `Money`: currency is serialized as a nested map (not string ID),
+   - for `Money`: includes extended fields (from record extension map),
+   - accepts `:keys` option for filtering; supports nested opts via map elements,
+   - returns `nil` when input is `nil`.
 - `to-*-string` -> String/nil:
-  - returns canonical string representation,
-  - JSON: `"<amount> <currency-id>"` (e.g. `"12.30 PLN"`),
-  - EDN: tagged literal (e.g. `#money[12.30M PLN]`, `#money/crypto[1.5M ETH]`),
-  - returns `nil` when input is `nil`.
+   - returns canonical string representation,
+   - JSON: `"<amount> <currency-id>"` (e.g. `"12.30 PLN"`),
+   - EDN: tagged literal (e.g. `#money[12.30M PLN]`, `#money/crypto[1.5M ETH]`),
+   - returns `nil` when input is `nil`.
 
 ### 6.3 Deserialization contracts
 
 - `from-*-map` -> Money/Currency:
-  - strict: throws `ExceptionInfo` when:
-    - input is not a map,
-    - required key is missing (`:currency`, `:amount` for Money; `:id` for Currency),
-    - currency cannot be resolved in registry,
-    - `:rounding-mode` cannot be parsed (when provided). Accepts: `RoundingMode`,
-      keywords (`:HALF_UP`), or strings (`"HALF_UP"`).
-  - returns `nil` when input is `nil`.
+   - strict: throws `ExceptionInfo` when:
+     - input is not a map,
+     - required key is missing (`:currency`, `:amount` for Money; `:id` for Currency),
+     - currency cannot be resolved in registry,
+     - `:rounding-mode` cannot be parsed (when provided). Accepts: `RoundingMode`,
+       keywords (`:HALF_UP`), or strings (`"HALF_UP"`).
+   - returns `nil` when input is `nil`.
 - `from-*-string` -> Money/Currency:
-  - strict: throws `ExceptionInfo` when:
-    - input is not a string,
-    - string cannot be parsed,
-    - currency cannot be resolved in registry.
-  - returns `nil` when input is `nil`.
+   - strict: throws `ExceptionInfo` when:
+     - input is not a string,
+     - string cannot be parsed,
+     - currency cannot be resolved in registry.
+   - returns `nil` when input is `nil`.
 
 ### 6.4 Registry, rounding, and rescaling behavior
 
@@ -627,11 +628,13 @@ Implementations: `Money`, `Currency`, `Class` (type token for deserialization).
 ### 6.4.1 The `:rescale` option
 
 **Serialization** with `:rescale`:
+
 - Rescales the amount to the specified scale before outputting.
 - Downscaling requires `:rounding-mode` or `scale/*rounding-mode*`.
 - Does not modify the Money object itself, only the serialized output.
 
 **Deserialization** with `:rescale`:
+
 - Overrides the currency's nominal scale from the registry.
 - The Currency object is cloned with the `:rescale` value as its scale.
 - The resulting Money carries this modified Currency (not the registry's version).
@@ -639,6 +642,7 @@ Implementations: `Money`, `Currency`, `Class` (type token for deserialization).
   the registry currency's scale.
 
 Contract:
+
 - `:rescale` must be a non-negative integer when provided.
 - Invalid `:rescale` (non-integer or negative) throws `ExceptionInfo` on both
   serialization and deserialization.
@@ -653,6 +657,7 @@ They do not throw on `nil`.
 ### 6.6 Map key acceptance (JSON)
 
 JSON deserialization accepts both keyword and string keys in input maps:
+
 - `:currency` or `"currency"`
 - `:amount` or `"amount"`
 - `:id` or `"id"`

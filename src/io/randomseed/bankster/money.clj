@@ -502,14 +502,14 @@
   currency, rounding mode must be given, which may be a symbol, a keyword or a string
   of the following:
 
-  * `CEILING`     - rounds towards positive infinity.
-  * `DOWN`        - rounds towards zero.
-  * `FLOOR`       - rounds towards negative infinity.
-  * `HALF_DOWN`   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
-  * `HALF_EVEN`   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
-  * `HALF_UP`     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
-  * `UP`          – rounds away from zero
-  * `UNNECESSARY` - asserts that the requested operation has an exact result, hence no rounding is necessary.
+  - `CEILING`     - rounds towards positive infinity.
+  - `DOWN`        - rounds towards zero.
+  - `FLOOR`       - rounds towards negative infinity.
+  - `HALF_DOWN`   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
+  - `HALF_EVEN`   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
+  - `HALF_UP`     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
+  - `UP`          – rounds away from zero
+  - `UNNECESSARY` - asserts that the requested operation has an exact result, hence no rounding is necessary.
 
   To create a monetary object using function, call `io.randomseed.bankster.money/value`.
 
@@ -1355,7 +1355,7 @@
   [^Money a]
   (clojure.core/<= (.compareTo ^BigDecimal (.amount ^Money a) 0M) 0))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
+(def ^{:tag      Money :added "1.2.0"
        :arglists '(^Boolean [^Money a])}
   neg-or-zero?
   "Alias for is-neg-or-zero?."
@@ -1367,7 +1367,7 @@
   [^Money a]
   (clojure.core/>= (.compareTo ^BigDecimal (.amount ^Money a) 0M) 0))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
+(def ^{:tag      Money :added "1.2.0"
        :arglists '(^Boolean [^Money a])}
   pos-or-zero?
   "Alias for is-pos-or-zero?."
@@ -2592,6 +2592,7 @@
   applied to all resulting parts (preserving the exact sum).
 
   Throws `ExceptionInfo` when:
+
   - `ratios` is empty,
   - the sum of ratios is not strictly positive.
 
@@ -2831,6 +2832,7 @@
   `clojure.edn/read` / `clojure.edn/read-string`.
 
   The returned map always includes the base tags:
+
   - `#money` and `#bankster.money`,
   - `#currency` and `#bankster.currency`.
 
@@ -2951,6 +2953,7 @@
   "Coerces a money-like value into an EDN-friendly map.
 
   Canonical shape:
+
   - `:currency` - currency ID keyword (may be namespaced, e.g. `:crypto/USDT`)
   - `:amount`   - BigDecimal amount (scale preserved)
 
@@ -2967,8 +2970,9 @@
   "Creates Money from a map representation.
 
   Expected keys:
+
   - `:currency` (or `:cur`)  - any currency representation accepted by Bankster
-  - `:amount`               - amount as BigDecimal/number/string
+  - `:amount`                - amount as BigDecimal/number/string
   - optional `:rounding-mode` / `:rounding`
 
   This is a general-purpose helper meant for EDN-like data. It accepts keyword/symbol
@@ -3022,6 +3026,7 @@
   The returned map uses keyword keys but is safe to pass to JSON encoders.
 
   Options:
+
   - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `\"ETH\"`"
   {:tag clojure.lang.IPersistentMap :added "2.1.0" :ex/strict true}
   (^clojure.lang.IPersistentMap [money]
@@ -3035,6 +3040,7 @@
   "Serializes a money-like value to a canonical JSON string.
 
   Options:
+
   - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `\"ETH\"`"
   {:tag String :added "2.1.0" :ex/strict true}
   (^String [money]
@@ -3048,6 +3054,7 @@
   "Deserializes Money from a JSON map.
 
   Options:
+
   - `:registry`      - registry to use for currency lookup (default: `registry/get`)
   - `:rounding-mode` - `java.math.RoundingMode` for rescaling"
   {:tag Money :added "2.1.0" :ex/strict true}
@@ -3060,6 +3067,7 @@
   "Deserializes Money from a JSON string.
 
   Options:
+
   - `:registry`      - registry to use for currency lookup (default: `registry/get`)
   - `:rounding-mode` - `java.math.RoundingMode` for rescaling"
   {:tag Money :added "2.1.0" :ex/strict true}

@@ -59,14 +59,14 @@
   The first argument should be a valid rounding (from `io.randomseed.bankster.scale`
   or `java.math.RoundingMode`) or one of the following:
 
-  CEILING     - rounds towards positive infinity.
-  DOWN        - rounds towards zero.
-  FLOOR       - rounds towards negative infinity.
-  HALF_DOWN   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
-  HALF_EVEN   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
-  HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
-  UP          - rounds away from zero
-  UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
+  - CEILING     - rounds towards positive infinity.
+  - DOWN        - rounds towards zero.
+  - FLOOR       - rounds towards negative infinity.
+  - HALF_DOWN   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
+  - HALF_EVEN   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
+  - HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
+  - UP          - rounds away from zero
+  - UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
   {:added "2.2.0"}
   [rounding-mode & body]
   `(scale/with-rounding ~rounding-mode ~@body))
@@ -81,14 +81,14 @@
   The first argument should be a valid rounding (from `io.randomseed.bankster.scale`
   or `java.math.RoundingMode`) or one of the following:
 
-  CEILING     - rounds towards positive infinity.
-  DOWN        - rounds towards zero.
-  FLOOR       - rounds towards negative infinity.
-  HALF_DOWN   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
-  HALF_EVEN   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
-  HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
-  UP          - rounds away from zero
-  UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
+  - CEILING     - rounds towards positive infinity.
+  - DOWN        - rounds towards zero.
+  - FLOOR       - rounds towards negative infinity.
+  - HALF_DOWN   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
+  - HALF_EVEN   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
+  - HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
+  - UP          - rounds away from zero
+  - UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
   {:added "2.2.0"}
   [rounding-mode & body]
   `(scale/with-rescaling ~rounding-mode ~@body))

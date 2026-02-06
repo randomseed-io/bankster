@@ -5,6 +5,7 @@ It is a curated, stable facade over the core namespaces (`currency`, `money`,
 `registry`) and should be the default entry point for application code.
 
 Frozen API for major 2:
+
 - `io.randomseed.bankster.api.v2` and its sub-namespaces mirror
   `io.randomseed.bankster.api.*` for the Bankster 2.x line.
 - When Bankster 3 appears, the v2 API will remain available for compatibility.
@@ -31,6 +32,7 @@ Note: this is an overview, not an exhaustive arity-level reference.
 - *Soft* functions return `nil` when no match is found.
 
 Examples:
+
 - `api.currency/resolve` (strict) vs `api.currency/resolve-try` (soft)
 - `api.money/resolve` (strict) vs `api.money/resolve-try` (soft)
 
@@ -44,43 +46,52 @@ Examples:
 ## `io.randomseed.bankster.api.currency`
 
 **Resolution / constructors**
+
 - `resolve`, `resolve-try`, `resolve-all`, `new`
 - `of` (macro alias), `normalize`
 - `with`, `with-default`, `with-registry`
 
 **Accessors**
+
 - `id`, `id-str`, `code`, `code-str`, `nr`, `scale`, `domain`, `kind`, `symbol`
 - `info`, `to-map` (and JSON/EDN helpers)
 
 **Predicates / traits / kinds**
+
 - `currency?`, `possible?`, `definitive?`, `auto-scaled?`, `crypto?`, `iso?`
 - `has-trait?`, `of-trait?`, `has-kind?`, `of-kind?`, `of-domain?`
 
 **Registry operations**
+
 - `register`, `register!`, `unregister`, `unregister!`
 - `add-traits`, `set-traits`, `remove-traits`
 
 ## `io.randomseed.bankster.api.money`
 
 **Constructors / coercion**
+
 - `resolve`, `resolve-try`
 - `major`, `minor`, `of-registry`, `cast`, `cast-try`
 - `amount`, `currency`, `info`, `normalize`
- - `rounding-mode`, `scale-apply`
+- `rounding-mode`, `scale-apply`
 
 **Arithmetic**
+
 - `add`, `sub`, `mul`, `div`
 - `round`, `round-to`, `allocate`, `distribute`
 
 **Comparisons / predicates**
+
 - `compare`, `eq?`, `ne?`, `gt?`, `ge?`, `lt?`, `le?`
 - `pos?`, `neg?`, `zero?`, `same-currencies?`
 
 **Parsing / formatting**
+
 - `parse`, `parse-major`, `parse-minor`
 - `format`, `unparse`
 
 **Serialization**
+
 - `to-map`, `to-json-string`, `from-json`, `from-edn`, etc.
 
 ## `io.randomseed.bankster.api.registry`

@@ -24,12 +24,13 @@
 ;; Contextual helpers
 ;;
 
-(bu/defalias with-registry api-registry/with)
-(bu/defalias new           io.randomseed.bankster.currency/new-currency)
+(bu/defalias with-registry api-registry/with                            "2.2.0")
+(bu/defalias new           io.randomseed.bankster.currency/new-currency "2.2.0")
 
 (defmacro with-default
   "Sets the dynamic binding of `io.randomseed.bankster.currency/*default*` to
   `currency` and evaluates body in an implicit `do`."
+  {:added "2.2.0"}
   [currency & body]
   `(binding [io.randomseed.bankster.currency/*default* ~currency]
      ~@body))
@@ -53,9 +54,10 @@
   Delegates to `io.randomseed.bankster.currency/unit`.
 
   Arity:
-  - `()` uses `io.randomseed.bankster.currency/*default*`.
-  - `([currency])` resolves the given currency representation.
-  - `([currency registry])` resolves using the given registry (`nil` -> default).
+
+  - `[]` uses `io.randomseed.bankster.currency/*default*`.
+  - `[currency]` resolves the given currency representation.
+  - `[currency registry]` resolves using the given registry (`nil` -> default).
 
   Accepts currency identifiers (keyword/symbol/string/number), `Currency` values, and
   currency maps (treated as registry lookup specs).
@@ -90,9 +92,10 @@
   `Currency` or `nil` when it cannot be resolved.
 
   Arity:
-  - `()` uses `currency/*default*`.
-  - `([currency])` resolves the given representation using the default registry.
-  - `([currency registry])` resolves using the given registry (`nil` -> default).
+
+  - `[]` uses `currency/*default*`.
+  - `[currency]` resolves the given representation using the default registry.
+  - `[currency registry]` resolves using the given registry (`nil` -> default).
 
   Accepts currency identifiers (keyword/symbol/string/number), `Currency` values, and
   currency maps (treated as registry lookup specs).
@@ -195,7 +198,7 @@
   "Returns currency ID (keyword). Delegates to `io.randomseed.bankster.currency/id`.
 
   - `([currency])` is registry-light and may return a keyword even if the currency is
-   not registered;
+    not registered;
   - `([currency registry])` is strict when `registry` is non-nil.
 
   When registry is `true`, the default registry (global or dynamically bound) is

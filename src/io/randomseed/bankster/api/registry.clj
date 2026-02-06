@@ -39,10 +39,10 @@
     (registry/hierarchy-derive hierarchy-name tag parent (registry/get))
     (registry/hierarchy-derive hierarchy-name tag parent registry)))
 
-(bu/defalias with              io.randomseed.bankster.registry/with)
-(bu/defalias new               io.randomseed.bankster.registry/new-registry)
-(bu/defalias state             io.randomseed.bankster.registry/state)
-(bu/defalias hierarchy-derive! io.randomseed.bankster.registry/hierarchy-derive!)
+(bu/defalias with              io.randomseed.bankster.registry/with              "2.2.0")
+(bu/defalias new               io.randomseed.bankster.registry/new-registry      "2.2.2")
+(bu/defalias state             io.randomseed.bankster.registry/state             "2.2.0")
+(bu/defalias hierarchy-derive! io.randomseed.bankster.registry/hierarchy-derive! "2.2.0")
 
 (bu/auto-alias 'io.randomseed.bankster.registry)
 

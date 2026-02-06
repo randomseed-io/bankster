@@ -158,6 +158,7 @@
   "Wraps an ArithmeticException into ExceptionInfo with stable ex-data keys.
 
   Contract:
+
   - always sets `:op`, `:arithmetic-exception`, and `:arithmetic-exception/cause`
   - preserves all keys from the provided `data` map"
   {:tag clojure.lang.ExceptionInfo :private true :added "2.1.0"}
@@ -590,6 +591,7 @@
   (wrapped in ExceptionInfo) if rounding is needed but no rounding mode is available.
 
   Arguments:
+
   - `n`  - a value convertible to BigDecimal (number, string, BigDecimal)
   - `sc` - target scale (long); -1 means auto-scaled (no rescaling)
   - `rm` - optional RoundingMode for downscaling
@@ -813,14 +815,14 @@
   The first argument should be a valid rounding (from `io.randomseed.bankster.scale`
   or `java.math.RoundingMode`) or one of the following:
 
-  CEILING     - rounds towards positive infinity.
-  DOWN        - rounds towards zero.
-  FLOOR       - rounds towards negative infinity.
-  HALF_DOWN   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
-  HALF_EVEN   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
-  HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
-  UP          – rounds away from zero
-  UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
+  - CEILING     - rounds towards positive infinity.
+  - DOWN        - rounds towards zero.
+  - FLOOR       - rounds towards negative infinity.
+  - HALF_DOWN   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
+  - HALF_EVEN   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
+  - HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
+  - UP          – rounds away from zero
+  - UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
   {:added "1.0.0"}
   [rounding-mode & body]
   (let [rms# (parse-rounding rounding-mode)]
@@ -843,14 +845,14 @@
   The first argument should be a valid rounding (from `io.randomseed.bankster.scale`
   or `java.math.RoundingMode`) or one of the following:
 
-  CEILING     - rounds towards positive infinity.
-  DOWN        - rounds towards zero.
-  FLOOR       - rounds towards negative infinity.
-  HALF_DOWN   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
-  HALF_EVEN   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
-  HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
-  UP          – rounds away from zero
-  UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
+  - CEILING     - rounds towards positive infinity.
+  - DOWN        - rounds towards zero.
+  - FLOOR       - rounds towards negative infinity.
+  - HALF_DOWN   - rounds towards nearest neighbor unless both neighbors are equidistant, in which case rounds down.
+  - HALF_EVEN   - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds towards the even.
+  - HALF_UP     - rounds towards the nearest neighbor unless both neighbors are equidistant, and if so, rounds up.
+  - UP          – rounds away from zero
+  - UNNECESSARY - asserts that the requested operation has an exact result, hence no rounding is necessary."
   {:added "1.0.0"}
   ([rounding-mode & body]
    (let [rms# (parse-rounding rounding-mode)]

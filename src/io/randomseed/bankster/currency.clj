@@ -525,6 +525,7 @@
   a currency-like object.
 
   If a `Currency` record is passed and `registry`:
+
   - is not given (unary arity), or
   - is explicitly set to `nil`,
 
@@ -718,6 +719,7 @@
   "Returns `true` when two currency representations refer to the same currency ID.
 
   Contract:
+
   - symmetric (argument order does not matter),
   - non-throwing (returns `false` when IDs cannot be established),
   - `registry` set to `nil` means: use the default registry,
@@ -2713,6 +2715,7 @@
 
 (defn register-numeric
   "Updates numeric indexes:
+   
    - `:cur-nr->curs` => sorted-set
    - `:cur-nr->cur`  => canonical currency (first from set)"
   {:tag Registry :private true :added "1.0.2"}
@@ -4273,6 +4276,7 @@
   "Serializes a currency to a JSON-friendly map.
 
   Options:
+
   - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `\"ETH\"`"
   {:tag clojure.lang.IPersistentMap :added "2.1.0" :ex/strict true}
   (^clojure.lang.IPersistentMap [currency]
@@ -4286,6 +4290,7 @@
   "Serializes a currency to a JSON string identifier.
 
   Options:
+
   - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `\"ETH\"`"
   {:tag String :added "2.1.0" :ex/strict true}
   (^String [currency]
@@ -4299,6 +4304,7 @@
   "Serializes a currency to an EDN-friendly map.
 
   Options:
+
   - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `:ETH`"
   {:tag clojure.lang.IPersistentMap :added "2.1.0" :ex/strict true}
   (^clojure.lang.IPersistentMap [currency]
@@ -4312,6 +4318,7 @@
   "Serializes a currency to an EDN tagged literal string.
 
   Options:
+
   - `:code-only?` - when truthy, namespace is omitted: `:crypto/ETH` → `:ETH`"
   {:tag String :added "2.1.0" :ex/strict true}
   (^String [currency]
@@ -4365,7 +4372,6 @@
            #'io.randomseed.bankster.currency/code-literal
            #'io.randomseed.bankster.currency/codes
            #'io.randomseed.bankster.currency/commodity?
-           #'io.randomseed.bankster.currency/config->registry
            #'io.randomseed.bankster.currency/countries
            #'io.randomseed.bankster.currency/credit?
            #'io.randomseed.bankster.currency/data-literal

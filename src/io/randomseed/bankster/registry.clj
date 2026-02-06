@@ -184,6 +184,7 @@
   "Builds a hierarchy map out of a \"parent map\" (child -> parent/parents).
 
   The map value may be:
+
   - a single parent (keyword/symbol/class), or
   - a set/vector/list/seq of parents (multiple inheritance)."
   {:tag clojure.lang.IPersistentMap :added "2.0.0" :private true}

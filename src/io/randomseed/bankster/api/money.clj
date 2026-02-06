@@ -30,10 +30,12 @@
 ;; Contextual helpers
 ;;
 
-(bu/defalias with-currency  io.randomseed.bankster.currency/with)
-(bu/defalias with-registry  api-registry/with)
-(bu/defalias with-rounding  io.randomseed.bankster.scale/with-rounding)
-(bu/defalias with-rescaling io.randomseed.bankster.scale/with-rescaling)
+(bu/defalias with-registry  api-registry/with                           "2.2.0")
+(bu/defalias with-currency  io.randomseed.bankster.currency/with        "2.2.0")
+(bu/defalias with-rounding  io.randomseed.bankster.scale/with-rounding  "2.2.0")
+(bu/defalias with-rescaling io.randomseed.bankster.scale/with-rescaling "2.2.0")
+(bu/defalias major-of       io.randomseed.bankster.money/of-major       "2.2.0")
+(bu/defalias minor-of       io.randomseed.bankster.money/of-minor       "2.2.0")
 
 (defn rounding-mode
   "Returns the current rounding mode.
@@ -78,12 +80,12 @@
 
   Arity:
 
-  - `()` creates zero in the default currency.
-  - `([amount])` delegates to unary `money/value`.
-  - `([amount currency])` uses amount + currency.
-  - `([amount currency rounding])` uses amount + currency + rounding.
-  - `([amount currency registry])` uses amount + currency (resolved using registry).
-  - `([amount currency rounding registry])` explicit rounding + registry for resolution.
+  - `[]` creates zero in the default currency.
+  - `[amount]` delegates to unary `money/value`.
+  - `[amount currency]` uses amount + currency.
+  - `[amount currency rounding]` uses amount + currency + rounding.
+  - `[amount currency registry]` uses amount + currency (resolved using registry).
+  - `[amount currency rounding registry]` explicit rounding + registry for resolution.
 
   `currency` may be a `Currency`, an identifier (keyword/symbol/string/number), or a
   currency map (lookup spec).
@@ -448,8 +450,7 @@
   - `([amount])` accepts `Money`, EDN-like map (via `money/of-map`), or a literal
     amount (delegates to `money/parse`).
   - `([amount currency])` and `([amount currency rounding])` use amount-first order
-    and delegate to `money/parse`. Rounding is parsed via
-    `scale/post-parse-rounding`."
+    and delegate to `money/parse`. Rounding is parsed via `scale/post-parse-rounding`."
   {:tag      Money
    :added    "2.2.0"
    :arglists '([amount] [amount currency] [amount currency rounding])
@@ -699,9 +700,6 @@
        {:op    :bankster.api.money/from-json-text
         :value x
         :class (class x)})))))
-
-(bu/defalias major-of io.randomseed.bankster.money/of-major)
-(bu/defalias minor-of io.randomseed.bankster.money/of-minor)
 
 (bu/auto-alias 'io.randomseed.bankster.money)
 
