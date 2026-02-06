@@ -357,6 +357,22 @@
          (not-empty ^String (.substring ^String s (unchecked-inc-int i)))]))
     [nil nil]))
 
+(defn split-on-last-slash
+  "Splits a string on the last slash character ('/').
+
+  Returns a vector of two strings: `[before after]`. When `s` is `nil` or empty,
+  returns `[nil nil]`. When there is no slash, returns `[nil s]`. Uses Java
+  `lastIndexOf` and `substring`."
+  {:added "2.2.3"}
+  [^String s]
+  (if (and (some? s) (not (.isEmpty ^String s)))
+    (let [i (unchecked-int (.lastIndexOf ^String s (int \/)))]
+      (if (neg? i)
+        [nil s]
+        [(not-empty ^String (.substring ^String s 0 i))
+         (not-empty ^String (.substring ^String s (unchecked-inc-int i)))]))
+    [nil nil]))
+
 (defmacro is
   [pred val & body]
   `(let [v# ~val]

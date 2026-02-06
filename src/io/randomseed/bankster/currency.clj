@@ -320,7 +320,9 @@
                               (str/upper-case
                                (if (ident? domain)
                                  (core-name domain)
-                                 (let [d (str domain)] (when (seq d) d)))))))
+                                 (let [d (str domain)]
+                                   (when (seq d)
+                                     (or (second (bu/split-on-last-slash d)) d))))))))
            ns-domain     (when-not iso-ns? ns-domain)]
        (when (and (some? ns-domain) (not= domain ns-domain))
          (throw (ex-info
