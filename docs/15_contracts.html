@@ -33,9 +33,12 @@
 <ul>
 <li>Contract violations (wrong arity/typing combination, mismatched currencies, missing currency in registry, missing rounding-mode, etc.) are signaled via <code>clojure.lang.ExceptionInfo</code> (<code>ex-info</code>).</li>
 <li>In <code>ex-data</code> you will typically find keys like <code>:registry</code>, <code>:currency</code>, <code>:value</code>, <code>:op</code>, and/or domain-specific keys (<code>:augend</code>, <code>:addend</code>, <code>:minuend</code>, <code>:subtrahend</code>, <code>:dividend</code>, <code>:divisor</code>).</li>
-<li>When an error originates from <code>BigDecimal</code> arithmetic (Java <code>ArithmeticException</code>), Bankster rethrows it as <code>ExceptionInfo</code> and marks it in <code>ex-data</code> with:</li>
+<li>When an error originates from <code>BigDecimal</code> arithmetic (Java <code>ArithmeticException</code>), Bankster rethrows it as <code>ExceptionInfo</code> and marks it in <code>ex-data</code> with:
+<ul>
 <li><code>:arithmetic-exception true</code>,</li>
 <li><code>:arithmetic-exception/cause</code> (the original <code>ArithmeticException</code>, also used as the exception cause).</li>
+</ul>
+</li>
 </ul>
 <h2><a href="#2-records-core-data" id="2-records-core-data"></a>2. Records (core data)</h2>
 <h3><a href="#21-iorandomseedbankstercurrency" id="21-iorandomseedbankstercurrency"></a>2.1 <code>io.randomseed.bankster/Currency</code></h3>
@@ -118,30 +121,58 @@
 </ul>
 <p>Key methods and their contracts:</p>
 <ul>
-<li><code>to-id</code> -&gt; keyword:</li>
+<li><code>to-id</code> -&gt; keyword:
+<ul>
 <li>registry-free,</li>
 <li>may intern keywords (e.g. from a string) - do not use on untrusted input.</li>
-<li><code>to-code</code> -&gt; keyword:</li>
+</ul>
+</li>
+<li><code>to-code</code> -&gt; keyword:
+<ul>
 <li>registry-free,</li>
 <li>returns an unqualified code.</li>
-<li><code>to-id-str</code> / <code>to-code-str</code> -&gt; String:</li>
+</ul>
+</li>
+<li><code>to-id-str</code> / <code>to-code-str</code> -&gt; String:
+<ul>
 <li>registry-free,</li>
 <li>should not intern keywords (safer for untrusted input),</li>
 <li>canonicalization: upper-case name, namespace preserved (for ID).</li>
-<li><code>to-numeric-id</code> -&gt; long/nil:</li>
+</ul>
+</li>
+<li><code>to-numeric-id</code> -&gt; long/nil:
+<ul>
 <li>registry-free hint (for objects that carry a numeric id).</li>
-<li><code>to-currency</code> -&gt; Currency/nil:</li>
+</ul>
+</li>
+<li><code>to-currency</code> -&gt; Currency/nil:
+<ul>
 <li>registry-free; may create an ad-hoc <code>Currency</code> (e.g. from a map).</li>
-<li><code>to-map</code> -&gt; map/nil:</li>
+</ul>
+</li>
+<li><code>to-map</code> -&gt; map/nil:
+<ul>
 <li>registry-free; the map may be partial.</li>
-<li><code>definitive?</code> -&gt; boolean:</li>
+</ul>
+</li>
+<li><code>definitive?</code> -&gt; boolean:
+<ul>
 <li>whether the representation carries enough information to make meaningful negative property checks (e.g. “definitely not ISO”).</li>
-<li><code>resolve</code> -&gt; Currency/nil:</li>
+</ul>
+</li>
+<li><code>resolve</code> -&gt; Currency/nil:
+<ul>
 <li>soft: returns <code>nil</code> when it cannot be resolved.</li>
 <li>when <code>registry</code> is <code>nil</code>, uses the default registry.</li>
-<li><code>resolve-all</code> -&gt; set/nil:</li>
+</ul>
+</li>
+<li><code>resolve-all</code> -&gt; set/nil:
+<ul>
 <li>soft; returns a set of matches or <code>nil</code>.</li>
-<li><code>id</code> -&gt; keyword:</li>
+</ul>
+</li>
+<li><code>id</code> -&gt; keyword:
+<ul>
 <li>unary:
 <ul>
 <li>advisory / soft: returns what it can infer locally,</li>
@@ -153,26 +184,46 @@
 <li>binary: when a registry is actually consulted, missing currency -&gt; exception. For already constructed <code>Currency</code> values the registry is ignored and <code>.id</code> is returned.</li>
 <li>binary: <code>registry</code> should be a <code>Registry</code> (or <code>nil</code> as above). The boolean sentinel <code>true</code> works only syntactically via <code>(registry/get true)</code> (macro-level); passing <code>true</code> as a runtime value is not supported.</li>
 <li>note: for numeric IDs (numbers), <code>id</code> always consults a registry and throws when the mapping is missing.</li>
-<li><code>of-id</code> -&gt; Currency:</li>
+</ul>
+</li>
+<li><code>of-id</code> -&gt; Currency:
+<ul>
 <li>strict: missing currency -&gt; exception,</li>
 <li>when the argument is a <code>Currency</code>: <code>registry=nil</code> means “return as-is”.</li>
-<li><code>unit</code> -&gt; Currency:</li>
+</ul>
+</li>
+<li><code>unit</code> -&gt; Currency:
+<ul>
 <li>strict: missing currency -&gt; exception,</li>
 <li>when the argument is a <code>Currency</code>: <code>registry=nil</code> means “return as-is”,</li>
 <li>for maps: maps are treated as masks/constraints (match by key presence); <code>:id</code> and <code>:code</code> hints are normalized (upper-case name, namespace preserved; ISO-4217 namespace stripped) before matching, and when multiple matches exist, the best match is selected by weight (lower wins).</li>
 <li>for <code>Currency</code> objects: field match is strict; <code>:domain</code>/<code>:kind</code> may be <code>nil</code> wildcards, but scale must match exactly (including <code>auto-scaled</code>, which is not a wildcard).</li>
-<li><code>defined?</code> -&gt; boolean:</li>
+</ul>
+</li>
+<li><code>defined?</code> -&gt; boolean:
+<ul>
 <li>existence of a currency in a registry (by ID/numeric/code); this is a “does anything exist” check, without validating full field-level consistency.</li>
-<li><code>present?</code> -&gt; boolean:</li>
+</ul>
+</li>
+<li><code>present?</code> -&gt; boolean:
+<ul>
 <li>checks whether the representation is consistent with the entry in the registry (field match).</li>
+</ul>
+</li>
 </ul>
 <p>Soft helpers:</p>
 <ul>
-<li><code>currency/attempt</code> and <code>currency/attempt*</code>:</li>
+<li><code>currency/attempt</code> and <code>currency/attempt*</code>:
+<ul>
 <li>soft coercion: returns a <code>Currency</code> or <code>nil</code>, does not throw.</li>
 <li>preferred in predicates and “try” paths.</li>
-<li><code>currency/unit-try</code>:</li>
+</ul>
+</li>
+<li><code>currency/unit-try</code>:
+<ul>
 <li>soft variant of <code>unit</code> with identical semantics; returns <code>nil</code> instead of throwing.</li>
+</ul>
+</li>
 </ul>
 <h4><a href="#constructor-quick-reference-currencymoney" id="constructor-quick-reference-currencymoney"></a>Constructor quick reference (Currency/Money)</h4>
 <table>
@@ -204,14 +255,20 @@
 <li><code>scalable?</code> -&gt; boolean: can this value be coerced to a scalable value?</li>
 <li><code>applied?</code> -&gt; boolean: does the value already carry scale information (e.g. <code>BigDecimal</code>, <code>Money</code>, <code>Currency</code>)?</li>
 <li><code>of</code> -&gt; long: scale (for <code>Money</code> it’s the amount scale; for <code>Currency</code> it’s the currency scale; for auto-scaled currencies this is <code>-1</code>).</li>
-<li><code>apply</code> -&gt; scaled value:</li>
+<li><code>apply</code> -&gt; scaled value:
+<ul>
 <li>for numbers: returns a <code>BigDecimal</code>,</li>
 <li>for <code>Money</code>: may rescale the amount; unary <code>apply</code> reapplies the currency’s nominal scale (when the currency is not auto-scaled).</li>
 <li>for <code>Currency</code>: returns a <code>Currency</code> with updated <code>:scale</code>.</li>
-<li><code>amount</code> -&gt; BigDecimal:</li>
+</ul>
+</li>
+<li><code>amount</code> -&gt; BigDecimal:
+<ul>
 <li>for <code>Money</code>: returns the amount,</li>
 <li>for <code>Currency</code>: returns <code>0M</code> at nominal scale; returns <code>nil</code> for auto-scaled currencies,</li>
 <li>for numbers: returns a <code>BigDecimal</code> (after coercion).</li>
+</ul>
+</li>
 </ul>
 <p>Helpers:</p>
 <ul>
@@ -220,33 +277,57 @@
 <p>Front API namespaces:</p>
 <ul>
 <li><code>API.md</code> contains an overview of the front API surface.</li>
-<li><code>io.randomseed.bankster.api</code>:</li>
+<li><code>io.randomseed.bankster.api</code>:
+<ul>
 <li><code>amount</code> -&gt; <code>scale/amount</code>.</li>
 <li><code>scale</code> -&gt; scale for <code>Money</code> and <code>Currency</code> (Money amount scale / Currency nominal scale; <code>-1</code> for auto-scaled currencies).</li>
-<li><code>io.randomseed.bankster.api.registry</code>:</li>
+</ul>
+</li>
+<li><code>io.randomseed.bankster.api.registry</code>:
+<ul>
 <li>Registry helpers (<code>with</code>, <code>state</code>, <code>hierarchy-derive</code>, <code>hierarchy-derive!</code>, <code>or-default</code>).
 <ul>
 <li><code>or-default</code> treats <code>nil</code> and <code>true</code> as “use default registry”.</li>
 </ul>
 </li>
-<li><code>io.randomseed.bankster.api.money</code>:</li>
+</ul>
+</li>
+<li><code>io.randomseed.bankster.api.money</code>:
+<ul>
 <li>Money-only arithmetic: <code>add</code>, <code>sub</code>, <code>mul</code>, <code>div</code>.</li>
 <li>Money-only comparisons/predicates: <code>eq?</code>, <code>ne?</code>, <code>gt?</code>, <code>ge?</code>, <code>lt?</code>, <code>le?</code>, <code>compare</code>, <code>pos?</code>, <code>neg?</code>, <code>zero?</code>.</li>
-<li><code>io.randomseed.bankster.api.currency</code>:</li>
+</ul>
+</li>
+<li><code>io.randomseed.bankster.api.currency</code>:
+<ul>
 <li>Currency helpers (unprefixed function set).</li>
+</ul>
+</li>
 <li>Operator namespace for intentional <code>:refer :all</code>: <code>io.randomseed.bankster.api.ops</code>.</li>
 <li>Frozen API for major version 2: <code>io.randomseed.bankster.api.v2</code> and sub-namespaces. It mirrors <code>io.randomseed.bankster.api</code> for the 2.x line and remains available when Bankster 3 appears. In the current release the v2 API is equivalent to <code>io.randomseed.bankster.api</code>.</li>
 </ul>
 <p>Dynamic vars and rounding:</p>
 <ul>
-<li><code>scale/*rounding-mode*</code>:</li>
+<li><code>scale/*rounding-mode*</code>:
+<ul>
 <li>default rounding mode used by scaling operations when rounding is needed.</li>
-<li><code>scale/*each*</code>:</li>
+</ul>
+</li>
+<li><code>scale/*each*</code>:
+<ul>
 <li>when true, some operations (e.g. multi-arg division in money) rescale after each step.</li>
-<li><code>scale/with-rounding</code>:</li>
+</ul>
+</li>
+<li><code>scale/with-rounding</code>:
+<ul>
 <li>binds <code>*rounding-mode*</code> and sets a thread-local fast path for rounding-mode lookups (performance).</li>
-<li><code>scale/with-rescaling</code>:</li>
+</ul>
+</li>
+<li><code>scale/with-rescaling</code>:
+<ul>
 <li>binds <code>*each*</code> + <code>*rounding-mode*</code> and sets a thread-local fast path for rounding-mode lookups (performance).</li>
+</ul>
+</li>
 </ul>
 <p>Recommendation:</p>
 <ul>
@@ -256,14 +337,20 @@
 <p>Accountable is the “what can become Money” + “how to convert Money across currencies/registries” layer.</p>
 <p>Methods:</p>
 <ul>
-<li><code>value</code> -&gt; Money/nil:</li>
+<li><code>value</code> -&gt; Money/nil:
+<ul>
 <li>builds a <code>Money</code> from numbers/strings/currency identifiers, etc.,</li>
 <li>when the amount is <code>nil</code> it typically returns <code>nil</code>,</li>
 <li>when currency is missing and cannot be inferred, it throws,</li>
 <li>a rounding mode is required when coercion/scaling needs rounding and there is no explicit rounding mode and <code>scale/*rounding-mode*</code> is not set.</li>
-<li><code>cast</code> -&gt; Money:</li>
+</ul>
+</li>
+<li><code>cast</code> -&gt; Money:
+<ul>
 <li>changes currency (with rescaling/rounding preserved),</li>
 <li>if you only need to ensure the currency comes from a given registry, prefer <code>money/of-registry</code>.</li>
+</ul>
+</li>
 </ul>
 <h2><a href="#4-public-function-families-practical-classification" id="4-public-function-families-practical-classification"></a>4. Public function families (practical classification)</h2>
 <h3><a href="#41-registry-api-iorandomseedbanksterregistry" id="41-registry-api-iorandomseedbanksterregistry"></a>4.1 Registry API (<code>io.randomseed.bankster.registry</code>)</h3>
@@ -271,10 +358,13 @@
 <ul>
 <li><code>registry/new</code>, <code>registry/new-registry</code> - create a new registry.</li>
 <li><code>registry/R</code> - Atom holding the global registry.</li>
-<li><code>registry/get</code> - returns a registry:</li>
+<li><code>registry/get</code> - returns a registry:
+<ul>
 <li><code>(registry/get)</code> uses the default registry (dynamic or global),</li>
 <li><code>(registry/get registry)</code> prefers the provided registry unless it is <code>nil</code> or <code>false</code>,</li>
 <li><code>(registry/get true)</code> works as a syntactic sentinel (macro-level): use the default registry.</li>
+</ul>
+</li>
 <li><code>registry/state</code> - <code>@R</code> (global).</li>
 <li><code>registry/set!</code> - sets the global registry.</li>
 <li><code>registry/update</code>, <code>registry/update!</code> - functional / global update.</li>
@@ -295,10 +385,13 @@
 <h3><a href="#42-currency-api-iorandomseedbankstercurrency" id="42-currency-api-iorandomseedbankstercurrency"></a>4.2 Currency API (<code>io.randomseed.bankster.currency</code>)</h3>
 <p>Construction:</p>
 <ul>
-<li><code>currency/new-currency</code>, <code>currency/new</code>, <code>currency/map-&gt;new</code>:</li>
+<li><code>currency/new-currency</code>, <code>currency/new</code>, <code>currency/map-&gt;new</code>:
+<ul>
 <li>canonicalize IDs (upper-case name; namespace preserved, except <code>ISO-4217</code> which is stripped),</li>
 <li>may infer <code>:domain</code> as <code>:ISO-4217</code> under typical conditions,</li>
 <li><code>:weight</code> defaults to 0.</li>
+</ul>
+</li>
 </ul>
 <p>Default currency / registry:</p>
 <ul>
@@ -367,19 +460,31 @@
 </ul>
 <p>Arithmetic (general rule: currencies must be “the same currency”, but weight is ignored):</p>
 <ul>
-<li><code>money/add</code> (<code>+</code>), <code>money/sub</code> (<code>-</code>):</li>
+<li><code>money/add</code> (<code>+</code>), <code>money/sub</code> (<code>-</code>):
+<ul>
 <li>accept <code>Money</code> and require matching currency,</li>
 <li>do not allow adding/subtracting plain numbers to/from <code>Money</code>.</li>
-<li><code>money/mul</code> (<code>*</code>):</li>
+</ul>
+</li>
+<li><code>money/mul</code> (<code>*</code>):
+<ul>
 <li>allows <code>Money</code> * numbers,</li>
 <li>supports at most one <code>Money</code> argument in the whole expression; otherwise throws <code>ExceptionInfo</code>.</li>
-<li><code>money/div</code> (<code>/</code>):</li>
+</ul>
+</li>
+<li><code>money/div</code> (<code>/</code>):
+<ul>
 <li><code>Money / number</code> -&gt; Money,</li>
 <li><code>Money / Money</code> (same currency) -&gt; <code>BigDecimal</code>,</li>
 <li><code>number / Money</code> -&gt; exception.</li>
 <li>unary <code>money/div</code> works like <code>clojure.core//</code> for numbers, but throws for <code>Money</code> (because it would be equivalent to <code>number / Money</code>).</li>
-<li><code>money/rem</code>:</li>
+</ul>
+</li>
+<li><code>money/rem</code>:
+<ul>
 <li>analogous to <code>div</code>: for <code>Money/Money</code> the result is <code>BigDecimal</code>, for <code>Money/number</code> the result is <code>Money</code>.</li>
+</ul>
+</li>
 </ul>
 <p>Scaling / rounding:</p>
 <ul>
@@ -388,12 +493,18 @@
 </ul>
 <p>Allocation:</p>
 <ul>
-<li><code>money/allocate</code>:</li>
+<li><code>money/allocate</code>:
+<ul>
 <li>splits the amount into parts according to integer-like ratios,</li>
 <li>the sum of parts equals the original exactly (sum-preserving),</li>
 <li>the remainder is distributed deterministically left-to-right.</li>
-<li><code>money/distribute</code>:</li>
+</ul>
+</li>
+<li><code>money/distribute</code>:
+<ul>
 <li><code>allocate</code> with ratios <code>(repeat n 1)</code>.</li>
+</ul>
+</li>
 </ul>
 <p>Formatting:</p>
 <ul>
@@ -406,12 +517,18 @@
 </ul>
 <h3><a href="#44-inter-op-layers-operators" id="44-inter-op-layers-operators"></a>4.4 Inter-op layers (operators)</h3>
 <ul>
-<li><code>io.randomseed.bankster.money.ops</code>:</li>
+<li><code>io.randomseed.bankster.money.ops</code>:
+<ul>
 <li>operator aliases (<code>+</code>, <code>-</code>, <code>*</code>, <code>/</code>, <code>=</code>, etc.) that always mean Money semantics.</li>
-<li><code>io.randomseed.bankster.money.inter-ops</code>:</li>
+</ul>
+</li>
+<li><code>io.randomseed.bankster.money.inter-ops</code>:
+<ul>
 <li>if there is <em>no</em> <code>Money</code> argument, behaves 1:1 like <code>clojure.core</code>,</li>
 <li>if there is any <code>Money</code> argument, it “taints” the operation and switches to Bankster semantics.</li>
 <li>this layer is intentionally polymorphic; boxed math warnings are suppressed in that namespace to keep build output clean.</li>
+</ul>
+</li>
 </ul>
 <h2><a href="#5-recommendations-and-pitfalls-practical" id="5-recommendations-and-pitfalls-practical"></a>5. Recommendations and pitfalls (practical)</h2>
 <ul>
@@ -444,25 +561,35 @@
 <p>Implementations: <code>Money</code>, <code>Currency</code>, <code>Class</code> (type token for deserialization).</p>
 <h3><a href="#62-serialization-contracts" id="62-serialization-contracts"></a>6.2 Serialization contracts</h3>
 <ul>
-<li><code>to-*-map</code> -&gt; map/nil:</li>
+<li><code>to-*-map</code> -&gt; map/nil:
+<ul>
 <li>returns <strong>minimal</strong> representation by default (currency ID + amount only),</li>
 <li>with <code>:full? true</code> delegates to <code>to-*-full-map</code>,</li>
 <li>returns <code>nil</code> when input is <code>nil</code>.</li>
-<li><code>to-*-full-map</code> -&gt; map/nil:</li>
+</ul>
+</li>
+<li><code>to-*-full-map</code> -&gt; map/nil:
+<ul>
 <li>returns <strong>full</strong> representation with all fields,</li>
 <li>for <code>Money</code>: currency is serialized as a nested map (not string ID),</li>
 <li>for <code>Money</code>: includes extended fields (from record extension map),</li>
 <li>accepts <code>:keys</code> option for filtering; supports nested opts via map elements,</li>
 <li>returns <code>nil</code> when input is <code>nil</code>.</li>
-<li><code>to-*-string</code> -&gt; String/nil:</li>
+</ul>
+</li>
+<li><code>to-*-string</code> -&gt; String/nil:
+<ul>
 <li>returns canonical string representation,</li>
 <li>JSON: <code>"&lt;amount&gt; &lt;currency-id&gt;"</code> (e.g. <code>"12.30 PLN"</code>),</li>
 <li>EDN: tagged literal (e.g. <code>#money[12.30M PLN]</code>, <code>#money/crypto[1.5M ETH]</code>),</li>
 <li>returns <code>nil</code> when input is <code>nil</code>.</li>
 </ul>
+</li>
+</ul>
 <h3><a href="#63-deserialization-contracts" id="63-deserialization-contracts"></a>6.3 Deserialization contracts</h3>
 <ul>
-<li><code>from-*-map</code> -&gt; Money/Currency:</li>
+<li><code>from-*-map</code> -&gt; Money/Currency:
+<ul>
 <li>strict: throws <code>ExceptionInfo</code> when:
 <ul>
 <li>input is not a map,</li>
@@ -472,7 +599,10 @@
 </ul>
 </li>
 <li>returns <code>nil</code> when input is <code>nil</code>.</li>
-<li><code>from-*-string</code> -&gt; Money/Currency:</li>
+</ul>
+</li>
+<li><code>from-*-string</code> -&gt; Money/Currency:
+<ul>
 <li>strict: throws <code>ExceptionInfo</code> when:
 <ul>
 <li>input is not a string,</li>
@@ -481,6 +611,8 @@
 </ul>
 </li>
 <li>returns <code>nil</code> when input is <code>nil</code>.</li>
+</ul>
+</li>
 </ul>
 <h3><a href="#64-registry-rounding-and-rescaling-behavior" id="64-registry-rounding-and-rescaling-behavior"></a>6.4 Registry, rounding, and rescaling behavior</h3>
 <ul>
