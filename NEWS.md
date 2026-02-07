@@ -7,18 +7,33 @@ Money:
 - Deprecated operator-style aliases in `io.randomseed.bankster.money` (use
   `io.randomseed.bankster.money.ops` or `io.randomseed.bankster.api.ops` instead).
 
+Currency:
+
+- Fixed domain normalization for string inputs containing `/` in `currency/new-currency`
+  (now takes the part after the last slash, consistent with keyword/symbol handling).
+- Added `util/split-on-last-slash` helper.
+
 Specs:
 
-- Added initial specs for Registry, RegistryHierarchies, Currency, Money.
+- Added specs for `Registry`, `CurrencyHierarchies`, `Currency`, `Money`.
+- Organized specs into sub-namespaces: `spec.primitives`, `spec.scale`, `spec.records`.
 
 Testing:
 
-- Added specification tests.
+- Added specification tests (unit, generative, property-based, roundtrip).
+- 100% line coverage for `spec.primitives`, `spec.scale`, and `util`.
 
 Documentation:
 
 - Restructured, README simplified, "Sneak Peeks" are now a separate file.
 - Indentation fixed in docstrings and documents.
+- Added "Specs" section to README.
+
+Tooling:
+
+- Added `logback-test.xml` to suppress Cloverage excluded-form log noise in dev/test.
+- Configured Eastwood `:ignored-faults` for intentional deprecation re-exports
+  in `api.money` and `api.v2.money`.
 
 ## 2.2.2 (2026-02-05)
 
