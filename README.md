@@ -86,14 +86,29 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
   '[io.randomseed.bankster.api.money    :as   m]
   '[io.randomseed.bankster.api.currency :as   c]
   '[io.randomseed.bankster.api.ops      :as ops])
-```
 
-```clojure
+;; currency code resolution using the default registry (strict)
+
 (def usd (c/resolve "USD"))
 (def pln (c/resolve "PLN"))
-(def a   (m/resolve 12.34M usd))
-(def b   (m/resolve 10M pln))
-(ops/+ a (m/resolve 1.66M usd))
+
+;; create Money values (strict)
+
+(def a (m/money 12.34M usd))
+(def b (m/money 10M    pln))
+
+;; arithmetic (Money semantics)
+
+(ops/+ a (m/money 1.66M usd))
+(ops/- a (m/money 2M    usd))
+
+;; EDN tagged literals (optional convenience)
+
+#money[1.66M :USD]
+#currency[PLN]
+
+;; soft resolution (nil on failure)
+
 (c/resolve-try "NOT_A_CURRENCY") ; => nil
 ```
 
@@ -105,6 +120,75 @@ described in the docs.
 * For demonstrative snippets see [Sneak Peeks](doc/11_sneak-peeks.md).
 * For more complete, runnable examples see the `examples/` directory in the [source
   repository](https://github.com/randomseed-io/bankster/tree/main/examples).
+
+## Pitfalls
+
+A few things that can bite you in production if you treat money/currency like "just
+numbers and strings":
+
+* **Don't use `clojure.core/=` to compare Money.**
+
+BigDecimal equality is scale-sensitive (1.0 vs 1.00), so value-equality can surprise
+you. Use Bankster’s dedicated predicates (e.g. `money/eq?`, `money/==`) or the
+operator layer (`money.inter-ops`, `money.api.inter-ops`) depending on the semantics
+you want.
+
+* **Be careful with untrusted input – avoid keyword interning.**
+
+Turning arbitrary user data into keywords can leak memory (interning is
+global). Prefer string IDs/codes and the helper functions intended for untrusted
+values (e.g. `to-id-str`, `to-code-str`), then resolve currencies through the
+registry.
+
+* **Non-terminating division requires an explicit policy.**
+
+BigDecimal division can throw for non-terminating results unless you provide
+a rounding/rescaling policy. In Bankster, use the rounding/rescaling helpers (or the
+Front API variants that accept a rounding mode) so the behavior is deterministic and
+documented.
+
+* **Know whether you want strict or soft behavior at the boundaries.**
+
+Bankster provides strict (throwing) and soft (nil-returning) variants (e.g. `resolve`
+vs `resolve-try`, `money` vs `money-try`). A good pattern is: soft at system
+boundaries (parsing/import), strict in the core business logic.
+
+* **Registries are a feature – but choose the scoping deliberately.**
+
+Registry can be global, dynamically scoped, or passed explicitly. Pick one policy per
+subsystem to avoid "it works on my machine" issues (especially in tests and
+multi-tenant setups).
+
+### Warning about literal amounts
+
+Clojure changes number literals into objects of various numeric data types.
+Some of them will have fixed precision when there is a decimal separator
+present, yet they will not be big decimals before entering monetary functions of
+Bankster.
+
+Putting a decimal number having more than 16–17 digits will often result in
+**accidental approximation** and casting it to a double value. This value may
+become the amount of money which probably is not what you want:
+
+```clojure
+1234.5678910111213000001
+; => 1234.5678910111212
+```
+
+To work around that you should:
+
+* Use **big decimal literals** (e.g. `(api-money/of XXX 1234.56789101112M)` – note the `M`).
+* Use **strings** (e.g. `(api-money/of "1234.56789101112 XXX")`).
+* Use `api-money/of` macro or `#money` tagged literal with amount and currency in joint
+  form (or with the above tactics applied), e.g.:
+  * `(api-money/of XXX123.45678)`,
+  * `#money XXX123.45678`,
+  * `#money "XXX123.45678"`,
+  * `#money "123.456789101112 XXX"`,
+  * `#money[123.45678M XXX]`.
+
+As it may not be a problem in case of regular currencies, it may pop-up when using
+scale-wide cryptocurrencies, like Ether or Ethereum tokens, having 18 decimal places.
 
 ## Front API
 
@@ -479,75 +563,6 @@ Clojure semantic bridge inspired by JSR-354 (JavaMoney). It is not a Java
 implementation/interface of the standard. The goal is to progressively cover more
 of JSR-354 semantics in future Bankster releases; until then, treat this namespace
 as unstable.
-
-## Pitfalls
-
-A few things that can bite you in production if you treat money/currency like "just
-numbers and strings":
-
-* **Don't use `clojure.core/=` to compare Money.**
-
-BigDecimal equality is scale-sensitive (1.0 vs 1.00), so value-equality can surprise
-you. Use Bankster’s dedicated predicates (e.g. `money/eq?`, `money/==`) or the
-operator layer (`money.inter-ops`, `money.api.inter-ops`) depending on the semantics
-you want.
-
-* **Be careful with untrusted input – avoid keyword interning.**
-
-Turning arbitrary user data into keywords can leak memory (interning is
-global). Prefer string IDs/codes and the helper functions intended for untrusted
-values (e.g. `to-id-str`, `to-code-str`), then resolve currencies through the
-registry.
-
-* **Non-terminating division requires an explicit policy.**
-
-BigDecimal division can throw for non-terminating results unless you provide
-a rounding/rescaling policy. In Bankster, use the rounding/rescaling helpers (or the
-Front API variants that accept a rounding mode) so the behavior is deterministic and
-documented.
-
-* **Know whether you want strict or soft behavior at the boundaries.**
-
-Bankster provides strict (throwing) and soft (nil-returning) variants (e.g. `resolve`
-vs `resolve-try`, `money` vs `money-try`). A good pattern is: soft at system
-boundaries (parsing/import), strict in the core business logic.
-
-* **Registries are a feature – but choose the scoping deliberately.**
-
-Registry can be global, dynamically scoped, or passed explicitly. Pick one policy per
-subsystem to avoid "it works on my machine" issues (especially in tests and
-multi-tenant setups).
-
-### Warning about literal amounts
-
-Clojure changes number literals into objects of various numeric data types.
-Some of them will have fixed precision when there is a decimal separator
-present, yet they will not be big decimals before entering monetary functions of
-Bankster.
-
-Putting a decimal number having more than 16–17 digits will often result in
-**accidental approximation** and casting it to a double value. This value may
-become the amount of money which probably is not what you want:
-
-```clojure
-1234.5678910111213000001
-; => 1234.5678910111212
-```
-
-To work around that you should:
-
-* Use **big decimal literals** (e.g. `(api-money/of XXX 1234.56789101112M)` – note the `M`).
-* Use **strings** (e.g. `(api-money/of "1234.56789101112 XXX")`).
-* Use `api-money/of` macro or `#money` tagged literal with amount and currency in joint
-  form (or with the above tactics applied), e.g.:
-  * `(api-money/of XXX123.45678)`,
-  * `#money XXX123.45678`,
-  * `#money "XXX123.45678"`,
-  * `#money "123.456789101112 XXX"`,
-  * `#money[123.45678M XXX]`.
-
-As it may not be a problem in case of regular currencies, it may pop-up when using
-scale-wide cryptocurrencies, like Ether or Ethereum tokens, having 18 decimal places.
 
 ## Documentation
 
