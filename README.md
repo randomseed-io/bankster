@@ -67,7 +67,7 @@ representing currency + amount and doing safe operations around that.
 Bankster models currencies and monetary amounts. The recommended entrypoint is the
 Front API (`io.randomseed.bankster.api.*`) and the default registry.
 
-To start Bankster using add it as a dependency to your project:
+To start using Bankster add it as a dependency to your project:
 
 ```clojure
 ;; deps.edn
