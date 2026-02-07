@@ -1073,6 +1073,13 @@
                  (m-eval `(m/bd-set-scale ~bd 1 java.math.RoundingMode/UNNECESSARY :x {}))))
     (is (= "1.2" (.toPlainString ^BigDecimal (m-eval `(m/bd-set-scale ~bd 1 java.math.RoundingMode/DOWN :x {})))))))
 
+(deftest round-to-non-money-first-arg
+  (testing "round-to throws when first argument is not Money and interval is positive"
+    (is (thrown-with-msg?
+         clojure.lang.ExceptionInfo
+         #"First argument must be a kind of Money"
+         (m/round-to "not-money" 0.05M)))))
+
 (deftest parse-number-and-split-branches
   (let [parse-number #'m/parse-number
         split-first  #'m/split-currency-first]

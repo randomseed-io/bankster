@@ -171,11 +171,11 @@
   `(let [^Currency ca# ~ca
          ^Currency cb# ~cb]
      (or (q= ca# cb#)
-         (and (clojure.core/== (int    (.scale   ^Currency  ca#)) (int  (.scale   ^Currency cb#)))
-              (clojure.core/== (long   (.numeric ^Currency  ca#)) (long (.numeric ^Currency cb#)))
-              (q=                      (.id      ^Currency  ca#)        (.id      ^Currency cb#))
-              (q=                      (.domain  ^Currency  ca#)        (.domain  ^Currency cb#))
-              (q=                      (.kind    ^Currency  ca#)        (.kind    ^Currency cb#))))))
+         (and (clojure.core/== (int  (.scale   ^Currency  ca#)) (int  (.scale   ^Currency cb#)))
+              (clojure.core/== (long (.numeric ^Currency  ca#)) (long (.numeric ^Currency cb#)))
+              (q=                    (.id      ^Currency  ca#)        (.id      ^Currency cb#))
+              (q=                    (.domain  ^Currency  ca#)        (.domain  ^Currency cb#))
+              (q=                    (.kind    ^Currency  ca#)        (.kind    ^Currency cb#))))))
 
 (defmacro same-currency-objs?
   "Returns true if both Currency objects get from .currency field of Money objects are
@@ -184,7 +184,10 @@
   Currency weight is ignored."
   {:no-doc true :added "2.2.4"}
   [ma mb]
-  `(same-currency-objs-native? (.currency ^Money ~ma) (.currency ^Money ~mb)))
+  `(let [^Money ma# ~ma
+         ^Money mb# ~mb]
+     (same-currency-objs-native? (.currency ^Money ma#)
+                                 (.currency ^Money mb#))))
 
 ;;
 ;; Money generation macros.
@@ -1045,7 +1048,7 @@
   (^long [^Money a ^Money b]
    (let [nila (nil? a)
          nilb (nil? b)]
-     (when-not (or nila nilb (same-currency-objs? ^Money a ^Money b))
+     (when-not (or nila nilb (same-currency-objs? a b))
        (throw
         (ex-info
          (str "Can only compare amounts of the same currency and/or nil values: "
@@ -1068,7 +1071,7 @@
   (^long [^Money a ^Money b]
    (let [nila (nil? a)
          nilb (nil? b)]
-     (when-not (or nila nilb (same-currency-objs? ^Money a ^Money b))
+     (when-not (or nila nilb (same-currency-objs? a b))
        (throw
         (ex-info
          (str "Can only compare amounts of the same currency and/or nil values: "
@@ -1120,7 +1123,7 @@
   Note: currency weight is ignored."
   {:tag Boolean :added "1.0.0"}
   [^Money a ^Money b]
-  (same-currency-objs? a b))
+  (same-currency-objs? ^Money a ^Money b))
 
 (defn same-currency-ids?
   "Returns `true` if both currencies have the same IDs for the given money objects."
@@ -1461,19 +1464,19 @@
          acc             (volatile! ^BigDecimal (.amount ^Money a))
          acc-b           (volatile! nil)]
      (try
-       (Money. ^Currency cur-a
-               ^BigDecimal
-               (loop [items (cons b more)]
-                 (if-let [s (seq items)]
-                   (let [b (first s)]
-                     (vreset! acc-b b)
-                     (when-not (same-currency-objs-native? cur-a (.currency ^Money b))
-                       (throw (ex-info
-                               "Cannot add amounts of two different currencies."
-                               {:augend acc :addend b})))
-                     (vreset! acc (.add ^BigDecimal @acc ^BigDecimal (.amount ^Money b)))
-                     (recur (rest s)))
-                   @acc)))
+       (let [^BigDecimal total
+             (loop [items (cons b more)]
+               (if-let [s (seq items)]
+                 (let [b (first s)]
+                   (vreset! acc-b b)
+                   (when-not (same-currency-objs-native? cur-a (.currency ^Money b))
+                     (throw (ex-info
+                             "Cannot add amounts of two different currencies."
+                             {:augend acc :addend b})))
+                   (vreset! acc (.add ^BigDecimal @acc ^BigDecimal (.amount ^Money b)))
+                   (recur (rest s)))
+                 @acc))]
+         (Money. ^Currency cur-a total))
        (catch Throwable e
          (if-not (instance? Money @acc-b)
            (throw (ex-info
@@ -1536,19 +1539,19 @@
          acc             (volatile! ^BigDecimal (.amount ^Money a))
          acc-b           (volatile! nil)]
      (try
-       (Money. ^Currency cur-a
-               ^BigDecimal
-               (loop [items (cons b more)]
-                 (if-let [s (seq items)]
-                   (let [b (first s)]
-                     (vreset! acc-b b)
-                     (when-not (same-currency-objs-native? cur-a (.currency ^Money b))
-                       (throw (ex-info
-                               "Cannot subtract amounts of two different currencies."
-                               {:minuend acc :subtrahend b})))
-                     (vreset! acc (.subtract ^BigDecimal @acc ^BigDecimal (.amount ^Money b)))
-                     (recur (rest s)))
-                   @acc)))
+       (let [^BigDecimal total
+             (loop [items (cons b more)]
+               (if-let [s (seq items)]
+                 (let [b (first s)]
+                   (vreset! acc-b b)
+                   (when-not (same-currency-objs-native? cur-a (.currency ^Money b))
+                     (throw (ex-info
+                             "Cannot subtract amounts of two different currencies."
+                             {:minuend acc :subtrahend b})))
+                   (vreset! acc (.subtract ^BigDecimal @acc ^BigDecimal (.amount ^Money b)))
+                   (recur (rest s)))
+                 @acc))]
+         (Money. ^Currency cur-a total))
        (catch Throwable e
          (if-not (instance? Money @acc-b)
            (throw (ex-info
@@ -1956,7 +1959,7 @@
                ;; there is next element
                (if (instance? Money y)
                  ;; next is money
-                 (if-not (same-currency-objs? a y)
+                 (if-not (same-currency-objs-native? c (.currency ^Money y))
                    (throw (ex-info "Cannot divide by the amount of a different currency."
                                    {:dividend a :divisor y}))
                    ;; first 2 are money - treat like a regular decimals
@@ -1986,7 +1989,7 @@
                ;; there is next element
                (if (instance? Money y)
                  ;; next is money
-                 (if-not (same-currency-objs? a y)
+                 (if-not (same-currency-objs-native? c (.currency ^Money y))
                    (throw (ex-info "Cannot divide by the amount of a different currency."
                                    {:dividend a :divisor y}))
                    ;; first 2 are money - treat like a regular decimals
@@ -2060,7 +2063,7 @@
        (let [^Currency c (.currency ^Money a)]
          (if bm?
            ;; money, money
-           (if-not (same-currency-objs? a b)
+           (if-not (same-currency-objs-native? c (.currency ^Money b))
              (throw (ex-info "Cannot divide by the amount of a different currency."
                              {:dividend a :divisor b}))
              (div-core ^BigDecimal am ^BigDecimal bm ^RoundingMode rm))
@@ -2141,7 +2144,7 @@
                    (throw (ex-info "Cannot divide a regular number by the monetary amount."
                                    {:dividend x :divisor y}))
                    ;; money, money
-                   (if (same-currency-objs? a y)
+                   (if (same-currency-objs-native? c (.currency ^Money y))
                      (reduce
                       (fn ^BigDecimal [^BigDecimal a b]
                         (when (instance? Money b)
@@ -2319,7 +2322,7 @@
        (let [^Currency c (.currency ^Money a)]
          (if bm?
            ;; money, money
-           (if-not (same-currency-objs? a b)
+           (if-not (same-currency-objs-native? c (.currency ^Money b))
              (throw (ex-info "Cannot divide by the amount of a different currency."
                              {:dividend a :divisor b}))
              (rem-core ^BigDecimal am ^BigDecimal bm ^RoundingMode rounding-mode))
@@ -2387,11 +2390,13 @@
          (Money. ^Currency (.currency ^Money money) res))))))
 
 (defn round-to
-  "Rounds a Money to an interval i (which should also be a Money or a number). If
-  rounding mode is not provided (via the last argument or `scale/*rounding-mode*`) then
-  it defaults to HALF_EVEN. Retains original scale of the amount (but not the nominal
-  scale of a currency, if money was given). For nil intervals or intervals whose
-  amounts are negative or zero, returns an unaltered monetary object."
+  "Rounds a Money to an interval `i` (which should also be a Money or a number). If
+  rounding mode is not provided (via the last argument or `scale/*rounding-mode*`)
+  then it defaults to HALF_EVEN. Retains original scale of the amount (but not the
+  nominal scale of a currency, if money was given).
+
+  For nil intervals or intervals whose amounts are negative or zero, returns an
+  unaltered monetary object."
   {:tag Money :added "1.2.9"}
   (^Money [^Money money] money)
   (^Money [^Money money ^Scalable i] (round-to money i nil))
@@ -2404,20 +2409,26 @@
    (let [^BigDecimal am-s (scale/amount i)]
      (if (or (nil? am-s) (clojure.core/not= 1 (.compareTo ^BigDecimal am-s BigDecimal/ZERO)))
        money
-       (do  (when (and (instance? Money i) (not (same-currency-objs? money i)))
-              (throw
-               (ex-info
-                (str "Money and interval should be of the same currency: " money ", " i ".")
-                {:money    money
-                 :interval i})))
-            (let [sn               (long (.scale ^BigDecimal (.amount ^Money money)))
-                  ^Money an        (scale/apply money)
-                  ^RoundingMode rm (or rounding-mode (scale/rounding-mode) scale/ROUND_HALF_EVEN)]
-              (scale/with-rounding rm
-                (scale/apply
-                 (mul ^BigDecimal am-s
-                      ^Money (scale/apply ^Money (scale/apply ^Money (div an am-s) 0 rm) sn rm))
-                 sn))))))))
+       (do (when-not (instance? Money money)
+             (throw
+              (ex-info
+               (str "First argument must be a kind of Money.")
+               {:money    money
+                :interval i})))
+           (when (and (instance? Money i) (not (same-currency-objs? money i)))
+             (throw
+              (ex-info
+               (str "Money and interval should be of the same currency: " money ", " i ".")
+               {:money    money
+                :interval i})))
+           (let [sn               (long (.scale ^BigDecimal (.amount ^Money money)))
+                 ^Money an        (scale/apply money)
+                 ^RoundingMode rm (or rounding-mode (scale/rounding-mode) scale/ROUND_HALF_EVEN)]
+             (scale/with-rounding rm
+               (scale/apply
+                (mul ^BigDecimal am-s
+                     ^Money (scale/apply ^Money (scale/apply ^Money (div an am-s) 0 rm) sn rm))
+                sn))))))))
 
 (defn major
   "Returns the major part of the given amount of money."
