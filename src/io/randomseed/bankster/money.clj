@@ -1438,33 +1438,48 @@
                      {:augend a})))
    a)
   (^Money [^Money a ^Money b]
-   (when-not (and (instance? Money a) (instance? Money b))
-     (throw (ex-info "Both arguments must be a kind of Money."
-                     {:augend a :addend b})))
-   (if (same-currency-objs? a b)
-     (Money. ^Currency   (.currency ^Money a)
-             ^BigDecimal (.add  ^BigDecimal (.amount ^Money a)
-                                ^BigDecimal (.amount ^Money b)))
-     (throw (ex-info
-             "Cannot add amounts of two different currencies."
-             {:augend a :addend b}))))
+   (try
+     (let [^Currency cura (.currency ^Money a)
+           ^Currency curb (.currency ^Money b)]
+       (when-not (same-currency-objs-native? cura curb)
+         (throw (ex-info
+                 "Cannot add amounts of two different currencies."
+                 {:augend a :addend b})))
+       (Money. ^Currency   cura
+               ^BigDecimal (.add ^BigDecimal (.amount ^Money a)
+                                 ^BigDecimal (.amount ^Money b))))
+     (catch Throwable e
+       (when-not (and (instance? Money a) (instance? Money b))
+         (throw (ex-info "Both arguments must be a kind of Money."
+                         {:augend a :addend b})))
+       (throw e))))
   (^Money [^Money a ^Money b & more]
    (when-not (instance? Money a)
      (throw (ex-info "Both arguments must be a kind of Money."
                      {:augend a :addend b})))
    (let [^Currency cur-a (.currency ^Money a)
-         fun             (fn ^BigDecimal [^BigDecimal a b]
-                           (when-not (instance? Money b)
-                             (throw (ex-info
-                                     "Cannot add a regular number to the monetary amount."
-                                     {:augend a :addend b})))
-                           (when-not (same-currency-objs-native? cur-a (.currency ^Money b))
-                             (throw (ex-info
-                                     "Cannot add amounts of two different currencies."
-                                     {:augend a :addend b})))
-                           (.add ^BigDecimal a ^BigDecimal (.amount ^Money b)))]
-     (Money. ^Currency   (.currency ^Money a)
-             ^BigDecimal (reduce fun (fun ^BigDecimal (.amount ^Money a) b) more)))))
+         acc             (volatile! ^BigDecimal (.amount ^Money a))
+         acc-b           (volatile! nil)]
+     (try
+       (Money. ^Currency cur-a
+               ^BigDecimal
+               (loop [items (cons b more)]
+                 (if-let [s (seq items)]
+                   (let [b (first s)]
+                     (vreset! acc-b b)
+                     (when-not (same-currency-objs-native? cur-a (.currency ^Money b))
+                       (throw (ex-info
+                               "Cannot add amounts of two different currencies."
+                               {:augend acc :addend b})))
+                     (vreset! acc (.add ^BigDecimal @acc ^BigDecimal (.amount ^Money b)))
+                     (recur (rest s)))
+                   @acc)))
+       (catch Throwable e
+         (if-not (instance? Money @acc-b)
+           (throw (ex-info
+                   "Cannot add a regular number to the monetary amount."
+                   {:augend @acc :addend @acc-b}))
+           (throw e)))))))
 
 (def ^{:tag      Money
        :added    "1.0.0"
@@ -1498,33 +1513,48 @@
    (Money. ^Currency   (.currency ^Money a)
            ^BigDecimal (.negate ^BigDecimal (.amount ^Money a))))
   (^Money [^Money a ^Money b]
-   (when-not (and (instance? Money a) (instance? Money b))
-     (throw (ex-info "Both arguments must be a kind of Money."
-                     {:augend a :addend b})))
-   (if (same-currency-objs? a b)
-     (Money. ^Currency   (.currency ^Money a)
-             ^BigDecimal (.subtract  ^BigDecimal (.amount ^Money a)
-                                     ^BigDecimal (.amount ^Money b)))
-     (throw (ex-info
-             "Cannot subtract amounts of two different currencies."
-             {:minuend a :subtrahend b}))))
+   (try
+     (let [^Currency cura (.currency ^Money a)
+           ^Currency curb (.currency ^Money b)]
+       (when-not (same-currency-objs-native? cura curb)
+         (throw (ex-info
+                 "Cannot subtract amounts of two different currencies."
+                 {:minuend a :subtrahend b})))
+       (Money. ^Currency   cura
+               ^BigDecimal (.subtract ^BigDecimal (.amount ^Money a)
+                                      ^BigDecimal (.amount ^Money b))))
+     (catch Throwable e
+       (when-not (and (instance? Money a) (instance? Money b))
+         (throw (ex-info "Both arguments must be a kind of Money."
+                         {:augend a :addend b})))
+       (throw e))))
   (^Money [^Money a ^Money b & more]
    (when-not (instance? Money a)
      (throw (ex-info "Both arguments must be a kind of Money."
                      {:augend a :addend b})))
    (let [^Currency cur-a (.currency ^Money a)
-         fun             (fn [^BigDecimal a b]
-                           (when-not (instance? Money b)
-                             (throw (ex-info
-                                     "Cannot subtract a regular number from the monetary amount."
-                                     {:minuend a :subtrahend b})))
-                           (when-not (same-currency-objs-native? cur-a (.currency ^Money b))
-                             (throw (ex-info
-                                     "Cannot subtract amounts of two different currencies."
-                                     {:minuend a :subtrahend b})))
-                           (.subtract ^BigDecimal a ^BigDecimal (.amount ^Money b)))]
-     (Money. ^Currency   (.currency ^Money a)
-             ^BigDecimal (reduce fun (fun (.amount ^Money a) b) more)))))
+         acc             (volatile! ^BigDecimal (.amount ^Money a))
+         acc-b           (volatile! nil)]
+     (try
+       (Money. ^Currency cur-a
+               ^BigDecimal
+               (loop [items (cons b more)]
+                 (if-let [s (seq items)]
+                   (let [b (first s)]
+                     (vreset! acc-b b)
+                     (when-not (same-currency-objs-native? cur-a (.currency ^Money b))
+                       (throw (ex-info
+                               "Cannot subtract amounts of two different currencies."
+                               {:minuend acc :subtrahend b})))
+                     (vreset! acc (.subtract ^BigDecimal @acc ^BigDecimal (.amount ^Money b)))
+                     (recur (rest s)))
+                   @acc)))
+       (catch Throwable e
+         (if-not (instance? Money @acc-b)
+           (throw (ex-info
+                   "Cannot subtract a regular number from the monetary amount."
+                   {:minuend @acc :subtrahend @acc-b}))
+           (throw e)))))))
 
 (def ^{:tag      Money
        :added    "1.0.0"
@@ -1624,7 +1654,7 @@
          bm               (if bm? (.amount ^Money b) b)
          mon              (volatile! (when am? (LastMoney. ^Money a (int (.scale am)) (boolean (auto-scaled? ^Money a)))))
          ^RoundingMode rm (or (scale/rounding-mode) scale/ROUND_UNNECESSARY)
-         fun              (fn [^BigDecimal a b]
+         fun              (fn ^BigDecimal [^BigDecimal a b]
                             (if-let [^LastMoney m @mon]
                               (if (instance? Money b)
                                 ;; money, money
@@ -1687,42 +1717,43 @@
          (throw (ex-info "Only one multiplied value can be a kind of Money."
                          {:multiplicant a :multiplier b}))
          ;; money, number
-	 (let [^Currency c (.currency ^Money a)]
-	   (if (currency-auto-scaled? ^Currency c)
-	     (Money. ^Currency   c
-	             (mul-core ^BigDecimal am bm))
-	     (Money. ^Currency   c
-	             (mul-core ^BigDecimal am bm
-	                       (int (.scale ^BigDecimal am))
-	                       (or ^RoundingMode (scale/rounding-mode)
-	                           ^RoundingMode scale/ROUND_UNNECESSARY))))))
+         (let [^Currency c (.currency ^Money a)]
+           (if (currency-auto-scaled? ^Currency c)
+             (Money. ^Currency   c
+                     (mul-core ^BigDecimal am bm))
+             (Money. ^Currency   c
+                     (mul-core ^BigDecimal am bm
+                               (int (.scale ^BigDecimal am))
+                               (or ^RoundingMode (scale/rounding-mode)
+                                   ^RoundingMode scale/ROUND_UNNECESSARY))))))
        (if bm?
          ;; number, money
-	 (let [^Currency c (.currency ^Money b)]
-	   (if (currency-auto-scaled? c)
-	     (Money. ^Currency   (.currency ^Money b)
-	             (mul-core ^BigDecimal am ^BigDecimal bm nil))
-	     (Money. ^Currency   (.currency ^Money b)
-	             (mul-core ^BigDecimal am ^BigDecimal bm
-	                       (int (.scale ^BigDecimal bm))
-	                       (or ^RoundingMode (scale/rounding-mode)
-	                           ^RoundingMode scale/ROUND_UNNECESSARY)
-	                       nil))))
+         (let [^Currency c (.currency ^Money b)]
+           (if (currency-auto-scaled? c)
+             (Money. ^Currency   (.currency ^Money b)
+                     (mul-core ^BigDecimal am ^BigDecimal bm nil))
+             (Money. ^Currency   (.currency ^Money b)
+                     (mul-core ^BigDecimal am ^BigDecimal bm
+                               (int (.scale ^BigDecimal bm))
+                               (or ^RoundingMode (scale/rounding-mode)
+                                   ^RoundingMode scale/ROUND_UNNECESSARY)
+                               nil))))
          ;; number, number
          (mul-core ^BigDecimal am bm)))))
   ([a b & more]
    (if scale/*each*
      (clojure.core/apply mul-scaled a b more)
-     (let [step                       (fn [[^BigDecimal acc ^Money m] x]
-	                                (if (instance? Money x)
-	                                  (if (some? m)
-	                                    (throw (ex-info "Only one multiplied value can be a kind of Money."
-	                                                    {:multiplicant m :multiplier x}))
-	                                    [(mul-core ^BigDecimal acc ^BigDecimal (.amount ^Money x) nil)
-	                                     ^Money x])
-	                                  [(mul-core ^BigDecimal acc x)
-	                                   m]))
-	   [^BigDecimal res ^Money m] (reduce step [1M nil] (cons a (cons b more)))]
+     (let [step
+           (fn [[^BigDecimal acc ^Money m] x]
+             (if (instance? Money x)
+               (if (some? m)
+                 (throw (ex-info "Only one multiplied value can be a kind of Money."
+                                 {:multiplicant m :multiplier x}))
+                 [(mul-core ^BigDecimal acc ^BigDecimal (.amount ^Money x) nil)
+                  ^Money x])
+               [(mul-core ^BigDecimal acc x)
+                m]))
+           [^BigDecimal res ^Money m] (reduce step [1M nil] (cons a (cons b more)))]
        (if (some? m)
          (let [^Currency c (.currency ^Money m)]
            (Money. ^Currency c
