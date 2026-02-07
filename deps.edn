@@ -45,7 +45,10 @@
            :eastwood  {
                        :main-opts  ["-m" "eastwood.lint"
                                     {:source-paths ["src"]
-                                     :exclude-linters [:no-ns-form-found]}]
+                                     :exclude-linters [:no-ns-form-found]
+                                     :ignored-faults {:deprecations
+                                                      {io.randomseed.bankster.api.money    true
+                                                       io.randomseed.bankster.api.v2.money true}}}]
                        :extra-deps {orchestra/orchestra         {:mvn/version "2021.01.01-1"}
                                     expound/expound             {:mvn/version "0.9.0"}
                                     org.clojure/test.check      {:mvn/version "1.1.3"}
