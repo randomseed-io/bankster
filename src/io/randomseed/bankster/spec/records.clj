@@ -19,10 +19,12 @@
 ;; Namespaces for easy use of keywords (aliased to record types)
 ;;
 
-(alias 'currency   (create-ns 'io.randomseed.bankster.Currency))              ;; Currency record
-(alias 'money      (create-ns 'io.randomseed.bankster.Money))                 ;; Money record
-(alias 'currency-h (create-ns 'io.randomseed.bankster.CurrencyHierarchies))   ;; CurrencyHierarchies record
-(alias 'registry   (create-ns 'io.randomseed.bankster.Registry))              ;; Registry record
+(alias 'currency       (create-ns 'io.randomseed.bankster.Currency))              ;; Currency record
+(alias 'currency-iso   (create-ns 'io.randomseed.bankster.Currency.ISO))         ;; ISO Currency variant
+(alias 'currency-other (create-ns 'io.randomseed.bankster.Currency.Other))       ;; non-ISO Currency variant
+(alias 'money          (create-ns 'io.randomseed.bankster.Money))                ;; Money record
+(alias 'currency-h     (create-ns 'io.randomseed.bankster.CurrencyHierarchies))  ;; CurrencyHierarchies record
+(alias 'registry       (create-ns 'io.randomseed.bankster.Registry))             ;; Registry record
 
 ;;
 ;; Currency record specs
@@ -44,18 +46,58 @@
 (s/def ::currency/kind
   (s/nilable keyword?))
 
-;; Currency domain (keyword or nil).
+;; Currency domain.
 (s/def ::currency/domain
-  (s/nilable keyword?))
+  (s/or :iso-domain     ::prim/currency-iso-domain
+        :regular-domain (s/nilable ::prim/currency-regular-domain)))
 
-;; Specification for the Currency record.
+;;
+;; ISO Currency variant field specs (keys resolve to record field names: :id, :numeric, :domain, etc.)
+;; Note: specs used inside s/keys must be nonconforming when they use s/or,
+;;       because s/keys calls conform and tries to assoc the result back into the record.
+;;       Tagged tuples from s/or would break typed record fields (^long, ^int).
+;;
+
+(s/def ::currency-iso/id       simple-keyword?)
+(s/def ::currency-iso/numeric  ::prim/currency-numeric-id-iso)
+(s/def ::currency-iso/domain   ::prim/currency-iso-domain)
+(s/def ::currency-iso/scale    ::prim/currency-scale)
+(s/def ::currency-iso/kind     (s/nilable keyword?))
+
+;;
+;; Non-ISO Currency variant field specs
+;;
+
+(s/def ::currency-other/id      keyword?)
+(s/def ::currency-other/numeric ::prim/currency-numeric-id)
+(s/def ::currency-other/domain  (s/nilable ::prim/currency-regular-domain))
+(s/def ::currency-other/scale   ::prim/currency-scale)
+(s/def ::currency-other/kind    (s/nilable keyword?))
+
+;; Specification for the ISO Currency record.
+(s/def ::bankster/Currency-ISO
+  (s/and
+   #(instance? Currency %)
+   (s/keys :req-un [::currency-iso/id
+                    ::currency-iso/numeric
+                    ::currency-iso/domain
+                    ::currency-iso/scale
+                    ::currency-iso/kind])))
+
+;; Specification for the non-ISO Currency record.
+(s/def ::bankster/Currency-Other
+  (s/and
+   #(instance? Currency %)
+   (s/keys :req-un [::currency-other/id
+                    ::currency-other/numeric
+                    ::currency-other/domain
+                    ::currency-other/scale
+                    ::currency-other/kind])))
+
 (s/def ::bankster/Currency
-  (s/and #(instance? Currency %)
-         (fn [c] (s/valid? ::currency/id (:id c)))
-         (fn [c] (s/valid? ::currency/numeric (:numeric c)))
-         (fn [c] (s/valid? ::currency/scale (:scale c)))
-         (fn [c] (s/valid? ::currency/kind (:kind c)))
-         (fn [c] (s/valid? ::currency/domain (:domain c)))))
+  (s/nonconforming
+   (s/or :iso-currency     ::bankster/Currency-ISO
+         :regular-currency ::bankster/Currency-Other)))
 
 ;;
 ;; Money record specs

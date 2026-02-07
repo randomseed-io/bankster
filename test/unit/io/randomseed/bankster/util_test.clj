@@ -54,7 +54,14 @@
     (is (= ["abc" nil] (u/split-on-first-slash "abc")))
     (is (= ["a" "b/c"] (u/split-on-first-slash "a/b/c")))
     (is (= [nil "a"] (u/split-on-first-slash "/a")))
-    (is (= ["a" nil] (u/split-on-first-slash "a/")))))
+    (is (= ["a" nil] (u/split-on-first-slash "a/"))))
+  (testing "split-on-last-slash"
+    (is (= [nil nil] (u/split-on-last-slash nil)))
+    (is (= [nil nil] (u/split-on-last-slash "")))
+    (is (= [nil "abc"] (u/split-on-last-slash "abc")))
+    (is (= ["a/b" "c"] (u/split-on-last-slash "a/b/c")))
+    (is (= [nil "a"] (u/split-on-last-slash "/a")))
+    (is (= ["a" nil] (u/split-on-last-slash "a/")))))
 
 (deftest inferred-key-access
   (testing "inferred-contains?/get check both qualified and simple key variants"

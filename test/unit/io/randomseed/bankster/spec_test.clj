@@ -21,8 +21,7 @@
   (testing "Currency scale specification"
     (testing "auto-scaled sentinel"
       (is (s/valid? :io.randomseed.bankster.spec.primitives/currency-scale -1))
-      (is (= [:auto-scaled -1]
-             (s/conform :io.randomseed.bankster.spec.primitives/currency-scale -1))))
+      (is (= -1 (s/conform :io.randomseed.bankster.spec.primitives/currency-scale -1))))
 
     (testing "fixed scales"
       (are [scale] (s/valid? :io.randomseed.bankster.spec.primitives/currency-scale scale)
@@ -41,8 +40,7 @@
   (testing "Currency numeric ID specification"
     (testing "no-numeric-id sentinel"
       (is (s/valid? :io.randomseed.bankster.spec.primitives/currency-numeric-id -1))
-      (is (= [:no-numeric -1]
-             (s/conform :io.randomseed.bankster.spec.primitives/currency-numeric-id -1))))
+      (is (= -1 (s/conform :io.randomseed.bankster.spec.primitives/currency-numeric-id -1))))
 
     (testing "valid numeric IDs"
       (are [nr] (s/valid? :io.randomseed.bankster.spec.primitives/currency-numeric-id nr)
@@ -105,7 +103,21 @@
     (testing "auto-scaled currency"
       (let [auto-cur (currency/new :TEST/AUTO -1 -1 :virtual/test :TEST)]
         (is (s/valid? :io.randomseed.bankster/Currency auto-cur))
-        (is (= -1 (:scale auto-cur)))))))
+        (is (= -1 (:scale auto-cur)))))
+
+    (testing "ISO-4217 domain requires simple keyword ID"
+      (testing "valid - simple keyword with ISO-4217"
+        (let [iso-cur (currency/new :EUR 978 2 :iso/fiat :ISO-4217)]
+          (is (s/valid? :io.randomseed.bankster/Currency iso-cur))))
+
+      (testing "invalid - namespaced keyword with ISO-4217"
+        ;; Directly construct Currency record to test spec without currency/new validation
+        (let [invalid-cur (Currency. :custom/EUR 978 2 :iso/fiat :ISO-4217)]
+          (is (not (s/valid? :io.randomseed.bankster/Currency invalid-cur)))))
+
+      (testing "valid - namespaced keyword with non-ISO domain"
+        (let [crypto-cur (currency/new :crypto/BTC -1 8 :virtual/crypto :CRYPTO)]
+          (is (s/valid? :io.randomseed.bankster/Currency crypto-cur)))))))
 
 ;;
 ;; Money specs tests
@@ -250,16 +262,14 @@
     (let [samples (s/exercise :io.randomseed.bankster.spec.primitives/currency-scale 20)]
       (doseq [[value conformed] samples]
         (is (s/valid? :io.randomseed.bankster.spec.primitives/currency-scale value))
-        (is (or (= :auto-scaled (first conformed))
-                (= :fixed-scale (first conformed))))))))
+        (is (= value conformed))))))
 
 (deftest currency-numeric-id-generative-test
   (testing "Generated currency numeric IDs are valid"
     (let [samples (s/exercise :io.randomseed.bankster.spec.primitives/currency-numeric-id 20)]
       (doseq [[value conformed] samples]
         (is (s/valid? :io.randomseed.bankster.spec.primitives/currency-numeric-id value))
-        (is (or (= :no-numeric (first conformed))
-                (= :numeric-id (first conformed))))))))
+        (is (= value conformed))))))
 
 (deftest currency-fields-sample-test
   (testing "Sampled currency field values"
@@ -310,3 +320,18 @@
       (doseq [[original conformed] samples]
         (let [unformed (s/unform :io.randomseed.bankster.spec.primitives/currency-scale conformed)]
           (is (= original unformed)))))))
+
+(deftest auto-scaled-sentinel-spec-test
+  (testing "auto-scaled sentinel spec from spec.scale"
+    (is (s/valid? :io.randomseed.bankster.spec.scale/auto-scaled -1))
+    (is (not (s/valid? :io.randomseed.bankster.spec.scale/auto-scaled 0)))
+    (is (not (s/valid? :io.randomseed.bankster.spec.scale/auto-scaled 1)))
+    (is (not (s/valid? :io.randomseed.bankster.spec.scale/auto-scaled "x"))))
+  (testing "auto-scaled generator produces valid values"
+    (let [samples (gen/sample (s/gen :io.randomseed.bankster.spec.scale/auto-scaled) 10)]
+      (is (every? #{-1} samples)))))
+
+(deftest currency-numeric-id-iso-generative-test
+  (testing "Generated ISO numeric IDs are valid positive integers"
+    (let [samples (gen/sample (s/gen :io.randomseed.bankster.spec.primitives/currency-numeric-id-iso) 20)]
+      (is (every? #(and (integer? %) (pos? %)) samples)))))
