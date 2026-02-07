@@ -1,5 +1,39 @@
 # History of Bankster releases
 
+## 2.2.4 (2026-02-07)
+
+Performance:
+
+- `money/same-currency-objs?` and `money/same-currency-objs-native?` converted from
+  functions to macros (inlining eliminates call overhead on hot paths).
+- `money/add` and `money/sub` varargs arities rewritten: `BigDecimal` result is now
+  accumulated in a loop with `volatile!` instead of being threaded through the `Money`
+  constructor inside the loop body (constructor moved after the loop).
+- `money/mul` varargs arity rewritten: `reduce` replaced by an explicit loop with
+  `volatile!` accumulators, eliminating intermediate vector allocations.
+- `money/div` and `money/rem`: replaced `same-currency-objs?` (extracts `.currency`
+  twice) with direct `same-currency-objs-native?` calls on already-extracted currency
+  objects, avoiding redundant field access.
+
+Reliability:
+
+- Calls to `clojure.core/identical?` across `currency.clj`, `money.clj`,
+  `serializers/edn.clj`, `serializers/json.clj`, `util/fs.clj`, and
+  `util/importer.clj` replaced by `q=` macro calls for consistent fast-path equality.
+
+Type hints / reflection:
+
+- Type hints improved across `money.clj` to prevent potential reflection in
+  comparators (`compare`, `compare-amounts`), equality (`eq?`), division and
+  remainder paths.
+- Docstrings updated in `money/round-to`.
+
+Utilities:
+
+- Added `io.randomseed.bankster.util.qe` namespace with `q=` macro — a quick equality
+  check that tries `identical?` first, then falls back to `=`. Compile-time constant
+  folding for keywords, strings, numbers, and nils.
+
 ## 2.2.3 (2026-02-07)
 
 Money:

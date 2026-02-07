@@ -67,18 +67,21 @@ representing currency + amount and doing safe operations around that.
 Bankster models currencies and monetary amounts. The recommended entrypoint is the
 Front API (`io.randomseed.bankster.api.*`) and the default registry.
 
+To start Bankster using add it as a dependency to your project:
+
 ```clojure
 ;; deps.edn
 
-{io.randomseed/bankster {:mvn/version "2.2.3"}}
+{io.randomseed/bankster {:mvn/version "2.2.4"}}
 
 ;; Leiningen
 
-[io.randomseed/bankster "2.2.3"]
+[io.randomseed/bankster "2.2.4"]
 ```
 
-You can also download JAR from [Clojars](https://clojars.org/io.randomseed/bankster).
+*You can also download JAR from [Clojars](https://clojars.org/io.randomseed/bankster).*
 
+Then you can use `require` to make API namespaces ready to use:
 
 ```clojure
 (require
@@ -97,12 +100,12 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 (def a (m/money 12.34M usd))
 (def b (m/money 10M    pln))
 
-;; arithmetic (Money semantics)
+;; arithmetic (Money semantics, strict)
 
 (ops/+ a (m/money 1.66M usd))
 (ops/- a (m/money 2M    usd))
 
-;; EDN tagged literals (optional convenience)
+;; EDN tagged literals (optional convenience, strict)
 
 #money[1.66M :USD]
 #currency[PLN]
@@ -112,10 +115,11 @@ You can also download JAR from [Clojars](https://clojars.org/io.randomseed/banks
 (c/resolve-try "NOT_A_CURRENCY") ; => nil
 ```
 
-**Strict** variants throw on missing currency/match; **soft** variants (usually
-`-try`) return `nil`. Use soft at boundaries (parsing/import), strict in core
-domain logic. Quickstart uses the default registry; registry scoping options are
-described in the docs.
+* **Strict** variants throw on missing currency/match.
+* **Soft** variants (usually `-try`) return `nil`.
+
+Use soft at boundaries (parsing/import), strict in core domain logic. Quickstart uses
+the default registry; registry scoping options are described in the docs.
 
 * For demonstrative snippets see [Sneak Peeks](doc/11_sneak-peeks.md).
 * For more complete, runnable examples see the `examples/` directory in the [source
@@ -129,7 +133,7 @@ numbers and strings":
 * **Don't use `clojure.core/=` to compare Money.**
 
 BigDecimal equality is scale-sensitive (1.0 vs 1.00), so value-equality can surprise
-you. Use Bankster’s dedicated predicates (e.g. `money/eq?`, `money/==`) or the
+you. Use Bankster's dedicated predicates (e.g. `money/eq?`, `money/==`) or the
 operator layer (`money.inter-ops`, `money.api.inter-ops`) depending on the semantics
 you want.
 
