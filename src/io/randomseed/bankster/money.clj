@@ -85,6 +85,7 @@
   ExceptionInfo with standardized ex-data keys.
 
   Adds:
+
   - `:arithmetic-exception true`
   - `:arithmetic-exception/cause <ArithmeticException>`"
   {:private true :added "2.0.0"}
@@ -923,7 +924,7 @@
      :amount   ^BigDecimal (.amount ^Money money)})
 
   (definitive?
-    (^Boolean [money]
+    ([money]
      (currency/definitive? ^Currency (.currency ^Money money))))
 
   (resolve
@@ -957,17 +958,17 @@
      (.id ^Currency (.currency ^Money money))))
 
   (defined?
-    (^Boolean [money]
+    ([money]
      (contains? (registry/currency-id->currency*)
                 (.id ^Currency (.currency ^Money money))))
-    (^Boolean [money ^Registry registry]
+    ([money ^Registry registry]
      (contains? (registry/currency-id->currency* registry)
                 (.id ^Currency (.currency ^Money money)))))
 
   (present?
-    (^Boolean [money]
+    ([money]
      (currency/present? ^Currency (.currency ^Money money)))
-    (^Boolean [money ^Registry registry]
+    ([money ^Registry registry]
      (currency/present? ^Currency (.currency ^Money money) ^Registry registry)))
   )
 
@@ -979,8 +980,8 @@
 
   Money
 
-  (^Boolean scalable? [_] true)
-  (^Boolean applied?  [_] true)
+  (scalable? [_] true)
+  (applied?  [_] true)
 
   (of [m] (.scale ^BigDecimal (.amount ^Money m)))
 
@@ -1133,21 +1134,23 @@
   currencies with different scales or other properties are considered different. Use
   eq-am? (aliased as ==) to compare amounts regardless of their scales."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money _] true)
-  (^Boolean [^Money a ^Money b]
+  ([^Money _] true)
+  ([^Money a ^Money b]
    (and (.equals ^BigDecimal (.amount ^Money a) ^BigDecimal (.amount ^Money b))
         (same-currency-objs? a b)))
-  (^Boolean [^Money a ^Money b & more]
+  ([^Money a ^Money b & more]
    (if (eq? a b)
      (if (next more)
        (recur b (first more) (next more))
        (eq? b (first more)))
      false)))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '(^Boolean [^Money a]
-                   ^Boolean [^Money a ^Money b]
-                   ^Boolean [^Money a ^Money b & more])}
+(def ^{:tag        Boolean
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '([^Money a]
+                     [^Money a ^Money b]
+                     [^Money a ^Money b & more])}
   =
   "Alias for eq?."
   eq?)
@@ -1156,8 +1159,8 @@
   "Returns true if the monetary amounts and their currencies are equal, regardless of
   their scales."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money _] true)
-  (^Boolean [^Money a ^Money b]
+  ([^Money _] true)
+  ([^Money a ^Money b]
    (if-not (same-currency-objs? a b)
      false
      (let [^BigDecimal am-a (.amount ^Money a)
@@ -1169,17 +1172,19 @@
          (if (clojure.core/< sa sb)
            (.equals ^BigDecimal (scale/apply am-a sb) ^BigDecimal am-b)
            (.equals ^BigDecimal am-a ^BigDecimal (scale/apply am-b sa)))))))
-  (^Boolean [^Money a ^Money b & more]
+  ([^Money a ^Money b & more]
    (if (eq-am? a b)
      (if (next more)
        (recur b (first more) (next more))
        (eq-am? b (first more)))
      false)))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '(^Boolean [^Money a]
-                   ^Boolean [^Money a ^Money b]
-                   ^Boolean [^Money a ^Money b & more])}
+(def ^{:tag        Boolean
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '([^Money a]
+                     [^Money a ^Money b]
+                     [^Money a ^Money b & more])}
   ==
   "Alias for eq-am?."
   eq-am?)
@@ -1188,16 +1193,18 @@
   "Returns true if the money amounts or their currencies are different, regardless of
   their scales. Note that currencies with different scales are considered different."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money _] false)
-  (^Boolean [^Money a ^Money b]
+  ([^Money _] false)
+  ([^Money a ^Money b]
    (not (eq? ^Money a ^Money b)))
-  (^Boolean [^Money a ^Money b & more]
+  ([^Money a ^Money b & more]
    (not (clojure.core/apply eq? ^Money a ^Money b more))))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '(^Boolean [^Money a]
-                   ^Boolean [^Money a ^Money b]
-                   ^Boolean [^Money a ^Money b & more])}
+(def ^{:tag        Boolean
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '([^Money a]
+                     [^Money a ^Money b]
+                     [^Money a ^Money b & more])}
   not=
   "Alias for ne?."
   ne?)
@@ -1206,16 +1213,18 @@
   "Returns true if the money amounts or their currencies are different, regardless of
   their scales."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money _] false)
-  (^Boolean [^Money a ^Money b]
+  ([^Money _] false)
+  ([^Money a ^Money b]
    (not (eq-am? ^Money a ^Money b)))
-  (^Boolean [^Money a ^Money b & more]
+  ([^Money a ^Money b & more]
    (not (clojure.core/apply eq-am? ^Money a ^Money b more))))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '(^Boolean [^Money a]
-                   ^Boolean [^Money a ^Money b]
-                   ^Boolean [^Money a ^Money b & more])}
+(def ^{:tag        Boolean
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '([^Money a]
+                     [^Money a ^Money b]
+                     [^Money a ^Money b & more])}
   not==
   "Alias for ne-am?."
   ne-am?)
@@ -1224,20 +1233,22 @@
   "Returns non-nil if monetary amounts are in monotonically decreasing order,
   otherwise false."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money _] true)
-  (^Boolean [^Money a ^Money b]
+  ([^Money _] true)
+  ([^Money a ^Money b]
    (pos-int? (compare-amounts a b)))
-  (^Boolean [^Money a ^Money b & more]
+  ([^Money a ^Money b & more]
    (if (gt? a b)
      (if (next more)
        (recur b (first more) (next more))
        (gt? b (first more)))
      false)))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '(^Boolean [^Money a]
-                   ^Boolean [^Money a ^Money b]
-                   ^Boolean [^Money a ^Money b & more])}
+(def ^{:tag      Boolean
+       :added "1.2.0"
+       :deprecated "2.2.3"
+       :arglists '([^Money a]
+                   [^Money a ^Money b]
+                   [^Money a ^Money b & more])}
   >
   "Alias for gt?."
   gt?)
@@ -1246,20 +1257,22 @@
   "Returns non-nil if monetary amounts are in monotonically non-increasing order,
   otherwise false."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money _] true)
-  (^Boolean [^Money a ^Money b]
+  ([^Money _] true)
+  ([^Money a ^Money b]
    (clojure.core/>= (compare-amounts a b) 0))
-  (^Boolean [^Money a ^Money b & more]
+  ([^Money a ^Money b & more]
    (if (ge? a b)
      (if (next more)
        (recur b (first more) (next more))
        (ge? b (first more)))
      false)))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '(^Boolean [^Money a]
-                   ^Boolean [^Money a ^Money b]
-                   ^Boolean [^Money a ^Money b & more])}
+(def ^{:tag        Boolean
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '([^Money a]
+                     [^Money a ^Money b]
+                     [^Money a ^Money b & more])}
   >=
   "Alias for ge?."
   ge?)
@@ -1268,20 +1281,22 @@
   "Returns non-nil if monetary amounts are in monotonically increasing order,
   otherwise false."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money _] true)
-  (^Boolean [^Money a ^Money b]
+  ([^Money _] true)
+  ([^Money a ^Money b]
    (neg-int? (compare-amounts a b)))
-  (^Boolean [^Money a ^Money b & more]
+  ([^Money a ^Money b & more]
    (if (lt? a b)
      (if (next more)
        (recur b (first more) (next more))
        (lt? b (first more)))
      false)))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '(^Boolean [^Money a]
-                   ^Boolean [^Money a ^Money b]
-                   ^Boolean [^Money a ^Money b & more])}
+(def ^{:tag        Boolean
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '([^Money a]
+                     [^Money a ^Money b]
+                     [^Money a ^Money b & more])}
   <
   "Alias for lt?."
   lt?)
@@ -1290,20 +1305,22 @@
   "Returns non-nil if monetary amounts are in monotonically non-decreasing order,
   otherwise false."
   {:tag Boolean :added "1.0.0"}
-  (^Boolean [^Money _] true)
-  (^Boolean [^Money a ^Money b]
+  ([^Money _] true)
+  ([^Money a ^Money b]
    (clojure.core/<= (compare-amounts a b) 0))
-  (^Boolean [^Money a ^Money b & more]
+  ([^Money a ^Money b & more]
    (if (le? a b)
      (if (next more)
        (recur b (first more) (next more))
        (le? b (first more)))
      false)))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '(^Boolean [^Money a]
-                   ^Boolean [^Money a ^Money b]
-                   ^Boolean [^Money a ^Money b & more])}
+(def ^{:tag        Boolean
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '([^Money a]
+                     [^Money a ^Money b]
+                     [^Money a ^Money b & more])}
   <=
   "Alias for le?."
   le?)
@@ -1314,8 +1331,10 @@
   [^Money a]
   (clojure.core/zero? (.compareTo ^BigDecimal (.amount ^Money a) 0M)))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '(^Boolean [^Money a])}
+(def ^{:tag        Boolean
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '([^Money a])}
   zero?
   "Alias for is-zero?."
   is-zero?)
@@ -1326,8 +1345,10 @@
   [^Money a]
   (neg-int? (.compareTo ^BigDecimal (.amount ^Money a) 0M)))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '(^Boolean [^Money a])}
+(def ^{:tag        Boolean
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '([^Money a])}
   neg?
   "Alias for is-neg?."
   is-neg?)
@@ -1339,8 +1360,10 @@
   (pos-int? (.compareTo ^BigDecimal (.amount ^Money a) 0M)))
 
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '(^Boolean [^Money a])}
+(def ^{:tag        Boolean
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '([^Money a])}
   pos?
   "Alias for is-pos?."
   is-pos?)
@@ -1351,8 +1374,9 @@
   [^Money a]
   (clojure.core/<= (.compareTo ^BigDecimal (.amount ^Money a) 0M) 0))
 
-(def ^{:tag      Money :added "1.2.0"
-       :arglists '(^Boolean [^Money a])}
+(def ^{:tag      Boolean
+       :added    "1.2.0"
+       :arglists '([^Money a])}
   neg-or-zero?
   "Alias for is-neg-or-zero?."
   is-neg-or-zero?)
@@ -1363,8 +1387,9 @@
   [^Money a]
   (clojure.core/>= (.compareTo ^BigDecimal (.amount ^Money a) 0M) 0))
 
-(def ^{:tag      Money :added "1.2.0"
-       :arglists '(^Boolean [^Money a])}
+(def ^{:tag      Boolean
+       :added    "1.2.0"
+       :arglists '([^Money a])}
   pos-or-zero?
   "Alias for is-pos-or-zero?."
   is-pos-or-zero?)
@@ -1428,7 +1453,7 @@
      (throw (ex-info "Both arguments must be a kind of Money."
                      {:augend a :addend b})))
    (let [^Currency cur-a (.currency ^Money a)
-         fun             (fn [^BigDecimal a b]
+         fun             (fn ^BigDecimal [^BigDecimal a b]
                            (when-not (instance? Money b)
                              (throw (ex-info
                                      "Cannot add a regular number to the monetary amount."
@@ -1439,9 +1464,10 @@
                                      {:augend a :addend b})))
                            (.add ^BigDecimal a ^BigDecimal (.amount ^Money b)))]
      (Money. ^Currency   (.currency ^Money a)
-             ^BigDecimal (reduce fun (fun (.amount ^Money a) b) more)))))
+             ^BigDecimal (reduce fun (fun ^BigDecimal (.amount ^Money a) b) more)))))
 
-(def ^{:tag      Money :added "1.0.0"
+(def ^{:tag      Money
+       :added    "1.0.0"
        :arglists '(^Money []
                    ^Money [^Money a]
                    ^Money [^Money a ^Money b]
@@ -1450,11 +1476,13 @@
   "Alias for add."
   add)
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '(^Money []
-                   ^Money [^Money a]
-                   ^Money [^Money a ^Money b]
-                   ^Money [^Money a ^Money b & more])}
+(def ^{:tag        Money
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '(^Money []
+                     ^Money [^Money a]
+                     ^Money [^Money a ^Money b]
+                     ^Money [^Money a ^Money b & more])}
   +
   "Alias for add."
   add)
@@ -1498,7 +1526,8 @@
      (Money. ^Currency   (.currency ^Money a)
              ^BigDecimal (reduce fun (fun (.amount ^Money a) b) more)))))
 
-(def ^{:tag      Money :added "1.0.0"
+(def ^{:tag      Money
+       :added    "1.0.0"
        :arglists '(^Money [^Money a]
                    ^Money [^Money a ^Money b]
                    ^Money [^Money a ^Money b & more])}
@@ -1506,10 +1535,12 @@
   "Alias for sub."
   sub)
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '(^Money [^Money a]
-                   ^Money [^Money a ^Money b]
-                   ^Money [^Money a ^Money b & more])}
+(def ^{:tag        Money
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '(^Money [^Money a]
+                     ^Money [^Money a ^Money b]
+                     ^Money [^Money a ^Money b & more])}
   -
   "Alias for sub."
   sub)
@@ -1559,7 +1590,7 @@
    `^BigDecimal (.multiply ^BigDecimal ~a ^BigDecimal ~b)))
 
 (declare mul)
-(defrecord LastMoney [^Money m ^int scale ^Boolean auto-scaled])
+(defrecord LastMoney [^Money m ^int scale ^boolean auto-scaled])
 
 (defn mul-scaled
   "Multiplies two or more values where one may be a Money object. If one of the values
@@ -1591,7 +1622,7 @@
          bm?              (instance? Money b)
          ^BigDecimal am   (if am? (.amount ^Money a) (scale/apply a))
          bm               (if bm? (.amount ^Money b) b)
-         mon              (volatile! (when am? (LastMoney. ^Money a (int (.scale am)) ^Boolean (auto-scaled? ^Money a))))
+         mon              (volatile! (when am? (LastMoney. ^Money a (int (.scale am)) (boolean (auto-scaled? ^Money a)))))
          ^RoundingMode rm (or (scale/rounding-mode) scale/ROUND_UNNECESSARY)
          fun              (fn [^BigDecimal a b]
                             (if-let [^LastMoney m @mon]
@@ -1704,11 +1735,13 @@
                                    {:money m :currency c}))))
          ^BigDecimal res)))))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '([]
-                   [a]
-                   [a b]
-                   [a b & more])}
+(def ^{:tag        Money
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '([]
+                     [a]
+                     [a b]
+                     [a b & more])}
   *
   "Alias for mul."
   mul)
@@ -2093,10 +2126,12 @@
                              ^BigDecimal x
                              ^BigDecimal (scale/apply x (.scale ^BigDecimal am)))))))))))))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '([a]
-                   [a b]
-                   [a b & more])}
+(def ^{:tag        Money
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '([a]
+                     [a b]
+                     [a b & more])}
   /
   "Alias for div."
   div)
@@ -2113,10 +2148,12 @@
   (^Money  [^Money a ^Money b & more]
    (reduce min-amount (min-amount ^Money a ^Money b) more)))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '(^Money [^Money a]
-                   ^Money [^Money a ^Money b]
-                   ^Money [^Money a ^Money b & more])}
+(def ^{:tag        Money
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '(^Money [^Money a]
+                     ^Money [^Money a ^Money b]
+                     ^Money [^Money a ^Money b & more])}
   min
   "Alias for min-amount."
   min-amount)
@@ -2133,10 +2170,12 @@
   (^Money [^Money a ^Money b & more]
    (reduce max-amount (max-amount a b) more)))
 
-(def ^{:tag      Money :added "1.2.0" :deprecated "2.2.3"
-       :arglists '(^Money [^Money a]
-                   ^Money [^Money a ^Money b]
-                   ^Money [^Money a ^Money b & more])}
+(def ^{:tag        Money
+       :added      "1.2.0"
+       :deprecated "2.2.3"
+       :arglists   '(^Money [^Money a]
+                     ^Money [^Money a ^Money b]
+                     ^Money [^Money a ^Money b & more])}
   max
   "Alias for max-amount."
   max-amount)
@@ -2871,14 +2910,14 @@
   If there are 3 arguments passed the third one should be a map of options
   customizing the formatting. It can have the following keys:
 
-  - `:rounding-mode`   - RoundingMode, rounding mode to apply when scaling (if `scale/*rounding-mode*` is not set)
-  - `:grouping`        - Boolean, if true then grouping will be used
+  - `:rounding-mode`   - `RoundingMode`, rounding mode to apply when scaling (if `scale/*rounding-mode*` is not set)
+  - `:grouping`        - `Boolean`, if true then grouping will be used
   - `:grouping-size`   - integer, size of a group when grouping
-  - `:negative-prefix` - String, negative prefix to use
-  - `:negative-suffix` - String, negative suffix to use
-  - `:positive-prefix` - String, positive prefix to use
-  - `:positive-suffix` - String, positive suffix to use
-  - `:always-sep-dec`  - Boolean, if true then the decimal separator will always be shown
+  - `:negative-prefix` - `String`, negative prefix to use
+  - `:negative-suffix` - `String`, negative suffix to use
+  - `:positive-prefix` - `String`, positive prefix to use
+  - `:positive-suffix` - `String`, positive suffix to use
+  - `:always-sep-dec`  - `Boolean`, if true then the decimal separator will always be shown
   - `:currency-symbol-fn`  - a function used on a bankster/Currency object to get its symbol as a string
   - `:min-fraction-digits` - integer, the minimum number of digits allowed in the fraction portion of an amount
   - `:min-integer-digits`  - integer, the minimum number of digits allowed in the integer portion of an amount
