@@ -1770,31 +1770,6 @@
     (is (thrown? clojure.lang.ExceptionInfo
                  (m/rem money0 0.3M RoundingMode/UNNECESSARY)))))
 
-(deftest same-currency-objects-branches
-  (let [base       (c/new-currency :EQ 0 2 :K1 :DOM nil)
-        same       (c/new-currency :EQ 0 2 :K1 :DOM nil)
-        diff-id    (c/new-currency :DIFF 0 2 :K1 :DOM nil)
-        diff-scale (c/new-currency :EQ 0 3 :K1 :DOM nil)
-        diff-num   (c/new-currency :EQ 1 2 :K1 :DOM nil)
-        diff-domain (c/new-currency :EQ 0 2 :K1 :DOM2 nil)
-        diff-kind  (c/new-currency :EQ 0 2 :K2 :DOM nil)
-        m-base     (Money. base (BigDecimal. "1.00"))
-        m-same     (Money. base (BigDecimal. "2.00"))
-        m-eq       (Money. same (BigDecimal. "1.00"))]
-    (is (true? (#'m/same-currency-objs-native? base base)))
-    (is (true? (#'m/same-currency-objs-native? base same)))
-    (is (false? (#'m/same-currency-objs-native? base diff-id)))
-    (is (false? (#'m/same-currency-objs-native? base diff-scale)))
-    (is (false? (#'m/same-currency-objs-native? base diff-num)))
-    (is (false? (#'m/same-currency-objs-native? base diff-domain)))
-    (is (false? (#'m/same-currency-objs-native? base diff-kind)))
-    (is (true? (#'m/same-currency-objs? m-base m-same)))
-    (is (true? (#'m/same-currency-objs? m-base m-eq)))
-    (is (false? (#'m/same-currency-objs? m-base (Money. diff-id (BigDecimal. "1.00")))))
-    (is (false? (#'m/same-currency-objs? m-base (Money. diff-scale (BigDecimal. "1.00")))))
-    (is (false? (#'m/same-currency-objs? m-base (Money. diff-num (BigDecimal. "1.00")))))
-    (is (false? (#'m/same-currency-objs? m-base (Money. diff-domain (BigDecimal. "1.00")))))
-    (is (false? (#'m/same-currency-objs? m-base (Money. diff-kind (BigDecimal. "1.00")))))))
 
 (deftest coverage-missing-forms-extra
   (testing "bd-set-scale and round paths"

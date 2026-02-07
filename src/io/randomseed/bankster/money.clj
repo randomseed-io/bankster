@@ -161,34 +161,29 @@
 ;; Predicate helpers
 ;;
 
-(defn- same-currency-objs-native?
+(defmacro same-currency-objs-native?
   "Returns true if both Currency objects are the same for Money operations.
 
   Currency weight is ignored."
-  {:private true :added "2.0.0" :tag Boolean}
-  ^Boolean [^Currency ca ^Currency cb]
-  (or (q= ca cb)
-      (and (q=                      (.id      ^Currency  ca)        (.id      ^Currency cb))
-           (clojure.core/== (int    (.scale   ^Currency  ca)) (int  (.scale   ^Currency cb)))
-           (clojure.core/== (long   (.numeric ^Currency  ca)) (long (.numeric ^Currency cb)))
-           (q=                      (.domain  ^Currency  ca)        (.domain  ^Currency cb))
-           (q=                      (.kind    ^Currency  ca)        (.kind    ^Currency cb)))))
+  {:no-doc true :added "2.2.4"}
+  [ca cb]
+  `(let [^Currency ca# ~ca
+         ^Currency cb# ~cb]
+     (or (q= ca# cb#)
+         (and (clojure.core/== (int    (.scale   ^Currency  ca#)) (int  (.scale   ^Currency cb#)))
+              (clojure.core/== (long   (.numeric ^Currency  ca#)) (long (.numeric ^Currency cb#)))
+              (q=                      (.id      ^Currency  ca#)        (.id      ^Currency cb#))
+              (q=                      (.domain  ^Currency  ca#)        (.domain  ^Currency cb#))
+              (q=                      (.kind    ^Currency  ca#)        (.kind    ^Currency cb#))))))
 
-(defn- same-currency-objs?
+(defmacro same-currency-objs?
   "Returns true if both Currency objects get from .currency field of Money objects are
   the same for Money operations.
 
   Currency weight is ignored."
-  {:private true :added "2.0.0" :tag Boolean}
-  ^Boolean [^Money ma ^Money mb]
-  (let [^Currency ca (.currency ma)
-        ^Currency cb (.currency mb)]
-    (or (q= ca cb)
-        (and (q=                      (.id      ^Currency  ca)        (.id      ^Currency cb))
-             (clojure.core/== (int    (.scale   ^Currency  ca)) (int  (.scale   ^Currency cb)))
-             (clojure.core/== (long   (.numeric ^Currency  ca)) (long (.numeric ^Currency cb)))
-             (q=                      (.domain  ^Currency  ca)        (.domain  ^Currency cb))
-             (q=                       (.kind    ^Currency  ca)        (.kind    ^Currency cb))))))
+  {:no-doc true :added "2.2.4"}
+  [ma mb]
+  `(same-currency-objs-native? (.currency ^Money ~ma) (.currency ^Money ~mb)))
 
 ;;
 ;; Money generation macros.
