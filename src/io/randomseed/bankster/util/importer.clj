@@ -18,7 +18,8 @@
             [io.randomseed.bankster.currency :as currency]
             [io.randomseed.bankster.util.fs  :as       fs]
             [io.randomseed.bankster.util.map :as      map]
-            [io.randomseed.bankster.util     :as       bu])
+            [io.randomseed.bankster.util     :as       bu]
+            [io.randomseed.bankster.util.qe  :refer  [q=]])
 
   (:import  (io.randomseed.bankster Currency Registry)
             (java.time              LocalDateTime)
@@ -584,7 +585,7 @@
   [m]
   (when (and (map? m) (pos? (count m)))
     (map/map-keys (fn [k]
-                    (if (identical? :* k)
+                    (if (q= :* k)
                       :*
                       (keyword (str (l/locale k)))))
                   m)))
@@ -731,13 +732,13 @@
                (let [d              (.domain ^Currency c)
                      iso-like?      (boolean
                                      (and iso-like?
-                                          (or (identical? d :ISO-4217)
-                                              (identical? d :ISO-4217-LEGACY))))
+                                          (or (q= d :ISO-4217)
+                                              (q= d :ISO-4217-LEGACY))))
                      src-id         (.id ^Currency c)
                      iso-code-id    (when iso-like? (keyword (name src-id)))
                      iso-legacy-id  (when iso-like? (keyword "iso-4217-legacy" (name src-id)))
-                     legacy?        (and iso-like? (identical? d :ISO-4217-LEGACY))
-                     legacy-domain? (identical? d :ISO-4217-LEGACY)
+                     legacy?        (and iso-like? (q= d :ISO-4217-LEGACY))
+                     legacy-domain? (q= d :ISO-4217-LEGACY)
                      dst-id         (if legacy? iso-legacy-id (or iso-code-id src-id))
                      alt-id         (when iso-like? (if legacy? iso-code-id iso-legacy-id))
                      ^Currency c    (if (and iso-like? (not= src-id dst-id)) (assoc c :id dst-id) c)

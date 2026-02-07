@@ -142,7 +142,7 @@
   [^String s]
   (let [s (str/triml (str s))]
     (and (pos? (count s))
-         (identical? \# (first s)))))
+         (= \# (first s)))))
 
 (defn- quote-last-field
   "If the last CSV field contains a # comment then quote the whole field, so commas in

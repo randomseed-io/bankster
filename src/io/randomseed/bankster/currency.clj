@@ -23,7 +23,8 @@
             [io.randomseed.bankster.registry :as registry]
             [io.randomseed.bankster.scale    :as    scale]
             [io.randomseed.bankster.util.map :as      map]
-            [io.randomseed.bankster.util     :as       bu])
+            [io.randomseed.bankster.util     :as       bu]
+            [io.randomseed.bankster.util.qe  :refer  [q=]])
 
   (:import  (io.randomseed.bankster Currency
                                     CurrencyHierarchies
@@ -169,7 +170,7 @@
   {:tag Boolean :private true :added "2.0.0"}
   [^Currency c]
   (and (some? c)
-       (identical?    :ISO-4217 (.domain  c))
+       (q=            :ISO-4217 (.domain  c))
        (valid-numeric-id? (long (.numeric c)))
        (iso-strict-code?        (.id      c))))
 
@@ -220,7 +221,7 @@
             ns                        (.getNamespace kid)
             nm                        (.getName kid)
             nm'                       (upper-ascii-if-needed nm)]
-        (if (identical? nm nm')
+        (if (q= nm nm')
           kid
           (if (nil? ns)
             (keyword nm')
@@ -253,7 +254,7 @@
   (let [ns  (.getNamespace id)
         nm  (.getName id)
         nm' (upper-ascii-if-needed nm)]
-    (if (identical? nm nm')
+    (if (q= nm nm')
       [id]
       (if-some [kid (clojure.lang.Keyword/find ns nm')]
         [kid id]
@@ -309,9 +310,9 @@
            scale         (unchecked-int (or scale auto-scaled))
            weight        (unchecked-int (or weight 0))
            ns-domain     (some-> (namespace kid) bu/try-upper-case keyword)
-           iso-ns?       (identical? ns-domain :ISO-4217)
+           iso-ns?       (q= ns-domain :ISO-4217)
            kid           (if iso-ns? (keyword (upper-ascii-if-needed (core-name kid))) kid)
-           explicit-nil? (identical? domain explicit-nil)
+           explicit-nil? (q= domain explicit-nil)
            domain        (if explicit-nil?
                            nil
                            (if (nil? domain)
@@ -611,11 +612,11 @@
       (and (some? registered-currency)
            (== (unchecked-long (.numeric  registered-currency)) (unchecked-long (.numeric compared-currency)))
            (== (unchecked-int  (.scale    registered-currency)) (unchecked-int  (.scale   compared-currency)))
-           (identical? (.id registered-currency) (.id compared-currency))
+           (q=                 (.id       registered-currency)                  (.id compared-currency))
            (or (nil? (.domain compared-currency))
-               (identical? (.domain registered-currency) (.domain compared-currency)))
+               (q=   (.domain registered-currency) (.domain compared-currency)))
            (or (nil? (.kind compared-currency))
-               (identical? (.kind   registered-currency) (.kind   compared-currency))))
+               (q=   (.kind   registered-currency) (.kind   compared-currency))))
     registered-currency))
 
 (defn- unit-registry
@@ -935,21 +936,21 @@
           id-ns (when id-val (some-> (namespace id-val) bu/try-upper-case keyword))]
       (when-not (or (and id?   (nil? id-val))
                     (and code? (nil? code-val))
-                    (identical? invalid-map-hint nr-val)
-                    (identical? invalid-map-hint sc-val)
-                    (identical? invalid-map-hint we-val)
-                    (identical? invalid-map-hint do-val)
-                    (identical? invalid-map-hint ki-val)
-                    (and do? id-ns (not (identical? id-ns :ISO-4217))
+                    (q= invalid-map-hint nr-val)
+                    (q= invalid-map-hint sc-val)
+                    (q= invalid-map-hint we-val)
+                    (q= invalid-map-hint do-val)
+                    (q= invalid-map-hint ki-val)
+                    (and do? id-ns (not (q= id-ns :ISO-4217))
                          (not= do-val id-ns)))
         (when
-            (and (or (not id?)   (identical? id-val          (.id      registered-currency)))
-                 (or (not code?) (identical? code-val        (to-code  registered-currency)))
-                 (or (not nr?)   (== (long nr-val)    (long  (.numeric registered-currency))))
-                 (or (not sc?)   (== (int  sc-val)    (int   (.scale   registered-currency))))
-                 (or (not we?)   (== (int  we-val)    (currency-weight registered-currency)))
-                 (or (not do?)   (identical? do-val          (.domain  registered-currency)))
-                 (or (not ki?)   (identical? ki-val          (.kind    registered-currency))))
+            (and (or (not id?)   (q= id-val         (.id             registered-currency)))
+                 (or (not code?) (q= code-val       (to-code         registered-currency)))
+                 (or (not nr?)   (== (long nr-val)  (long  (.numeric registered-currency))))
+                 (or (not sc?)   (== (int  sc-val)  (int   (.scale   registered-currency))))
+                 (or (not we?)   (== (int  we-val)  (currency-weight registered-currency)))
+                 (or (not do?)   (q= do-val                (.domain  registered-currency)))
+                 (or (not ki?)   (q= ki-val                (.kind    registered-currency))))
           registered-currency)))))
 
 (defn- map-registry-op!
@@ -1163,8 +1164,8 @@
            (when-some [jcode (keyword ^String (.getCurrencyCode jc))]
 	     (let [jsca (int (.getDefaultFractionDigits jc))]
 	       (some (fn [^Currency c]
-	               (and (== jsca     ^int (.scale c))
-	                    (identical? jcode (.id    c))
+	               (and (== jsca  ^int (.scale c))
+	                    (q= jcode      (.id    c))
 	                    c))
 	             curs))))
 	 (throw (ex-info
@@ -1370,7 +1371,7 @@
              (when-some [kid (or (clojure.lang.Keyword/find nil nm')
                                  (clojure.lang.Keyword/find nil nm))]
                (when-some [^Currency hit (registry/currency-id->currency* kid registry)]
-                 (when (identical? (.domain ^Currency hit) :ISO-4217) hit))))
+                 (when (q= (.domain ^Currency hit) :ISO-4217) hit))))
            (let [ids (lookup-id-keys id)]
              (some #(registry/currency-id->currency* % registry) ids)))))))
 
@@ -1399,7 +1400,7 @@
              (when-some [kid (or (clojure.lang.Keyword/find nil nm')
                                  (clojure.lang.Keyword/find nil nm))]
                (when-some [^Currency hit (registry/currency-id->currency* kid registry)]
-                 (when (identical? (.domain ^Currency hit) :ISO-4217) #{hit}))))
+                 (when (q= (.domain ^Currency hit) :ISO-4217) #{hit}))))
            (let [ids (lookup-id-keys id)]
              (not-empty
               (reduce
@@ -1532,7 +1533,7 @@
                  (if (= nsu "ISO-4217")
                    (when-some [kid (clojure.lang.Keyword/find nil nmu)]
                      (when-some [^Currency hit (registry/currency-id->currency* kid registry)]
-                       (when (identical? (.domain ^Currency hit) :ISO-4217) hit)))
+                       (when (q= (.domain ^Currency hit) :ISO-4217) hit)))
                    (when-some [kid (clojure.lang.Keyword/find ns nmu)]
                      (registry/currency-id->currency* kid registry)))))))))))
 
@@ -1553,7 +1554,7 @@
                  (if (= nsu "ISO-4217")
                    (when-some [kid (clojure.lang.Keyword/find nil nmu)]
                      (when-some [^Currency hit (registry/currency-id->currency* kid registry)]
-                       (when (identical? (.domain ^Currency hit) :ISO-4217) #{hit})))
+                       (when (q= (.domain ^Currency hit) :ISO-4217) #{hit})))
                    (when-some [kid (clojure.lang.Keyword/find ns nmu)]
                      (some-> (registry/currency-id->currency* kid registry) hash-set)))))))))))
 
@@ -1699,9 +1700,9 @@
           r  {}
           r  (if id (assoc r :id (to-id id)) r)
           r  (if nr (let [nr (to-numeric-id nr)]         (if nr (assoc r :nr (long nr)) r)) r)
-          r  (if sc (let [sc (normalize-scale-hint sc)]  (if (identical? sc invalid-map-hint) r (assoc r :sc (int sc)))) r)
+          r  (if sc (let [sc (normalize-scale-hint sc)]  (if (q= sc invalid-map-hint) r (assoc r :sc (int sc)))) r)
           r  (if ki (let [ki (normalize-kind-hint ki)]   (if ki (assoc r :ki ki) r)) r)
-          r  (if we (let [we (normalize-weight-hint we)] (if (identical? we invalid-map-hint) r (assoc r :we (int we)))) r)
+          r  (if we (let [we (normalize-weight-hint we)] (if (q= we invalid-map-hint) r (assoc r :we (int we)))) r)
           r  (if do (let [do (normalize-domain-hint do)] (if do (assoc r :do do) r)) r)]
       r))
 
@@ -1884,7 +1885,7 @@
             (definitive? c#)        (or (to-currency c#) (resolve c# (registry/get)))
             :else                   (resolve c# (registry/get)))))
   ([c registry]
-   (if (or (nil? registry) (identical? 'nil registry))
+   (if (or (nil? registry) (q= 'nil registry))
      `(attempt* ~c)
      `(let [c#        ~c
             registry# ^io.randomseed.bankster.Registry ~registry]
@@ -2254,7 +2255,7 @@
     (let [^Currency c0 (of-id currency-id registry)
           cid          (.id ^Currency c0)
           w            (normalize-weight-hint weight)]
-      (when (identical? w invalid-map-hint)
+      (when (q= w invalid-map-hint)
         (throw
          (ex-info "Invalid currency weight."
                   {:currency-id cid
@@ -2469,7 +2470,7 @@
   (^java.util.Currency [currency ^Registry registry]
    (let [^Registry registry (unit-registry registry)]
      (when-some [^Currency currency (attempt currency registry)]
-       (when (identical? :ISO-4217 (.domain ^Currency currency))
+       (when (q= :ISO-4217 (.domain ^Currency currency))
          (let [nr (.numeric ^Currency currency)
                sc (.scale   ^Currency currency)]
            (when (and (not (== no-numeric-id nr))
@@ -2602,7 +2603,7 @@
   {:tag clojure.lang.IPersistentMap :added "1.0.0" :private true}
   [^clojure.lang.IPersistentMap p]
   (map/map-keys-and-vals
-   #(vector (let [k (keyword %1)] (if (identical? :* k) k (l/locale k)))
+   #(vector (let [k (keyword %1)] (if (q= :* k) k (l/locale k)))
             (map/map-vals str %2)) p))
 
 (defn prep-all-localized-props
@@ -2649,7 +2650,7 @@
                   (when (some? cid)
                     (let [cid (keyword cid)
                           w   (normalize-weight-hint w0)]
-                      (when (identical? w invalid-map-hint)
+                      (when (q= w invalid-map-hint)
                         (throw
                          (ex-info
                           "Invalid currency weight in EDN configuration."
@@ -2668,7 +2669,7 @@
       ;; Comparator must be consistent with `Currency` equality which ignores weight.
       (let [ida (.id a)
             idb (.id b)]
-        (if (identical? ida idb)
+        (if (q= ida idb)
           0
           (let [wa (currency-weight a)
                 wb (currency-weight b)]
@@ -2685,7 +2686,7 @@
   [^clojure.lang.PersistentTreeSet s ^clojure.lang.Keyword cid]
   (when s
     (let [r (reduce (fn [^clojure.lang.PersistentTreeSet acc ^Currency cur]
-                      (if (identical? cid (.id cur))
+                      (if (q= cid (.id cur))
                         acc
                         (conj acc cur)))
                     (weighted-currencies)
@@ -2895,7 +2896,7 @@
           cid         (.id c)
           kw-code     (if (simple-keyword? cid) cid (keyword (core-name cid)))
           curs        (registry/currency-code->currencies* kw-code registry)
-          already?    (some #(identical? (.id ^Currency %) cid) curs)]
+          already?    (some #(q= (.id ^Currency %) cid) curs)]
       (if already?
         registry
         (update-in registry [:cur-code->curs kw-code]
@@ -3261,9 +3262,9 @@
   "Returns `true` if the given currency has a domain set to the first given argument."
   {:tag Boolean :added "1.0.0" :ex/soft true}
   ([ns c]
-   (with-attempt c nil [c] (identical? ns (.domain ^Currency c))))
+   (with-attempt c nil [c] (q= ns (.domain ^Currency c))))
   ([ns c ^Registry registry]
-   (with-attempt c registry [c] (identical? ns (.domain ^Currency c)))))
+   (with-attempt c registry [c] (q= ns (.domain ^Currency c)))))
 
 (defn has-domain?
   "Returns `true` if the given currency `c` has its domain defined (when only currency
@@ -3280,10 +3281,10 @@
      (has-domain? c)
      (if (instance? Registry registry-or-ns)
        (with-attempt c ^Registry registry-or-ns [c] (some? (.domain ^Currency c)))
-       (with-attempt c nil [c] (identical? registry-or-ns (.domain ^Currency c))))))
+       (with-attempt c nil [c] (q= registry-or-ns (.domain ^Currency c))))))
   ([c ns ^Registry registry]
    (with-attempt c registry [c]
-     (identical? ns (.domain ^Currency c)))))
+     (q= ns (.domain ^Currency c)))))
 
 (defn of-domain?
   "Checks if a domain of the given currency `c` equals to the one given as a first
@@ -3294,14 +3295,14 @@
          h                  (some-> registry .hierarchies :domain)]
      (with-attempt c registry [c]
        (let [d (.domain ^Currency c)]
-         (or (identical? domain d)
+         (or (q= domain d)
              (if h (isa? h d domain) (isa? d domain)))))))
   ([^clojure.lang.Keyword domain c ^Registry registry]
    (let [^Registry registry (registry/get registry)
          h                  (some-> registry .hierarchies :domain)]
      (with-attempt c registry [c]
        (let [d (.domain ^Currency c)]
-         (or (identical? domain d)
+         (or (q= domain d)
              (if h (isa? h d domain) (isa? d domain))))))))
 
 (defn big?
@@ -3393,10 +3394,10 @@
 
      :else
      (with-attempt c nil [c]
-       (identical? registry-or-tag (.kind ^Currency c)))))
+       (q= registry-or-tag (.kind ^Currency c)))))
   ([c tag ^Registry registry]
    (with-attempt c registry [c]
-     (identical? tag (.kind ^Currency c)))))
+     (q= tag (.kind ^Currency c)))))
 
 (defn of-kind?
   "Checks if a kind of the given currency `c` equals to the one given as a second
@@ -3409,7 +3410,7 @@
          h                  (some-> registry .hierarchies :kind)]
      (with-attempt c registry [c]
        (if-some [k (.kind ^Currency c)]
-         (or (identical? kind k)
+         (or (q= kind k)
              (if h
                (isa? h k kind)
                (isa? k kind)))

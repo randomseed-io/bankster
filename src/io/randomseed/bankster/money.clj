@@ -19,7 +19,8 @@
             [io.randomseed.bankster.currency         :as         currency]
             [io.randomseed.bankster.registry         :as         registry]
             [io.randomseed.bankster.serializers.json :as serializers-json]
-            [io.randomseed.bankster.util.fs          :as               fs])
+            [io.randomseed.bankster.util.fs          :as               fs]
+            [io.randomseed.bankster.util.qe          :refer          [q=]])
 
   (:import  (io.randomseed.bankster       Currency
                                           Registry
@@ -166,12 +167,12 @@
   Currency weight is ignored."
   {:private true :added "2.0.0" :tag Boolean}
   ^Boolean [^Currency ca ^Currency cb]
-  (or (clojure.core/identical? ca cb)
-      (and (clojure.core/identical? (.id      ^Currency  ca)        (.id      ^Currency cb))
+  (or (q= ca cb)
+      (and (q=                      (.id      ^Currency  ca)        (.id      ^Currency cb))
            (clojure.core/== (int    (.scale   ^Currency  ca)) (int  (.scale   ^Currency cb)))
            (clojure.core/== (long   (.numeric ^Currency  ca)) (long (.numeric ^Currency cb)))
-           (clojure.core/identical? (.domain  ^Currency  ca)        (.domain  ^Currency cb))
-           (clojure.core/identical? (.kind    ^Currency  ca)        (.kind    ^Currency cb)))))
+           (q=                      (.domain  ^Currency  ca)        (.domain  ^Currency cb))
+           (q=                      (.kind    ^Currency  ca)        (.kind    ^Currency cb)))))
 
 (defn- same-currency-objs?
   "Returns true if both Currency objects get from .currency field of Money objects are
@@ -182,12 +183,12 @@
   ^Boolean [^Money ma ^Money mb]
   (let [^Currency ca (.currency ma)
         ^Currency cb (.currency mb)]
-    (or (clojure.core/identical? ca cb)
-        (and (clojure.core/identical? (.id      ^Currency  ca)        (.id      ^Currency cb))
+    (or (q= ca cb)
+        (and (q=                      (.id      ^Currency  ca)        (.id      ^Currency cb))
              (clojure.core/== (int    (.scale   ^Currency  ca)) (int  (.scale   ^Currency cb)))
              (clojure.core/== (long   (.numeric ^Currency  ca)) (long (.numeric ^Currency cb)))
-             (clojure.core/identical? (.domain  ^Currency  ca)        (.domain  ^Currency cb))
-             (clojure.core/identical? (.kind    ^Currency  ca)        (.kind    ^Currency cb))))))
+             (q=                      (.domain  ^Currency  ca)        (.domain  ^Currency cb))
+             (q=                       (.kind    ^Currency  ca)        (.kind    ^Currency cb))))))
 
 ;;
 ;; Money generation macros.
@@ -1129,8 +1130,8 @@
   "Returns `true` if both currencies have the same IDs for the given money objects."
   {:tag Boolean :added "1.0.0"}
   [^Money a ^Money b]
-  (clojure.core/identical? (.id ^Currency (.currency ^Money a))
-                           (.id ^Currency (.currency ^Money b))))
+  (q= (.id ^Currency (.currency ^Money a))
+      (.id ^Currency (.currency ^Money b))))
 
 (defn eq?
   "Returns true if the money amounts and their currencies are equal. Note that

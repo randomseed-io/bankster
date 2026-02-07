@@ -12,7 +12,8 @@
             [io.randomseed.bankster.currency           :as currency]
             [io.randomseed.bankster.registry           :as registry]
             [io.randomseed.bankster.scale              :as    scale]
-            [io.randomseed.bankster.serializers.common :as   common])
+            [io.randomseed.bankster.serializers.common :as   common]
+            [io.randomseed.bankster.util.qe            :refer  [q=]])
 
   (:import  (io.randomseed.bankster Currency
                                     Registry
@@ -774,10 +775,10 @@
      (from-json-map cls m nil))
     ([cls m opts]
      (cond
-       (identical? cls Money)
+       (q= cls Money)
        (json-map->money m opts)
 
-       (identical? cls Currency)
+       (q= cls Currency)
        (json-map->currency m opts)
 
        :else
@@ -793,10 +794,10 @@
      (from-json-string cls s nil))
     ([cls s opts]
      (cond
-       (identical? cls Money)
+       (q= cls Money)
        (json-string->money s opts)
 
-       (identical? cls Currency)
+       (q= cls Currency)
        (json-string->currency s opts)
 
        :else
@@ -873,7 +874,7 @@
                             (catch Throwable _ nil))
          resolved-add-fn  (when resolved-add-var (var-get resolved-add-var))
          add-encoder      (or add-encoder resolved-add-fn)
-         use-cheshire?    (and resolved-add-fn (identical? add-encoder resolved-add-fn))
+         use-cheshire?    (and resolved-add-fn (q= add-encoder resolved-add-fn))
          encode-map       (when use-cheshire?
                             (some-> (try
                                       (requiring-resolve 'cheshire.generate/encode-map)

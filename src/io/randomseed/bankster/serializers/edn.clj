@@ -13,7 +13,8 @@
             [io.randomseed.bankster.currency           :as currency]
             [io.randomseed.bankster.registry           :as registry]
             [io.randomseed.bankster.scale              :as    scale]
-            [io.randomseed.bankster.serializers.common :as   common])
+            [io.randomseed.bankster.serializers.common :as   common]
+            [io.randomseed.bankster.util.qe            :refer  [q=]])
 
   (:import  (io.randomseed.bankster Currency
                                     Registry
@@ -545,10 +546,10 @@
      (from-edn-map cls m nil))
     ([cls m opts]
      (cond
-       (identical? cls Money)
+       (q= cls Money)
        (edn-map->money m opts)
 
-       (identical? cls Currency)
+       (q= cls Currency)
        (edn-map->currency m opts)
 
        :else
@@ -564,10 +565,10 @@
      (from-edn-string cls s nil))
     ([cls s opts]
      (cond
-       (identical? cls Money)
+       (q= cls Money)
        (edn-string->money s opts)
 
-       (identical? cls Currency)
+       (q= cls Currency)
        (edn-string->currency s opts)
 
        :else
