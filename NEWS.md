@@ -1,5 +1,25 @@
 # History of Bankster releases
 
+## 2.2.3 (2026-02-07)
+
+Money:
+
+- Deprecated operator-style aliases in `io.randomseed.bankster.money` (use
+  `io.randomseed.bankster.money.ops` or `io.randomseed.bankster.api.ops` instead).
+
+Specs:
+
+- Added initial specs for Registry, RegistryHierarchies, Currency, Money.
+
+Testing:
+
+- Added specification tests.
+
+Documentation:
+
+- Restructured, README simplified, "Sneak Peeks" are now a separate file.
+- Indentation fixed in docstrings and documents.
+
 ## 2.2.2 (2026-02-05)
 
 Licensing:

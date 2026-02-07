@@ -83,6 +83,13 @@ and optional per-currency <strong>traits</strong>.</li>
 <p>For major-version stability there is a frozen API namespace: <code>io.randomseed.bankster.api.v2</code> and its sub-namespaces. It mirrors <code>io.randomseed.bankster.api</code> for the Bankster 2.x line. When Bankster 3 appears, the v2 API will remain available for compatibility. In the current release, <code>io.randomseed.bankster.api.v2.*</code> is equivalent to <code>io.randomseed.bankster.api.*</code>.</p>
 <h2><a href="#contracts" id="contracts"></a>Contracts</h2>
 <p>See <a href="15_contracts.html">Bankster Contracts</a> for practical contracts (what is guaranteed, what is “soft” vs “strict”, how the default registry is chosen, when exceptions are thrown, how the protocols behave) for Bankster’s core axis: <code>Currency</code>, <code>Money</code>, <code>Registry</code> records and the <code>Monetary</code>, <code>Scalable</code> and <code>Accountable</code> protocols.</p>
+<h2><a href="#specs" id="specs"></a>Specs</h2>
+<p>Clojure Spec definitions for Bankster’s core data structures live in <code>io.randomseed.bankster.spec</code> (aggregator) and in the <code>io.randomseed.bankster.spec.*</code> sub-namespaces:</p>
+<ul>
+<li><code>spec.primitives</code> — sentinel values, basic types, and composite specs (e.g. currency scale, numeric ID, domain);</li>
+<li><code>spec.scale</code> — auto-scaled sentinel spec;</li>
+<li><code>spec.records</code> — record-level specs for <code>Currency</code>, <code>Money</code>, <code>Registry</code>, and <code>CurrencyHierarchies</code> (including ISO/non-ISO <code>Currency</code> variants).</li>
+</ul>
 <h2><a href="#design" id="design"></a>Design</h2>
 <p>The core design principle: <strong>money is a value with a currency attached</strong>, and currencies live in a <strong>registry</strong> that can be global, dynamic, or explicitly passed around. This keeps both <em>precision</em> and <em>context</em> explicit.</p>
 <h3><a href="#registry-of-currencies" id="registry-of-currencies"></a>Registry of currencies</h3>

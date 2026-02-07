@@ -3,7 +3,7 @@
   <groupId>io.randomseed</groupId>
   <artifactId>bankster</artifactId>
   <packaging>jar</packaging>
-  <version>2.2.2</version>
+  <version>2.2.3</version>
   <name>bankster</name>
   <description>Money as data, done right.</description>
   <url>https://randomseed.io/software/bankster/</url>
@@ -16,7 +16,7 @@
   <scm>
     <connection>scm:git:git://github.com/randomseed-io/bankster.git</connection>
     <developerConnection>scm:git:ssh://git@github.com/randomseed-io/bankster.git</developerConnection>
-    <tag>2.2.2</tag>
+    <tag>2.2.3</tag>
     <url>https://github.com/randomseed-io/bankster/</url>
   </scm>
   <dependencies>

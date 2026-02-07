@@ -70,11 +70,11 @@ Front API (`io.randomseed.bankster.api.*`) and the default registry.
 ```clojure
 ;; deps.edn
 
-{io.randomseed/bankster {:mvn/version "2.2.2"}}
+{io.randomseed/bankster {:mvn/version "2.2.3"}}
 
 ;; Leiningen
 
-[io.randomseed/bankster "2.2.2"]
+[io.randomseed/bankster "2.2.3"]
 ```
 
 You can also download JAR from [Clojars](https://clojars.org/io.randomseed/bankster).
@@ -123,6 +123,16 @@ See [Bankster Contracts](doc/15_contracts.md) for practical contracts (what is g
 what is "soft" vs "strict", how the default registry is chosen, when exceptions are
 thrown, how the protocols behave) for Bankster's core axis: `Currency`, `Money`,
 `Registry` records and the `Monetary`, `Scalable` and `Accountable` protocols.
+
+## Specs
+
+Clojure Spec definitions for Bankster's core data structures live in
+`io.randomseed.bankster.spec` (aggregator) and in the `io.randomseed.bankster.spec.*`
+sub-namespaces:
+
+* `spec.primitives` — sentinel values, basic types, and composite specs (e.g. currency scale, numeric ID, domain);
+* `spec.scale` — auto-scaled sentinel spec;
+* `spec.records` — record-level specs for `Currency`, `Money`, `Registry`, and `CurrencyHierarchies` (including ISO/non-ISO `Currency` variants).
 
 ## Design
 
