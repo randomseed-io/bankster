@@ -1743,28 +1743,31 @@
   ([a b & more]
    (if scale/*each*
      (clojure.core/apply mul-scaled a b more)
-     (let [step
-           (fn [[^BigDecimal acc ^Money m] x]
+     (let [acc (volatile! 1M)
+           mon (volatile! nil)]
+       (loop [items (cons a (cons b more))]
+         (if-let [s (seq items)]
+           (let [x (first s)]
              (if (instance? Money x)
-               (if (some? m)
+               (if (some? @mon)
                  (throw (ex-info "Only one multiplied value can be a kind of Money."
-                                 {:multiplicant m :multiplier x}))
-                 [(mul-core ^BigDecimal acc ^BigDecimal (.amount ^Money x) nil)
-                  ^Money x])
-               [(mul-core ^BigDecimal acc x)
-                m]))
-           [^BigDecimal res ^Money m] (reduce step [1M nil] (cons a (cons b more)))]
-       (if (some? m)
-         (let [^Currency c (.currency ^Money m)]
-           (Money. ^Currency c
-                   (if (currency-auto-scaled? c)
-                     res
-                     (bd-set-scale res
-                                   (.scale ^BigDecimal (.amount ^Money m))
-                                   (scale/rounding-mode)
-                                   :mul
-                                   {:money m :currency c}))))
-         ^BigDecimal res)))))
+                                 {:multiplicant @mon :multiplier x}))
+                 (do (vreset! mon ^Money x)
+                     (vreset! acc (mul-core ^BigDecimal @acc ^BigDecimal (.amount ^Money x) nil))))
+               (vreset! acc (mul-core ^BigDecimal @acc x)))
+             (recur (rest s)))
+           (let [^BigDecimal res @acc]
+             (if-some [^Money m @mon]
+               (let [^Currency c (.currency ^Money m)]
+                 (Money. ^Currency c
+                         (if (currency-auto-scaled? c)
+                           res
+                           (bd-set-scale res
+                                         (.scale ^BigDecimal (.amount ^Money m))
+                                         (scale/rounding-mode)
+                                         :mul
+                                         {:money m :currency c}))))
+               ^BigDecimal res))))))))
 
 (def ^{:tag        Money
        :added      "1.2.0"
